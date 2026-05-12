@@ -2,16 +2,50 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, MapPin, Heart, 
-  CreditCard, Settings, LogOut, ChevronRight, User, Bell,
-  Menu, X
+  CreditCard, LogOut, ChevronRight, User, Bell,
+  Menu, X, Sun, Moon
 } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Hook personnalisé pour le thème
+const useTheme = () => {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    // Vérifier si un thème est sauvegardé dans localStorage
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light" || savedTheme === "dark") {
+      return savedTheme;
+    }
+    // Vérifier les préférences système
+    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return "light";
+  });
+
+  useEffect(() => {
+    // Appliquer le thème au document
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    // Sauvegarder dans localStorage
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === "dark" ? "light" : "dark");
+  };
+
+  return { theme, toggleTheme };
+};
 
 const DashboardClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -26,7 +60,6 @@ const DashboardClientLayout = () => {
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
     { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
-
   ];
 
   const isActive = (path: string) => {
@@ -89,10 +122,7 @@ const DashboardClientLayout = () => {
         </nav>
 
         {/* Footer sidebar */}
-        <div className="p-4 border-t border-border">
-          <ThemeToggle />
-          <p className="text-xs text-muted-foreground mt-3">v1.0.0</p>
-        </div>
+   
       </aside>
 
       {/* Main content */}
@@ -110,20 +140,31 @@ const DashboardClientLayout = () => {
 
             <div className="flex-1" />
 
-            {/* Theme toggle mobile */}
-            <div className="md:hidden mr-2">
-              <ThemeToggle />
-            </div>
+            {/* Actions groupées - Notifications + Theme Toggle */}
+            <div className="flex items-center gap-2">
+              {/* Notifications */}
+              <button className="relative p-2 rounded-lg hover:bg-secondary transition">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full animate-pulse"></span>
+              </button>
 
-            {/* Notifications */}
-            <button className="relative p-2 rounded-lg hover:bg-secondary transition mr-1">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full"></span>
-            </button>
+              {/* Theme Toggle Button avec icône fonctionnelle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-secondary transition"
+                aria-label="Changer de thème"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-5 w-5 text-amber-500 hover:text-amber-400 transition" />
+                ) : (
+                  <Moon className="h-5 w-5 text-primary hover:text-primary/80 transition" />
+                )}
+              </button>
+            </div>
 
             {/* User profile */}
             <div 
-              className="relative"
+              className="relative ml-2"
               onMouseEnter={() => setShowLogout(true)}
               onMouseLeave={() => setShowLogout(false)}
             >
@@ -141,7 +182,7 @@ const DashboardClientLayout = () => {
 
               {/* Dropdown déconnexion */}
               {showLogout && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
                   <div className="px-4 py-2 border-b border-border">
                     <p className="text-sm font-medium text-foreground">{userData.name}</p>
                     <p className="text-xs text-muted-foreground">{userData.email}</p>
@@ -214,7 +255,26 @@ const DashboardClientLayout = () => {
               </nav>
 
               <div className="p-4 border-t border-border space-y-3">
-                <ThemeToggle />
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-all duration-200"
+                >
+                  <div className="flex items-center gap-2">
+                    {theme === "dark" ? (
+                      <Sun className="h-4 w-4 text-amber-500" />
+                    ) : (
+                      <Moon className="h-4 w-4 text-primary" />
+                    )}
+                    <span className="text-sm text-foreground">
+                      {theme === "dark" ? "Mode clair" : "Mode sombre"}
+                    </span>
+                  </div>
+                  <div className="w-8 h-4 bg-muted rounded-full relative">
+                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-foreground transition-transform duration-200 ${
+                      theme === "dark" ? 'translate-x-4' : 'translate-x-0.5'
+                    }`} />
+                  </div>
+                </button>
                 <p className="text-xs text-muted-foreground text-center">v1.0.0</p>
               </div>
             </div>
