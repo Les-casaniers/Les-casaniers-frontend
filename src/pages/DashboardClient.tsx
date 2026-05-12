@@ -1,36 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, MapPin, Heart, 
   CreditCard, LogOut, ChevronRight, User, Bell,
-  Menu, X, Sun, Moon
+  Menu, X, Sun, Moon, Settings
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Hook personnalisé pour le thème
 const useTheme = () => {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
-    // Vérifier si un thème est sauvegardé dans localStorage
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "light" || savedTheme === "dark") {
       return savedTheme;
     }
-    // Vérifier les préférences système
-    if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark";
-    }
-    return "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   useEffect(() => {
-    // Appliquer le thème au document
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
-    // Sauvegarder dans localStorage
     localStorage.setItem("theme", theme);
   }, [theme]);
 
@@ -48,10 +41,13 @@ const DashboardClientLayout = () => {
   const { theme, toggleTheme } = useTheme();
   const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const userData = {
     name: user?.name || "Jean Dupont",
     email: user?.email || "jean.dupont@email.com",
+    role: "Client",
+    memberSince: "Janvier 2025"
   };
 
   const menuItems = [
@@ -71,6 +67,22 @@ const DashboardClientLayout = () => {
     logout();
     navigate("/login");
   };
+
+  // Toggle le menu profil au clic
+  const toggleProfileMenu = () => {
+    setShowLogout(!showLogout);
+  };
+
+  // Fermer le menu quand on clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setShowLogout(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Fermer le menu mobile sur resize
   useEffect(() => {
@@ -121,8 +133,8 @@ const DashboardClientLayout = () => {
           ))}
         </nav>
 
-        {/* Footer sidebar */}
-   
+        {/* Footer sidebar avec bouton thème */}
+     
       </aside>
 
       {/* Main content */}
@@ -162,13 +174,12 @@ const DashboardClientLayout = () => {
               </button>
             </div>
 
-            {/* User profile */}
-            <div 
-              className="relative ml-2"
-              onMouseEnter={() => setShowLogout(true)}
-              onMouseLeave={() => setShowLogout(false)}
-            >
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition">
+            {/* User profile - Menu au clic */}
+            <div className="relative ml-2" ref={profileRef}>
+              <button
+                onClick={toggleProfileMenu}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition"
+              >
                 <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-sm font-bold text-primary-foreground">
                     {userData.name.charAt(0).toUpperCase()}
@@ -180,16 +191,39 @@ const DashboardClientLayout = () => {
                 </div>
               </button>
 
-              {/* Dropdown déconnexion */}
+              {/* Dropdown déconnexion - Apparaît au clic */}
               {showLogout && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-border">
-                    <p className="text-sm font-medium text-foreground">{userData.name}</p>
-                    <p className="text-xs text-muted-foreground">{userData.email}</p>
+                  <div className="px-4 py-3 border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{userData.name}</p>
+                        <p className="text-xs text-muted-foreground">{userData.email}</p>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Rôle :</span> {userData.role}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <span className="font-medium">Membre depuis :</span> {userData.memberSince}
+                      </p>
+                    </div>
                   </div>
+                  <Link
+                    to="/DashboardClient/parametres"
+                    onClick={() => setShowLogout(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Paramètres du compte
+                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-secondary transition"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 transition"
                   >
                     <LogOut className="h-4 w-4" />
                     Déconnexion
