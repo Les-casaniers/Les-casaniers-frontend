@@ -29,6 +29,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Compte from "@/pages/Compte";
+import MotDePasseOublie from "@/pages/MotDePasseOublie";
 
 
 //Import Routes pour Admin
@@ -83,6 +84,7 @@ const App = () => (
             {/* Route connexion */}
             <Route path="/login" element={<Login />} /> 
             <Route path="/inscription" element={<Register />} />
+            <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/compte" element={<Compte />} />
             <Route path="/DashboardClient" element={<DashboardClient />} />
             
