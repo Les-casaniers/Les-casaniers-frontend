@@ -1,0 +1,47 @@
+L'intégration complète entre le backend Laravel et le frontend React/Vite a été réalisée. Voici un résumé des configurations et des modifications apportées :
+
+1. Configuration du Backend (Laravel)
+Variables d'environnement (
+
+.env
+) : Mise à jour de FRONTEND_URL à http://localhost:8080 pour correspondre au serveur de développement Vite.
+CORS (
+
+cors.php
+) : Ajout de l'URL du frontend aux origines autorisées et activation de supports_credentials.
+Sanctum (
+
+sanctum.php
+) : Ajout du guard admin pour permettre l'authentification des administrateurs via Sanctum.
+2. Configuration du Frontend (React/Vite)
+Installation : Installation de la bibliothèque axios pour les appels API.
+Variables d'environnement (
+
+.env
+) : Création du fichier avec VITE_API_URL=http://localhost:8000/api.
+Service API (
+
+api.ts
+) : Configuration d'une instance Axios centralisée avec :
+Base URL automatique.
+Gestion des identifiants (cookies/Sanctum).
+Intercepteur pour injecter automatiquement le token Bearer dans les headers.
+Gestion des erreurs 401 pour la déconnexion automatique.
+3. Logique d'Authentification et Intégration UI
+AuthContext (
+
+AuthContext.tsx
+) : Remplacement des simulations par des appels réels vers /login et /logout. Gestion de la persistance de l'utilisateur dans le localStorage.
+Page de Connexion (
+
+Login.tsx
+) : Utilisation du hook useAuth pour traiter la connexion réelle avec gestion des erreurs backend.
+Page Mon Compte (
+
+Compte.tsx
+) : Affichage dynamique des données utilisateur (nom, prénom, email, rôle) provenant du backend et gestion de la déconnexion asynchrone.
+Application (
+
+App.tsx
+) : Activation de l'AuthProvider pour englober toute l'application et nettoyage des routes en double.
+La communication API est maintenant fonctionnelle et sécurisée entre les deux applications.
