@@ -7,7 +7,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isAdmin } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -19,7 +19,6 @@ const Login = () => {
   });
   const [generalError, setGeneralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminLogin, setIsAdminLogin] = useState(false);
 
   const navigate = useNavigate();
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -41,54 +40,50 @@ const Login = () => {
     if (generalError) setGeneralError("");
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setGeneralError("");
-  //   setErrors({ email: "", password: "" });
-
-  //   if (!formData.email || !formData.password) {
-  //     setGeneralError("Veuillez remplir tous les champs obligatoires.");
-  //     return;
-  //   }
-
-  //   setIsLoading(true);
-  //   try {
-  //     const result = await login(formData.email, formData.password, isAdminLogin ? 'admin' : 'client');
-      
-  //     setIsLoading(false);
-      
-  //     if (result.success) {
-  //       // Redirection explicite après succès
-  //       //navigate("/compte");
-  //       navigate(isAdminLogin ? "/DashboardAdmin" : "/DashboardClient");
-  //     } else {
-  //       if (result.errors) {
-  //         const emailError = result.errors.email ? (Array.isArray(result.errors.email) ? result.errors.email[0] : result.errors.email) : "";
-  //         const passwordError = (result.errors.password || result.errors.mot_de_passe) 
-  //             ? (Array.isArray(result.errors.password || result.errors.mot_de_passe) 
-  //                 ? (result.errors.password || result.errors.mot_de_passe)[0] 
-  //                 : (result.errors.password || result.errors.mot_de_passe)) 
-  //             : "";
-              
-  //         setErrors({
-  //           email: typeof emailError === 'string' ? emailError : JSON.stringify(emailError),
-  //           password: typeof passwordError === 'string' ? passwordError : JSON.stringify(passwordError)
-  //         });
-  //       }
-  //       setGeneralError(result.message || "Email ou mot de passe incorrect");
-  //     }
-  //   } catch (error) {
-  //     console.error("Critical login submission error:", error);
-  //     setIsLoading(false);
-  //     setGeneralError("Une erreur inattendue est survenue. Veuillez réessayer.");
-  //   }
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  // Redirection directe selon le choix Client/Admin (temporaire)
-  navigate(isAdminLogin ? "/DashboardAdmin" : "/DashboardClient");
-};
+    e.preventDefault();
+    setGeneralError("");
+    setErrors({ email: "", password: "" });
+
+    if (!formData.email || !formData.password) {
+      setGeneralError("Veuillez remplir tous les champs obligatoires.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await login(formData.email, formData.password);
+
+      setIsLoading(false);
+
+      if (result.success) {
+        navigate(result.isAdmin ? "/DashboardAdmin" : "/DashboardClient");
+      } else {
+        if (result.errors) {
+          const emailError = result.errors.email
+            ? Array.isArray(result.errors.email)
+              ? result.errors.email[0]
+              : result.errors.email
+            : "";
+          const passwordError = result.errors.password || result.errors.mot_de_passe
+            ? Array.isArray(result.errors.password || result.errors.mot_de_passe)
+              ? (result.errors.password || result.errors.mot_de_passe)[0]
+              : (result.errors.password || result.errors.mot_de_passe)
+            : "";
+
+          setErrors({
+            email: typeof emailError === "string" ? emailError : JSON.stringify(emailError),
+            password: typeof passwordError === "string" ? passwordError : JSON.stringify(passwordError),
+          });
+        }
+        setGeneralError(result.message || "Email ou mot de passe incorrect");
+      }
+    } catch (error) {
+      console.error("Critical login submission error:", error);
+      setIsLoading(false);
+      setGeneralError("Une erreur inattendue est survenue. Veuillez réessayer.");
+    }
+  };
 
 
   return (
@@ -183,30 +178,14 @@ const Login = () => {
                   )}
                 </div>
 
-                {/* Sélecteur de type de compte */}
-                <div className="flex p-1 bg-secondary rounded-lg mb-6">
-                  <button
-                    type="button"
-                    onClick={() => setIsAdminLogin(false)}
-                    className={`flex-1 py-2 text-sm font-medium rounded-md transition ${!isAdminLogin ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Client
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsAdminLogin(true)}
-                    className={`flex-1 py-2 text-sm font-medium rounded-md transition ${isAdminLogin ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Admin
-                  </button>
-                </div>
-
                 {/* Mot de passe oublié */}
-                <div className="flex justify-end">
-                  <Link to="/mot-de-passe-oublie" className="text-xs text-muted-foreground hover:text-foreground transition">
-                    Mot de passe oublié ?
-                  </Link>
-                </div>
+                {!isAdmin && (
+                  <div className="flex justify-end">
+                    <Link to="/mot-de-passe-oublie" className="text-xs text-muted-foreground hover:text-foreground transition">
+                      Mot de passe oublié ?
+                    </Link>
+                  </div>
+                )}
 
                 {/* Bouton de connexion MODIFIÉ */}
                 <button

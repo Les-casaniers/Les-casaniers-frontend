@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Download, Trash2, AlertTriangle, X, Eye, Filter, CheckCircle, Clock, XCircle, Printer } from "lucide-react";
+import { FileText, Download, Trash2, AlertTriangle, X, Eye, Filter, CheckCircle, Clock, XCircle, Printer, Search, ChevronDown, ChevronUp, DollarSign, TrendingUp, Calendar, Users } from "lucide-react";
 
 type StatutPaiement = "Payée" | "En attente" | "En retard" | "Remboursée";
 
@@ -95,6 +95,21 @@ const facturesParDefaut: Facture[] = [
       { nom: "Webcam HD", quantite: 1, prix: "12 500 Ar" },
     ],
   },
+  {
+    id: "FAC-006",
+    commandeId: "CMD-006",
+    client: "Miora Rabe",
+    email: "miora.rabe@email.com",
+    dateEmission: "2025-05-08",
+    dateEcheance: "2025-05-22",
+    montantHT: "20 833 Ar",
+    tva: "4 167 Ar",
+    montantTTC: "25 000 Ar",
+    statut: "En attente",
+    articles: [
+      { nom: "Casque Gaming", quantite: 1, prix: "25 000 Ar" },
+    ],
+  },
 ];
 
 const AdminFactures = () => {
@@ -103,15 +118,59 @@ const AdminFactures = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedFacture, setSelectedFacture] = useState<Facture | null>(null);
   const [filtreStatut, setFiltreStatut] = useState<StatutPaiement | "Tous">("Tous");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<keyof Facture>("dateEmission");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const inputClass = "px-3 py-1.5 text-sm border border-black/20 dark:border-white/20 rounded-lg bg-white dark:bg-black text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-black/30 dark:focus:ring-white/30";
+  // Filtrer les factures
+  const filteredFactures = factures.filter(f => {
+    const matchesSearch = f.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         f.commandeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         f.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         f.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filtreStatut === "Tous" || f.statut === filtreStatut;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Trier les factures
+  const sortedFactures = [...filteredFactures].sort((a, b) => {
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+    
+    if (sortField === "montantTTC") {
+      aValue = parseInt(a.montantTTC.replace(/[^0-9]/g, ""));
+      bValue = parseInt(b.montantTTC.replace(/[^0-9]/g, ""));
+    }
+    
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedFactures.length / itemsPerPage);
+  const paginatedFactures = sortedFactures.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleSort = (field: keyof Facture) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   const getStatutStyle = (statut: StatutPaiement) => {
     const styles = {
-      "Payée": "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/50",
-      "En attente": "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/50",
-      "En retard": "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/50",
-      "Remboursée": "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/50",
+      "Payée": "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20",
+      "En attente": "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      "En retard": "bg-destructive/10 text-destructive border-destructive/20",
+      "Remboursée": "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
     };
     return styles[statut];
   };
@@ -121,6 +180,7 @@ const AdminFactures = () => {
       case "Payée": return <CheckCircle className="h-3 w-3" />;
       case "En attente": return <Clock className="h-3 w-3" />;
       case "En retard": return <XCircle className="h-3 w-3" />;
+      case "Remboursée": return <TrendingUp className="h-3 w-3" />;
       default: return null;
     }
   };
@@ -148,9 +208,9 @@ const AdminFactures = () => {
 
   const handleExportAll = () => {
     const csvContent = [
-      ["ID Facture", "Commande", "Client", "Date émission", "Date échéance", "Montant TTC", "Statut"],
-      ...factures.filter(f => filtreStatut === "Tous" || f.statut === filtreStatut).map(f => [
-        f.id, f.commandeId, f.client, f.dateEmission, f.dateEcheance, f.montantTTC, f.statut
+      ["ID Facture", "Commande", "Client", "Email", "Date émission", "Date échéance", "Montant HT", "TVA", "Montant TTC", "Statut"],
+      ...filteredFactures.map(f => [
+        f.id, f.commandeId, f.client, f.email, f.dateEmission, f.dateEcheance, f.montantHT, f.tva, f.montantTTC, f.statut
       ])
     ].map(row => row.join(",")).join("\n");
     
@@ -163,12 +223,13 @@ const AdminFactures = () => {
     URL.revokeObjectURL(url);
   };
 
-  const facturesFiltrees = factures.filter(f => filtreStatut === "Tous" || f.statut === filtreStatut);
   const stats = {
     total: factures.length,
     totalMontant: factures.reduce((sum, f) => sum + parseInt(f.montantTTC.replace(/[^0-9]/g, "")), 0),
     payees: factures.filter(f => f.statut === "Payée").length,
+    enAttente: factures.filter(f => f.statut === "En attente").length,
     enRetard: factures.filter(f => f.statut === "En retard").length,
+    remboursees: factures.filter(f => f.statut === "Remboursée").length,
   };
 
   return (
@@ -176,246 +237,339 @@ const AdminFactures = () => {
       {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-black dark:text-white">Factures</h1>
-          <p className="text-sm text-black/50 dark:text-white/50 mt-0.5">Gestion et historique des factures</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Factures</h1>
+          <p className="text-muted-foreground mt-1">Gestion et suivi des factures</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportAll}
-            className="flex items-center gap-2 px-4 py-2 bg-black/5 dark:bg-white/10 text-black dark:text-white rounded-lg hover:bg-black/10 dark:hover:bg-white/20 transition text-sm font-medium border border-black/10 dark:border-white/10"
-          >
-            <Download className="h-4 w-4" />
-            Exporter tout
-          </button>
-        </div>
+        <button
+          onClick={handleExportAll}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
+        >
+          <Download className="h-4 w-4" />
+          Exporter tout
+        </button>
       </div>
 
       {/* Cartes statistiques */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <FileText className="h-5 w-5 text-black/40 dark:text-white/40" />
-            <span className="text-2xl font-bold text-black dark:text-white">{stats.total}</span>
-          </div>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-1">Total factures</p>
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 text-center hover:shadow-md transition">
+          <FileText className="h-5 w-5 mx-auto text-muted-foreground mb-2" />
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+          <p className="text-xs text-muted-foreground">Total factures</p>
         </div>
-        <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-black/40 dark:text-white/40">Ar</span>
-            <span className="text-2xl font-bold text-black dark:text-white">{stats.totalMontant.toLocaleString()}</span>
-          </div>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-1">Chiffre d'affaires</p>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <DollarSign className="h-5 w-5 mx-auto text-primary mb-2" />
+          <p className="text-2xl font-bold text-foreground">{(stats.totalMontant / 1000000).toFixed(1)}M</p>
+          <p className="text-xs text-muted-foreground">Chiffre d'affaires</p>
         </div>
-        <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            <span className="text-2xl font-bold text-black dark:text-white">{stats.payees}</span>
-          </div>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-1">Factures payées</p>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <CheckCircle className="h-5 w-5 mx-auto text-green-500 mb-2" />
+          <p className="text-2xl font-bold text-green-600">{stats.payees}</p>
+          <p className="text-xs text-muted-foreground">Payées</p>
         </div>
-        <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <XCircle className="h-5 w-5 text-red-500" />
-            <span className="text-2xl font-bold text-black dark:text-white">{stats.enRetard}</span>
-          </div>
-          <p className="text-sm text-black/60 dark:text-white/60 mt-1">Paiements en retard</p>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <Clock className="h-5 w-5 mx-auto text-amber-500 mb-2" />
+          <p className="text-2xl font-bold text-amber-600">{stats.enAttente}</p>
+          <p className="text-xs text-muted-foreground">En attente</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <XCircle className="h-5 w-5 mx-auto text-destructive mb-2" />
+          <p className="text-2xl font-bold text-destructive">{stats.enRetard}</p>
+          <p className="text-xs text-muted-foreground">En retard</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <TrendingUp className="h-5 w-5 mx-auto text-blue-500 mb-2" />
+          <p className="text-2xl font-bold text-blue-600">{stats.remboursees}</p>
+          <p className="text-xs text-muted-foreground">Remboursées</p>
         </div>
       </div>
 
-      {/* Filtres */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Filter className="h-4 w-4 text-black/50 dark:text-white/50" />
-        <div className="flex flex-wrap gap-2">
-          {["Tous", "Payée", "En attente", "En retard", "Remboursée"].map((statut) => (
-            <button
-              key={statut}
-              onClick={() => setFiltreStatut(statut as typeof filtreStatut)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                filtreStatut === statut
-                  ? "bg-black dark:bg-white text-white dark:text-black"
-                  : "bg-black/5 dark:bg-white/10 text-black/70 dark:text-white/70 hover:bg-black/10 dark:hover:bg-white/20"
-              }`}
+      {/* Filtres et recherche */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher par ID, commande, client ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+        </div>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <select
+              value={filtreStatut}
+              onChange={(e) => setFiltreStatut(e.target.value as typeof filtreStatut)}
+              className="pl-10 pr-8 py-2.5 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
             >
-              {statut}
-            </button>
-          ))}
+              <option value="Tous">Tous les statuts</option>
+              <option value="Payée">Payées</option>
+              <option value="En attente">En attente</option>
+              <option value="En retard">En retard</option>
+              <option value="Remboursée">Remboursées</option>
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          </div>
         </div>
       </div>
 
-      {/* Tableau des factures */}
-      <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl overflow-hidden">
+      {/* Tableau Desktop */}
+      <div className="hidden lg:block bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5">
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Facture</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Commande</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Client</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Émission</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Échéance</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Montant TTC</th>
-                <th className="text-left py-3 px-4 text-black/50 dark:text-white/50 font-medium">Statut</th>
-                <th className="text-right py-3 px-4 text-black/50 dark:text-white/50 font-medium">Actions</th>
-               </tr>
+              <tr className="border-b border-border bg-secondary/30">
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("id")}>
+                  <div className="flex items-center gap-1">Facture {sortField === "id" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("commandeId")}>
+                  <div className="flex items-center gap-1">Commande {sortField === "commandeId" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("client")}>
+                  <div className="flex items-center gap-1">Client {sortField === "client" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("dateEmission")}>
+                  <div className="flex items-center gap-1">Émission {sortField === "dateEmission" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("dateEcheance")}>
+                  <div className="flex items-center gap-1">Échéance {sortField === "dateEcheance" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("montantTTC")}>
+                  <div className="flex items-center gap-1">Montant TTC {sortField === "montantTTC" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}</div>
+                </th>
+                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Statut</th>
+                <th className="text-right py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
+              </tr>
             </thead>
             <tbody>
-              {facturesFiltrees.map((facture) => (
-                <tr key={facture.id} className="border-b border-black/5 dark:border-white/5 last:border-b-0 hover:bg-black/5 dark:hover:bg-white/5 transition">
-                  <td className="py-3 px-4 font-mono text-xs font-semibold text-black dark:text-white">{facture.id}</td>
-                  <td className="py-3 px-4 font-mono text-xs text-black/60 dark:text-white/60">{facture.commandeId}</td>
+              {paginatedFactures.map((facture) => (
+                <tr key={facture.id} className="border-b border-border/50 hover:bg-secondary/20 transition-colors group">
+                  <td className="py-3 px-4 font-mono text-sm font-semibold text-foreground">{facture.id}</td>
+                  <td className="py-3 px-4 font-mono text-sm text-muted-foreground">{facture.commandeId}</td>
                   <td className="py-3 px-4">
-                    <p className="font-medium text-black dark:text-white">{facture.client}</p>
-                    <p className="text-xs text-black/40 dark:text-white/40">{facture.email}</p>
-                  </td>
-                  <td className="py-3 px-4 font-mono text-xs text-black/60 dark:text-white/60">
-                    {new Date(facture.dateEmission).toLocaleDateString("fr-FR")}
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">{facture.client.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{facture.client}</p>
+                        <p className="text-xs text-muted-foreground">{facture.email}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`font-mono text-xs ${new Date(facture.dateEcheance) < new Date() && facture.statut !== "Payée" ? "text-red-500" : "text-black/60 dark:text-white/60"}`}>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(facture.dateEmission).toLocaleDateString("fr-FR")}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className={`flex items-center gap-1.5 text-sm ${new Date(facture.dateEcheance) < new Date() && facture.statut !== "Payée" ? "text-destructive" : "text-muted-foreground"}`}>
+                      <Calendar className="h-3 w-3" />
                       {new Date(facture.dateEcheance).toLocaleDateString("fr-FR")}
-                    </span>
+                    </div>
                   </td>
-                  <td className="py-3 px-4 font-semibold text-black dark:text-white">{facture.montantTTC}</td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(facture.statut)}`}>
+                    <span className="font-semibold text-foreground">{facture.montantTTC}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatutStyle(facture.statut)}`}>
                       {getStatutIcone(facture.statut)}
                       {facture.statut}
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => handleViewDetails(facture)}
-                        className="p-1.5 rounded-lg text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition"
-                        title="Voir détails"
-                      >
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => handleViewDetails(facture)} className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all" title="Détails">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleDownloadPDF(facture)}
-                        className="p-1.5 rounded-lg text-black/40 dark:text-white/40 hover:text-blue-500 transition"
-                        title="Télécharger PDF"
-                      >
+                      <button onClick={() => handleDownloadPDF(facture)} className="p-2 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all" title="PDF">
                         <Download className="h-4 w-4" />
                       </button>
-                      <button
-                        onClick={() => handleOpenDelete(facture)}
-                        className="p-1.5 rounded-lg text-black/40 dark:text-white/40 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-500/10 transition"
-                        title="Supprimer"
-                      >
+                      <button onClick={() => handleOpenDelete(facture)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all" title="Supprimer">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
-                 </tr>
+                </tr>
               ))}
             </tbody>
-           </table>
+          </table>
         </div>
 
-        {facturesFiltrees.length === 0 && (
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-4 border-t border-border bg-secondary/10">
+            <p className="text-sm text-muted-foreground">{sortedFactures.length} facture{sortedFactures.length > 1 ? 's' : ''}</p>
+            <div className="flex gap-2">
+              <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition">Précédent</button>
+              <span className="px-3 py-1.5 text-sm font-medium text-foreground">{currentPage} / {totalPages}</span>
+              <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition">Suivant</button>
+            </div>
+          </div>
+        )}
+
+        {sortedFactures.length === 0 && (
           <div className="py-12 text-center">
-            <FileText className="h-12 w-12 mx-auto text-black/20 dark:text-white/20 mb-3" />
-            <p className="text-black/40 dark:text-white/40">Aucune facture trouvée</p>
+            <FileText className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground">Aucune facture trouvée</p>
+            <p className="text-sm text-muted-foreground/60 mt-1">Essayez de modifier vos critères de recherche</p>
+          </div>
+        )}
+      </div>
+
+      {/* Version Mobile (Cartes) */}
+      <div className="lg:hidden space-y-4">
+        {paginatedFactures.map((facture) => (
+          <div key={facture.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-mono text-sm font-semibold text-foreground">{facture.id}</p>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">Commande: {facture.commandeId}</p>
+              </div>
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatutStyle(facture.statut)}`}>
+                {getStatutIcone(facture.statut)}
+                {facture.statut}
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-3 pt-2 border-t border-border/50">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">{facture.client.charAt(0).toUpperCase()}</span>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">{facture.client}</p>
+                <p className="text-xs text-muted-foreground">{facture.email}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Émission</p>
+                <p className="text-foreground">{new Date(facture.dateEmission).toLocaleDateString("fr-FR")}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Échéance</p>
+                <p className={new Date(facture.dateEcheance) < new Date() && facture.statut !== "Payée" ? "text-destructive" : "text-foreground"}>
+                  {new Date(facture.dateEcheance).toLocaleDateString("fr-FR")}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-muted-foreground">Montant TTC</p>
+                <p className="text-lg font-bold text-foreground">{facture.montantTTC}</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => handleViewDetails(facture)} className="flex-1 py-2 rounded-xl text-sm font-medium border border-border hover:bg-secondary transition">Détails</button>
+              <button onClick={() => handleDownloadPDF(facture)} className="flex-1 py-2 rounded-xl text-sm font-medium border border-border hover:bg-blue-500/10 hover:text-blue-500 transition">PDF</button>
+            </div>
+          </div>
+        ))}
+        
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 pt-4">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="px-3 py-1.5 rounded-lg text-sm border border-border disabled:opacity-50">←</button>
+            <span className="px-3 py-1.5 text-sm">{currentPage}/{totalPages}</span>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="px-3 py-1.5 rounded-lg text-sm border border-border disabled:opacity-50">→</button>
           </div>
         )}
       </div>
 
       {/* MODAL DÉTAILS FACTURE */}
       {showDetailsModal && selectedFacture && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 dark:border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in">
+            <div className="flex items-center justify-between p-6 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-black/5 dark:bg-white/10 rounded-lg">
-                  <FileText className="h-5 w-5 text-black dark:text-white" />
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <FileText className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-black dark:text-white">Détails de la facture</h2>
-                  <p className="text-xs text-black/40 dark:text-white/40 font-mono">{selectedFacture.id}</p>
+                  <h2 className="text-xl font-bold text-foreground">Détails de la facture</h2>
+                  <p className="text-sm text-muted-foreground font-mono">{selectedFacture.id}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDetailsModal(false)} className="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
-                <X className="h-5 w-5 text-black/50 dark:text-white/50" />
+              <button onClick={() => setShowDetailsModal(false)} className="p-2 rounded-lg hover:bg-secondary transition">
+                <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
-            <div className="overflow-y-auto px-6 py-5 flex-1 space-y-5">
+            
+            <div className="overflow-y-auto p-6 flex-1 space-y-5">
               {/* En-tête facture */}
-              <div className="flex justify-between items-start pb-4 border-b border-black/10 dark:border-white/10">
+              <div className="flex justify-between items-start pb-4 border-b border-border">
                 <div>
-                  <h3 className="font-bold text-lg text-black dark:text-white">INFIGO</h3>
-                  <p className="text-xs text-black/50 dark:text-white/50">Matériel informatique</p>
-                  <p className="text-xs text-black/40 dark:text-white/40 mt-2">Antananarivo, Madagascar</p>
+                  <h3 className="font-bold text-xl text-foreground">LES CASANIERS</h3>
+                  <p className="text-xs text-muted-foreground">Matériel informatique</p>
+                  <p className="text-xs text-muted-foreground mt-2">Antananarivo, Madagascar</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-black dark:text-white">Facture n°{selectedFacture.id}</p>
-                  <p className="text-xs text-black/50 dark:text-white/50">Commande : {selectedFacture.commandeId}</p>
-                  <p className="text-xs text-black/50 dark:text-white/50">Émise le : {new Date(selectedFacture.dateEmission).toLocaleDateString("fr-FR")}</p>
+                  <p className="text-sm font-semibold text-foreground">Facture n°{selectedFacture.id}</p>
+                  <p className="text-xs text-muted-foreground">Commande : {selectedFacture.commandeId}</p>
+                  <p className="text-xs text-muted-foreground">Émise le : {new Date(selectedFacture.dateEmission).toLocaleDateString("fr-FR")}</p>
                 </div>
               </div>
 
               {/* Client */}
-              <div className="bg-black/5 dark:bg-white/5 rounded-lg p-4">
-                <p className="text-xs font-semibold text-black/60 dark:text-white/60 mb-1">CLIENT</p>
-                <p className="font-medium text-black dark:text-white">{selectedFacture.client}</p>
-                <p className="text-sm text-black/60 dark:text-white/60">{selectedFacture.email}</p>
+              <div className="bg-secondary/30 rounded-xl p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Client</p>
+                <p className="font-semibold text-foreground">{selectedFacture.client}</p>
+                <p className="text-sm text-muted-foreground">{selectedFacture.email}</p>
               </div>
 
               {/* Articles */}
               <div>
-                <p className="text-xs font-semibold text-black/60 dark:text-white/60 mb-2">ARTICLES</p>
-                <div className="border border-black/10 dark:border-white/10 rounded-lg overflow-hidden">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Articles</p>
+                <div className="border border-border rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-black/5 dark:bg-white/5">
+                    <thead className="bg-secondary/30">
                       <tr>
-                        <th className="text-left py-2 px-3 text-xs text-black/50 dark:text-white/50">Produit</th>
-                        <th className="text-center py-2 px-3 text-xs text-black/50 dark:text-white/50">Qté</th>
-                        <th className="text-right py-2 px-3 text-xs text-black/50 dark:text-white/50">Prix</th>
+                        <th className="text-left py-2 px-3 text-xs text-muted-foreground">Produit</th>
+                        <th className="text-center py-2 px-3 text-xs text-muted-foreground">Qté</th>
+                        <th className="text-right py-2 px-3 text-xs text-muted-foreground">Prix</th>
                        </tr>
                     </thead>
                     <tbody>
                       {selectedFacture.articles.map((article, idx) => (
-                        <tr key={idx} className="border-t border-black/5 dark:border-white/5">
-                          <td className="py-2 px-3 text-black dark:text-white">{article.nom}</td>
-                          <td className="text-center py-2 px-3 text-black/70 dark:text-white/70">{article.quantite}</td>
-                          <td className="text-right py-2 px-3 text-black/70 dark:text-white/70">{article.prix}</td>
+                        <tr key={idx} className="border-t border-border/50">
+                          <td className="py-2 px-3 text-foreground">{article.nom}</td>
+                          <td className="text-center py-2 px-3 text-muted-foreground">{article.quantite}</td>
+                          <td className="text-right py-2 px-3 text-muted-foreground">{article.prix}</td>
                          </tr>
                       ))}
                     </tbody>
-                  </table>
+                   </table>
                 </div>
               </div>
 
               {/* Totaux */}
-              <div className="border-t border-black/10 dark:border-white/10 pt-4">
+              <div className="border-t border-border pt-4">
                 <div className="flex justify-end">
-                  <div className="w-64 space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-black/60 dark:text-white/60">Montant HT :</span>
-                      <span className="text-black dark:text-white">{selectedFacture.montantHT}</span>
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Montant HT :</span>
+                      <span className="text-foreground">{selectedFacture.montantHT}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-black/60 dark:text-white/60">TVA (20%) :</span>
-                      <span className="text-black dark:text-white">{selectedFacture.tva}</span>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">TVA (20%) :</span>
+                      <span className="text-foreground">{selectedFacture.tva}</span>
                     </div>
-                    <div className="flex justify-between pt-1 border-t border-black/10 dark:border-white/10">
-                      <span className="font-semibold text-black dark:text-white">Total TTC :</span>
-                      <span className="font-bold text-lg text-black dark:text-white">{selectedFacture.montantTTC}</span>
+                    <div className="flex justify-between pt-2 border-t border-border">
+                      <span className="font-semibold text-foreground">Total TTC :</span>
+                      <span className="font-bold text-xl text-primary">{selectedFacture.montantTTC}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Statut */}
+              {/* Statut et action */}
               <div className="flex justify-between items-center pt-3">
-                <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium border ${getStatutStyle(selectedFacture.statut)}`}>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${getStatutStyle(selectedFacture.statut)}`}>
                   {getStatutIcone(selectedFacture.statut)}
                   {selectedFacture.statut}
                 </span>
-                <button
-                  onClick={() => handleDownloadPDF(selectedFacture)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm bg-black dark:bg-white text-white dark:text-black rounded-lg hover:bg-black/80 dark:hover:bg-white/80 transition"
-                >
+                <button onClick={() => handleDownloadPDF(selectedFacture)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition">
                   <Printer className="h-4 w-4" />
                   Télécharger PDF
                 </button>
@@ -427,29 +581,21 @@ const AdminFactures = () => {
 
       {/* ALERTE SUPPRESSION */}
       {showDeleteAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-sm mx-4">
-            <div className="px-6 py-6 flex flex-col items-center text-center gap-4">
-              <div className="p-3 bg-red-500/10 rounded-full">
-                <AlertTriangle className="h-6 w-6 text-red-500" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
-              <div>
-                <h3 className="text-base font-semibold text-black dark:text-white">Confirmer la suppression</h3>
-                <p className="text-sm text-black/50 dark:text-white/50 mt-1">
-                  Voulez-vous vraiment supprimer la facture <span className="font-medium text-black dark:text-white">"{selectedFacture?.id}"</span> ?<br />
-                  <span className="text-xs">Cette action est irréversible.</span>
-                </p>
-              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Confirmer la suppression</h3>
+              <p className="text-muted-foreground">
+                Supprimer la facture <span className="font-semibold text-foreground">"{selectedFacture?.id}"</span> ?
+              </p>
+              <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>
             </div>
-            <div className="flex gap-3 px-6 pb-6">
-              <button onClick={() => setShowDeleteAlert(false)}
-                className="flex-1 py-2 text-sm font-medium text-black/70 dark:text-white/70 border border-black/20 dark:border-white/20 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition">
-                Annuler
-              </button>
-              <button onClick={handleConfirmDelete}
-                className="flex-1 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                Supprimer
-              </button>
+            <div className="flex gap-3 p-6 pt-0">
+              <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">Annuler</button>
+              <button onClick={handleConfirmDelete} className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition">Supprimer</button>
             </div>
           </div>
         </div>

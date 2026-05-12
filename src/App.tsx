@@ -29,6 +29,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Compte from "@/pages/Compte";
+import MotDePasseOublie from "@/pages/MotDePasseOublie";
 
 
 //Import Routes pour Admin
@@ -49,6 +50,7 @@ import DashboardAdresses from "@/components/ActionClient/DashboardAdresses";
 import DashboardFavoris from "@/components/ActionClient/DashboardFavoris";
 import DashboardPaiement from "@/components/ActionClient/DashboardPaiement";
 import DashboardParametres from "@/components/ActionClient/DashboardParametres";
+import Favorites from "./pages/Favorites.tsx";
 
 const queryClient = new QueryClient();
 
@@ -77,10 +79,12 @@ const App = () => (
             <Route path="/peripheriques" element={<Peripheriques />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/importation" element={<Importation />} />
+            <Route path="/favoris" element={<Favorites />} />
             <Route path="/devis-express" element={<DevisExpress />} />
             {/* Route connexion */}
             <Route path="/login" element={<Login />} /> 
             <Route path="/inscription" element={<Register />} />
+            <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
             <Route path="/compte" element={<Compte />} />
             <Route path="/DashboardClient" element={<DashboardClient />} />
             

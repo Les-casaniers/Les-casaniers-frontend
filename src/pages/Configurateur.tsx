@@ -223,36 +223,34 @@ const Configurateur = () => {
               </span>
               <span className="text-foreground/60 font-medium">{Math.round(progress)}% complété</span>
             </div>
-            {/* Progress bar avec effet shimmer */}
-            <div className="relative h-2.5 rounded-full overflow-hidden" style={{
-              backgroundColor: "hsl(var(--muted))",
-              border: "1px solid hsl(var(--border))",
-            }}>
+            {/* Progress bar — lisible en mode clair ET sombre */}
+            <div
+              className="h-2.5 rounded-full overflow-hidden"
+              style={{
+                backgroundColor: "rgba(128,128,128,0.18)",
+                border: "1px solid rgba(128,128,128,0.25)",
+              }}
+            >
               <div
-                className="h-full rounded-full transition-all duration-500 relative overflow-hidden"
+                className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${progress}%`,
-                  backgroundColor: "hsl(var(--warning))",
+                  backgroundColor: "var(--foreground, #000)",
                 }}
-              >
-                {/* Effet de brillance */}
-                <div className="absolute inset-0 animate-shimmer" style={{
-                  background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
-                  backgroundSize: "200% 100%",
-                }} />
-              </div>
+              />
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
               {steps.map((s, i) => (
                 <button
                   key={s.key}
                   onClick={() => setStep(i)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${i === step
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    i === step
                       ? "bg-gradient-accent text-accent-foreground shadow-glow"
                       : sel[s.key]
-                        ? "bg-tech/10 text-tech"
-                        : "bg-secondary text-muted-foreground hover:text-foreground"
-                    }`}
+                      ? "bg-tech/10 text-tech"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
                 >
                   {sel[s.key] && <Check className="h-3 w-3 inline mr-1" />}
                   {s.mascot}
@@ -281,10 +279,11 @@ const Configurateur = () => {
                     <button
                       key={o.id}
                       onClick={() => handleSelect(o.id)}
-                      className={`group text-left rounded-2xl border-2 transition-all hover-lift overflow-hidden ${active
+                      className={`group text-left rounded-2xl border-2 transition-all hover-lift overflow-hidden ${
+                        active
                           ? "border-accent bg-accent/5 shadow-glow"
                           : "border-border bg-card hover:border-accent/40"
-                        }`}
+                      }`}
                     >
                       {/* Component image */}
                       {o.image && (

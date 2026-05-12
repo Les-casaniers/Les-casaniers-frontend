@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
@@ -14,7 +14,7 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<any>({
+  const [errors, setErrors] = useState<Record<string, string>>({
     name: "",
     lastname: "",
     email: "",
@@ -24,8 +24,19 @@ const Register = () => {
   const [generalError, setGeneralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const redirectTimeoutRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const validateForm = () => {
     let isValid = true;
@@ -47,12 +58,26 @@ const Register = () => {
       newErrors.password = "Le mot de passe est requis";
       isValid = false;
     }
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "La confirmation est requise";
+      isValid = false;
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Format d'email invalide";
+      isValid = false;
+    }
+    if (formData.password && !/(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}/.test(formData.password)) {
+      newErrors.password = "Le mot de passe doit contenir 8 caracteres minimum, 1 majuscule, 1 chiffre et 1 symbole";
+      isValid = false;
+    }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
       isValid = false;
     }
 
-    setErrors(newErrors);
+    if (isMountedRef.current) {
+      setErrors(newErrors);
+    }
     return isValid;
   };
 
@@ -71,6 +96,9 @@ const Register = () => {
 
     setIsLoading(true);
     setGeneralError("");
+    if (isMountedRef.current) {
+      setShowSuccess(false);
+    }
 
     try {
       const response = await api.post('/utilisateurs/register', {
@@ -82,12 +110,19 @@ const Register = () => {
       });
 
       if (response.data.success) {
-        setShowSuccess(true);
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+        if (isMountedRef.current) {
+          setErrors({ name: "", lastname: "", email: "", password: "", confirmPassword: "" });
+          setGeneralError("");
+          setShowSuccess(true);
+          setFormData({ name: "", lastname: "", email: "", password: "", confirmPassword: "" });
+          redirectTimeoutRef.current = window.setTimeout(() => {
+            navigate("/login");
+          }, 2000);
+        }
       } else {
-        setGeneralError(response.data.message || "Erreur lors de l'inscription");
+        if (isMountedRef.current) {
+          setGeneralError(response.data.message || "Erreur lors de l'inscription");
+        }
       }
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -96,17 +131,24 @@ const Register = () => {
       if (responseData?.errors) {
         // Map backend errors to form fields
         const backendErrors = responseData.errors;
-        const newErrors: any = {};
+        const newErrors: Record<string, string> = {};
         if (backendErrors.nom) newErrors.name = backendErrors.nom[0];
         if (backendErrors.prenom) newErrors.lastname = backendErrors.prenom[0];
         if (backendErrors.email) newErrors.email = backendErrors.email[0];
         if (backendErrors.mot_de_passe) newErrors.password = backendErrors.mot_de_passe[0];
-        setErrors(newErrors);
+        if (backendErrors.mot_de_passe_confirmation) newErrors.confirmPassword = backendErrors.mot_de_passe_confirmation[0];
+        if (isMountedRef.current) {
+          setErrors(newErrors);
+        }
       }
       
-      setGeneralError(responseData?.message || "Erreur lors de l'inscription. Veuillez réessayer.");
+      if (isMountedRef.current) {
+        setGeneralError(responseData?.message || "Erreur lors de l'inscription. Veuillez réessayer.");
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -159,6 +201,7 @@ const Register = () => {
                       type="text"
                       value={formData.name}
                       onChange={handleChange}
+                      required
                       className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.name ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="Dupont"
                     />
@@ -183,6 +226,7 @@ const Register = () => {
                       type="text"
                       value={formData.lastname}
                       onChange={handleChange}
+                      required
                       className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.lastname ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="Jean"
                     />
@@ -207,6 +251,7 @@ const Register = () => {
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
+                      required
                       className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.email ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="exemple@email.com"
                     />
@@ -231,6 +276,7 @@ const Register = () => {
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
                       onChange={handleChange}
+                      required
                       className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.password ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="••••••••"
                     />
@@ -266,6 +312,7 @@ const Register = () => {
                       type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmPassword}
                       onChange={handleChange}
+                      required
                       className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.confirmPassword ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="••••••••"
                     />

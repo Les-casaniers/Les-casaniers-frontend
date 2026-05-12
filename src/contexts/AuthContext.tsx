@@ -22,7 +22,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string, type: 'client' | 'admin') => Promise<{ success: boolean; message?: string; errors?: Record<string, string[]> }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string; errors?: Record<string, string[]>; isAdmin?: boolean }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
 }
@@ -53,71 +53,110 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (email: string, password: string, type: 'client' | 'admin') => {
-    try {
-      const endpoint = type === 'admin' ? '/admin/login' : '/utilisateurs/login';
-      const response = await api.post(endpoint, { 
-        email, 
-        mot_de_passe: password 
+  const login = async (email: string, password: string) => {
+    const isAdminEmailNotFound = (errors?: Record<string, string[]>) => {
+      const emailErrors = errors?.email;
+      if (!emailErrors) return false;
+      const messages = Array.isArray(emailErrors) ? emailErrors : [String(emailErrors)];
+      return messages.some((message) => {
+        const normalized = String(message).toLowerCase();
+        return normalized.includes("adresse email incorrecte") || normalized.includes("adresse e-mail incorrecte");
       });
-      
-      // Accessing response.data.data as per the controller's structure
-      const success = response.data?.success;
-      const data = response.data?.data;
-      
-      if (success && data) {
-        const userObj = type === 'admin' ? data.admin : data.utilisateur;
-        
-        if (!userObj) {
-          throw new Error("User data missing from response");
+    };
+
+    const attemptLogin = async (type: 'client' | 'admin') => {
+      try {
+        const endpoint = type === 'admin' ? '/admin/login' : '/utilisateurs/login';
+        const response = await api.post(endpoint, {
+          email,
+          mot_de_passe: password,
+        });
+
+        const success = response.data?.success;
+        const data = response.data?.data;
+
+        if (success && data) {
+          const userObj = type === 'admin' ? data.admin : data.utilisateur;
+
+          if (!userObj) {
+            throw new Error("User data missing from response");
+          }
+
+          const token = data.access_token;
+          const refreshToken = data.refresh_token;
+
+          setAuthToken(token);
+          if (refreshToken) setRefreshToken(refreshToken);
+          setStoredUser(userObj);
+          localStorage.setItem('is_admin', type === 'admin' ? 'true' : 'false');
+
+          setUser(userObj);
+          setIsAdmin(type === 'admin');
+
+          return { success: true, isAdmin: type === 'admin' };
         }
 
-        const token = data.access_token;
-        const refreshToken = data.refresh_token;
-        
-        setAuthToken(token);
-        if (refreshToken) setRefreshToken(refreshToken);
-        setStoredUser(userObj);
-        localStorage.setItem('is_admin', type === 'admin' ? 'true' : 'false');
-        
-        setUser(userObj);
-        setIsAdmin(type === 'admin');
-        
-        return { success: true };
-      }
-      
-      return { 
-        success: false, 
-        message: response.data?.message || "Erreur de connexion",
-        errors: response.data?.errors 
-      };
-    } catch (error: any) {
-      console.error("Login error details:", error);
-      
-      const responseData = error.response?.data;
-      let message = responseData?.message || "Email ou mot de passe incorrect";
-      
-      // Extract specific validation error message if present
-      if (responseData?.errors) {
-        const errorKeys = Object.keys(responseData.errors);
-        if (errorKeys.length > 0) {
-          const firstError = responseData.errors[errorKeys[0]];
-          message = Array.isArray(firstError) ? firstError[0] : firstError;
+        return {
+          success: false,
+          message: response.data?.message || "Erreur de connexion",
+          errors: response.data?.errors,
+          status: response.status,
+        };
+      } catch (error: any) {
+        console.error("Login error details:", error);
+
+        const status = error.response?.status;
+        const responseData = error.response?.data;
+        let message = responseData?.message || "Email ou mot de passe incorrect";
+
+        if (responseData?.errors) {
+          const errorKeys = Object.keys(responseData.errors);
+          if (errorKeys.length > 0) {
+            const firstError = responseData.errors[errorKeys[0]];
+            message = Array.isArray(firstError) ? firstError[0] : firstError;
+          }
         }
+
+        if (typeof message !== 'string') {
+          message = JSON.stringify(message);
+        }
+
+        return {
+          success: false,
+          message,
+          errors: responseData?.errors,
+          status,
+        };
       }
-      
-      // Sécurité : s'assurer que le message est bien une chaîne de caractères
-      // pour éviter les plantages React ("Objects are not valid as a React child")
-      if (typeof message !== 'string') {
-        message = JSON.stringify(message);
-      }
-      
-      return { 
-        success: false, 
-        message: message,
-        errors: responseData?.errors
+    };
+
+    const adminResult = await attemptLogin('admin');
+    if (adminResult.success) {
+      return adminResult;
+    }
+
+    const shouldFallbackToClient =
+      isAdminEmailNotFound(adminResult.errors) ||
+      (!adminResult.errors && (adminResult.status === 401 || adminResult.status === 404 || adminResult.status === undefined));
+
+    if (!shouldFallbackToClient) {
+      return {
+        success: false,
+        message: adminResult.message,
+        errors: adminResult.errors,
       };
     }
+
+    const clientResult = await attemptLogin('client');
+    if (clientResult.success) {
+      return clientResult;
+    }
+
+    return {
+      success: false,
+      message: "Email ou mot de passe incorrect",
+      errors: clientResult.errors || adminResult.errors,
+    };
   };
 
   const logout = async () => {
@@ -144,4 +183,4 @@ export const useAuth = () => {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-};
+};
