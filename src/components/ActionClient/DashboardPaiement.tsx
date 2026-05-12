@@ -432,6 +432,7 @@ const DashboardPaiement = () => {
               <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
                 Annuler
               </button>
+              
               <button onClick={confirmDelete} className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition">
                 Supprimer
               </button>
