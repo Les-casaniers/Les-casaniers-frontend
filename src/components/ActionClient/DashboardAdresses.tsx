@@ -436,6 +436,7 @@ const DashboardAdresses = () => {
             <div className="p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
                 <AlertCircle className="h-8 w-8 text-destructive" />
+                
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">Supprimer l'adresse</h3>
               <p className="text-muted-foreground">
