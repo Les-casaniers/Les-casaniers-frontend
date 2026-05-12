@@ -376,6 +376,9 @@ const DashboardAdresses = () => {
                   </div>
                 </div>
 
+
+                
+
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Type d'adresse</label>
                   <div className="grid grid-cols-3 gap-2">
