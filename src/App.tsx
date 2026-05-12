@@ -49,6 +49,7 @@ import DashboardAdresses from "@/components/ActionClient/DashboardAdresses";
 import DashboardFavoris from "@/components/ActionClient/DashboardFavoris";
 import DashboardPaiement from "@/components/ActionClient/DashboardPaiement";
 import DashboardParametres from "@/components/ActionClient/DashboardParametres";
+import Favorites from "./pages/Favorites.tsx";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ const App = () => (
             <Route path="/peripheriques" element={<Peripheriques />} />
             <Route path="/guides" element={<Guides />} />
             <Route path="/importation" element={<Importation />} />
+            <Route path="/favoris" element={<Favorites />} />
             <Route path="/devis-express" element={<DevisExpress />} />
             {/* Route connexion */}
             <Route path="/login" element={<Login />} /> 

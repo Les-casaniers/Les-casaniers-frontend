@@ -1,134 +1,236 @@
-import { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, Package, ShoppingCart, Users, FileText,
-  Bell, Settings, LogOut, ChevronRight, Shield, User
-} from "lucide-react";
+  import { useState, useEffect } from "react";
+  import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+  import {
+    LayoutDashboard, Package, ShoppingCart, Users, FileText,
+    Bell, Settings, LogOut, ChevronRight, Shield, Menu, X
+  } from "lucide-react";
+  import { ThemeToggle } from "@/components/ThemeToggle";
+  import { useAuth } from "@/contexts/AuthContext";
 
-const AdminLayout = () => {
-  const location = useLocation();
-  const [showLogout, setShowLogout] = useState(false);
+  const AdminLayout = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+    const [showLogout, setShowLogout] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Données admin fictives
-  const admin = {
-    name: "Admin Test",
-    email: "admin@lescasaniers.mg"
-  };
+    // Données admin
+    const admin = {
+      name: user?.name || "Admin Test",
+      email: user?.email || "admin@lescasaniers.mg",
+      role: "Administrateur"
+    };
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
-    { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
-    { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes" },
-    { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
-    { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
-    { icon: Bell, label: "Notifications", path: "/DashboardAdmin/notifications", badge: "3" },
-    { icon: Settings, label: "Paramètres", path: "/DashboardAdmin/parametres" },
-  ];
+    const menuItems = [
+      { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
+      { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
+      { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes", badge: "3" },
+      { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
+      { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
+      { icon: Bell, label: "Notifications", path: "/DashboardAdmin/notifications" },
+      { icon: Settings, label: "Paramètres", path: "/DashboardAdmin/parametres" },
+    ];
 
-  const isActive = (path: string) => {
-    if (path === "/DashboardAdmin") return location.pathname === "/DashboardAdmin";
-    return location.pathname.startsWith(path);
-  };
+    const isActive = (path: string) => {
+      if (path === "/DashboardAdmin") return location.pathname === "/DashboardAdmin";
+      return location.pathname.startsWith(path);
+    };
 
-  return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950">
-      {/* Sidebar - fond noir */}
-      <aside className="w-64 bg-black border-r border-gray-800 flex flex-col fixed h-full z-30">
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
-          <Link to="/DashboardAdmin" className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center">
-              <Shield className="h-5 w-5 text-black" />
-            </div>
-            <div>
-              <h2 className="font-bold text-lg text-white">Admin</h2>
-              <p className="text-xs text-gray-400">Les Casaniers</p>
-            </div>
-          </Link>
-        </div>
+    const handleLogout = () => {
+      logout();
+      navigate("/login");
+    };
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-                isActive(item.path)
-                  ? "bg-gray-800 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
+    // Fermer le menu mobile sur resize
+    useEffect(() => {
+      const handleResize = () => {
+        if (window.innerWidth >= 768) {
+          setMobileMenuOpen(false);
+        }
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return (
+      <div className="flex h-screen bg-background">
+        {/* Sidebar Desktop */}
+        <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col fixed h-full z-30">
+          {/* Logo */}
+          <div className="p-6 border-b border-border">
+            <Link to="/DashboardAdmin" className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-foreground rounded-xl flex items-center justify-center">
+                <Shield className="h-5 w-5 text-background" />
               </div>
-              <div className="flex items-center gap-2">
+              <div>
+                <h2 className="font-bold text-lg text-foreground">Admin</h2>
+                <p className="text-xs text-muted-foreground">Les Casaniers</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            {menuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+                  isActive(item.path)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </div>
                 {item.badge && (
-                  <span className="h-5 min-w-5 px-1 rounded-full bg-white text-black text-[10px] font-bold flex items-center justify-center">
+                  <span className={`h-5 min-w-5 px-1 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                    isActive(item.path)
+                      ? "bg-primary-foreground text-primary"
+                      : "bg-destructive text-destructive-foreground"
+                  }`}>
                     {item.badge}
                   </span>
                 )}
-                <ChevronRight className={`h-4 w-4 transition ${isActive(item.path) ? 'translate-x-0.5' : ''}`} />
-              </div>
-            </Link>
-          ))}
-        </nav>
+              </Link>
+            ))}
+          </nav>
 
-        {/* Footer sidebar */}
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-500">v1.0.0</p>
-        </div>
-      </aside>
-
-      {/* Main content area */}
-      <div className="flex-1 ml-64">
-        {/* Navbar - fond noir */}
-        <header className="h-16 bg-black border-b border-gray-800 flex items-center justify-end px-6 sticky top-0 z-20">
-          {/* Profil admin avec dropdown */}
-          <div 
-            className="relative"
-            onMouseEnter={() => setShowLogout(true)}
-            onMouseLeave={() => setShowLogout(false)}
-          >
-            <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition">
-              <div className="h-8 w-8 bg-white rounded-full flex items-center justify-center">
-                <span className="text-sm font-bold text-black">
-                  {admin.name.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-white">{admin.name}</p>
-                <p className="text-xs text-gray-400">{admin.email}</p>
-              </div>
-            </button>
-
-            {/* Dropdown déconnexion */}
-            {showLogout && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-black border border-gray-800 rounded-lg shadow-lg py-1 z-50">
-                <div className="px-4 py-2 border-b border-gray-800">
-                  <p className="text-sm font-medium text-white">{admin.name}</p>
-                  <p className="text-xs text-gray-400">{admin.email}</p>
-                </div>
-                <button
-                  onClick={() => window.location.href = "/"}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-gray-800 transition"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Déconnexion
-                </button>
-              </div>
-            )}
+          {/* Footer sidebar */}
+          <div className="p-4 border-t border-border">
+            <ThemeToggle />
+            <p className="text-xs text-muted-foreground mt-3">v1.0.0</p>
           </div>
-        </header>
+        </aside>
 
-        {/* Page content */}
-        <main className="p-6 overflow-y-auto" style={{ height: 'calc(100vh - 64px)' }}>
-          <Outlet />
-        </main>
+        {/* Main content */}
+        <div className="flex-1 md:ml-64">
+          {/* Header */}
+          <header className="bg-card border-b border-border sticky top-0 z-20">
+            <div className="flex items-center justify-between px-4 py-3">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-secondary transition"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <div className="flex-1" />
+
+              {/* Theme toggle mobile */}
+              <div className="md:hidden mr-2">
+                <ThemeToggle />
+              </div>
+
+              {/* Admin profile */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setShowLogout(true)}
+                onMouseLeave={() => setShowLogout(false)}
+              >
+                <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition">
+                  <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary-foreground">
+                      {admin.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-sm font-medium text-foreground">{admin.name}</p>
+                    <p className="text-xs text-muted-foreground">{admin.email}</p>
+                  </div>
+                </button>
+
+                {/* Dropdown déconnexion */}
+                {showLogout && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-border">
+                      <p className="text-sm font-medium text-foreground">{admin.name}</p>
+                      <p className="text-xs text-muted-foreground">{admin.email}</p>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-secondary transition"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </header>
+
+          {/* Page content */}
+          <main className="p-4 md:p-6 overflow-y-auto" style={{ height: 'calc(100vh - 57px)' }}>
+            <Outlet />
+          </main>
+        </div>
+
+        {/* Mobile Sidebar */}
+        {mobileMenuOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <aside className="fixed left-0 top-0 h-full w-80 bg-card border-r border-border z-50 md:hidden animate-slide-in-right">
+              <div className="flex flex-col h-full">
+                <div className="p-4 border-b border-border flex items-center justify-between">
+                  <Link to="/DashboardAdmin" className="flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="h-10 w-10 bg-foreground rounded-xl flex items-center justify-center">
+                      <Shield className="h-5 w-5 text-background" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-lg text-foreground">Admin</h2>
+                      <p className="text-xs text-muted-foreground">Les Casaniers</p>
+                    </div>
+                  </Link>
+                  <button 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 rounded-lg hover:bg-secondary transition"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                  {menuItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition ${
+                        isActive(item.path)
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                      </div>
+                      {item.badge && (
+                        <span className="h-5 min-w-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </nav>
+
+                <div className="p-4 border-t border-border space-y-3">
+                  <ThemeToggle />
+                  <p className="text-xs text-muted-foreground text-center">v1.0.0</p>
+                </div>
+              </div>
+            </aside>
+          </>
+        )}
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default AdminLayout;
+  export default AdminLayout;
