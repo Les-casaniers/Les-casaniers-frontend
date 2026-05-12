@@ -26,7 +26,7 @@ const DashboardClientLayout = () => {
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
     { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
-    { icon: Settings, label: "Paramètres", path: "/DashboardClient/parametres" },
+
   ];
 
   const isActive = (path: string) => {
