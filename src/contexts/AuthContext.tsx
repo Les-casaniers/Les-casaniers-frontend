@@ -1,12 +1,13 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import api, { 
-  setAuthToken, 
-  setRefreshToken, 
-  getAuthToken, 
-  getRefreshToken, 
-  clearAuthStorage, 
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import api, {
+  setAuthToken,
+  setRefreshToken,
+  getAuthToken,
+  getRefreshToken,
+  clearAuthStorage,
   setStoredUser,
-  logout as apiLogout 
+  removeStoredUser,
+  logout as apiLogout
 } from "@/service/api";
 
 interface User {
@@ -23,8 +24,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string; errors?: Record<string, string[]>; isAdmin?: boolean }>;
-  logout: () => Promise<void>;
+  logout: (redirectPath?: string) => Promise<void>;
   isAdmin: boolean;
+  checkAuthStatus: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,10 +50,106 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Auth initialization error:", error);
       clearAuthStorage();
+      removeStoredUser(); // Also remove user if there's an initialization error
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const checkAuthStatus = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = getAuthToken();
+      const refreshToken = getRefreshToken();
+      const storedUser = localStorage.getItem("user");
+      const storedIsAdmin = localStorage.getItem("is_admin") === "true";
+
+      if (!token || !storedUser || storedUser === "undefined") {
+        clearAuthStorage();
+        removeStoredUser();
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      if (storedUser && storedIsAdmin) {
+        // Validate admin token by fetching profile
+        try {
+          const response = await api.get("/admin/profile");
+          setUser(response.data.data);
+          setIsAdmin(true);
+        } catch (adminProfileError: any) {
+          console.warn("Admin token invalid or expired, attempting refresh...", adminProfileError);
+          if (refreshToken) {
+            try {
+              const refreshResponse = await api.post("/admin/refresh-token", { refresh_token: refreshToken });
+              const newAccessToken = refreshResponse.data.data.access_token;
+              setAuthToken(newAccessToken);
+              // Re-fetch profile with new token
+              const newProfileResponse = await api.get("/admin/profile");
+              setUser(newProfileResponse.data.data);
+              setIsAdmin(true);
+            } catch (refreshError) {
+              console.error("Failed to refresh admin token:", refreshError);
+              clearAuthStorage();
+              removeStoredUser();
+              setUser(null);
+              setIsAdmin(false);
+            }
+          } else {
+            clearAuthStorage();
+            removeStoredUser();
+            setUser(null);
+            setIsAdmin(false);
+          }
+        }
+      } else if (storedUser) {
+        // Validate client token by fetching profile
+        try {
+          const response = await api.get("/utilisateurs/profile");
+          setUser(response.data.data);
+          setIsAdmin(false);
+        } catch (clientProfileError: any) {
+          console.warn("Client token invalid or expired, attempting refresh...", clientProfileError);
+          if (refreshToken) {
+            try {
+              const refreshResponse = await api.post("/utilisateurs/refresh-token", { refresh_token: refreshToken });
+              const newAccessToken = refreshResponse.data.data.access_token;
+              setAuthToken(newAccessToken);
+              // Re-fetch profile with new token
+              const newProfileResponse = await api.get("/utilisateurs/profile");
+              setUser(newProfileResponse.data.data);
+              setIsAdmin(false);
+            } catch (refreshError) {
+              console.error("Failed to refresh client token:", refreshError);
+              clearAuthStorage();
+              removeStoredUser();
+              setUser(null);
+              setIsAdmin(false);
+            }
+          } else {
+            clearAuthStorage();
+            removeStoredUser();
+            setUser(null);
+            setIsAdmin(false);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error during auth status check:", error);
+      clearAuthStorage();
+      removeStoredUser();
+      setUser(null);
+      setIsAdmin(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = async (email: string, password: string) => {
     const isAdminEmailNotFound = (errors?: Record<string, string[]>) => {
@@ -157,21 +255,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       message: "Email ou mot de passe incorrect",
       errors: clientResult.errors || adminResult.errors,
     };
-  };
+    };
 
-  const logout = async () => {
+  const logout = async (redirectPath?: string) => {
     try {
-      await apiLogout();
+      const currentIsAdmin = localStorage.getItem("is_admin") === "true";
+      if (currentIsAdmin) {
+        await api.post("/admin/logout");
+      } else {
+        await api.post("/utilisateurs/logout");
+      }
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      clearAuthStorage();
+      removeStoredUser();
       setUser(null);
       setIsAdmin(false);
+      if (redirectPath) {
+        window.location.href = redirectPath; // Perform a full page reload to clear all state
+      }
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, checkAuthStatus }}>
       {children}
     </AuthContext.Provider>
   );
