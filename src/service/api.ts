@@ -76,6 +76,12 @@ export const setStoredUser = (user: {
   } catch (e) { }
 };
 
+export const removeStoredUser = () => {
+  try {
+    localStorage.removeItem("user");
+  } catch (e) {}
+};
+
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,

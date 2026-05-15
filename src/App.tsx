@@ -36,9 +36,11 @@ import MotDePasseOublie from "@/pages/MotDePasseOublie";
 import DashboardAdmin from "@/pages/DashboardAdmin"; // votre layout
 import AdminDashboard from "@/components/ActionAdmin/AdminDashboard";
 import AdminProduits from "@/components/ActionAdmin/AdminProduits";
+import ConfigPc from "@/components/ActionAdmin/ConfigPc";
 import AdminCommandes from "@/components/ActionAdmin/AdminCommandes";
 import AdminClients from "@/components/ActionAdmin/AdminClients";
 import AdminFactures from "@/components/ActionAdmin/AdminFactures";
+import AdminDevis from "@/components/ActionAdmin/AdminDevis";
 import AdminNotifications from "@/components/ActionAdmin/AdminNotifications";
 import AdminParametres from "@/components/ActionAdmin/AdminParametres";
 
@@ -65,7 +67,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/catalogue" element={<Catalog />} />
-            <Route path="/produit/:slug" element={<Product />} />
+            <Route path="/produit/:id" element={<Product />} />
             <Route path="/config" element={<Config />} />
             <Route path="/configurateur" element={<Configurateur />} />
             <Route path="/panier" element={<Cart />} />
@@ -88,19 +90,21 @@ const App = () => (
             <Route path="/compte" element={<Compte />} />
             <Route path="/DashboardClient" element={<DashboardClient />} />
             
-            {/* ✅ Routes admin imbriquées sous le layout DashboardAdmin */}
+            {/* âœ… Routes admin imbriquÃ©es sous le layout DashboardAdmin */}
             <Route path="/DashboardAdmin" element={<DashboardAdmin />}>
               <Route index element={<AdminDashboard />} />
               <Route path="produits" element={<AdminProduits />} />
+              <Route path="produits/:id" element={<ConfigPc />} />
               <Route path="commandes" element={<AdminCommandes />} />
               <Route path="clients" element={<AdminClients />} />
+              <Route path="devis" element={<AdminDevis />} />
               <Route path="factures" element={<AdminFactures />} />
               <Route path="notifications" element={<AdminNotifications />} />
               <Route path="parametres" element={<AdminParametres />} />
              
             </Route>
 
-            {/* ✅ Routes Client imbriquées sous le layout DashboardClient */}
+            {/* âœ… Routes Client imbriquÃ©es sous le layout DashboardClient */}
             <Route path="/DashboardClient" element={<DashboardClient />}>
               <Route index element={<DashboardApercu />} />
               <Route path="commandes" element={<DashboardCommandes />} />
@@ -124,3 +128,4 @@ const App = () => (
 
 
 export default App;
+

@@ -1,4 +1,4 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -23,17 +23,19 @@ const specIcons = {
 const specLabels = { 
   processeur: "Processeur", 
   carte_graphique: "Carte graphique", 
-  ram: "Mémoire vive", 
+  ram: "MÃ©moire vive", 
   disque_dur: "Stockage", 
   alimentation: "Alimentation", 
   refroidissement: "Refroidissement", 
-  carte_mere: "Carte mère", 
-  boitier: "Boîtier" 
+  carte_mere: "Carte mÃ¨re", 
+  boitier: "BoÃ®tier" 
 } as const;
 
 const ProductPage = () => {
-  const { slug } = useParams();
-  const { data: product, isLoading, error } = useProduct(slug ?? "");
+  const { id } = useParams();
+  const productId = id ? Number(id) : null;
+  const safeProductId = productId !== null && !Number.isNaN(productId) ? productId : null;
+  const { data: product, isLoading, error } = useProduct(safeProductId);
   const { data: allProducts } = useProducts();
   
   const { addToCart, toggleFavorite, favorites } = useShop();
@@ -41,7 +43,7 @@ const ProductPage = () => {
   const [tab, setTab] = useState<"specs" | "story" | "garantie">("specs");
 
   useEffect(() => {
-    if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
+    if (product) document.title = `${product.nom} â€” Les Casaniers Madagascar`;
   }, [product]);
 
   if (isLoading) {
@@ -56,9 +58,10 @@ const ProductPage = () => {
   }
 
   if (!product || error) return <Navigate to="/catalogue" replace />;
+  if (!product.est_dispo || product.quantite_stock <= 0 || !product.actif) return <Navigate to="/catalogue" replace />;
 
   const fav = favorites.includes(product.id.toString());
-  const related = allProducts?.filter((p: any) => p.id !== product.id && p.categorie_id === product.categorie_id).slice(0, 3) || [];
+  const related = allProducts?.filter((p: any) => p.id !== product.id && p.categorie_id === product.categorie_id && p.est_dispo && p.quantite_stock > 0 && p.actif).slice(0, 3) || [];
 
   const specs: any = {
     processeur: product.processeur,
@@ -89,7 +92,7 @@ const ProductPage = () => {
           <div className="relative card-soft overflow-hidden p-2">
             <img src={product.image_principale || "/placeholder-pc.jpg"} alt={product.nom} className="w-full aspect-square object-cover rounded-2xl" />
             {product.badge && (
-              <span className="absolute top-6 left-6 pill bg-gradient-accent text-accent-foreground border-0">⚡ {product.badge}</span>
+              <span className="absolute top-6 left-6 pill bg-gradient-accent text-accent-foreground border-0">âš¡ {product.badge}</span>
             )}
           </div>
           {product.images && product.images.length > 0 && (
@@ -108,7 +111,7 @@ const ProductPage = () => {
           <div>
             <div className="text-xs font-mono uppercase tracking-wider text-accent mb-2">{product.categorie?.nom}</div>
             <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">{product.nom}</h1>
-            <p className="text-lg text-muted-foreground italic mt-2">"{product.tagline || 'Une puissance inégalée.'}"</p>
+            <p className="text-lg text-muted-foreground italic mt-2">"{product.tagline || 'Une puissance inÃ©galÃ©e.'}"</p>
           </div>
 
           <div className="flex items-center gap-4 text-sm">
@@ -119,15 +122,15 @@ const ProductPage = () => {
               <span className="font-semibold ml-1">{product.note || 5.0}</span>
             </div>
             <span className="h-4 w-px bg-border" />
-            <span className={`text-xs font-medium ${product.stock_disponible > 5 ? "text-tech" : "text-accent"}`}>
-              {product.stock_disponible > 5 ? `En stock (${product.stock_disponible})` : `Plus que ${product.stock_disponible} en stock !`}
+            <span className={`text-xs font-medium ${product.quantite_stock > 5 ? "text-tech" : "text-accent"}`}>
+              {product.quantite_stock > 5 ? `En stock (${product.quantite_stock})` : `Plus que ${product.quantite_stock} en stock !`}
             </span>
           </div>
 
           <div className="card-soft p-6 bg-gradient-to-br from-card to-secondary/30">
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Prix tout compris</div>
             <div className="font-display font-bold text-4xl mt-1">{formatAr(product.prix)}</div>
-            <div className="text-xs text-muted-foreground mt-1">ou 3× {formatAr(Math.round(product.prix / 3))} sans frais</div>
+            <div className="text-xs text-muted-foreground mt-1">ou 3Ã— {formatAr(Math.round(product.prix / 3))} sans frais</div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -141,7 +144,7 @@ const ProductPage = () => {
               </button>
             </div>
             <Button variant="hero" size="lg" className="flex-1"
-              onClick={() => { addToCart(product.id, qty); toast({ title: "Ajouté au panier", description: `${qty}× ${product.nom}` }); }}>
+              onClick={() => { addToCart(String(product.id), qty); toast({ title: "AjoutÃ© au panier", description: `${qty}Ã— ${product.nom}` }); }}>
               <ShoppingBag /> Ajouter au panier
             </Button>
             <Button variant="soft" size="icon" className="h-12 w-12" onClick={() => toggleFavorite(product.id.toString())}>
@@ -157,7 +160,7 @@ const ProductPage = () => {
               <Truck className="h-5 w-5 text-accent" /><span className="font-semibold">Livraison Tana</span>
             </div>
             <div className="card-soft p-3 flex flex-col items-center text-center gap-1">
-              <Wrench className="h-5 w-5 text-accent" /><span className="font-semibold">SAV à vie</span>
+              <Wrench className="h-5 w-5 text-accent" /><span className="font-semibold">SAV Ã  vie</span>
             </div>
           </div>
 
@@ -200,10 +203,10 @@ const ProductPage = () => {
               )}
               {tab === "garantie" && (
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>✓ Garantie pièces et main d'œuvre 24 mois</li>
-                  <li>✓ Diagnostic gratuit à vie au showroom</li>
-                  <li>✓ Mise à jour BIOS et drivers offerte 1×/an</li>
-                  <li>✓ Pièces de rechange importées d'Europe</li>
+                  <li>âœ“ Garantie piÃ¨ces et main d'Å“uvre 24 mois</li>
+                  <li>âœ“ Diagnostic gratuit Ã  vie au showroom</li>
+                  <li>âœ“ Mise Ã  jour BIOS et drivers offerte 1Ã—/an</li>
+                  <li>âœ“ PiÃ¨ces de rechange importÃ©es d'Europe</li>
                 </ul>
               )}
             </div>
@@ -217,7 +220,7 @@ const ProductPage = () => {
           <h2 className="font-display text-3xl font-bold mb-8">Vous aimerez aussi</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {related.map((r: any) => (
-              <Link key={r.id} to={`/produit/${r.slug}`} className="card-soft overflow-hidden hover-lift block group">
+              <Link key={r.id} to={`/produit/${r.id}`} className="card-soft overflow-hidden hover-lift block group">
                 <div className="aspect-[4/3] overflow-hidden bg-secondary">
                   <img src={r.image_principale || "/placeholder-pc.jpg"} alt={r.nom} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                 </div>
@@ -235,3 +238,5 @@ const ProductPage = () => {
 };
 
 export default ProductPage;
+
+

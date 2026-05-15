@@ -1,4 +1,4 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { useEffect, useState, useRef } from "react";
 import { User, Heart, Package, MapPin, LogOut, Settings, Bell, Award, Edit3, Volume2, VolumeX, X } from "lucide-react";
 import { useShop } from "@/store/shop";
@@ -20,7 +20,7 @@ const Account = () => {
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   useEffect(() => { 
-    document.title = "Mon compte — Les Casaniers Madagascar"; 
+    document.title = "Mon compte â€” Les Casaniers Madagascar"; 
   }, []);
 
   // Charger les voix disponibles
@@ -58,7 +58,7 @@ const Account = () => {
   const speakText = (text: string, onEnd?: () => void) => {
     if (!speechSynthesisRef.current) return;
     
-    const cleanText = text.replace(/[*_~`]/g, '').replace(/[🐧👋🎯✅🚚💰🏠💪]/g, '');
+    const cleanText = text.replace(/[*_~`]/g, '').replace(/[ðŸ§ðŸ‘‹ðŸŽ¯âœ…ðŸššðŸ’°ðŸ ðŸ’ª]/g, '');
     
     if (currentUtteranceRef.current) {
       speechSynthesisRef.current.cancel();
@@ -97,22 +97,22 @@ const Account = () => {
     let message = "";
     switch(tab) {
       case "overview":
-        message = "🐧 *Je tape sur ma poitrine* Salut Hery ! Bienvenue dans ton espace ! *regarde autour* Ici tu peux voir tes commandes, tes favoris, et gérer ton compte. T'as 2 commandes en cours et 1 280 points fidélité ! *sourit* Tu veux que je t'aide à naviguer ?";
+        message = "ðŸ§ *Je tape sur ma poitrine* Salut Hery ! Bienvenue dans ton espace ! *regarde autour* Ici tu peux voir tes commandes, tes favoris, et gÃ©rer ton compte. T'as 2 commandes en cours et 1 280 points fidÃ©litÃ© ! *sourit* Tu veux que je t'aide Ã  naviguer ?";
         break;
       case "orders":
-        message = "🐧 *Je pointe du doigt* Tes commandes sont ici ! *compte* T'as déjà acheté le Aurora Gaming et le Office Essentiel avec nous. *fait un clin d'œil* Satisfait du service ? N'hésite pas à laisser un avis !";
+        message = "ðŸ§ *Je pointe du doigt* Tes commandes sont ici ! *compte* T'as dÃ©jÃ  achetÃ© le Aurora Gaming et le Office Essentiel avec nous. *fait un clin d'Å“il* Satisfait du service ? N'hÃ©site pas Ã  laisser un avis !";
         break;
       case "favorites":
-        message = `🐧 *Je saute de joie* Tu as ${favorites.length} produit${favorites.length > 1 ? 's' : ''} dans tes favoris ! *montre l'écran* Une petite pépite se cache parmi eux. Tu veux que je te les présente ?`;
+        message = `ðŸ§ *Je saute de joie* Tu as ${favorites.length} produit${favorites.length > 1 ? 's' : ''} dans tes favoris ! *montre l'Ã©cran* Une petite pÃ©pite se cache parmi eux. Tu veux que je te les prÃ©sente ?`;
         break;
       case "address":
-        message = "🐧 *Je montre du doigt* Tes adresses de livraison sont en sécurité ici ! *sourit* On livre partout à Madagascar, avec soin et rapidité. Besoin d'ajouter une nouvelle adresse ?";
+        message = "ðŸ§ *Je montre du doigt* Tes adresses de livraison sont en sÃ©curitÃ© ici ! *sourit* On livre partout Ã  Madagascar, avec soin et rapiditÃ©. Besoin d'ajouter une nouvelle adresse ?";
         break;
       case "settings":
-        message = "🐧 *Je fais le café imaginaire* Ah, les paramètres ! *tape sur l'épaule* Tu peux modifier ton email, ton téléphone et ton mot de passe ici. Tout est sécurisé avec nous !";
+        message = "ðŸ§ *Je fais le cafÃ© imaginaire* Ah, les paramÃ¨tres ! *tape sur l'Ã©paule* Tu peux modifier ton email, ton tÃ©lÃ©phone et ton mot de passe ici. Tout est sÃ©curisÃ© avec nous !";
         break;
       default:
-        message = "🐧 *Je hoche la tête* Bienvenue dans ton compte Hery ! *sourit* Je suis là pour t'aider à naviguer. Tu as des questions sur tes commandes ou tes favoris ?";
+        message = "ðŸ§ *Je hoche la tÃªte* Bienvenue dans ton compte Hery ! *sourit* Je suis lÃ  pour t'aider Ã  naviguer. Tu as des questions sur tes commandes ou tes favoris ?";
     }
     setCurrentMessage(message);
     speakText(message);
@@ -123,19 +123,19 @@ const Account = () => {
     let message = "";
     switch(newTab) {
       case "overview":
-        message = "🐧 *Regarde autour* Vue d'ensemble ! *montre* Tes statistiques et ta dernière commande sont ici. Tout roule ?";
+        message = "ðŸ§ *Regarde autour* Vue d'ensemble ! *montre* Tes statistiques et ta derniÃ¨re commande sont ici. Tout roule ?";
         break;
       case "orders":
-        message = "🐧 *Compte sur ses doigts* Tes commandes ! *sourit* Tu peux suivre leur statut en temps réel. La dernière est en préparation !";
+        message = "ðŸ§ *Compte sur ses doigts* Tes commandes ! *sourit* Tu peux suivre leur statut en temps rÃ©el. La derniÃ¨re est en prÃ©paration !";
         break;
       case "favorites":
-        message = `🐧 *Frotte ses mains* Tes ${favorites.length} favoris ! *clin d'œil* Des petits bijoux technologiques. Passe ta souris dessus, je te les présente !`;
+        message = `ðŸ§ *Frotte ses mains* Tes ${favorites.length} favoris ! *clin d'Å“il* Des petits bijoux technologiques. Passe ta souris dessus, je te les prÃ©sente !`;
         break;
       case "address":
-        message = "🐧 *Pointe la carte* Tes adresses de livraison ! *sourit* On livre partout à Madagascar avec soin. Besoin d'en ajouter une ?";
+        message = "ðŸ§ *Pointe la carte* Tes adresses de livraison ! *sourit* On livre partout Ã  Madagascar avec soin. Besoin d'en ajouter une ?";
         break;
       case "settings":
-        message = "🐧 *Tapote l'écran* Les paramètres ! *regard sérieux* Tout est sécurisé avec nous. Tu peux modifier tes infos en toute tranquillité.";
+        message = "ðŸ§ *Tapote l'Ã©cran* Les paramÃ¨tres ! *regard sÃ©rieux* Tout est sÃ©curisÃ© avec nous. Tu peux modifier tes infos en toute tranquillitÃ©.";
         break;
     }
     setCurrentMessage(message);
@@ -143,7 +143,7 @@ const Account = () => {
   };
 
   const speakAboutProduct = (productName: string, productPrice: string) => {
-    const message = `🐧 *Je pointe* Ahh, ${productName} ! *s'approche* À ${productPrice} seulement. *fait un clin d'œil* Un excellent choix ! Tu veux l'ajouter au panier ?`;
+    const message = `ðŸ§ *Je pointe* Ahh, ${productName} ! *s'approche* Ã€ ${productPrice} seulement. *fait un clin d'Å“il* Un excellent choix ! Tu veux l'ajouter au panier ?`;
     setCurrentMessage(message);
     speakText(message);
   };
@@ -151,8 +151,8 @@ const Account = () => {
   const favProducts = products.filter((p) => favorites.includes(p.id));
 
   const fakeOrders = [
-    { id: "FOSA-2026-0481", date: "12 mars 2026", status: "Livré", total: 5990000, item: "Aurora Gaming" },
-    { id: "FOSA-2026-0312", date: "28 janv. 2026", status: "En préparation", total: 1890000, item: "Office Essentiel" },
+    { id: "FOSA-2026-0481", date: "12 mars 2026", status: "LivrÃ©", total: 5990000, item: "Aurora Gaming" },
+    { id: "FOSA-2026-0312", date: "28 janv. 2026", status: "En prÃ©paration", total: 1890000, item: "Office Essentiel" },
   ];
 
   return (
@@ -178,16 +178,16 @@ const Account = () => {
                 />
                 {isSpeaking && (
                   <div className="absolute -top-6 -right-6 bg-foreground text-background text-[8px] px-1.5 py-0.5 rounded-full whitespace-nowrap animate-pulse">
-                    🎙️ Parle...
+                    ðŸŽ™ï¸ Parle...
                   </div>
                 )}
               </div>
             </div>
           </div>
           <div>
-            <div className="pill mb-2">Le Coucou 👋</div>
+            <div className="pill mb-2">Le Coucou ðŸ‘‹</div>
             <h1 className="font-display text-3xl lg:text-4xl font-bold tracking-tight">Bonjour, Hery !</h1>
-            <p className="text-muted-foreground text-sm">Membre depuis janvier 2026 · <span className="text-accent font-semibold">Statut Or</span></p>
+            <p className="text-muted-foreground text-sm">Membre depuis janvier 2026 Â· <span className="text-accent font-semibold">Statut Or</span></p>
           </div>
         </div>
       </section>
@@ -201,7 +201,7 @@ const Account = () => {
               { k: "orders", label: "Mes commandes", icon: Package },
               { k: "favorites", label: "Favoris", icon: Heart },
               { k: "address", label: "Adresses", icon: MapPin },
-              { k: "settings", label: "Paramètres", icon: Settings },
+              { k: "settings", label: "ParamÃ¨tres", icon: Settings },
             ] as { k: Tab; label: string; icon: typeof User }[]).map((i) => (
               <button 
                 key={i.k} 
@@ -215,7 +215,7 @@ const Account = () => {
             ))}
             <hr className="border-border my-2" />
             <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-destructive transition-colors">
-              <LogOut className="h-4 w-4" /> Déconnexion
+              <LogOut className="h-4 w-4" /> DÃ©connexion
             </button>
           </nav>
         </aside>
@@ -227,11 +227,11 @@ const Account = () => {
               <div className="grid sm:grid-cols-3 gap-4">
                 <Stat icon={Package} label="Commandes" value="2" tag="Actives" />
                 <Stat icon={Heart} label="Favoris" value={String(favorites.length)} />
-                <Stat icon={Award} label="Points fidélité" value="1 280" tag="+ Or" />
+                <Stat icon={Award} label="Points fidÃ©litÃ©" value="1 280" tag="+ Or" />
               </div>
               <div className="card-soft p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display font-bold text-xl">Dernière commande</h2>
+                  <h2 className="font-display font-bold text-xl">DerniÃ¨re commande</h2>
                   <Button variant="ghost" size="sm" onClick={() => handleTabChange("orders")}>Tout voir</Button>
                 </div>
                 <OrderCard order={fakeOrders[0]} />
@@ -240,10 +240,10 @@ const Account = () => {
                 <div className="flex items-start gap-4">
                   <Bell className="h-6 w-6 text-accent shrink-0" />
                   <div>
-                    <h3 className="font-display font-bold mb-1">Le Fosa vous chuchote…</h3>
-                    <p className="text-sm text-muted-foreground">Une nouvelle config <strong className="text-foreground">Atelier Creator</strong> est arrivée. Elle correspond à vos derniers favoris.</p>
+                    <h3 className="font-display font-bold mb-1">Le Fosa vous chuchoteâ€¦</h3>
+                    <p className="text-sm text-muted-foreground">Une nouvelle config <strong className="text-foreground">Atelier Creator</strong> est arrivÃ©e. Elle correspond Ã  vos derniers favoris.</p>
                     <Button variant="hero" size="sm" className="mt-3" asChild>
-                      <Link to="/produit/atelier-creator">La découvrir</Link>
+                      <Link to="/produit/atelier-creator">La dÃ©couvrir</Link>
                     </Button>
                   </div>
                 </div>
@@ -264,7 +264,7 @@ const Account = () => {
             <div className="card-soft p-6">
               <h2 className="font-display font-bold text-xl mb-4">Mes favoris ({favorites.length})</h2>
               {favProducts.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Aucun favori pour l'instant. Le câlin vous attend dans le catalogue 🐾</p>
+                <p className="text-muted-foreground text-sm">Aucun favori pour l'instant. Le cÃ¢lin vous attend dans le catalogue ðŸ¾</p>
               ) : (
                 <div className="grid sm:grid-cols-2 gap-4">
                   {favProducts.map((p) => (
@@ -275,7 +275,7 @@ const Account = () => {
                     >
                       <img src={p.image} alt="" className="h-20 w-20 rounded-xl object-cover" />
                       <div className="flex-1 min-w-0">
-                        <Link to={`/produit/${p.slug}`} className="font-display font-bold text-sm hover:text-accent">{p.name}</Link>
+                        <Link to={`/produit/${p.id}`} className="font-display font-bold text-sm hover:text-accent">{p.name}</Link>
                         <div className="font-display font-bold text-sm mt-1">{formatAr(p.price)}</div>
                         <button onClick={() => toggleFavorite(p.id)} className="text-xs text-muted-foreground hover:text-destructive mt-1">Retirer</button>
                       </div>
@@ -305,11 +305,11 @@ const Account = () => {
 
           {tab === "settings" && (
             <div className="card-soft p-6 space-y-4">
-              <h2 className="font-display font-bold text-xl">Paramètres du compte</h2>
+              <h2 className="font-display font-bold text-xl">ParamÃ¨tres du compte</h2>
               {[
                 { label: "E-mail", value: "hery@example.mg" },
-                { label: "Téléphone", value: "+261 34 12 345 67" },
-                { label: "Mot de passe", value: "••••••••••" },
+                { label: "TÃ©lÃ©phone", value: "+261 34 12 345 67" },
+                { label: "Mot de passe", value: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" },
               ].map((f) => (
                 <div key={f.label} className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl">
                   <div>
@@ -332,11 +332,11 @@ const Account = () => {
               <img src={fosa} alt="Casio" className="h-10 w-10 rounded-full object-contain bg-white/10 p-1" />
               <div>
                 <div className="font-bold text-sm flex items-center gap-2">
-                  Casio 🐧
+                  Casio ðŸ§
                   <span className="text-[8px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">VOIX D'HOMME</span>
                 </div>
                 <div className="text-[9px] opacity-80">
-                  {isSpeaking ? "🎙️ Parle en ce moment..." : "🎧 Prêt à t'aider"}
+                  {isSpeaking ? "ðŸŽ™ï¸ Parle en ce moment..." : "ðŸŽ§ PrÃªt Ã  t'aider"}
                 </div>
               </div>
             </div>
@@ -354,18 +354,18 @@ const Account = () => {
           <div className="p-4 bg-secondary/30">
             <div className="bg-white dark:bg-card rounded-2xl p-3 shadow-sm border border-border">
               <div className="text-xs leading-relaxed whitespace-pre-wrap">
-                {currentMessage || "🐧 Salut Hery ! Je suis Casio, ta mascotte. Clique sur les onglets pour naviguer, je t'explique tout !"}
+                {currentMessage || "ðŸ§ Salut Hery ! Je suis Casio, ta mascotte. Clique sur les onglets pour naviguer, je t'explique tout !"}
               </div>
               {currentMessage && (
                 <button onClick={() => speakText(currentMessage)} className="mt-2 text-[9px] opacity-60 hover:opacity-100 flex items-center gap-1 transition">
-                  <Volume2 className="h-2.5 w-2.5" /> Réécouter
+                  <Volume2 className="h-2.5 w-2.5" /> RÃ©Ã©couter
                 </button>
               )}
             </div>
           </div>
           <div className="p-3 border-t border-border text-center">
             <p className="text-[9px] text-muted-foreground">
-              💡 Passe ta souris sur les favoris, Casio te les présente !
+              ðŸ’¡ Passe ta souris sur les favoris, Casio te les prÃ©sente !
             </p>
           </div>
         </div>
@@ -400,10 +400,10 @@ const OrderCard = ({ order }: { order: { id: string; date: string; status: strin
   <div className="card-soft p-4 flex flex-wrap items-center justify-between gap-3">
     <div>
       <div className="font-semibold text-sm">{order.item}</div>
-      <div className="text-xs text-muted-foreground">{order.id} · {order.date}</div>
+      <div className="text-xs text-muted-foreground">{order.id} Â· {order.date}</div>
     </div>
     <div className="flex items-center gap-4">
-      <span className={`pill !text-[11px] ${order.status === "Livré" ? "bg-tech/10 text-tech border-tech/20" : "bg-accent/10 text-accent border-accent/20"}`}>
+      <span className={`pill !text-[11px] ${order.status === "LivrÃ©" ? "bg-tech/10 text-tech border-tech/20" : "bg-accent/10 text-accent border-accent/20"}`}>
         {order.status}
       </span>
       <span className="font-display font-bold tabular-nums">{formatAr(order.total)}</span>

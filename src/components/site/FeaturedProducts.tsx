@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { Star, ArrowUpRight, Volume2, VolumeX, X } from "lucide-react";
 import { products, formatAr } from "@/lib/products";
 import mascot from "@/assets/casaniers-mascot.png";
@@ -18,16 +18,16 @@ export const FeaturedProducts = () => {
       {/* Grid background subtile */}
       <div className="absolute inset-0 grid-bg opacity-[0.03] pointer-events-none" />
       
-      {/* Détail décoratif */}
+      {/* DÃ©tail dÃ©coratif */}
       <div className="absolute top-40 right-20 w-72 h-72 rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-40 left-20 w-96 h-96 rounded-full bg-foreground/5 blur-3xl pointer-events-none" />
 
       <div className="container-x relative z-10">
         <div className="flex items-end justify-between mb-12 pb-6 border-b-2 border-foreground">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.4em] font-bold mb-3">— Sélection</div>
+            <div className="text-[10px] uppercase tracking-[0.4em] font-bold mb-3">â€” SÃ©lection</div>
             <h2 className="font-display text-4xl lg:text-6xl font-black tracking-tighter leading-[0.9]">
-              Nos pièces <span className="italic font-light">d'exception.</span>
+              Nos piÃ¨ces <span className="italic font-light">d'exception.</span>
             </h2>
           </div>
           <Link to="/catalogue" className="hidden md:inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] hover:opacity-60 transition-opacity">
@@ -39,7 +39,7 @@ export const FeaturedProducts = () => {
           {top.map((p, index) => (
             <Link
               key={p.id}
-              to={`/produit/${p.slug}`}
+              to={`/produit/${p.id}`}
               className="group bg-background border-r border-b border-border hover:bg-foreground hover:text-background transition-all duration-500 flex flex-col relative overflow-hidden rounded-lg"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
@@ -70,7 +70,7 @@ export const FeaturedProducts = () => {
                 </div>
                 <div className="mt-auto flex items-end justify-between border-t border-current/20 pt-3">
                   <div>
-                    <div className="text-[9px] uppercase tracking-widest opacity-60">à partir de</div>
+                    <div className="text-[9px] uppercase tracking-widest opacity-60">Ã  partir de</div>
                     <div className="font-display font-black text-lg">{formatAr(p.price)}</div>
                   </div>
                   <ArrowUpRight className="h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
@@ -110,12 +110,12 @@ export const FeaturedProducts = () => {
                 <span className="text-xs font-medium uppercase tracking-wider">Fosa te recommande</span>
               </div>
               <h3 className="font-display text-xl md:text-2xl font-bold mb-2">
-                Une pièce d'exception pour une <span className="italic font-light">configuration unique</span>
+                Une piÃ¨ce d'exception pour une <span className="italic font-light">configuration unique</span>
               </h3>
               <p className="text-muted-foreground text-sm max-w-2xl mx-auto md:mx-0">
                 Chaque composant est choisi avec soin par nos experts. 
-                Des pièces de qualité premium, importées directement d'Europe 
-                pour garantir performance et durabilité.
+                Des piÃ¨ces de qualitÃ© premium, importÃ©es directement d'Europe 
+                pour garantir performance et durabilitÃ©.
               </p>
             </div>
             
@@ -124,7 +124,7 @@ export const FeaturedProducts = () => {
               to="/catalogue"
               className="group inline-flex items-center gap-2 px-6 py-3 bg-foreground text-background text-sm font-bold uppercase tracking-wider hover:bg-foreground/90 transition-all hover:gap-3"
             >
-              Découvrir la collection
+              DÃ©couvrir la collection
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </Link>
           </div>
