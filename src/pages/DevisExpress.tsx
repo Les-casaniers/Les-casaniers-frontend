@@ -4,6 +4,7 @@ import { Send, Phone, Mail, User, FileText, MessageCircle, CheckCircle, AlertCir
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { MiniHero } from "@/components/layout/MiniHero";
+import api from "@/api/axios"; // Importer axios
 
 const DevisExpress = () => {
   const location = useLocation();
@@ -19,6 +20,8 @@ const DevisExpress = () => {
     message: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     document.title = "Devis Express — Les Casaniers Madagascar";
@@ -40,30 +43,62 @@ const DevisExpress = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Effacer les messages d'erreur quand l'utilisateur modifie le formulaire
+    setErrorMessage("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage("");
+    setSuccessMessage("");
 
-    // Simuler l'envoi du formulaire
-    setTimeout(() => {
-      setFormSubmitted(true);
+    try {
+      const response = await api.post('/devis-express', formData);
+      
+      if (response.data.success) {
+        setSuccessMessage(response.data.message);
+        setFormSubmitted(true);
+        // Réinitialiser le formulaire
+        setFormData({
+          nom: "",
+          email: "",
+          telephone: "",
+          entreprise: "",
+          besoin: "",
+          budget: "",
+          dateSouhaitee: "",
+          message: ""
+        });
+      }
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      
+      if (error.response?.data?.errors) {
+        // Afficher les erreurs de validation
+        const errors = error.response.data.errors;
+        const firstError = Object.values(errors)[0];
+        setErrorMessage(Array.isArray(firstError) ? firstError[0] : firstError);
+      } else if (error.response?.data?.message) {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage("Une erreur est survenue. Veuillez réessayer.");
+      }
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
-  // Générer le message WhatsApp
+  // Générer le message WhatsApp avec les données du formulaire
   const generateWhatsAppMessage = () => {
-    const message = `Bonjour Les Casaniers !%0A%0A📋 *Demande de devis express*%0A%0A👤 *Nom et prénom:* ${formData.nom || "Non renseigné"}%0A📧 *Email:* ${formData.email || "Non renseigné"}%0A📞 *Téléphone:* ${formData.telephone || "Non renseigné"}%0A🏢 *Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A🎯 *Besoin spécifique:*%0A${formData.besoin || "Non renseigné"}%0A%0A💰 *Budget estimé:* ${formData.budget || "Non renseigné"}%0A📅 *Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A📝 *Message complémentaire:*%0A${formData.message || "Non renseigné"}%0A%0A---%0AJe souhaite être recontacté rapidement.`;
+    const message = `Bonjour Les Casaniers !%0A%0A📋 *Demande de devis express*%0A%0A👤 *Nom:* ${formData.nom || "Non renseigné"}%0A📧 *Email:* ${formData.email || "Non renseigné"}%0A📞 *Téléphone:* ${formData.telephone || "Non renseigné"}%0A🏢 *Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A🎯 *Besoin:* ${formData.besoin || "Non renseigné"}%0A💰 *Budget:* ${formData.budget || "Non renseigné"}%0A📅 *Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A📝 *Message:*%0A${formData.message || "Non renseigné"}`;
     return `https://wa.me/261341234567?text=${message}`;
   };
 
-  const whatsappNumber = "261341234567"; // Remplace par ton vrai numéro WhatsApp
+  const whatsappNumber = "261341234567";
 
   return (
     <SiteLayout>
-      {/* Hero */}
       <MiniHero
         title="Besoin d'un devis rapide ?"
         description="Pour les professionnels pressés ou les demandes spécifiques, contactez-nous directement. Réponse sous 24h ouvrées."
@@ -83,6 +118,20 @@ const DevisExpress = () => {
                 </p>
               </div>
 
+              {/* Message d'erreur */}
+              {errorMessage && (
+                <div className="bg-red-50 dark:bg-red-950/20 border border-red-500 rounded-lg p-4">
+                  <p className="text-red-600 dark:text-red-400 text-sm">{errorMessage}</p>
+                </div>
+              )}
+
+              {/* Message de succès */}
+              {successMessage && !formSubmitted && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-4">
+                  <p className="text-green-600 dark:text-green-400 text-sm">{successMessage}</p>
+                </div>
+              )}
+
               {formSubmitted ? (
                 <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-6 text-center">
                   <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
@@ -90,7 +139,7 @@ const DevisExpress = () => {
                   <p className="text-muted-foreground mb-4">
                     Merci pour votre confiance. Nous vous répondrons sous 24h ouvrées.
                   </p>
-                  <div className="flex gap-3 justify-center">
+                  <div className="flex gap-3 justify-center flex-wrap">
                     <a
                       href={generateWhatsAppMessage()}
                       target="_blank"
@@ -98,10 +147,13 @@ const DevisExpress = () => {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
                     >
                       <MessageCircle className="h-4 w-4" />
-                      Contacter directement sur WhatsApp
+                      Contacter sur WhatsApp
                     </a>
                     <button
-                      onClick={() => setFormSubmitted(false)}
+                      onClick={() => {
+                        setFormSubmitted(false);
+                        setSuccessMessage("");
+                      }}
                       className="px-4 py-2 border border-border rounded-lg hover:bg-secondary transition"
                     >
                       Nouvelle demande
@@ -123,6 +175,7 @@ const DevisExpress = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                         placeholder="Jean Rakoto"
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
@@ -137,6 +190,7 @@ const DevisExpress = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                         placeholder="contact@entreprise.mg"
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
@@ -154,6 +208,7 @@ const DevisExpress = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                         placeholder="034 12 345 67"
+                        disabled={isSubmitting}
                       />
                     </div>
                     <div>
@@ -167,6 +222,7 @@ const DevisExpress = () => {
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                         placeholder="Nom de votre société"
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
@@ -181,6 +237,7 @@ const DevisExpress = () => {
                       value={formData.besoin}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
+                      disabled={isSubmitting}
                     >
                       <option value="">Sélectionnez votre besoin</option>
                       <option value="PC Gaming sur-mesure">🎮 PC Gaming sur-mesure</option>
@@ -195,14 +252,13 @@ const DevisExpress = () => {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        💰 Budget estimé
-                      </label>
+                      <label className="block text-sm font-medium mb-1">💰 Budget estimé</label>
                       <select
                         name="budget"
                         value={formData.budget}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
+                        disabled={isSubmitting}
                       >
                         <option value="">Sélectionnez un budget</option>
                         <option value="Moins de 2 000 000 Ar">Moins de 2 000 000 Ar</option>
@@ -222,6 +278,7 @@ const DevisExpress = () => {
                         value={formData.dateSouhaitee}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
+                        disabled={isSubmitting}
                       />
                     </div>
                   </div>
@@ -235,11 +292,16 @@ const DevisExpress = () => {
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                       placeholder="Décrivez votre projet en quelques lignes..."
+                      disabled={isSubmitting}
                     />
                   </div>
 
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 flex items-center gap-2">
+                  <div className="flex gap-3 pt-4 flex-wrap">
+                    <Button 
+                      type="submit" 
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 flex items-center gap-2"
+                      disabled={isSubmitting}
+                    >
                       <Send className="h-4 w-4" />
                       {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande"}
                     </Button>
@@ -262,7 +324,7 @@ const DevisExpress = () => {
               )}
             </div>
 
-            {/* Section information */}
+            {/* Section information - gardez le même contenu */}
             <div className="space-y-6">
               {/* WhatsApp direct */}
               <div className="bg-green-50 dark:bg-green-950/20 border border-green-500/30 rounded-xl p-6">
