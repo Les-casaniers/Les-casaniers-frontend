@@ -16,7 +16,7 @@ const DashboardClientLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const userData = {
-    name: user?.name || "Jean Dupont",
+    name: user?.nom || user?.prenom || "Jean Dupont",
     email: user?.email || "jean.dupont@email.com",
   };
 
