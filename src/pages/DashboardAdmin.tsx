@@ -45,7 +45,7 @@ const AdminLayout = () => {
 
   // Données admin
   const admin = {
-    name: user?.name || "Admin Test",
+    name: user?.nom || "Admin Test",
     email: user?.email || "admin@lescasaniers.mg",
     role: "Administrateur"
   };

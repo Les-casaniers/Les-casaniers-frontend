@@ -44,7 +44,7 @@ const DashboardClientLayout = () => {
   const profileRef = useRef<HTMLDivElement>(null);
 
   const userData = {
-    name: user?.name || "Jean Dupont",
+    name: user?.nom || user?.prenom || "Jean Dupont",
     email: user?.email || "jean.dupont@email.com",
     role: "Client",
     memberSince: "Janvier 2025"
