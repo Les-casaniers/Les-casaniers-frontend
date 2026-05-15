@@ -1,53 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, MapPin, Heart, 
-  CreditCard, LogOut, ChevronRight, User, Bell,
-  Menu, X, Sun, Moon, Settings
+  CreditCard, Settings, LogOut, ChevronRight, User, Bell,
+  Menu, X
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
-
-// Hook personnalisé pour le thème
-const useTheme = () => {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "light" || savedTheme === "dark") {
-      return savedTheme;
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  });
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === "dark" ? "light" : "dark");
-  };
-
-  return { theme, toggleTheme };
-};
 
 const DashboardClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
 
   const userData = {
     name: user?.nom || user?.prenom || "Jean Dupont",
     email: user?.email || "jean.dupont@email.com",
-    role: "Client",
-    memberSince: "Janvier 2025"
   };
 
   const menuItems = [
@@ -56,6 +26,7 @@ const DashboardClientLayout = () => {
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
     { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
+
   ];
 
   const isActive = (path: string) => {
@@ -67,22 +38,6 @@ const DashboardClientLayout = () => {
     logout();
     navigate("/login");
   };
-
-  // Toggle le menu profil au clic
-  const toggleProfileMenu = () => {
-    setShowLogout(!showLogout);
-  };
-
-  // Fermer le menu quand on clique en dehors
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-        setShowLogout(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   // Fermer le menu mobile sur resize
   useEffect(() => {
@@ -133,8 +88,11 @@ const DashboardClientLayout = () => {
           ))}
         </nav>
 
-        {/* Footer sidebar avec bouton thème */}
-     
+        {/* Footer sidebar */}
+        <div className="p-4 border-t border-border">
+          <ThemeToggle />
+          <p className="text-xs text-muted-foreground mt-3">v1.0.0</p>
+        </div>
       </aside>
 
       {/* Main content */}
@@ -152,34 +110,24 @@ const DashboardClientLayout = () => {
 
             <div className="flex-1" />
 
-            {/* Actions groupées - Notifications + Theme Toggle */}
-            <div className="flex items-center gap-2">
-              {/* Notifications */}
-              <button className="relative p-2 rounded-lg hover:bg-secondary transition">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full animate-pulse"></span>
-              </button>
-
-              {/* Theme Toggle Button avec icône fonctionnelle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-secondary transition"
-                aria-label="Changer de thème"
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-5 w-5 text-amber-500 hover:text-amber-400 transition" />
-                ) : (
-                  <Moon className="h-5 w-5 text-primary hover:text-primary/80 transition" />
-                )}
-              </button>
+            {/* Theme toggle mobile */}
+            <div className="md:hidden mr-2">
+              <ThemeToggle />
             </div>
 
-            {/* User profile - Menu au clic */}
-            <div className="relative ml-2" ref={profileRef}>
-              <button
-                onClick={toggleProfileMenu}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition"
-              >
+            {/* Notifications */}
+            <button className="relative p-2 rounded-lg hover:bg-secondary transition mr-1">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full"></span>
+            </button>
+
+            {/* User profile */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setShowLogout(true)}
+              onMouseLeave={() => setShowLogout(false)}
+            >
+              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition">
                 <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-sm font-bold text-primary-foreground">
                     {userData.name.charAt(0).toUpperCase()}
@@ -191,39 +139,16 @@ const DashboardClientLayout = () => {
                 </div>
               </button>
 
-              {/* Dropdown déconnexion - Apparaît au clic */}
+              {/* Dropdown déconnexion */}
               {showLogout && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
-                  <div className="px-4 py-3 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{userData.name}</p>
-                        <p className="text-xs text-muted-foreground">{userData.email}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-border/50">
-                      <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Rôle :</span> {userData.role}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        <span className="font-medium">Membre depuis :</span> {userData.memberSince}
-                      </p>
-                    </div>
+                <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                  <div className="px-4 py-2 border-b border-border">
+                    <p className="text-sm font-medium text-foreground">{userData.name}</p>
+                    <p className="text-xs text-muted-foreground">{userData.email}</p>
                   </div>
-                  <Link
-                    to="/DashboardClient/parametres"
-                    onClick={() => setShowLogout(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Paramètres du compte
-                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20 transition"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-secondary transition"
                   >
                     <LogOut className="h-4 w-4" />
                     Déconnexion
@@ -289,26 +214,7 @@ const DashboardClientLayout = () => {
               </nav>
 
               <div className="p-4 border-t border-border space-y-3">
-                <button
-                  onClick={toggleTheme}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-all duration-200"
-                >
-                  <div className="flex items-center gap-2">
-                    {theme === "dark" ? (
-                      <Sun className="h-4 w-4 text-amber-500" />
-                    ) : (
-                      <Moon className="h-4 w-4 text-primary" />
-                    )}
-                    <span className="text-sm text-foreground">
-                      {theme === "dark" ? "Mode clair" : "Mode sombre"}
-                    </span>
-                  </div>
-                  <div className="w-8 h-4 bg-muted rounded-full relative">
-                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-foreground transition-transform duration-200 ${
-                      theme === "dark" ? 'translate-x-4' : 'translate-x-0.5'
-                    }`} />
-                  </div>
-                </button>
+                <ThemeToggle />
                 <p className="text-xs text-muted-foreground text-center">v1.0.0</p>
               </div>
             </div>

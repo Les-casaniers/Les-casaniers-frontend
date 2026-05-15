@@ -1,4 +1,4 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { useShop } from "@/store/shop";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ const Cart = () => {
   const [promo, setPromo] = useState("");
   const [discount, setDiscount] = useState(0);
 
-  useEffect(() => { document.title = "Mon panier — Les Casaniers Madagascar"; }, []);
+  useEffect(() => { document.title = "Mon panier â€” Les Casaniers Madagascar"; }, []);
 
   const shipping = cartTotal > 5000000 ? 0 : 50000;
   const total = Math.max(0, cartTotal - discount + shipping);
@@ -21,7 +21,7 @@ const Cart = () => {
   const applyPromo = () => {
     if (promo.toUpperCase() === "FOSA10") {
       setDiscount(Math.round(cartTotal * 0.1));
-      toast({ title: "Code appliqué !", description: "-10% sur votre commande." });
+      toast({ title: "Code appliquÃ© !", description: "-10% sur votre commande." });
     } else {
       toast({ title: "Code invalide", description: "Essayez FOSA10." });
     }
@@ -38,8 +38,8 @@ const Cart = () => {
         {cartDetailed.length === 0 ? (
           <div className="card-soft p-12 text-center max-w-xl mx-auto">
             <img src={fosa} alt="" className="h-24 w-24 mx-auto animate-float mb-4" />
-            <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu ici…</h2>
-            <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite découvrir nos configurations !</p>
+            <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu iciâ€¦</h2>
+            <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite dÃ©couvrir nos configurations !</p>
             <Button variant="hero" size="lg" asChild>
               <Link to="/catalogue">Explorer le catalogue <ArrowRight /></Link>
             </Button>
@@ -49,12 +49,12 @@ const Cart = () => {
             <div className="lg:col-span-8 space-y-4">
               {cartDetailed.map(({ product, qty, subtotal }) => (
                 <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
-                  <Link to={`/produit/${product.slug}`} className="shrink-0">
+                  <Link to={`/produit/${product.id}`} className="shrink-0">
                     <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
-                    <Link to={`/produit/${product.slug}`} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
+                    <Link to={`/produit/${product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
                     <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center bg-secondary rounded-full">
@@ -84,11 +84,11 @@ const Cart = () => {
 
             <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
               <div className="card-soft p-6">
-                <h3 className="font-display font-bold text-lg mb-4">Récapitulatif</h3>
+                <h3 className="font-display font-bold text-lg mb-4">RÃ©capitulatif</h3>
                 <div className="space-y-2 text-sm">
                   <Row label="Sous-total" value={formatAr(cartTotal)} />
                   {discount > 0 && <Row label="Remise FOSA10" value={`- ${formatAr(discount)}`} accent />}
-                  <Row label="Livraison" value={shipping === 0 ? "Offerte 🎉" : formatAr(shipping)} />
+                  <Row label="Livraison" value={shipping === 0 ? "Offerte ðŸŽ‰" : formatAr(shipping)} />
                 </div>
                 <div className="border-t border-border mt-4 pt-4 flex items-end justify-between">
                   <span className="font-semibold">Total</span>
@@ -110,8 +110,8 @@ const Cart = () => {
               </div>
 
               <div className="card-soft p-4 space-y-2 text-xs">
-                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /><span>Paiement sécurisé · 3× sans frais</span></div>
-                <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-accent" /><span>Livraison gratuite dès 5 000 000 Ar</span></div>
+                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /><span>Paiement sÃ©curisÃ© Â· 3Ã— sans frais</span></div>
+                <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-accent" /><span>Livraison gratuite dÃ¨s 5 000 000 Ar</span></div>
               </div>
             </aside>
           </div>
@@ -129,3 +129,4 @@ const Row = ({ label, value, accent }: { label: string; value: string; accent?: 
 );
 
 export default Cart;
+

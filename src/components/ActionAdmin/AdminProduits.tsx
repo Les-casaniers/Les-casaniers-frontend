@@ -1,524 +1,583 @@
-import { useState } from "react";
-import { Package, PlusCircle, X, Save, XCircle, Pencil, Trash2, AlertTriangle, Search, Filter, ChevronDown, ChevronUp, Star, Sparkles } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye } from "lucide-react";
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  useCategories,
+  useProductImageActions,
+  Product as APIProduct,
+  ProductFilters,
+} from "@/hooks/useProducts";
+import { useAuth } from "@/contexts/AuthContext";
+import api from "@/service/api";
+import { useToast } from "@/hooks/use-toast";
 
 const TYPES_PRODUIT = ["pc", "portable", "composant", "peripherique", "service"] as const;
+const CATEGORY_TYPES = ["pro", "gaming", "composants", "peripheriques", "services", "guides"] as const;
 
-const initialForm = {
+type ProduitForm = {
+  categorie_id: string;
+  reference: string;
+  nom: string;
+  description_courte: string;
+  description: string;
+  type_produit: (typeof TYPES_PRODUIT)[number] | "";
+  prix: string;
+  devise: string;
+  quantite_stock: string;
+  actif: boolean;
+};
+
+type CategoryForm = {
+  nom: string;
+  type: (typeof CATEGORY_TYPES)[number] | "";
+  parent_id: string;
+  ordre_tri: string;
+};
+
+const initialForm: ProduitForm = {
   categorie_id: "",
   reference: "",
-  slug: "",
   nom: "",
   description_courte: "",
   description: "",
-  type_produit: "" as typeof TYPES_PRODUIT[number] | "",
+  type_produit: "",
   prix: "",
   devise: "MGA",
   quantite_stock: "",
   actif: true,
 };
 
-type Produit = {
-  id: string;
-  nom: string;
-  prix: string;
-  stock: number;
-  statut: string;
-  image?: string;
-  category?: string;
+const initialCategoryForm: CategoryForm = {
+  nom: "",
+  type: "",
+  parent_id: "",
+  ordre_tri: "0",
 };
 
+type Produit = APIProduct;
+
 const AdminProduits = () => {
+  const [activeTab, setActiveTab] = useState<"produits" | "categories">("produits");
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedProduit, setSelectedProduit] = useState<Produit | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [form, setForm] = useState(initialForm);
   const [editForm, setEditForm] = useState(initialForm);
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>(initialCategoryForm);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sortField, setSortField] = useState<keyof Produit>("nom");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [dispoFilter, setDispoFilter] = useState<"all" | "available" | "unavailable">("all");
+  const [createImageFiles, setCreateImageFiles] = useState<File[]>([]);
+  const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<{ id: number; url: string; alt: string; ordre?: number }[]>([]);
 
-  const produits: Produit[] = [
-    { id: "PROD-001", nom: "PC Gaming RTX 4060", prix: "2 500 000 Ar", stock: 12, statut: "Actif", category: "PC Gaming", image: "https://picsum.photos/id/0/50/50" },
-    { id: "PROD-002", nom: "Clavier Mécanique RGB", prix: "120 000 Ar", stock: 45, statut: "Actif", category: "Périphériques", image: "https://picsum.photos/id/1/50/50" },
-    { id: "PROD-003", nom: "Souris Gaming", prix: "85 000 Ar", stock: 0, statut: "Rupture", category: "Périphériques", image: "https://picsum.photos/id/2/50/50" },
-    { id: "PROD-004", nom: "Processeur Intel i7", prix: "450 000 Ar", stock: 8, statut: "Actif", category: "Composants", image: "https://picsum.photos/id/3/50/50" },
-    { id: "PROD-005", nom: "Carte Mère B760", prix: "320 000 Ar", stock: 15, statut: "Actif", category: "Composants", image: "https://picsum.photos/id/4/50/50" },
-    { id: "PROD-006", nom: "Écran 144Hz", prix: "650 000 Ar", stock: 3, statut: "Actif", category: "Périphériques", image: "https://picsum.photos/id/5/50/50" },
-  ];
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAdmin, user, loading: authLoading, logout } = useAuth();
 
-  // Filtrer les produits
-  const filteredProduits = produits.filter(p => {
-    const matchesSearch = p.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         p.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || 
-                         (filterStatus === "active" && p.statut === "Actif") ||
-                         (filterStatus === "out" && p.statut === "Rupture");
-    return matchesSearch && matchesStatus;
-  });
-
-  // Trier les produits
-  const sortedProduits = [...filteredProduits].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
-    
-    if (sortField === "prix") {
-      aValue = parseInt(a.prix.replace(/[^0-9]/g, ""));
-      bValue = parseInt(b.prix.replace(/[^0-9]/g, ""));
-    }
-    
-    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  // Pagination
-  const totalPages = Math.ceil(sortedProduits.length / itemsPerPage);
-  const paginatedProduits = sortedProduits.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const apiFilters = useMemo<ProductFilters>(
+    () => ({
+      search: searchTerm || undefined,
+      est_dispo: dispoFilter === "all" ? undefined : dispoFilter === "available" ? 1 : 0,
+    }),
+    [searchTerm, dispoFilter],
   );
 
-  const handleSort = (field: keyof Produit) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
+  const { data: produits, refetch } = useProducts(apiFilters);
+  const { data: categories, refetch: refetchCategories } = useCategories();
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  const deleteProductMutation = useDeleteProduct();
+  const { uploadImage, deleteImage, setMainImage } = useProductImageActions();
+
+  useEffect(() => {
+    if (!authLoading && (!isAdmin || !user)) {
+      logout("/login?redirect_admin=true");
+    }
+  }, [isAdmin, user, authLoading, logout]);
+
+  const normalizedProduits = produits ?? [];
+  const normalizedCategories = categories ?? [];
+
+  const filteredProduits = normalizedProduits;
+
+  const getMainImage = (product: Produit) => {
+    const images = product.images ?? [];
+    if (images.length === 0) return null;
+    return images.find((img) => img.ordre === 0) ?? images.slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))[0];
+  };
+
+  const inputClass =
+    "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+
+  const handleApiError = (error: any, fallback: string) => {
+    const responseData = error?.response?.data;
+    let message = responseData?.message || fallback;
+    if (responseData?.errors) {
+      const firstKey = Object.keys(responseData.errors)[0];
+      const firstError = responseData.errors[firstKey];
+      message = Array.isArray(firstError) ? firstError[0] : String(firstError);
+    }
+    toast({ title: "Erreur", description: message, variant: "destructive" });
+  };
+
+  const buildFormData = (data: ProduitForm) => {
+    const fd = new FormData();
+    fd.append("categorie_id", data.categorie_id);
+    fd.append("reference", data.reference);
+    fd.append("nom", data.nom);
+    fd.append("description_courte", data.description_courte);
+    fd.append("description", data.description);
+    fd.append("type_produit", data.type_produit);
+    fd.append("prix", data.prix);
+    fd.append("devise", data.devise);
+    fd.append("quantite_stock", data.quantite_stock);
+    fd.append("actif", data.actif ? "1" : "0");
+    return fd;
+  };
+
+  const handleCreate = async () => {
+    try {
+      const created = await createProductMutation.mutateAsync(buildFormData(form));
+      const createdProductId = created?.data?.data?.id as number | undefined;
+
+      if (createdProductId && createImageFiles.length > 0) {
+        await Promise.all(
+          createImageFiles.map((file, index) =>
+            uploadImage.mutateAsync({
+              produitId: createdProductId,
+              imageFile: file,
+              alt: `${form.nom} - image ${index + 1}`,
+              ordre: index,
+            }),
+          ),
+        );
+      }
+
+      setShowModal(false);
+      setForm(initialForm);
+      setCreateImageFiles([]);
+      await refetch();
+      toast({ title: "Produit créé" });
+    } catch (e: any) {
+      handleApiError(e, "Impossible de créer le produit.");
     }
   };
 
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200";
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-    }));
-  };
-
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    setEditForm(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-    }));
-  };
-
-  const handleNomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nom = e.target.value;
-    const slug = nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    setForm(prev => ({ ...prev, nom, slug }));
-  };
-
-  const handleEditNomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const nom = e.target.value;
-    const slug = nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    setEditForm(prev => ({ ...prev, nom, slug }));
-  };
-
-  const handleOpenEdit = (p: Produit) => {
+  const handleOpenEdit = async (p: Produit) => {
     setSelectedProduit(p);
     setEditForm({
-      ...initialForm,
-      nom: p.nom,
-      slug: p.nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
-      prix: p.prix.replace(/[^0-9]/g, ""),
-      quantite_stock: String(p.stock),
-      actif: p.statut === "Actif",
+      categorie_id: String(p.categorie_id ?? ""),
+      reference: p.reference ?? "",
+      nom: p.nom ?? "",
+      description_courte: p.description_courte ?? "",
+      description: p.description ?? "",
+      type_produit: (p.type_produit as ProduitForm["type_produit"]) ?? "",
+      prix: String(p.prix ?? ""),
+      devise: p.devise ?? "MGA",
+      quantite_stock: String(p.quantite_stock ?? ""),
+      actif: p.actif ?? true,
     });
+    setEditImageFiles([]);
+    try {
+      const details = await api.get(`/produits/${p.id}`);
+      setExistingImages(details?.data?.data?.images ?? []);
+    } catch {
+      setExistingImages(p.images ?? []);
+    }
     setShowEditModal(true);
   };
 
-  const handleOpenDelete = (p: Produit) => {
-    setSelectedProduit(p);
-    setShowDeleteAlert(true);
+  const handleEdit = async () => {
+    if (!selectedProduit) return;
+    try {
+      await updateProductMutation.mutateAsync({ id: selectedProduit.id, updatedProduct: buildFormData(editForm) });
+
+      if (editImageFiles.length > 0) {
+        const startOrder = existingImages.length;
+        await Promise.all(
+          editImageFiles.map((file, index) =>
+            uploadImage.mutateAsync({
+              produitId: selectedProduit.id,
+              imageFile: file,
+              alt: `${editForm.nom} - image ${startOrder + index + 1}`,
+              ordre: startOrder + index,
+            }),
+          ),
+        );
+      }
+
+      setShowEditModal(false);
+      setSelectedProduit(null);
+      setEditImageFiles([]);
+      setExistingImages([]);
+      await refetch();
+      toast({ title: "Produit mis à jour" });
+    } catch (e: any) {
+      handleApiError(e, "Impossible de modifier le produit.");
+    }
   };
 
-  const handleValider = () => {
-    console.log("Nouveau produit :", form);
-    setShowModal(false);
-    setForm(initialForm);
+  const handleDelete = async () => {
+    if (!selectedProduit) return;
+    try {
+      await deleteProductMutation.mutateAsync(selectedProduit.id);
+      setShowDeleteAlert(false);
+      setSelectedProduit(null);
+      await refetch();
+      toast({ title: "Produit supprimé" });
+    } catch (e: any) {
+      handleApiError(e, "Impossible de supprimer le produit.");
+    }
   };
 
-  const handleValiderEdit = () => {
-    console.log("Produit modifié :", { id: selectedProduit?.id, ...editForm });
-    setShowEditModal(false);
-    setSelectedProduit(null);
+  const handleCategorySubmit = async () => {
+    const payload = {
+      nom: categoryForm.nom,
+      type: categoryForm.type,
+      parent_id: categoryForm.parent_id ? Number(categoryForm.parent_id) : null,
+      ordre_tri: Number(categoryForm.ordre_tri || 0),
+    };
+
+    try {
+      if (selectedCategory?.id) {
+        await api.put(`/categories/${selectedCategory.id}`, payload);
+      } else {
+        await api.post("/categories", payload);
+      }
+      setShowCategoryModal(false);
+      setSelectedCategory(null);
+      setCategoryForm(initialCategoryForm);
+      await refetchCategories();
+      toast({ title: "Catégorie enregistrée" });
+    } catch (e: any) {
+      handleApiError(e, "Impossible d'enregistrer la catégorie.");
+    }
   };
 
-  const handleConfirmDelete = () => {
-    console.log("Supprimer produit :", selectedProduit?.id);
-    setShowDeleteAlert(false);
-    setSelectedProduit(null);
-  };
-
-  const FormFields = ({ f, onChange, onNomChange, onCheckbox }: any) => (
-    <div className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Nom <span className="text-destructive">*</span></label>
-          <input name="nom" value={f.nom} onChange={onNomChange} placeholder="Ex: PC Gaming RTX 4060" className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Référence</label>
-          <input name="reference" value={f.reference} onChange={onChange} placeholder="Ex: REF-001" className={inputClass} />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Slug <span className="text-destructive">*</span></label>
-        <input name="slug" value={f.slug} onChange={onChange} placeholder="auto-généré depuis le nom" className={`${inputClass} font-mono text-sm`} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Type de produit <span className="text-destructive">*</span></label>
-          <select name="type_produit" value={f.type_produit} onChange={onChange} className={inputClass}>
-            <option value="">-- Choisir --</option>
-            {TYPES_PRODUIT.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Catégorie <span className="text-destructive">*</span></label>
-          <input name="categorie_id" value={f.categorie_id} onChange={onChange} placeholder="Ex: 1" type="number" min="1" className={inputClass} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Prix</label>
-          <input name="prix" value={f.prix} onChange={onChange} placeholder="Ex: 2500000" type="number" min="0" className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Devise</label>
-          <select name="devise" value={f.devise} onChange={onChange} className={inputClass}>
-            <option value="MGA">MGA - Ariary</option>
-            <option value="EUR">EUR - Euro</option>
-            <option value="USD">USD - Dollar</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">Stock</label>
-          <input name="quantite_stock" value={f.quantite_stock} onChange={onChange} placeholder="Ex: 10" type="number" min="0" className={inputClass} />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Description courte</label>
-        <input name="description_courte" value={f.description_courte} onChange={onChange} placeholder="Résumé en quelques mots..." maxLength={500} className={inputClass} />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">Description complète</label>
-        <textarea name="description" value={f.description} onChange={onChange} placeholder="Description détaillée..." rows={5} className={`${inputClass} resize-none`} />
-      </div>
-
-      <div className="flex items-center gap-3 pt-2">
-        <input type="checkbox" id="actif" checked={f.actif} onChange={e => onCheckbox(e.target.checked)} className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20" />
-        <label htmlFor="actif" className="text-sm text-foreground/80">Produit actif (visible sur le site)</label>
-      </div>
+  const ProductForm = ({ value, setValue }: { value: ProduitForm; setValue: React.Dispatch<React.SetStateAction<ProduitForm>> }) => (
+    <div className="space-y-3">
+      <input className={inputClass} placeholder="Nom" value={value.nom} onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))} />
+      <input className={inputClass} placeholder="Référence" value={value.reference} onChange={(e) => setValue((p) => ({ ...p, reference: e.target.value }))} />
+      <select className={inputClass} value={value.type_produit} onChange={(e) => setValue((p) => ({ ...p, type_produit: e.target.value as ProduitForm["type_produit"] }))}>
+        <option value="">Type produit</option>
+        {TYPES_PRODUIT.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+      <select className={inputClass} value={value.categorie_id} onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}>
+        <option value="">Catégorie</option>
+        {normalizedCategories.map((c: any) => (
+          <option key={c.id} value={c.id}>
+            {c.nom}
+          </option>
+        ))}
+      </select>
+      <input className={inputClass} placeholder="Prix" value={value.prix} onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} />
+      <input className={inputClass} placeholder="Stock" value={value.quantite_stock} onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} />
+      <textarea className={inputClass} placeholder="Description" value={value.description} onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} />
     </div>
   );
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Gestion des produits</h1>
-          <p className="text-muted-foreground mt-1">Gérez votre catalogue de produits</p>
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Ajouter un produit
-        </button>
-      </div>
-
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Rechercher par nom ou référence..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="pl-10 pr-8 py-2.5 border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-            >
-              <option value="all">Tous les statuts</option>
-              <option value="active">Actifs</option>
-              <option value="out">Rupture de stock</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          </div>
-        </div>
-      </div>
-
-      {/* Tableau responsive */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-        {/* Version Desktop */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-secondary/30">
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("id")}>
-                  <div className="flex items-center gap-1">
-                    ID
-                    {sortField === "id" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
-                  </div>
-                </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Image</th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("nom")}>
-                  <div className="flex items-center gap-1">
-                    Produit
-                    {sortField === "nom" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
-                  </div>
-                </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition" onClick={() => handleSort("prix")}>
-                  <div className="flex items-center gap-1">
-                    Prix
-                    {sortField === "prix" && (sortDirection === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
-                  </div>
-                </th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                <th className="text-left py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Statut</th>
-                <th className="text-right py-4 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedProduits.map((p, idx) => (
-                <tr key={idx} className="border-b border-border/50 hover:bg-secondary/20 transition-colors">
-                  <td className="py-3 px-4 font-mono text-sm text-muted-foreground">{p.id}</td>
-                  <td className="py-3 px-4">
-                    <div className="h-10 w-10 rounded-lg bg-secondary overflow-hidden">
-                      <img src={p.image} alt={p.nom} className="h-full w-full object-cover" />
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <p className="font-medium text-foreground">{p.nom}</p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-muted-foreground">{p.category}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="font-semibold text-foreground">{p.prix}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`text-sm ${p.stock === 0 ? "text-destructive font-medium" : "text-foreground"}`}>
-                      {p.stock} unités
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      p.statut === "Actif"
-                        ? "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
-                        : "bg-destructive/10 text-destructive border border-destructive/20"
-                    }`}>
-                      <div className={`h-1.5 w-1.5 rounded-full ${p.statut === "Actif" ? "bg-green-500" : "bg-destructive"}`} />
-                      {p.statut}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleOpenEdit(p)} className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleOpenDelete(p)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Version Mobile (Cartes) */}
-        <div className="lg:hidden divide-y divide-border">
-          {paginatedProduits.map((p, idx) => (
-            <div key={idx} className="p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-xl bg-secondary overflow-hidden">
-                    <img src={p.image} alt={p.nom} className="h-full w-full object-cover" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-foreground">{p.nom}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{p.id}</p>
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => handleOpenEdit(p)} className="p-2 rounded-lg text-muted-foreground hover:text-primary">
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => handleOpenDelete(p)} className="p-2 rounded-lg text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Catégorie</p>
-                  <p className="text-foreground">{p.category}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Prix</p>
-                  <p className="font-semibold text-foreground">{p.prix}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Stock</p>
-                  <p className={p.stock === 0 ? "text-destructive" : "text-foreground"}>{p.stock} unités</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Statut</p>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
-                    p.statut === "Actif" ? "bg-green-500/10 text-green-600" : "bg-destructive/10 text-destructive"
-                  }`}>
-                    {p.statut}
-                  </span>
-                </div>
-              </div>
+  const ImageUploadField = ({
+    files,
+    setFiles,
+    label = "Images du produit",
+  }: {
+    files: File[];
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+    label?: string;
+  }) => (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className={inputClass}
+        onChange={(e) => {
+          const selected = Array.from(e.target.files ?? []);
+          setFiles((prev) => [...prev, ...selected]);
+          e.currentTarget.value = "";
+        }}
+      />
+      {files.length > 0 && (
+        <div className="space-y-1">
+          {files.map((file, index) => (
+            <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+              <span className="truncate pr-3">{file.name}</span>
+              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded">
+                <X className="h-4 w-4" />
+              </button>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-4 border-t border-border bg-secondary/10">
-            <p className="text-sm text-muted-foreground">
-              {sortedProduits.length} produit{sortedProduits.length > 1 ? 's' : ''}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                Précédent
-              </button>
-              <span className="px-3 py-1.5 text-sm font-medium text-foreground">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium border border-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                Suivant
-              </button>
-            </div>
+  const ExistingImagesManager = () => {
+    if (!selectedProduit) return null;
+    return (
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium">Images existantes</h4>
+        {existingImages.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {existingImages
+              .slice()
+              .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
+              .map((img) => (
+                <div key={img.id} className="border rounded-xl p-2 space-y-2">
+                  <img src={img.url} alt={img.alt || "image produit"} className="h-28 w-full object-cover rounded-lg border" />
+                  <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await setMainImage.mutateAsync({ produitId: selectedProduit.id, imageId: img.id });
+                          const details = await api.get(`/produits/${selectedProduit.id}`);
+                          setExistingImages(details?.data?.data?.images ?? []);
+                          toast({ title: "Image principale mise à jour" });
+                        } catch (e: any) {
+                          handleApiError(e, "Impossible de définir l'image principale.");
+                        }
+                      }}
+                      className="px-2 py-1 text-xs border rounded-lg"
+                    >
+                      Définir principale
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await deleteImage.mutateAsync(img.id);
+                          setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
+                          toast({ title: "Image supprimée" });
+                        } catch (e: any) {
+                          handleApiError(e, "Impossible de supprimer l'image.");
+                        }
+                      }}
+                      className="px-2 py-1 text-xs border rounded-lg text-destructive"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
           </div>
         )}
       </div>
+    );
+  };
 
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Package className="h-6 w-6" /> Gestion Catalogue
+        </h1>
+        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground">
+          <PlusCircle className="h-4 w-4" /> Ajouter
+        </button>
+      </div>
 
+      <div className="flex gap-2">
+        <button onClick={() => setActiveTab("produits")} className="px-4 py-2 border rounded-xl">Produits</button>
+        <button onClick={() => setActiveTab("categories")} className="px-4 py-2 border rounded-xl">Catégories</button>
+      </div>
 
-      {/* Modal Ajouter - mêmes modales mais avec le nouveau design */}
+      {activeTab === "produits" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
+              <input
+                className="w-full pl-10 pr-4 py-2 border rounded-xl"
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <select
+              className="px-4 py-2 border rounded-xl bg-background min-w-[220px]"
+              value={dispoFilter}
+              onChange={(e) => setDispoFilter(e.target.value as "all" | "available" | "unavailable")}
+            >
+              <option value="all">Tous les produits</option>
+              <option value="available">Produits disponibles</option>
+              <option value="unavailable">Produits indisponibles</option>
+            </select>
+          </div>
+
+          <div className="border rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">Image</th>
+                  <th className="text-left p-3">Nom</th>
+                  <th className="text-left p-3">Catégorie</th>
+                  <th className="text-left p-3">Prix</th>
+                  <th className="text-left p-3">Stock</th>
+                  <th className="text-left p-3">Disponibilité</th>
+                  <th className="text-right p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProduits.map((p) => {
+                  const mainImage = getMainImage(p);
+                  return (
+                    <tr key={p.id} className="border-b">
+                      <td className="p-3">
+                        {mainImage?.url ? (
+                          <img src={mainImage.url} alt={mainImage.alt || p.nom} className="h-12 w-12 object-cover rounded-md border" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
+                        )}
+                      </td>
+                      <td className="p-3">{p.nom}</td>
+                      <td className="p-3">{p.categorie?.nom ?? "-"}</td>
+                      <td className="p-3">{p.prix}</td>
+                      <td className="p-3">{p.quantite_stock}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          {p.est_dispo ? "Disponible" : "Indisponible"}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleOpenEdit(p)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "categories" && (
+        <div className="space-y-4">
+          <button onClick={() => { setSelectedCategory(null); setCategoryForm(initialCategoryForm); setShowCategoryModal(true); }} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground">Nouvelle catégorie</button>
+          <div className="border rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">Nom</th>
+                  <th className="text-left p-3">Type</th>
+                  <th className="text-left p-3">Parent</th>
+                  <th className="text-left p-3">Ordre</th>
+                  <th className="text-right p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {normalizedCategories.map((c: any) => (
+                  <tr key={c.id} className="border-b">
+                    <td className="p-3">{c.nom}</td>
+                    <td className="p-3">{c.type}</td>
+                    <td className="p-3">{c.parent_id ?? "-"}</td>
+                    <td className="p-3">{c.ordre_tri ?? 0}</td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-scale-in">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <Package className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Ajouter un produit</h2>
-                  <p className="text-sm text-muted-foreground">Remplissez les informations ci-dessous</p>
-                </div>
-              </div>
-              <button onClick={() => { setShowModal(false); setForm(initialForm); }} className="p-2 rounded-lg hover:bg-secondary transition">
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Ajouter produit</h2>
+              <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <div className="overflow-y-auto p-6 flex-1">
-              <FormFields f={form} onChange={handleChange} onNomChange={handleNomChange} onCheckbox={c => setForm(p => ({ ...p, actif: c }))} />
-            </div>
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-secondary/10">
-              <button onClick={() => { setShowModal(false); setForm(initialForm); }} className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
-                Annuler
-              </button>
-              <button onClick={handleValider} className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition">
-                <Save className="h-4 w-4" /> Ajouter le produit
-              </button>
+            <ProductForm value={form} setValue={setForm} />
+            <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setShowModal(false); setCreateImageFiles([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Modifier */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-scale-in">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <Pencil className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Modifier le produit</h2>
-                  <p className="text-sm text-muted-foreground font-mono">{selectedProduit?.id}</p>
-                </div>
-              </div>
-              <button onClick={() => setShowEditModal(false)} className="p-2 rounded-lg hover:bg-secondary transition">
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Modifier produit</h2>
+              <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <div className="overflow-y-auto p-6 flex-1">
-              <FormFields f={editForm} onChange={handleEditChange} onNomChange={handleEditNomChange} onCheckbox={c => setEditForm(p => ({ ...p, actif: c }))} />
-            </div>
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-secondary/10">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
-                Annuler
-              </button>
-              <button onClick={handleValiderEdit} className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition">
-                <Save className="h-4 w-4" /> Enregistrer
-              </button>
+            <ProductForm value={editForm} setValue={setEditForm} />
+            <ExistingImagesManager />
+            <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => { setShowEditModal(false); setEditImageFiles([]); setExistingImages([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Alert Suppression */}
-      {showDeleteAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Confirmer la suppression</h3>
-              <p className="text-muted-foreground">
-                Voulez-vous vraiment supprimer <span className="font-semibold text-foreground">"{selectedProduit?.nom}"</span> ?
-              </p>
-              <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>
+      {showCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border rounded-2xl w-full max-w-xl p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Catégorie</h2>
+              <button onClick={() => setShowCategoryModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <div className="flex gap-3 p-6 pt-0">
-              <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
-                Annuler
-              </button>
-              <button onClick={handleConfirmDelete} className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition">
-                Supprimer
-              </button>
+            <input className={inputClass} placeholder="Nom" value={categoryForm.nom} onChange={(e) => setCategoryForm((p) => ({ ...p, nom: e.target.value }))} />
+            <select className={inputClass} value={categoryForm.type} onChange={(e) => setCategoryForm((p) => ({ ...p, type: e.target.value as CategoryForm["type"] }))}>
+              <option value="">Type</option>
+              {CATEGORY_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <input className={inputClass} placeholder="Parent ID" value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))} />
+            <input className={inputClass} placeholder="Ordre" value={categoryForm.ordre_tri} onChange={(e) => setCategoryForm((p) => ({ ...p, ordre_tri: e.target.value }))} />
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleCategorySubmit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteAlert && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border rounded-2xl w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold">Supprimer le produit</h3>
+            <p>Confirmer la suppression de "{selectedProduit?.nom}" ?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowDeleteAlert(false)} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground">Supprimer</button>
             </div>
           </div>
         </div>
