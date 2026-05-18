@@ -630,34 +630,43 @@ const Cart = () => {
           <p className="text-muted-foreground mt-2">{cartDetailed.length} article{cartDetailed.length > 1 ? 's' : ''} dans votre panier</p>
         </div>
 
-        <div className="grid lg:grid-cols-12 gap-8">
-          {/* Liste des produits - inchangée */}
-          <div className="lg:col-span-8 space-y-4">
-            {cartDetailed.map((item: any) => (
-              <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift relative group">
-                <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <Heart className="h-5 w-5 text-rose-400 fill-rose-400" />
-                </div>
-                <Link to={`/produit/${item.product.id}`} className="shrink-0">
-                  <div className="h-28 w-28 rounded-xl bg-secondary flex items-center justify-center">
-                    <span className="text-4xl">{item.product.category === 'pc' ? '🖥️' : item.product.category === 'portable' ? '💻' : item.product.category === 'composant' ? '🔧' : item.product.category === 'peripherique' ? '🎮' : '📦'}</span>
-                  </div>
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category || 'Produit'}</div>
-                  <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
-                    {item.product.name}
+        {cartDetailed.length === 0 ? (
+          <div className="card-soft p-12 text-center max-w-xl mx-auto">
+            <img src={fosa} alt="" className="h-24 w-24 mx-auto animate-float mb-4" />
+            <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu iciâ€¦</h2>
+            <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite dÃ©couvrir nos configurations !</p>
+            <Button variant="hero" size="lg" asChild>
+              <Link to="/catalogue">Explorer le catalogue <ArrowRight /></Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-4">
+              {cartDetailed.map(({ product, qty, subtotal }) => (
+                <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
+                  <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="shrink-0">
+                    <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
                   </Link>
-                  <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline || 'Article ajouté au panier'}"</p>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center bg-secondary rounded-full">
-                      <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent"><Minus className="h-3.5 w-3.5" /></button>
-                      <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
-                      <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent"><Plus className="h-3.5 w-3.5" /></button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="font-display font-bold text-primary">{formatAr(item.subtotal)}</div>
-                      <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="h-4 w-4" /></button>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
+                    <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
+                    <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center bg-secondary rounded-full">
+                        <button onClick={() => setQty(product.id, qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-8 text-center font-semibold tabular-nums text-sm">{qty}</span>
+                        <button onClick={() => setQty(product.id, qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="font-display font-bold">{formatAr(subtotal)}</div>
+                        <button onClick={() => removeFromCart(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
