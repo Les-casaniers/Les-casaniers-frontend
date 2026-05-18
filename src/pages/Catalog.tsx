@@ -7,7 +7,7 @@ import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Filter, Volume2, V
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
-import { useProducts, useCategories } from "@/hooks/useProducts";
+import { Product, productImage, productSpec, useProducts, useCategories } from "@/hooks/useProducts";
 import { MiniHero } from "@/components/layout/MiniHero";
 
 const Catalog = () => {
@@ -31,7 +31,7 @@ const Catalog = () => {
   });
 
   useEffect(() => {
-    document.title = "Catalogue PC sur-mesure â€” Les Casaniers Madagascar";
+    document.title = "Catalogue PC sur-mesure — Les Casaniers Madagascar";
   }, []);
 
   // Charger les voix disponibles
@@ -69,7 +69,7 @@ const Catalog = () => {
   const speakText = (text: string, onEnd?: () => void) => {
     if (!speechSynthesisRef.current) return;
 
-    const cleanText = text.replace(/[*_~`]/g, '').replace(/[ðŸ§ðŸ‘‹ðŸŽ¯âœ…ðŸššðŸ’°ðŸ ðŸ’ªâ­]/g, '');
+    const cleanText = text.replace(/[*_~`]/g, '').replace(/[🐧👋🎯✅🚚💰🏠💪⭐]/g, '');
 
     if (currentUtteranceRef.current) {
       speechSynthesisRef.current.cancel();
@@ -106,7 +106,7 @@ const Catalog = () => {
   const handleMascotClick = () => {
     setIsChatOpen(true);
     setShowHelp(false);
-    const message = "ðŸ§ *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'Ã©cran* Ici tu peux filtrer par catÃ©gorie. *compte sur ses doigts* Tu peux aussi trier par prix ou popularitÃ©, et ajuster ton budget avec le curseur ! *sourit* Passe ta souris sur n'importe quel produit, je te le prÃ©sente. Besoin d'aide pour choisir ?";
+    const message = "🐧 *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie. *compte sur ses doigts* Tu peux aussi trier par prix ou popularité, et ajuster ton budget avec le curseur ! *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
     setCurrentMessage(message);
     speakText(message);
   };
@@ -114,27 +114,38 @@ const Catalog = () => {
   const handleHelpClick = () => {
     setShowHelp(!showHelp);
     if (!showHelp) {
-      const message = "ðŸ§ *Je m'approche* Voici un petit guide ! *pointe* Les filtres en haut : choisis ta catÃ©gorie pour voir les modÃ¨les. *montre le curseur* Le curseur de budget ajuste les prix. *pointe les produits* Et chaque carte produit a un bouton cÅ“ur pour les favoris ! Des questions ?";
+      const message = "🐧 *Je m'approche* Voici un petit guide ! *pointe* Les filtres en haut : choisis ta catégorie pour voir les modèles. *montre le curseur* Le curseur de budget ajuste les prix. *pointe les produits* Et chaque carte produit a un bouton cœur pour les favoris ! Des questions ?";
       setCurrentMessage(message);
       speakText(message);
     }
   };
 
-  const speakAboutProduct = (product: any) => {
-    const message = `ðŸ§ *Je pointe du doigt*, ${product.nom} ! *s'approche* ${product.tagline} C'est du ${product.categorie?.nom}, avec ${product.processeur} et ${product.carte_graphique}. Note ${product.note}/5. *fait un clin d'Å“il* Ã€ partir de ${formatAr(product.prix)} seulement ! Une super affaire !`;
+  const toCartProduct = (product: Product) => ({
+    id: String(product.id),
+    name: product.nom,
+    category: product.categorie?.nom || product.type_produit,
+    tagline: product.description_courte || product.tagline || "Configuration Les Casaniers",
+    price: Number(product.prix),
+    image: productImage(product),
+  });
+
+  const speakAboutProduct = (product: Product) => {
+    const cpu = productSpec(product, "processeur") || "une configuration equilibree";
+    const gpu = productSpec(product, "carte_graphique") || "des composants adaptes";
+    const message = `Bienvenue sur ${product.nom}. ${product.description_courte || product.tagline || ""} C'est du ${product.categorie?.nom || product.type_produit}, avec ${cpu} et ${gpu}. A partir de ${formatAr(product.prix)}.`;
     setCurrentMessage(message);
     speakText(message);
   };
 
   const speakAboutFilter = (name: string) => {
-    const message = `ðŸ§ *J'ouvre les bras* La catÃ©gorie ${name} ! *sourit* Trouve celle qui te correspond !`;
+    const message = `🐧 *J'ouvre les bras* La catégorie ${name} ! *sourit* Trouve celle qui te correspond !`;
     setCurrentMessage(message);
     speakText(message);
   };
 
   const filtered = useMemo(() => {
     if (!products) return [];
-    let list = products.filter((p: any) => p.prix <= budget && p.est_dispo && p.quantite_stock > 0 && p.actif);
+    let list = products.filter((p) => p.prix <= budget && p.est_dispo && p.quantite_stock > 0 && p.actif);
     if (sort === "asc") list = [...list].sort((a, b) => a.prix - b.prix);
     if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
     return list;
@@ -145,7 +156,7 @@ const Catalog = () => {
       {/* Hero catalogue */}
       <MiniHero
         title="Trouvez la machine qui vous correspond."
-        description="Filtres intelligents, comparaisons instantanÃ©es, et le Fosa qui veille sur vos choix."
+        description="Filtres intelligents, comparaisons instantanées, et le Fosa qui veille sur vos choix."
         bg="5.png"
       />
 
@@ -156,7 +167,7 @@ const Catalog = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Rechercher dans le catalogueâ€¦"
+              placeholder="Rechercher dans le catalogue..."
               className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary text-sm focus:outline-none focus:ring-4 focus:ring-accent/15 border border-transparent focus:border-accent transition-all"
             />
           </div>
@@ -199,9 +210,9 @@ const Catalog = () => {
             </label>
             <select value={sort} onChange={(e) => setSort(e.target.value as never)}
               className="h-10 rounded-full bg-secondary px-4 text-sm border border-transparent focus:outline-none focus:border-accent">
-              <option value="pop">PopularitÃ©</option>
+              <option value="pop">Popularité</option>
               <option value="asc">Prix croissant</option>
-              <option value="desc">Prix dÃ©croissant</option>
+              <option value="desc">Prix décroissant</option>
             </select>
             <button
               onClick={handleHelpClick}
@@ -217,12 +228,12 @@ const Catalog = () => {
       {/* Grille */}
       <section className="container-x py-12">
         <div className="text-sm text-muted-foreground mb-6 flex items-center justify-between">
-          <span>{filtered.length} configurations trouvÃ©es</span>
+          <span>{filtered.length} configurations trouvées</span>
           {showHelp && (
             <div className="card-soft p-3 max-w-md animate-fade-up">
               <div className="flex items-start gap-2 text-xs">
-                <span className="text-lg">ðŸ§</span>
-                <p className="text-muted-foreground">Utilise les filtres pour trouver ton bonheur ! Le curseur ajuste ton budget. Et passe ta souris sur un produit pour que je te le prÃ©sente !</p>
+                <span className="text-lg">🐧</span>
+                <p className="text-muted-foreground">Utilise les filtres pour trouver ton bonheur ! Le curseur ajuste ton budget. Et passe ta souris sur un produit pour que je te le présente !</p>
               </div>
             </div>
           )}
@@ -235,13 +246,16 @@ const Catalog = () => {
           </div>
         ) : filtered.length === 0 ? (
           <div className="card-soft p-12 text-center">
-            <p className="font-display text-2xl font-bold mb-2">Aucun rÃ©sultat</p>
-            <p className="text-muted-foreground">Essayez d'Ã©largir votre budget ou de changer de catÃ©gorie.</p>
+            <p className="font-display text-2xl font-bold mb-2">Aucun résultat</p>
+            <p className="text-muted-foreground">Essayez d'élargir votre budget ou de changer de catégorie.</p>
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((p: any, i: number) => {
-              const fav = favorites.includes(p.id);
+            {filtered.map((p: Product, i: number) => {
+              const fav = favorites.includes(String(p.id));
+              const cpu = productSpec(p, "processeur");
+              const gpu = productSpec(p, "carte_graphique");
+              const ram = productSpec(p, "ram");
               return (
                 <article
                   key={p.id}
@@ -250,15 +264,15 @@ const Catalog = () => {
                   onMouseEnter={() => speakAboutProduct(p)}
                 >
                   <Link to={`/produit/${p.id}`} className="block relative aspect-[4/3] overflow-hidden bg-secondary">
-                    <img src={p.image_principale || "/placeholder-pc.jpg"} alt={p.nom} loading="lazy"
+                    <img src={productImage(p)} alt={p.nom} loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     {p.badge && (
                       <span className="absolute top-3 left-3 pill bg-gradient-accent text-accent-foreground border-0">
-                        âš¡ {p.badge}
+                        ⚡ {p.badge}
                       </span>
                     )}
                     <button
-                      onClick={(e) => { e.preventDefault(); toggleFavorite(p.id); }}
+                      onClick={(e) => { e.preventDefault(); toggleFavorite(String(p.id)); }}
                       className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
                       aria-label="Favori">
@@ -276,19 +290,19 @@ const Catalog = () => {
                         <span className="font-semibold text-foreground">{p.note || 5.0}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground italic">"{p.tagline || 'Une configuration exceptionnelle.'}"</p>
+                    <p className="text-sm text-muted-foreground italic">"{p.description_courte || p.tagline || 'Une configuration exceptionnelle.'}"</p>
                     <div className="flex flex-wrap gap-1.5 text-[11px]">
-                      <span className="pill !py-1 !px-2">{p.processeur}</span>
-                      <span className="pill !py-1 !px-2">{p.carte_graphique}</span>
-                      <span className="pill !py-1 !px-2">{p.ram}</span>
+                      {cpu && <span className="pill !py-1 !px-2">{cpu}</span>}
+                      {gpu && <span className="pill !py-1 !px-2">{gpu}</span>}
+                      {ram && <span className="pill !py-1 !px-2">{ram}</span>}
                     </div>
                     <div className="flex items-end justify-between pt-2">
                       <div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Ã  partir de</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">à partir de</div>
                         <div className="font-display font-bold text-2xl">{formatAr(p.prix)}</div>
                       </div>
                       <Button variant="hero" size="sm"
-                        onClick={() => { addToCart(String(p.id)); toast({ title: "AjoutÃ© au panier", description: p.nom }); }}>
+                        onClick={() => { addToCart(String(p.id), 1, toCartProduct(p)); toast({ title: "Ajoute au panier", description: p.nom }); }}>
                         <ShoppingBag className="h-4 w-4" /> Ajouter
                       </Button>
                     </div>
@@ -309,11 +323,11 @@ const Catalog = () => {
               <img src={fosa} alt="Casio" className="h-10 w-10 rounded-full object-contain bg-white/10 p-1" />
               <div>
                 <div className="font-bold text-sm flex items-center gap-2">
-                  Casio ðŸ§
+                  Casio 🐧
                   <span className="text-[8px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full">GUIDE VOCAL</span>
                 </div>
                 <div className="text-[9px] opacity-80">
-                  {isSpeaking ? "ðŸŽ™ï¸ Parle en ce moment..." : "ðŸŽ§ PrÃªt Ã  guider"}
+                  {isSpeaking ? "🎙️ Parle en ce moment..." : "🎧 Prêt à guider"}
                 </div>
               </div>
             </div>
@@ -331,18 +345,18 @@ const Catalog = () => {
           <div className="p-4 bg-secondary/30">
             <div className="bg-white dark:bg-card rounded-2xl p-3 shadow-sm border border-border">
               <div className="text-xs leading-relaxed whitespace-pre-wrap">
-                {currentMessage || "ðŸ§ Salut ! Je suis Casio, ton guide dans le catalogue. Passe ta souris sur les produits, je te les prÃ©sente vocalement ! Clique sur les filtres, je t'explique chaque catÃ©gorie. Bonne recherche !"}
+                {currentMessage || "🐧 Salut ! Je suis Casio, ton guide dans le catalogue. Passe ta souris sur les produits, je te les présente vocalement ! Clique sur les filtres, je t'explique chaque catégorie. Bonne recherche !"}
               </div>
               {currentMessage && (
                 <button onClick={() => speakText(currentMessage)} className="mt-2 text-[9px] opacity-60 hover:opacity-100 flex items-center gap-1 transition">
-                  <Volume2 className="h-2.5 w-2.5" /> RÃ©Ã©couter
+                  <Volume2 className="h-2.5 w-2.5" /> Réécouter
                 </button>
               )}
             </div>
           </div>
           <div className="p-3 border-t border-border text-center">
             <p className="text-[9px] text-muted-foreground">
-              ðŸ’¡ Passe ta souris sur un produit â†’ Casio te le prÃ©sente vocalement !
+              💡 Passe ta souris sur un produit → Casio te le présente vocalement !
             </p>
           </div>
         </div>

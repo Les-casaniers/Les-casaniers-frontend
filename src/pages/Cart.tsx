@@ -49,12 +49,12 @@ const Cart = () => {
             <div className="lg:col-span-8 space-y-4">
               {cartDetailed.map(({ product, qty, subtotal }) => (
                 <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
-                  <Link to={`/produit/${product.id}`} className="shrink-0">
+                  <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="shrink-0">
                     <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
                   </Link>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
-                    <Link to={`/produit/${product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
+                    <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
                     <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
                     <div className="flex items-center justify-between mt-3">
                       <div className="flex items-center bg-secondary rounded-full">

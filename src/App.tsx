@@ -21,6 +21,7 @@ import Pro from "@/pages/Pro";
 import { FosaBot } from "./components/layout/FosaBot.tsx";
 import Peripheriques from "@/pages/Peripheriques";
 import Guides from "@/pages/Guides";
+import GuideDetail from "@/pages/GuideDetail";
 import Importation from "@/pages/Import";
 import DevisExpress from "@/pages/DevisExpress";
 
@@ -43,6 +44,7 @@ import AdminFactures from "@/components/ActionAdmin/AdminFactures";
 import AdminDevis from "@/components/ActionAdmin/AdminDevis";
 import AdminNotifications from "@/components/ActionAdmin/AdminNotifications";
 import AdminParametres from "@/components/ActionAdmin/AdminParametres";
+import AdminGuides from "@/components/ActionAdmin/AdminGuides";
 
 //Import Routes pour Client
 import DashboardClient from "@/pages/DashboardClient";
@@ -80,6 +82,7 @@ const App = () => (
             <Route path="/pro" element={<Pro />} />
             <Route path="/peripheriques" element={<Peripheriques />} />
             <Route path="/guides" element={<Guides />} />
+            <Route path="/guides/:id" element={<GuideDetail />} />
             <Route path="/importation" element={<Importation />} />
             <Route path="/favoris" element={<Favorites />} />
             <Route path="/devis-express" element={<DevisExpress />} />
@@ -94,6 +97,7 @@ const App = () => (
             <Route path="/DashboardAdmin" element={<DashboardAdmin />}>
               <Route index element={<AdminDashboard />} />
               <Route path="produits" element={<AdminProduits />} />
+              <Route path="guides" element={<AdminGuides />} />
               <Route path="produits/:id" element={<ConfigPc />} />
               <Route path="commandes" element={<AdminCommandes />} />
               <Route path="clients" element={<AdminClients />} />

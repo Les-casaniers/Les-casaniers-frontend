@@ -25,6 +25,7 @@
     const menuItems = [
       { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
       { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
+      { icon: FileText, label: "Guides", path: "/DashboardAdmin/guides" },
       { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes", badge: "3" },
       { icon: ClipboardList, label: "Devis", path: "/DashboardAdmin/devis" },
       { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
