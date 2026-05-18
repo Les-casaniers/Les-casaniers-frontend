@@ -1,438 +1,270 @@
-import { useState } from "react";
-import { CreditCard, Plus, Trash2, Check, X, Star, Shield, Calendar, Lock, Wallet, Building, Smartphone, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { 
+  FileText, 
+  Search, 
+  Trash2, 
+  Eye, 
+  Download, 
+  Loader2,
+  Calendar,
+  CreditCard,
+  AlertCircle,
+  XCircle
+} from "lucide-react";
 import { toast } from "sonner";
+import api from "@/service/api";
 
-type CarteBancaire = {
-  id: string;
-  type: "visa" | "mastercard" | "amex";
-  numero: string;
-  titulaire: string;
-  expiration: string;
-  estParDefaut: boolean;
-};
-
-type MoyenPaiement = {
-  id: string;
-  type: "carte" | "mobile_money" | "virement";
-  nom: string;
-  details: any;
-  estParDefaut: boolean;
+type Facture = {
+  id: number;
+  commande_id: number;
+  facture_ref: string;
+  statut: "en_attente" | "payee" | "annulee";
+  montant_total: number;
+  devise: string;
+  methode_paiement: string;
+  date_emission: string;
+  date_paiement: string | null;
+  pdf_path: string | null;
+  date_creation: string;
+  commande?: {
+    commande_uuid: string;
+  };
 };
 
 const DashboardPaiement = () => {
-  const [cartes, setCartes] = useState<CarteBancaire[]>([
-    {
-      id: "1",
-      type: "visa",
-      numero: "**** **** **** 4242",
-      titulaire: "JEAN DUPONT",
-      expiration: "12/28",
-      estParDefaut: true,
-    },
-    {
-      id: "2",
-      type: "mastercard",
-      numero: "**** **** **** 5555",
-      titulaire: "JEAN DUPONT",
-      expiration: "08/27",
-      estParDefaut: false,
-    },
-  ]);
-
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [factures, setFactures] = useState<Facture[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [selectedCard, setSelectedCard] = useState<CarteBancaire | null>(null);
-  const [newCard, setNewCard] = useState({
-    numero: "",
-    titulaire: "",
-    expiration: "",
-    cvv: "",
-  });
+  const [selectedFacture, setSelectedFacture] = useState<Facture | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const getCardIcon = (type: string) => {
-    switch(type) {
-      case "visa":
-        return <div className="text-blue-600 font-bold text-xl">VISA</div>;
-      case "mastercard":
-        return <div className="text-red-600 font-bold text-xl">MC</div>;
-      case "amex":
-        return <div className="text-blue-800 font-bold text-xl">AMEX</div>;
-      default:
-        return <CreditCard className="h-6 w-6" />;
+  useEffect(() => {
+    fetchFactures();
+  }, []);
+
+  const fetchFactures = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/factures');
+      console.log("Factures récupérées:", response.data);
+      
+      let facturesData: Facture[] = [];
+      if (response.data.data && Array.isArray(response.data.data)) {
+        facturesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        facturesData = response.data;
+      } else {
+        facturesData = [];
+      }
+      
+      setFactures(facturesData);
+    } catch (error: any) {
+      console.error("Erreur chargement factures:", error);
+      toast.error("Impossible de charger vos factures");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getCardBgColor = (type: string) => {
-    switch(type) {
-      case "visa":
-        return "bg-gradient-to-r from-blue-700 to-blue-500";
-      case "mastercard":
-        return "bg-gradient-to-r from-red-700 to-red-500";
-      case "amex":
-        return "bg-gradient-to-r from-blue-800 to-blue-600";
-      default:
-        return "bg-gradient-to-r from-gray-700 to-gray-500";
-    }
-  };
-
-  const handleSetDefault = (id: string) => {
-    setCartes(cartes.map(c => ({
-      ...c,
-      estParDefaut: c.id === id
-    })));
-    toast.success("Carte par défaut mise à jour");
-  };
-
-  const handleRemoveCard = (card: CarteBancaire) => {
-    if (card.estParDefaut && cartes.length > 1) {
-      toast.error("Veuillez d'abord définir une autre carte par défaut");
-      return;
-    }
-    setSelectedCard(card);
+  const handleDelete = async (facture: Facture) => {
+    setSelectedFacture(facture);
     setShowDeleteAlert(true);
   };
 
-  const confirmDelete = () => {
-    if (!selectedCard) return;
-    const wasDefault = selectedCard.estParDefaut;
-    const newCartes = cartes.filter(c => c.id !== selectedCard.id);
+  const confirmDelete = async () => {
+    if (!selectedFacture) return;
     
-    if (wasDefault && newCartes.length > 0) {
-      newCartes[0].estParDefaut = true;
+    try {
+      setDeletingId(selectedFacture.id);
+      const response = await api.delete(`/factures/${selectedFacture.id}`);
+      
+      if (response.data.success) {
+        toast.success(`Facture ${selectedFacture.facture_ref} supprimée`);
+        await fetchFactures();
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (error: any) {
+      console.error("Erreur suppression:", error);
+      toast.error(error.response?.data?.message || "Impossible de supprimer la facture");
+    } finally {
+      setDeletingId(null);
+      setShowDeleteAlert(false);
+      setSelectedFacture(null);
     }
-    
-    setCartes(newCartes);
-    setShowDeleteAlert(false);
-    setSelectedCard(null);
-    toast.success("Carte supprimée avec succès");
   };
 
-  const handleAddCard = () => {
-    if (!newCard.numero || !newCard.titulaire || !newCard.expiration || !newCard.cvv) {
-      toast.error("Veuillez remplir tous les champs");
-      return;
-    }
-
-    const numeroMasque = "**** **** **** " + newCard.numero.slice(-4);
-    const type = newCard.numero.startsWith("4") ? "visa" : 
-                 newCard.numero.startsWith("5") ? "mastercard" : "amex";
-
-    const nouvelleCarte: CarteBancaire = {
-      id: Date.now().toString(),
-      type,
-      numero: numeroMasque,
-      titulaire: newCard.titulaire.toUpperCase(),
-      expiration: newCard.expiration,
-      estParDefaut: cartes.length === 0,
-    };
-
-    let nouvellesCartes = [nouvelleCarte, ...cartes];
-    if (nouvelleCarte.estParDefaut) {
-      nouvellesCartes = nouvellesCartes.map(c => {
-        if (c.id !== nouvelleCarte.id) c.estParDefaut = false;
-        return c;
+  const handleDownload = async (facture: Facture) => {
+    try {
+      const response = await api.get(`/factures/${facture.id}/download`, {
+        responseType: 'blob'
       });
-    }
-
-    setCartes(nouvellesCartes);
-    setShowAddModal(false);
-    setNewCard({ numero: "", titulaire: "", expiration: "", cvv: "" });
-    toast.success("Carte ajoutée avec succès");
-  };
-
-  const formatNumeroCarte = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = matches && matches[0] || '';
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(' ');
-    } else {
-      return value;
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${facture.facture_ref}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("PDF téléchargé avec succès");
+    } catch (error: any) {
+      console.error("Erreur téléchargement:", error);
+      toast.error("Impossible de télécharger le PDF");
     }
   };
 
-  const handleNumeroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatNumeroCarte(e.target.value);
-    setNewCard({ ...newCard, numero: formatted });
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
   };
 
-  const handleExpirationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length >= 2) {
-      value = value.slice(0, 2) + '/' + value.slice(2, 4);
+  const formatPrice = (prix: number, devise: string = 'MGA') => {
+    return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
+  };
+
+  const getStatutStyle = (statut: string) => {
+    if (statut === 'payee') {
+      return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30";
     }
-    setNewCard({ ...newCard, expiration: value });
+    return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30";
   };
 
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200";
+  const getStatutLabel = (statut: string) => {
+    return statut === 'payee' ? 'Payée' : 'En attente';
+  };
+
+  const facturesFiltrees = factures.filter(facture => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      facture.facture_ref.toLowerCase().includes(searchLower) ||
+      facture.commande?.commande_uuid?.toLowerCase().includes(searchLower) ||
+      formatDate(facture.date_emission).includes(searchLower)
+    );
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Chargement de vos factures...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">Moyens de paiement</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gérez vos cartes bancaires et moyens de paiement</p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-all duration-200 font-medium shadow-sm hover:shadow-md"
-        >
-          <Plus className="h-4 w-4" />
-          Ajouter une carte
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Mes factures</h1>
+        <p className="text-muted-foreground">Consultez et téléchargez vos factures</p>
       </div>
 
-      {/* Cartes existantes */}
-      {cartes.length === 0 ? (
+      {/* Recherche */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Rechercher par numéro de facture, commande ou date..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+        />
+      </div>
+
+      {/* Liste des factures */}
+      {facturesFiltrees.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-12 text-center">
-          <div className="w-24 h-24 mx-auto mb-6 bg-secondary rounded-full flex items-center justify-center">
-            <CreditCard className="h-12 w-12 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Aucune carte enregistrée</h3>
-          <p className="text-muted-foreground mb-6">Ajoutez votre première carte bancaire pour faciliter vos paiements</p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition"
-          >
-            <Plus className="h-4 w-4" />
-            Ajouter une carte
-          </button>
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-2">Aucune facture trouvée</h3>
+          <p className="text-muted-foreground">
+            {searchTerm ? "Aucune facture ne correspond à votre recherche" : "Vous n'avez pas encore de facture"}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {cartes.map((carte) => (
+        <div className="space-y-4">
+          {facturesFiltrees.map((facture) => (
             <div
-              key={carte.id}
-              className={`relative rounded-2xl p-5 text-white transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${getCardBgColor(carte.type)}`}
+              key={facture.id}
+              className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
             >
-              {/* Badge par défaut */}
-              {carte.estParDefaut && (
-                <div className="absolute -top-2 -left-2">
-                  <div className="flex items-center gap-1 bg-amber-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-                    <Star className="h-3 w-3 fill-current" />
-                    PAR DÉFAUT
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <p className="font-mono font-semibold text-foreground">{facture.facture_ref}</p>
+                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(facture.statut)}`}>
+                      {getStatutLabel(facture.statut)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-sm">
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {formatDate(facture.date_emission)}
+                    </span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <CreditCard className="h-3.5 w-3.5" />
+                      Commande: {facture.commande?.commande_uuid || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Méthode de paiement: <span className="capitalize">{facture.methode_paiement}</span>
+                    </p>
                   </div>
                 </div>
-              )}
 
-              {/* Icône carte */}
-              <div className="flex justify-between items-start mb-6">
-                <div className="text-white/80 text-lg font-bold">
-                  {getCardIcon(carte.type)}
-                </div>
-                <Shield className="h-8 w-8 text-white/60" />
-              </div>
-
-              {/* Numéro */}
-              <p className="font-mono text-lg tracking-wider mb-4">
-                {carte.numero}
-              </p>
-
-              {/* Infos */}
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-xs text-white/70 uppercase tracking-wider mb-1">Titulaire</p>
-                  <p className="font-medium text-sm">{carte.titulaire}</p>
-                </div>
                 <div className="text-right">
-                  <p className="text-xs text-white/70 uppercase tracking-wider mb-1">Expiration</p>
-                  <p className="font-medium text-sm">{carte.expiration}</p>
+                  <p className="text-xl font-bold text-foreground">{formatPrice(facture.montant_total, facture.devise)}</p>
+                  <div className="flex items-center justify-end gap-2 mt-2">
+                    <button
+                      onClick={() => handleDownload(facture)}
+                      className="inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition"
+                    >
+                      <Download className="h-4 w-4" />
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => handleDelete(facture)}
+                      disabled={deletingId === facture.id}
+                      className="inline-flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition"
+                    >
+                      {deletingId === facture.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="absolute bottom-4 right-4 flex gap-2">
-                {!carte.estParDefaut && (
-                  <button
-                    onClick={() => handleSetDefault(carte.id)}
-                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition text-xs font-medium"
-                  >
-                    Définir par défaut
-                  </button>
-                )}
-                <button
-                  onClick={() => handleRemoveCard(carte)}
-                  className="p-1.5 rounded-lg bg-white/20 hover:bg-red-500/80 transition"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Sécurité et informations */}
-      <div className="bg-secondary/30 rounded-2xl p-6 border border-border/50">
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-primary/10 rounded-xl">
-            <Lock className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground mb-1">Paiement sécurisé</h3>
-            <p className="text-sm text-muted-foreground">
-              Vos informations de paiement sont cryptées et sécurisées. Nous ne stockons jamais votre CVV.
-            </p>
-            <div className="flex flex-wrap gap-4 mt-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center text-white text-[8px] font-bold">VISA</div>
-                <span className="text-xs text-muted-foreground">Accepté</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-5 bg-red-600 rounded flex items-center justify-center text-white text-[8px] font-bold">MC</div>
-                <span className="text-xs text-muted-foreground">Accepté</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-5 bg-blue-800 rounded flex items-center justify-center text-white text-[8px] font-bold">AMEX</div>
-                <span className="text-xs text-muted-foreground">Accepté</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-5 bg-green-600 rounded flex items-center justify-center text-white text-[8px] font-bold">3D</div>
-                <span className="text-xs text-muted-foreground">Secure</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal Ajout carte */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col animate-scale-in">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Ajouter une carte</h2>
-                  <p className="text-sm text-muted-foreground">Saisissez les informations de votre carte</p>
-                </div>
-              </div>
-              <button onClick={() => setShowAddModal(false)} className="p-2 rounded-lg hover:bg-secondary transition">
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Aperçu carte */}
-              <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-4 text-white">
-                <div className="flex justify-between mb-4">
-                  <CreditCard className="h-8 w-8 text-white/60" />
-                  <Shield className="h-6 w-6 text-white/40" />
-                </div>
-                <p className="font-mono text-lg tracking-wider mb-3">
-                  {newCard.numero || "**** **** **** ****"}
-                </p>
-                <div className="flex justify-between text-sm">
-                  <div>
-                    <p className="text-[10px] text-white/60 uppercase">Titulaire</p>
-                    <p>{newCard.titulaire || "NOM PRENOM"}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-white/60 uppercase">Expiration</p>
-                    <p>{newCard.expiration || "MM/AA"}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Formulaire */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Numéro de carte</label>
-                  <input
-                    type="text"
-                    value={newCard.numero}
-                    onChange={handleNumeroChange}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Titulaire de la carte</label>
-                  <input
-                    type="text"
-                    value={newCard.titulaire}
-                    onChange={(e) => setNewCard({ ...newCard, titulaire: e.target.value.toUpperCase() })}
-                    placeholder="JEAN DUPONT"
-                    className={inputClass}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Date d'expiration</label>
-                    <input
-                      type="text"
-                      value={newCard.expiration}
-                      onChange={handleExpirationChange}
-                      placeholder="MM/AA"
-                      maxLength={5}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">CVV</label>
-                    <input
-                      type="password"
-                      value={newCard.cvv}
-                      onChange={(e) => setNewCard({ ...newCard, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                      placeholder="123"
-                      maxLength={4}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                <span>Vos informations sont cryptées et sécurisées</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-secondary/10">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
-                Annuler
-              </button>
-              <button onClick={handleAddCard} className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition">
-                <Check className="h-4 w-4" />
-                Ajouter la carte
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal suppression */}
-      {showDeleteAlert && selectedCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
+      {/* MODAL SUPPRESSION */}
+      {showDeleteAlert && selectedFacture && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md">
             <div className="p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
                 <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Supprimer la carte</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2">Supprimer la facture</h3>
               <p className="text-muted-foreground">
-                Carte se terminant par <span className="font-semibold text-foreground">{selectedCard.numero.slice(-4)}</span>
+                Facture <span className="font-semibold text-foreground">{selectedFacture.facture_ref}</span>
               </p>
-              {selectedCard.estParDefaut && cartes.length > 1 && (
-                <p className="text-sm text-amber-600 mt-2">
-                  ⚠️ Cette carte est votre carte par défaut. Veuillez d'abord en définir une autre.
-                </p>
-              )}
               <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>
             </div>
             <div className="flex gap-3 p-6 pt-0">
               <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
                 Annuler
               </button>
-              
               <button onClick={confirmDelete} className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition">
                 Supprimer
               </button>

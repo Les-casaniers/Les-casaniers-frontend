@@ -54,6 +54,10 @@ import DashboardPaiement from "@/components/ActionClient/DashboardPaiement";
 import DashboardParametres from "@/components/ActionClient/DashboardParametres";
 import Favorites from "./pages/Favorites.tsx";
 
+import AdminAvis from "@/components/ActionAdmin/AdminAvis";
+import AdminDevisExpress from "@/components/ActionAdmin/AdminDevisExpress";
+import AdminUtilisateurs from "@/components/ActionAdmin/AdminUtilisateurs";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -99,6 +103,9 @@ const App = () => (
               <Route path="clients" element={<AdminClients />} />
               <Route path="devis" element={<AdminDevis />} />
               <Route path="factures" element={<AdminFactures />} />
+              <Route path="avis" element={<AdminAvis />} />                 // ← AJOUTER
+              <Route path="devis-express" element={<AdminDevisExpress />} /> // ← AJOUTER
+              <Route path="admins" element={<AdminUtilisateurs />} />        // ← AJOUTER
               <Route path="notifications" element={<AdminNotifications />} />
               <Route path="parametres" element={<AdminParametres />} />
              
