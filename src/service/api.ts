@@ -1,4 +1,3 @@
-/* eslint-disable no-empty */
 import axios, { AxiosHeaders, AxiosInstance, AxiosResponse } from "axios";
 
 /**
