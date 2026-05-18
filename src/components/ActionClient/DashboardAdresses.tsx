@@ -1,66 +1,107 @@
-import { useState } from "react";
-import { MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package, Star, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package, Star, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import api from "@/service/api";
 
+// Interface pour les adresses (correspondant à votre table)
 type Adresse = {
-  id: string;
+  id: number;
+  utilisateur_id: number;
+  etiquette: string;
+  nom_complet: string;
+  telephone: string;
+  adresse_ligne1: string;
+  adresse_ligne2: string | null;
+  ville: string;
+  region: string;
+  code_postal: string;
+  pays: string;
+  par_defaut_expedition: boolean;
+  par_defaut_facturation: boolean;
+  date_creation: string;
+  date_modification: string;
+};
+
+// Interface pour l'utilisateur connecté
+type User = {
+  id: number;
   nom: string;
   prenom: string;
-  telephone: string;
-  adresse: string;
-  complement?: string;
-  codePostal: string;
-  ville: string;
-  pays: string;
-  estParDefaut: boolean;
-  type: "maison" | "appartement" | "bureau";
+  email: string;
+  telephone?: string;
 };
 
 const DashboardAdresses = () => {
-  const [adresses, setAdresses] = useState<Adresse[]>([
-    {
-      id: "1",
-      nom: "Dupont",
-      prenom: "Jean",
-      telephone: "034 12 345 67",
-      adresse: "123 Avenue de l'Indépendance",
-      complement: "Lot II J 151",
-      codePostal: "101",
-      ville: "Antananarivo",
-      pays: "Madagascar",
-      estParDefaut: true,
-      type: "maison",
-    },
-    {
-      id: "2",
-      nom: "Dupont",
-      prenom: "Jean",
-      telephone: "034 12 345 67",
-      adresse: "45 Rue du Commerce",
-      complement: "",
-      codePostal: "501",
-      ville: "Toamasina",
-      pays: "Madagascar",
-      estParDefaut: false,
-      type: "bureau",
-    },
-  ]);
-
+  const [adresses, setAdresses] = useState<Adresse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [selectedAdresse, setSelectedAdresse] = useState<Adresse | null>(null);
   const [form, setForm] = useState<Partial<Adresse>>({
-    nom: "",
-    prenom: "",
+    etiquette: "",
+    nom_complet: "",
     telephone: "",
-    adresse: "",
-    complement: "",
-    codePostal: "",
+    adresse_ligne1: "",
+    adresse_ligne2: "",
+    code_postal: "",
     ville: "",
+    region: "",
     pays: "Madagascar",
-    estParDefaut: false,
-    type: "maison",
+    par_defaut_expedition: false,
+    par_defaut_facturation: false,
   });
+
+  // Récupérer l'utilisateur connecté et ses adresses
+  useEffect(() => {
+    fetchUserAndAdresses();
+  }, []);
+
+  const fetchUserAndAdresses = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Récupérer le profil de l'utilisateur connecté
+      const userResponse = await api.get('/utilisateurs/profile');
+      console.log("Utilisateur connecté:", userResponse.data);
+      
+      let currentUser = null;
+      if (userResponse.data.success && userResponse.data.data) {
+        currentUser = userResponse.data.data;
+      } else if (userResponse.data.data) {
+        currentUser = userResponse.data.data;
+      } else {
+        currentUser = userResponse.data;
+      }
+      
+      setUser(currentUser);
+      
+      // Récupérer les adresses de l'utilisateur connecté
+      const adressesResponse = await api.get(`/adresses?utilisateur_id=${currentUser.id}`);
+      console.log("Adresses récupérées:", adressesResponse.data);
+      
+      let userAdresses = [];
+      if (adressesResponse.data.data) {
+        userAdresses = Array.isArray(adressesResponse.data.data) ? adressesResponse.data.data : [];
+      } else if (Array.isArray(adressesResponse.data)) {
+        userAdresses = adressesResponse.data;
+      } else if (adressesResponse.data.adresses) {
+        userAdresses = adressesResponse.data.adresses;
+      } else {
+        userAdresses = [];
+      }
+      
+      setAdresses(userAdresses);
+      
+    } catch (error: any) {
+      console.error("Erreur lors du chargement:", error);
+      setError("Impossible de charger vos adresses. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200";
 
@@ -73,17 +114,21 @@ const DashboardAdresses = () => {
   };
 
   const handleOpenAdd = () => {
+    // Extraire le prénom et nom depuis nom_complet ou depuis user
+    const nomComplet = user ? `${user.prenom} ${user.nom}` : "";
+    
     setForm({
-      nom: "",
-      prenom: "",
-      telephone: "",
-      adresse: "",
-      complement: "",
-      codePostal: "",
+      etiquette: "",
+      nom_complet: nomComplet,
+      telephone: user?.telephone || "",
+      adresse_ligne1: "",
+      adresse_ligne2: "",
+      code_postal: "",
       ville: "",
+      region: "",
       pays: "Madagascar",
-      estParDefaut: adresses.length === 0,
-      type: "maison",
+      par_defaut_expedition: adresses.length === 0,
+      par_defaut_facturation: adresses.length === 0,
     });
     setSelectedAdresse(null);
     setShowModal(true);
@@ -100,100 +145,136 @@ const DashboardAdresses = () => {
     setShowDeleteAlert(true);
   };
 
-  const handleSave = () => {
-    if (!form.nom || !form.prenom || !form.telephone || !form.adresse || !form.codePostal || !form.ville) {
+  const handleSave = async () => {
+    if (!form.nom_complet || !form.telephone || !form.adresse_ligne1 || !form.code_postal || !form.ville || !form.region) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
 
-    if (selectedAdresse) {
-      // Modification
-      const updatedAdresses = adresses.map(a => 
-        a.id === selectedAdresse.id ? { ...a, ...form as Adresse } : a
-      );
-      
-      // Gérer l'adresse par défaut
-      if (form.estParDefaut) {
-        updatedAdresses.forEach(a => {
-          if (a.id !== selectedAdresse.id) a.estParDefaut = false;
+    try {
+      if (selectedAdresse) {
+        // Modification
+        const response = await api.put(`/adresses/${selectedAdresse.id}`, {
+          etiquette: form.etiquette,
+          nom_complet: form.nom_complet,
+          telephone: form.telephone,
+          adresse_ligne1: form.adresse_ligne1,
+          adresse_ligne2: form.adresse_ligne2 || null,
+          ville: form.ville,
+          region: form.region,
+          code_postal: form.code_postal,
+          pays: form.pays,
+          par_defaut_expedition: form.par_defaut_expedition,
+          par_defaut_facturation: form.par_defaut_facturation,
         });
+        
+        if (response.data.success) {
+          // Gérer l'adresse par défaut
+          if (form.par_defaut_expedition) {
+            await api.put('/adresses/set-default-expedition', { adresse_id: selectedAdresse.id });
+          }
+          
+          await fetchUserAndAdresses(); // Recharger les adresses
+          toast.success("Adresse modifiée avec succès");
+        }
+      } else {
+        // Ajout
+        const response = await api.post('/adresses', {
+          utilisateur_id: user?.id,
+          etiquette: form.etiquette || "Livraison",
+          nom_complet: form.nom_complet,
+          telephone: form.telephone,
+          adresse_ligne1: form.adresse_ligne1,
+          adresse_ligne2: form.adresse_ligne2 || null,
+          ville: form.ville,
+          region: form.region,
+          code_postal: form.code_postal,
+          pays: form.pays,
+          par_defaut_expedition: form.par_defaut_expedition || adresses.length === 0,
+          par_defaut_facturation: form.par_defaut_facturation || adresses.length === 0,
+        });
+        
+        if (response.data.success) {
+          await fetchUserAndAdresses(); // Recharger les adresses
+          toast.success("Adresse ajoutée avec succès");
+        }
       }
       
-      setAdresses(updatedAdresses);
-      toast.success("Adresse modifiée avec succès");
-    } else {
-      // Ajout
-      const newAdresse: Adresse = {
-        id: Date.now().toString(),
-        nom: form.nom!,
-        prenom: form.prenom!,
-        telephone: form.telephone!,
-        adresse: form.adresse!,
-        complement: form.complement || "",
-        codePostal: form.codePostal!,
-        ville: form.ville!,
-        pays: form.pays || "Madagascar",
-        estParDefaut: form.estParDefaut || adresses.length === 0,
-        type: form.type as "maison" | "appartement" | "bureau",
-      };
-      
-      let newAdresses = [newAdresse, ...adresses];
-      
-      if (newAdresse.estParDefaut) {
-        newAdresses = newAdresses.map(a => {
-          if (a.id !== newAdresse.id) a.estParDefaut = false;
-          return a;
-        });
-      }
-      
-      setAdresses(newAdresses);
-      toast.success("Adresse ajoutée avec succès");
+      setShowModal(false);
+    } catch (error: any) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la sauvegarde");
     }
-    
-    setShowModal(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!selectedAdresse) return;
     
-    const wasDefault = selectedAdresse.estParDefaut;
-    const newAdresses = adresses.filter(a => a.id !== selectedAdresse.id);
-    
-    if (wasDefault && newAdresses.length > 0) {
-      newAdresses[0].estParDefaut = true;
-    }
-    
-    setAdresses(newAdresses);
-    setShowDeleteAlert(false);
-    setSelectedAdresse(null);
-    toast.success("Adresse supprimée avec succès");
-  };
-
-  const handleSetDefault = (id: string) => {
-    setAdresses(adresses.map(a => ({
-      ...a,
-      estParDefaut: a.id === id
-    })));
-    toast.success("Adresse par défaut mise à jour");
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch(type) {
-      case "maison": return <Home className="h-4 w-4" />;
-      case "appartement": return <Building className="h-4 w-4" />;
-      case "bureau": return <Package className="h-4 w-4" />;
-      default: return <MapPin className="h-4 w-4" />;
+    try {
+      const response = await api.delete(`/adresses/${selectedAdresse.id}`);
+      
+      if (response.data.success) {
+        await fetchUserAndAdresses(); // Recharger les adresses
+        setShowDeleteAlert(false);
+        setSelectedAdresse(null);
+        toast.success("Adresse supprimée avec succès");
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la suppression");
     }
   };
 
-  const getTypeLabel = (type: string) => {
-    switch(type) {
-      case "maison": return "Maison";
-      case "appartement": return "Appartement";
-      case "bureau": return "Bureau";
-      default: return type;
+  const handleSetDefault = async (id: number) => {
+    try {
+      await api.put('/adresses/set-default-expedition', { adresse_id: id });
+      await fetchUserAndAdresses(); // Recharger les adresses
+      toast.success("Adresse par défaut mise à jour");
+    } catch (error: any) {
+      console.error("Erreur lors du changement d'adresse par défaut:", error);
+      toast.error(error.response?.data?.message || "Erreur lors de la mise à jour");
     }
   };
+
+  const getTypeIcon = (etiquette: string) => {
+    const type = etiquette?.toLowerCase() || "";
+    if (type.includes("maison") || type.includes("home")) return <Home className="h-4 w-4" />;
+    if (type.includes("appartement") || type.includes("apartment")) return <Building className="h-4 w-4" />;
+    if (type.includes("bureau") || type.includes("office")) return <Package className="h-4 w-4" />;
+    return <MapPin className="h-4 w-4" />;
+  };
+
+  const getTypeLabel = (etiquette: string) => {
+    const type = etiquette?.toLowerCase() || "";
+    if (type.includes("maison") || type.includes("home")) return "Maison";
+    if (type.includes("appartement") || type.includes("apartment")) return "Appartement";
+    if (type.includes("bureau") || type.includes("office")) return "Bureau";
+    return etiquette || "Adresse";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Chargement de vos adresses...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <p className="text-red-500 mb-4">{error}</p>
+        <button 
+          onClick={fetchUserAndAdresses}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+        >
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -234,11 +315,11 @@ const DashboardAdresses = () => {
             <div
               key={adresse.id}
               className={`relative bg-card border rounded-2xl p-5 transition-all hover:shadow-md ${
-                adresse.estParDefaut ? 'border-primary/50 bg-primary/5' : 'border-border'
+                adresse.par_defaut_expedition ? 'border-primary/50 bg-primary/5' : 'border-border'
               }`}
             >
               {/* Badge par défaut */}
-              {adresse.estParDefaut && (
+              {adresse.par_defaut_expedition && (
                 <div className="absolute -top-2 -left-2">
                   <div className="flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-md">
                     <Star className="h-3 w-3 fill-current" />
@@ -249,37 +330,33 @@ const DashboardAdresses = () => {
 
               {/* Type d'adresse */}
               <div className="flex items-center gap-2 mb-3">
-                <div className={`p-1.5 rounded-lg ${
-                  adresse.type === "maison" ? "bg-green-500/10 text-green-600" :
-                  adresse.type === "bureau" ? "bg-blue-500/10 text-blue-600" :
-                  "bg-purple-500/10 text-purple-600"
-                }`}>
-                  {getTypeIcon(adresse.type)}
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  {getTypeIcon(adresse.etiquette)}
                 </div>
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {getTypeLabel(adresse.type)}
+                  {getTypeLabel(adresse.etiquette)}
                 </span>
               </div>
 
               {/* Informations */}
               <div className="space-y-2">
                 <p className="font-semibold text-foreground">
-                  {adresse.prenom} {adresse.nom}
+                  {adresse.nom_complet}
                 </p>
                 <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
                 <p className="text-sm text-foreground leading-relaxed">
-                  {adresse.adresse}
-                  {adresse.complement && <><br />{adresse.complement}</>}
+                  {adresse.adresse_ligne1}
+                  {adresse.adresse_ligne2 && <><br />{adresse.adresse_ligne2}</>}
                   <br />
-                  {adresse.codePostal} {adresse.ville}
+                  {adresse.code_postal} {adresse.ville}
                   <br />
-                  {adresse.pays}
+                  {adresse.region}, {adresse.pays}
                 </p>
               </div>
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-border/50">
-                {!adresse.estParDefaut && (
+                {!adresse.par_defaut_expedition && (
                   <button
                     onClick={() => handleSetDefault(adresse.id)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition"
@@ -306,7 +383,7 @@ const DashboardAdresses = () => {
         </div>
       )}
 
-      {/* MODAL AJOUTER/MODIFIER */}
+      {/* MODAL AJOUTER/MODIFIER - Adaptée à votre table */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in">
@@ -333,66 +410,63 @@ const DashboardAdresses = () => {
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Prénom <span className="text-destructive">*</span></label>
-                    <input name="prenom" value={form.prenom || ""} onChange={handleInputChange} className={inputClass} />
+                    <label className="block text-sm font-medium text-foreground mb-2">Nom complet <span className="text-destructive">*</span></label>
+                    <input name="nom_complet" value={form.nom_complet || ""} onChange={handleInputChange} className={inputClass} placeholder="Jean Dupont" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Nom <span className="text-destructive">*</span></label>
-                    <input name="nom" value={form.nom || ""} onChange={handleInputChange} className={inputClass} />
+                    <label className="block text-sm font-medium text-foreground mb-2">Téléphone <span className="text-destructive">*</span></label>
+                    <input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="034 12 345 67" className={inputClass} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Téléphone <span className="text-destructive">*</span></label>
-                  <input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="034 12 345 67" className={inputClass} />
+                  <label className="block text-sm font-medium text-foreground mb-2">Adresse ligne 1 <span className="text-destructive">*</span></label>
+                  <input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange} placeholder="Numéro et nom de rue" className={inputClass} />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Adresse <span className="text-destructive">*</span></label>
-                  <input name="adresse" value={form.adresse || ""} onChange={handleInputChange} placeholder="Numéro et nom de rue" className={inputClass} />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Complément (optionnel)</label>
-                  <input name="complement" value={form.complement || ""} onChange={handleInputChange} placeholder="Appartement, étage, bâtiment..." className={inputClass} />
+                  <label className="block text-sm font-medium text-foreground mb-2">Adresse ligne 2 (optionnel)</label>
+                  <input name="adresse_ligne2" value={form.adresse_ligne2 || ""} onChange={handleInputChange} placeholder="Appartement, étage, bâtiment..." className={inputClass} />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Code postal <span className="text-destructive">*</span></label>
-                    <input name="codePostal" value={form.codePostal || ""} onChange={handleInputChange} className={inputClass} />
+                    <input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange} className={inputClass} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Ville <span className="text-destructive">*</span></label>
                     <input name="ville" value={form.ville || ""} onChange={handleInputChange} className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Pays</label>
-                    <select name="pays" value={form.pays} onChange={handleInputChange} className={inputClass}>
-                      <option value="Madagascar">Madagascar</option>
-                      <option value="France">France</option>
-                      <option value="Canada">Canada</option>
-                    </select>
+                    <label className="block text-sm font-medium text-foreground mb-2">Région <span className="text-destructive">*</span></label>
+                    <input name="region" value={form.region || ""} onChange={handleInputChange} className={inputClass} placeholder="Analamanga, Atsinanana..." />
                   </div>
                 </div>
 
-
-                
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Pays</label>
+                  <select name="pays" value={form.pays} onChange={handleInputChange} className={inputClass}>
+                    <option value="Madagascar">Madagascar</option>
+                    <option value="France">France</option>
+                    <option value="Canada">Canada</option>
+                  </select>
+                </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Type d'adresse</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">Étiquette</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { value: "maison", label: "🏠 Maison" },
-                      { value: "appartement", label: "🏢 Appartement" },
-                      { value: "bureau", label: "💼 Bureau" }
+                      { value: "Maison", label: "🏠 Maison" },
+                      { value: "Appartement", label: "🏢 Appartement" },
+                      { value: "Bureau", label: "💼 Bureau" }
                     ].map((type) => (
                       <button
                         key={type.value}
                         type="button"
-                        onClick={() => setForm(prev => ({ ...prev, type: type.value as Adresse["type"] }))}
+                        onClick={() => setForm(prev => ({ ...prev, etiquette: type.value }))}
                         className={`px-4 py-2 text-sm font-medium rounded-xl transition border ${
-                          form.type === type.value
+                          form.etiquette === type.value
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-background text-foreground border-border hover:bg-secondary"
                         }`}
@@ -406,14 +480,14 @@ const DashboardAdresses = () => {
                 <div className="flex items-center gap-3 pt-2">
                   <input
                     type="checkbox"
-                    id="estParDefaut"
-                    name="estParDefaut"
-                    checked={form.estParDefaut || false}
+                    id="par_defaut_expedition"
+                    name="par_defaut_expedition"
+                    checked={form.par_defaut_expedition || false}
                     onChange={handleInputChange}
                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
                   />
-                  <label htmlFor="estParDefaut" className="text-sm text-foreground">
-                    Définir comme adresse par défaut
+                  <label htmlFor="par_defaut_expedition" className="text-sm text-foreground">
+                    Définir comme adresse par défaut pour l'expédition
                   </label>
                 </div>
               </div>
@@ -439,15 +513,14 @@ const DashboardAdresses = () => {
             <div className="p-6 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
                 <AlertCircle className="h-8 w-8 text-destructive" />
-                
               </div>
               <h3 className="text-xl font-bold text-foreground mb-2">Supprimer l'adresse</h3>
               <p className="text-muted-foreground">
                 Voulez-vous vraiment supprimer cette adresse ?
               </p>
-              {selectedAdresse?.estParDefaut && (
+              {selectedAdresse?.par_defaut_expedition && (
                 <p className="text-sm text-amber-600 mt-2">
-                  ⚠️ Cette adresse est votre adresse par défaut. Une autre adresse sera définie par défaut.
+                  ⚠️ Cette adresse est votre adresse par défaut.
                 </p>
               )}
               <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>

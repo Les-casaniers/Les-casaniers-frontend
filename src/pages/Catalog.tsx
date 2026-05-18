@@ -9,9 +9,14 @@ import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { Product, productImage, productSpec, useProducts, useCategories } from "@/hooks/useProducts";
 import { MiniHero } from "@/components/layout/MiniHero";
+import api from "@/service/api";
+import { useCartApi } from "@/hooks/useCartApi";
+
 
 const Catalog = () => {
-  const { addToCart, toggleFavorite, favorites } = useShop();
+  //const { addToCart } = useShop();
+  const { addToCart } = useCartApi();
+  const [favorites, setFavorites] = useState<number[]>([]);
   const [catId, setCatId] = useState<number | "Tout">("Tout");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"pop" | "asc" | "desc">("pop");
@@ -33,6 +38,80 @@ const Catalog = () => {
   useEffect(() => {
     document.title = "Catalogue PC sur-mesure — Les Casaniers Madagascar";
   }, []);
+
+  // Charger les favoris de l'utilisateur connecté
+  useEffect(() => {
+    fetchFavorites();
+  }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await api.get('/favoris');
+      let favorisData = [];
+      if (response.data.data) {
+        favorisData = Array.isArray(response.data.data) ? response.data.data : [];
+      } else if (Array.isArray(response.data)) {
+        favorisData = response.data;
+      } else if (response.data.favoris) {
+        favorisData = response.data.favoris;
+      } else {
+        favorisData = [];
+      }
+      const favoriteIds = favorisData.map((f: any) => f.produit_id);
+      setFavorites(favoriteIds);
+    } catch (error: any) {
+      // Si l'utilisateur n'est pas connecté, ce n'est pas une erreur
+      if (error.response?.status !== 401) {
+        console.error("Erreur chargement favoris:", error);
+      }
+    }
+  };
+
+  const toggleFavorite = async (produitId: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    try {
+      const isCurrentlyFavorite = favorites.includes(produitId);
+      
+      if (isCurrentlyFavorite) {
+        await api.delete('/favoris', {
+          data: { produit_id: produitId }
+        });
+        setFavorites(favorites.filter(id => id !== produitId));
+        toast({ 
+          title: "Retiré des favoris", 
+          description: "Produit retiré de votre liste"
+        });
+      } else {
+        await api.post('/favoris', {
+          produit_id: produitId
+        });
+        setFavorites([...favorites, produitId]);
+        toast({ 
+          title: "Ajouté aux favoris", 
+          description: "Produit ajouté à votre liste"
+        });
+      }
+    } catch (error: any) {
+      console.error("Erreur favori:", error);
+      if (error.response?.status === 401) {
+        toast({ 
+          title: "Connexion requise", 
+          description: "Veuillez vous connecter pour ajouter aux favoris",
+          variant: "destructive"
+        });
+      } else {
+        toast({ 
+          title: "Erreur", 
+          description: "Une erreur est survenue",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
   // Charger les voix disponibles
   useEffect(() => {
@@ -271,6 +350,8 @@ const Catalog = () => {
                         ⚡ {p.badge}
                       </span>
                     )}
+                    
+                    {/* Bouton favori avec gestion API */}
                     <button
                       onClick={(e) => { e.preventDefault(); toggleFavorite(String(p.id)); }}
                       className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
@@ -301,6 +382,10 @@ const Catalog = () => {
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">à partir de</div>
                         <div className="font-display font-bold text-2xl">{formatAr(p.prix)}</div>
                       </div>
+                      {/* <Button variant="hero" size="sm"
+                        onClick={() => { addToCart(String(p.id)); toast({ title: "Ajouté au panier", description: p.nom }); }}>
+                        <ShoppingBag className="h-4 w-4" /> Ajouter
+                      </Button> */}
                       <Button variant="hero" size="sm"
                         onClick={() => { addToCart(String(p.id), 1, toCartProduct(p)); toast({ title: "Ajoute au panier", description: p.nom }); }}>
                         <ShoppingBag className="h-4 w-4" /> Ajouter
@@ -312,7 +397,6 @@ const Catalog = () => {
             })}
           </div>
         )}
-
       </section>
 
       {/* CHATBOT POPUP */}
