@@ -623,97 +623,93 @@ const Cart = () => {
   return (
     <SiteLayout>
       <section className="container-x py-12">
-        {/* Header existant... */}
-        <div className="mb-8">
-          <div className="pill mb-3"><ShoppingBag className="h-3.5 w-3.5 text-accent" /> Le Bond</div>
-          <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">Votre panier</h1>
-          <p className="text-muted-foreground mt-2">{cartDetailed.length} article{cartDetailed.length > 1 ? 's' : ''} dans votre panier</p>
-        </div>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="pill mb-3"><ShoppingBag className="h-3.5 w-3.5 text-accent" /> Le Bond</div>
+        <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">Votre panier</h1>
+        <p className="text-muted-foreground mt-2">{cartDetailed.length} article{cartDetailed.length > 1 ? 's' : ''} dans votre panier</p>
+      </div>
 
-        {cartDetailed.length === 0 ? (
-          <div className="card-soft p-12 text-center max-w-xl mx-auto">
-            <img src={fosa} alt="" className="h-24 w-24 mx-auto animate-float mb-4" />
-            <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu iciâ€¦</h2>
-            <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite dÃ©couvrir nos configurations !</p>
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/catalogue">Explorer le catalogue <ArrowRight /></Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-8 space-y-4">
-              {cartDetailed.map(({ product, qty, subtotal }) => (
-                <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
-                  <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="shrink-0">
-                    <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
-                    <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
-                    <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center bg-secondary rounded-full">
-                        <button onClick={() => setQty(product.id, qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-8 text-center font-semibold tabular-nums text-sm">{qty}</span>
-                        <button onClick={() => setQty(product.id, qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="font-display font-bold">{formatAr(subtotal)}</div>
-                        <button onClick={() => removeFromCart(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
+      <div className="grid lg:grid-cols-12 gap-8">
+        {/* Colonne de gauche - Liste des produits */}
+        <div className="lg:col-span-8 space-y-4">
+          {cartDetailed.map(({ product, qty, subtotal }) => (
+            <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
+              <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="shrink-0">
+                <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
+              </Link>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
+                <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="font-display font-bold text-lg hover:text-accent transition-colors">
+                  {product.name}
+                </Link>
+                <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
+                <div className="flex items-center justify-between mt-3">
+                  <div className="flex items-center bg-secondary rounded-full">
+                    <button onClick={() => handleSetQty(product.id, qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="w-8 text-center font-semibold tabular-nums text-sm">{qty}</span>
+                    <button onClick={() => handleSetQty(product.id, qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="font-display font-bold">{formatAr(subtotal)}</div>
+                    <button onClick={() => handleRemove(product.id, product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
-            ))}
-            <div className="flex justify-between items-center pt-2">
-              <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"><Trash2 className="h-3 w-3" /> Vider le panier</button>
-              <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
             </div>
+          ))}
+          
+          {/* Boutons en bas de la colonne de gauche */}
+          <div className="flex justify-between items-center pt-2">
+            <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
+              <Trash2 className="h-3 w-3" /> Vider le panier
+            </button>
+            <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
+          </div>
+        </div>
+
+        {/* Sidebar - Colonne de droite */}
+        <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
+          <div className="card-soft p-6">
+            <h3 className="font-display font-bold text-lg mb-4">Récapitulatif</h3>
+            <div className="space-y-2 text-sm">
+              <Row label="Sous-total" value={formatAr(calculateSubtotal())} />
+              {discount > 0 && <Row label="Remise FOSA10" value={`- ${formatAr(discount)}`} accent />}
+              <Row label="Livraison" value={shipping === 0 ? "Offerte 🎉" : formatAr(shipping)} />
+            </div>
+            <div className="border-t border-border mt-4 pt-4 flex items-end justify-between">
+              <span className="font-semibold">Total</span>
+              <span className="font-display font-bold text-2xl text-primary">{formatAr(total)}</span>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <input value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="Code promo (FOSA10)" className="flex-1 h-10 px-4 rounded-full bg-secondary text-sm" />
+              <Button variant="soft" size="sm" onClick={applyPromo}><Tag className="h-3.5 w-3.5" /></Button>
+            </div>
+
+            <Button variant="hero" size="lg" className="w-full mt-4 group" onClick={handleOpenDevisModal}>
+              Demander mon devis 
+              <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+            </Button>
+            <Button variant="soft" size="sm" className="w-full mt-2" asChild>
+              <Link to="/catalogue">Continuer mes achats</Link>
+            </Button>
           </div>
 
-          {/* Sidebar avec bouton Demander mon devis */}
-          <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
-            <div className="card-soft p-6">
-              <h3 className="font-display font-bold text-lg mb-4">Récapitulatif</h3>
-              <div className="space-y-2 text-sm">
-                <Row label="Sous-total" value={formatAr(calculateSubtotal())} />
-                {discount > 0 && <Row label="Remise FOSA10" value={`- ${formatAr(discount)}`} accent />}
-                <Row label="Livraison" value={shipping === 0 ? "Offerte 🎉" : formatAr(shipping)} />
-              </div>
-              <div className="border-t border-border mt-4 pt-4 flex items-end justify-between">
-                <span className="font-semibold">Total</span>
-                <span className="font-display font-bold text-2xl text-primary">{formatAr(total)}</span>
-              </div>
-
-              <div className="flex gap-2 mt-4">
-                <input value={promo} onChange={(e) => setPromo(e.target.value)} placeholder="Code promo (FOSA10)" className="flex-1 h-10 px-4 rounded-full bg-secondary text-sm" />
-                <Button variant="soft" size="sm" onClick={applyPromo}><Tag className="h-3.5 w-3.5" /></Button>
-              </div>
-
-              {/* Bouton Demander mon devis MODIFIÉ */}
-              <Button variant="hero" size="lg" className="w-full mt-4 group" onClick={handleOpenDevisModal}>
-                Demander mon devis 
-                <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <Button variant="soft" size="sm" className="w-full mt-2" asChild>
-                <Link to="/catalogue">Continuer mes achats</Link>
-              </Button>
-            </div>
-
-            <div className="card-soft p-4 space-y-2 text-xs">
-              <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /><span>Paiement sécurisé · 3× sans frais</span></div>
-              <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-accent" /><span>Livraison gratuite dès 5 000 000 Ar</span></div>
-            </div>
-          </aside>
-        </div>
-      </section>
+          <div className="card-soft p-4 space-y-2 text-xs">
+            <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-accent" /><span>Paiement sécurisé · 3× sans frais</span></div>
+            <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-accent" /><span>Livraison gratuite dès 5 000 000 Ar</span></div>
+          </div>
+        </aside>
+      </div>
+      
+    </section>
 
       {/* MODAL DEVIS */}
       {showDevisModal && (
