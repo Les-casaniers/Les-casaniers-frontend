@@ -203,7 +203,7 @@ const Catalog = () => {
   const handleMascotClick = () => {
     setIsChatOpen(true);
     setShowHelp(false);
-    const message = " *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie. *compte sur ses doigts* Tu peux aussi trier par prix ou popularité, et ajuster ton budget avec le curseur ! *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
+    const message = "🐧 *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie. *compte sur ses doigts* Tu peux aussi trier par prix ou popularité, et ajuster ton budget avec le curseur ! *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
     setCurrentMessage(message);
     speakText(message);
   };
@@ -329,7 +329,7 @@ const Catalog = () => {
           {showHelp && (
             <div className="card-soft p-3 max-w-md animate-fade-up">
               <div className="flex items-start gap-2 text-xs">
-                <span className="text-lg"></span>
+                <span className="text-lg">🐧</span>
                 <p className="text-muted-foreground">Utilise les filtres pour trouver ton bonheur ! Le curseur ajuste ton budget. Et passe ta souris sur un produit pour que je te le présente !</p>
               </div>
             </div>
@@ -361,12 +361,6 @@ const Catalog = () => {
                   onMouseEnter={() => speakAboutProduct(p)}
                 >
                   <Link to={`/produit/${p.id}`} className="block relative aspect-[4/3] overflow-hidden bg-secondary">
-                    <img 
-                      src={getProductImageUrl(p)} 
-                      alt={p.nom} 
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                    />
                     <img src={productImage(p)} alt={p.nom} loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     {p.badge && (
