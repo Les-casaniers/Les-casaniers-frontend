@@ -1,19 +1,28 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { products, Product } from "@/lib/products";
+import { products, Product as StaticProduct } from "@/lib/products";
 
-type CartItem = { productId: string; qty: number };
+export type CartProduct = {
+  id: string;
+  name: string;
+  category: string;
+  tagline: string;
+  price: number;
+  image: string;
+};
+
+type CartItem = { productId: string; qty: number; product?: CartProduct };
 
 type ShopCtx = {
   cart: CartItem[];
   favorites: string[];
-  addToCart: (id: string, qty?: number) => void;
+  addToCart: (id: string, qty?: number, product?: CartProduct) => void;
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   toggleFavorite: (id: string) => void;
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
-  cartDetailed: { product: Product; qty: number; subtotal: number }[];
+  cartDetailed: { product: CartProduct; qty: number; subtotal: number }[];
 };
 
 const Ctx = createContext<ShopCtx | null>(null);
@@ -39,11 +48,11 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem(KEY, JSON.stringify({ cart, favorites }));
   }, [cart, favorites]);
 
-  const addToCart = (id: string, qty = 1) => {
+  const addToCart = (id: string, qty = 1, product?: CartProduct) => {
     setCart((c) => {
       const ex = c.find((i) => i.productId === id);
-      if (ex) return c.map((i) => (i.productId === id ? { ...i, qty: i.qty + qty } : i));
-      return [...c, { productId: id, qty }];
+      if (ex) return c.map((i) => (i.productId === id ? { ...i, qty: i.qty + qty, product: product ?? i.product } : i));
+      return [...c, { productId: id, qty, product }];
     });
   };
 
@@ -58,11 +67,19 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     () =>
       cart
         .map((i) => {
-          const product = products.find((p) => p.id === i.productId);
+          const staticProduct = products.find((p) => p.id === i.productId);
+          const product: CartProduct | undefined = i.product ?? (staticProduct ? {
+            id: staticProduct.id,
+            name: staticProduct.name,
+            category: staticProduct.category,
+            tagline: staticProduct.tagline,
+            price: staticProduct.price,
+            image: staticProduct.image,
+          } : undefined);
           if (!product) return null;
           return { product, qty: i.qty, subtotal: product.price * i.qty };
         })
-        .filter(Boolean) as { product: Product; qty: number; subtotal: number }[],
+        .filter(Boolean) as { product: CartProduct; qty: number; subtotal: number }[],
     [cart],
   );
 

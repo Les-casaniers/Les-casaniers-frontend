@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { useNavigate } from "react-router-dom";
 import { MiniHero } from "@/components/layout/MiniHero";
+import { Product, productImage, useProducts } from "@/hooks/useProducts";
 
 type Step = {
   key: string;
@@ -154,36 +155,92 @@ const Configurateur = () => {
   const [ggPlayed, setGgPlayed] = useState(false);
   const { addToCart } = useShop();
   const navigate = useNavigate();
+  const { data: componentProducts = [] } = useProducts({ type_produit: "composant", actif: true, est_dispo: 1 });
 
   useEffect(() => {
     document.title = "Configurateur PC — Les Casaniers Madagascar";
   }, []);
 
-  const current = steps[step];
+  const componentMatches: Record<string, string[]> = {
+    case: ["boitier", "case", "tour"],
+    cpu: ["cpu", "processeur", "intel", "ryzen"],
+    motherboard: ["carte mere", "motherboard", "b660", "z790", "x670", "b650"],
+    cooling: ["refroidissement", "cooling", "ventirad", "watercooling", "aio"],
+    ram: ["ram", "memoire", "ddr"],
+    storage: ["stockage", "ssd", "hdd", "nvme", "disque"],
+    gpu: ["gpu", "carte graphique", "rtx", "radeon", "geforce"],
+    psu: ["alimentation", "psu", "bronze", "gold", "platinum"],
+  };
+
+  const dynamicSteps = useMemo<Step[]>(() => {
+    const normalize = (value?: string | null) => (value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const toOption = (product: Product) => ({
+      id: `product-${product.id}`,
+      name: product.nom,
+      price: Number(product.prix),
+      perf: Math.min(5, Math.max(1, Math.round(Number(product.prix) / 750000))),
+      tag: product.categorie?.nom || product.reference || undefined,
+      warn: product.quantite_stock <= 2 ? "Stock limite." : undefined,
+      image: productImage(product),
+    });
+
+    return steps.map((baseStep) => {
+      if (baseStep.key === "usage") return baseStep;
+      const needles = componentMatches[baseStep.key] || [];
+      const matches = componentProducts
+        .filter((product) => {
+          const haystack = normalize([
+            product.nom,
+            product.reference,
+            product.description_courte,
+            product.description,
+            product.categorie?.nom,
+            product.type_produit,
+            ...(product.attributs?.map((attr) => `${attr.cle_attr} ${attr.valeur_attr}`) || []),
+          ].filter(Boolean).join(" "));
+          return needles.some((needle) => haystack.includes(normalize(needle)));
+        })
+        .slice(0, 4);
+
+      return matches.length > 0 ? { ...baseStep, options: matches.map(toOption) } : baseStep;
+    });
+  }, [componentProducts]);
+
+  const current = dynamicSteps[Math.min(step, dynamicSteps.length - 1)];
   const total = useMemo(
     () =>
       Object.entries(sel).reduce((sum, [k, v]) => {
-        const opt = steps.find((s) => s.key === k)?.options.find((o) => o.id === v);
+        const opt = dynamicSteps.find((s) => s.key === k)?.options.find((o) => o.id === v);
         return sum + (opt?.price ?? 0);
       }, 0),
-    [sel],
+    [dynamicSteps, sel],
   );
 
   const warnings = useMemo(() => {
+    const normalize = (value?: string | null) =>
+      (value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const getSelection = (key: string) =>
+      dynamicSteps.find((s) => s.key === key)?.options.find((o) => o.id === sel[key]);
+    const cpuName = normalize(getSelection("cpu")?.name);
+    const gpuName = normalize(getSelection("gpu")?.name);
+    const coolingName = normalize(getSelection("cooling")?.name);
+
     const w: string[] = [];
-    if (sel.cpu === "i9" && sel.cooling === "air")
+    if ((cpuName.includes("i9") || cpuName.includes("ryzen 9")) && coolingName.includes("air"))
       w.push("Sub-Zero : un i9 avec un simple ventirad va surchauffer. Passez à du watercooling.");
-    if (sel.gpu === "4090" && sel.cpu === "i5")
+    if (gpuName.includes("4090") && (cpuName.includes("i5") || cpuName.includes("ryzen 5")))
       w.push("L'Architecte : une RTX 4090 sera bridée par un i5. Envisagez un i7/i9.");
-    if (sel.gpu === "igpu" && sel.cpu !== "i5")
+    const noGpuSelected = gpuName.includes("igpu") || gpuName.includes("aucune") || gpuName.includes("sans gpu");
+    const cpuHasNoGpu = cpuName.includes("-f") || cpuName.includes("kf") || cpuName.includes("sans igpu");
+    if (noGpuSelected && cpuHasNoGpu)
       w.push("Le Cerveau : le CPU choisi n'a pas d'iGPU. Ajoutez une carte graphique !");
     return w;
-  }, [sel]);
+  }, [dynamicSteps, sel]);
 
   // Count how many steps are completed
-  const completedCount = steps.filter((s) => sel[s.key]).length;
-  const progress = (completedCount / steps.length) * 100;
-  const allDone = step >= steps.length;
+  const completedCount = dynamicSteps.filter((s) => sel[s.key]).length;
+  const progress = (completedCount / dynamicSteps.length) * 100;
+  const allDone = step >= dynamicSteps.length;
 
   // Speak "GG" when all steps are done
   useEffect(() => {
@@ -199,12 +256,26 @@ const Configurateur = () => {
 
   const handleSelect = (id: string) => {
     setSel((s) => ({ ...s, [current.key]: id }));
-    setTimeout(() => setStep((s) => Math.min(s + 1, steps.length)), 250);
+    setTimeout(() => setStep((s) => Math.min(s + 1, dynamicSteps.length)), 250);
   };
 
   const handleAddToCart = () => {
-    addToCart("p1", 1);
-    toast({ title: "Configuration ajoutée", description: "Votre build sur-mesure est dans le panier." });
+    const selectedComponents = dynamicSteps
+      .map((s) => {
+        const opt = s.options.find((o) => o.id === sel[s.key]);
+        return opt ? `${s.mascot}: ${opt.name}` : null;
+      })
+      .filter(Boolean);
+    const id = `config-${Date.now()}`;
+    addToCart(id, 1, {
+      id,
+      name: "Configuration PC sur-mesure",
+      category: "Configuration",
+      tagline: selectedComponents.join(" | ") || "Build personnalise Les Casaniers",
+      price: total,
+      image: fosa,
+    });
+    toast({ title: "Configuration ajoutee", description: "Votre build sur-mesure est dans le panier." });
     navigate("/panier");
   };
 
@@ -219,7 +290,7 @@ const Configurateur = () => {
           <div className="card-soft p-5">
             <div className="flex items-center justify-between mb-3 text-sm">
               <span className="font-semibold">
-                Étape {Math.min(step + 1, steps.length)} / {steps.length}
+                Étape {Math.min(step + 1, dynamicSteps.length)} / {dynamicSteps.length}
               </span>
               <span className="text-foreground/60 font-medium">{Math.round(progress)}% complété</span>
             </div>
@@ -243,7 +314,7 @@ const Configurateur = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              {steps.map((s, i) => (
+              {dynamicSteps.map((s, i) => (
                 <button
                   key={s.key}
                   onClick={() => setStep(i)}
@@ -350,7 +421,7 @@ const Configurateur = () => {
                 >
                   <ChevronLeft /> Précédent
                 </Button>
-                <Button variant="soft" size="sm" onClick={() => setStep(Math.min(steps.length, step + 1))}>
+                <Button variant="soft" size="sm" onClick={() => setStep(Math.min(dynamicSteps.length, step + 1))}>
                   Passer cette étape <ChevronRight />
                 </Button>
               </div>
@@ -383,7 +454,7 @@ const Configurateur = () => {
               </div>
             </div>
             <div className="space-y-2 text-sm">
-              {steps.map((s) => {
+              {dynamicSteps.map((s) => {
                 const opt = s.options.find((o) => o.id === sel[s.key]);
                 return (
                   <div

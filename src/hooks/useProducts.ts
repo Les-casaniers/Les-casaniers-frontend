@@ -34,6 +34,18 @@ export interface Product {
   categorie_id: number;
   type_produit: string;
   actif: boolean;
+  image_principale?: string | null;
+  badge?: string | null;
+  tagline?: string | null;
+  note?: number | null;
+  processeur?: string | null;
+  carte_graphique?: string | null;
+  ram?: string | null;
+  disque_dur?: string | null;
+  alimentation?: string | null;
+  refroidissement?: string | null;
+  carte_mere?: string | null;
+  boitier?: string | null;
   date_creation?: string;
   date_modification?: string;
   images?: { id: number; url: string; alt: string; ordre?: number }[];
@@ -214,4 +226,16 @@ export const useProduct = (id: number | null) => {
     },
     enabled: id !== null,
   });
+};
+
+export const productImage = (product: Pick<Product, "image_principale" | "images">) =>
+  product.image_principale || product.images?.[0]?.url || "/placeholder-pc.jpg";
+
+export const productAttribute = (product: Product, key: string) =>
+  product.attributs?.find((attr) => attr.cle_attr === key)?.valeur_attr ?? null;
+
+export const productSpec = (product: Product, key: keyof Product | string) => {
+  const direct = product[key as keyof Product];
+  if (typeof direct === "string" && direct.trim()) return direct;
+  return productAttribute(product, String(key)) || undefined;
 };
