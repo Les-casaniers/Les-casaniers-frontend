@@ -52,13 +52,14 @@ const DashboardAdmin = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
     { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
+    { icon: FileText, label: "Guides", path: "/DashboardAdmin/guides" },
     { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes" },
     { icon: ClipboardList, label: "Devis", path: "/DashboardAdmin/devis" },
     { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
     { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
-    { icon: Star, label: "Avis clients", path: "/DashboardAdmin/avis" },           // ← AJOUTER
-    { icon: FileText, label: "Devis express", path: "/DashboardAdmin/devis-express" }, // ← AJOUTER
-    { icon: Shield, label: "Administrateurs", path: "/DashboardAdmin/admins" },     // ← AJOUTER
+    { icon: Star, label: "Avis clients", path: "/DashboardAdmin/avis" },
+    { icon: FileText, label: "Devis express", path: "/DashboardAdmin/devis-express" },
+    { icon: Shield, label: "Administrateurs", path: "/DashboardAdmin/admins" },
     { icon: Bell, label: "Notifications", path: "/DashboardAdmin/notifications" },
     { icon: Settings, label: "Paramètres", path: "/DashboardAdmin/parametres" },
   ];

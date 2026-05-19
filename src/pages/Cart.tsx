@@ -670,16 +670,15 @@ const Cart = () => {
                     </div>
                   </div>
                 </div>
-              </div>
             ))}
-            <div className="flex justify-between items-center pt-2">
-              <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"><Trash2 className="h-3 w-3" /> Vider le panier</button>
-              <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
+              <div className="flex justify-between items-center pt-2">
+                <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"><Trash2 className="h-3 w-3" /> Vider le panier</button>
+                <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
+              </div>
             </div>
-          </div>
 
-          {/* Sidebar avec bouton Demander mon devis */}
-          <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
+            {/* Sidebar avec bouton Demander mon devis */}
+            <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
             <div className="card-soft p-6">
               <h3 className="font-display font-bold text-lg mb-4">Récapitulatif</h3>
               <div className="space-y-2 text-sm">
@@ -713,6 +712,7 @@ const Cart = () => {
             </div>
           </aside>
         </div>
+        )}
       </section>
 
       {/* MODAL DEVIS */}
