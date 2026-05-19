@@ -67,9 +67,17 @@ const DashboardAdmin = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const menuItems = [
+      { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
+      { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
+      { icon: FileText, label: "Guides", path: "/DashboardAdmin/guides" },
+      { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes", badge: "3" },
+      { icon: ClipboardList, label: "Devis", path: "/DashboardAdmin/devis" },
+      { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
+      { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
+      { icon: Bell, label: "Notifications", path: "/DashboardAdmin/notifications" },
+      { icon: Settings, label: "Paramètres", path: "/DashboardAdmin/parametres" },
+    ];
 
   // Fermer le menu mobile sur resize
   useEffect(() => {
