@@ -1,31 +1,4 @@
-  // import { useState, useEffect } from "react";
-  // import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-  // import {
-  //   LayoutDashboard, Package, ShoppingCart, Users, FileText, ClipboardList,
-  //   Bell, Settings, LogOut, ChevronRight, Shield, Menu, X
-  // } from "lucide-react";
-  // import { ThemeToggle } from "@/components/ThemeToggle";
-  // import { useAuth } from "@/contexts/AuthContext";
-
-    const menuItems = [
-      { icon: LayoutDashboard, label: "Tableau de bord", path: "/DashboardAdmin" },
-      { icon: Package, label: "Produits", path: "/DashboardAdmin/produits" },
-      { icon: FileText, label: "Guides", path: "/DashboardAdmin/guides" },
-      { icon: ShoppingCart, label: "Commandes", path: "/DashboardAdmin/commandes", badge: "3" },
-      { icon: ClipboardList, label: "Devis", path: "/DashboardAdmin/devis" },
-      { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
-      { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
-      { icon: Bell, label: "Notifications", path: "/DashboardAdmin/notifications" },
-      { icon: Settings, label: "Paramètres", path: "/DashboardAdmin/parametres" },
-    ];
-
-    const isActive = (path: string) => {
-      if (path === "/DashboardAdmin") return location.pathname === "/DashboardAdmin";
-      return location.pathname.startsWith(path);
-    };
-
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // ← AJOUTER useRef
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, FileText, Star, ClipboardList,
@@ -173,7 +146,7 @@ const DashboardAdmin = () => {
               <ThemeToggle />
             </div>
 
-            {/* Admin profile - MODIFIÉ pour ne pas se fermer au survol */}
+            {/* Admin profile */}
             <div className="relative" ref={dropdownRef}>
               <button
                 ref={buttonRef}
