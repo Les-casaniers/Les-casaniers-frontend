@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, MapPin, Heart, 
   CreditCard, Settings, LogOut, ChevronRight, User, Bell,
-  Menu, X
+  Menu, X, ExternalLink
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,10 +14,12 @@ const DashboardClientLayout = () => {
   const { user, logout } = useAuth();
   const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const userData = {
-    name: user?.nom || user?.prenom || "Jean Dupont",
-    email: user?.email || "jean.dupont@email.com",
+    name: user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : (user?.prenom || user?.nom || "Client"),
+    email: user?.email || "client@lescasaniers.mg",
   };
 
   const menuItems = [
@@ -26,7 +28,6 @@ const DashboardClientLayout = () => {
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
     { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
-
   ];
 
   const isActive = (path: string) => {
@@ -37,7 +38,30 @@ const DashboardClientLayout = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+    setShowLogout(false);
   };
+
+  const handleViewSite = () => {
+    navigate("/catalogue");
+    setShowLogout(false);
+  };
+
+  // Gérer le clic en dehors pour fermer le dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLogout(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fermer le menu mobile sur resize
   useEffect(() => {
@@ -121,13 +145,13 @@ const DashboardClientLayout = () => {
               <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full"></span>
             </button>
 
-            {/* User profile */}
-            <div 
-              className="relative"
-              onMouseEnter={() => setShowLogout(true)}
-              onMouseLeave={() => setShowLogout(false)}
-            >
-              <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition">
+            {/* User profile - MODIFIÉ pour ne pas se fermer au survol */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                ref={buttonRef}
+                onClick={() => setShowLogout(!showLogout)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition"
+              >
                 <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-sm font-bold text-primary-foreground">
                     {userData.name.charAt(0).toUpperCase()}
@@ -139,16 +163,27 @@ const DashboardClientLayout = () => {
                 </div>
               </button>
 
-              {/* Dropdown déconnexion */}
+              {/* Dropdown - Voir le site + Déconnexion */}
               {showLogout && (
                 <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
                   <div className="px-4 py-2 border-b border-border">
                     <p className="text-sm font-medium text-foreground">{userData.name}</p>
                     <p className="text-xs text-muted-foreground">{userData.email}</p>
                   </div>
+                  
+                  {/* Bouton Voir le site */}
+                  <button
+                    onClick={handleViewSite}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Voir le site
+                  </button>
+                  
+                  {/* Bouton Déconnexion en rouge */}
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-secondary transition"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
                   >
                     <LogOut className="h-4 w-4" />
                     Déconnexion
@@ -215,12 +250,45 @@ const DashboardClientLayout = () => {
 
               <div className="p-4 border-t border-border space-y-3">
                 <ThemeToggle />
+                {/* Boutons mobile */}
+                <button
+                  onClick={handleViewSite}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-foreground border border-border rounded-lg hover:bg-secondary transition"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Voir le site
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Déconnexion
+                </button>
                 <p className="text-xs text-muted-foreground text-center">v1.0.0</p>
               </div>
             </div>
           </aside>
         </>
       )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.2s ease-out both;
+        }
+        
+        @keyframes slide-in-right {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out both;
+        }
+      `}</style>
     </div>
   );
 };

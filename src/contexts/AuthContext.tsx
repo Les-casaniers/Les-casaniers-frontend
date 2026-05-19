@@ -27,6 +27,7 @@ interface AuthContextType {
   logout: (redirectPath?: string) => Promise<void>;
   isAdmin: boolean;
   checkAuthStatus: () => void;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -279,7 +280,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, checkAuthStatus }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin, checkAuthStatus, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

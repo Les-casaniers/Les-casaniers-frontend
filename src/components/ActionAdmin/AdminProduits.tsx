@@ -435,41 +435,48 @@ const AdminProduits = () => {
               </thead>
               <tbody>
                 {filteredProduits.map((p) => {
-                  const mainImage = getMainImage(p);
-                  return (
-                    <tr key={p.id} className="border-b">
-                      <td className="p-3">
-                        {mainImage?.url ? (
-                          <img src={mainImage.url} alt={mainImage.alt || p.nom} className="h-12 w-12 object-cover rounded-md border" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
-                        )}
-                      </td>
-                      <td className="p-3">{p.nom}</td>
-                      <td className="p-3">{p.categorie?.nom ?? "-"}</td>
-                      <td className="p-3">{p.prix}</td>
-                      <td className="p-3">{p.quantite_stock}</td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                          {p.est_dispo ? "Disponible" : "Indisponible"}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => handleOpenEdit(p)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                const mainImage = getMainImage(p);
+                
+                // Afficher dans la console pour debug
+                console.log("Produit ID:", p.id);
+                console.log("Produit Nom:", p.nom);
+                console.log("mainImage:", mainImage);
+                console.log("mainImage?.url:", mainImage?.url);
+                
+                return (
+                  <tr key={p.id} className="border-b">
+                    <td className="p-3">
+                      {mainImage?.url ? (
+                        <img src={mainImage.url} alt={mainImage.alt || p.nom} className="h-12 w-12 object-cover rounded-md border" />
+                      ) : (
+                        <div className="h-12 w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
+                      )}
+                    </td>
+                    <td className="p-3">{p.nom}</td>
+                    <td className="p-3">{p.categorie?.nom ?? "-"}</td>
+                    <td className="p-3">{p.prix}</td>
+                    <td className="p-3">{p.quantite_stock}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        {p.est_dispo ? "Disponible" : "Indisponible"}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => handleOpenEdit(p)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               </tbody>
             </table>
           </div>
