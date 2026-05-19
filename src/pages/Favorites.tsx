@@ -1,28 +1,55 @@
 // src/pages/Favorites.tsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Trash2, ShoppingBag, ArrowRight, Star, Sparkles, Shield, X } from "lucide-react";
+import { Heart, Trash2, ShoppingBag, ArrowRight, Star, Sparkles, Shield, X, Loader2 } from "lucide-react";
 import { useShop } from "@/store/shop";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import api from "@/service/api";
+import { useAuth } from "@/contexts/AuthContext";
 
-import mascot from "@/assets/casaniers-mascot.png"; // Import de la mascotte
+import mascot from "@/assets/casaniers-mascot.png";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 
+// Types
 interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  inStock: boolean;
-  isPremium?: boolean;
-  isPro?: boolean;
-  rating?: number;
-  reviews?: number;
+  id: number;
+  nom: string;
+  prix: number;
+  devise: string;
+  quantite_stock: number;
+  description_courte: string;
+  type_produit: string;
+  images?: { id: number; url: string; alt: string; ordre: number }[];
+  est_dispo: boolean;
+  actif: boolean;
 }
+
+interface Favori {
+  id: number;
+  utilisateur_id: number;
+  produit_id: number;
+  date_creation: string;
+  produit?: Product;
+}
+
+// Fonction pour obtenir l'URL de l'image principale
+const getProductImageUrl = (product: Product) => {
+  if (!product) return "/placeholder-pc.jpg";
+  
+  const images = product.images || [];
+  if (images.length === 0) return "/placeholder-pc.jpg";
+  
+  const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
+  if (!mainImage?.url) return "/placeholder-pc.jpg";
+  
+  if (mainImage.url.startsWith('/storage')) {
+    return `http://127.0.0.1:8000${mainImage.url}`;
+  }
+  
+  return mainImage.url;
+};
 
 // Composant pour un produit favori individuel
 const FavoriteProductCard = ({ 
@@ -31,30 +58,45 @@ const FavoriteProductCard = ({
   onAddToCart 
 }: { 
   product: Product; 
-  onRemove: (id: string) => void;
-  onAddToCart: (id: string) => void;
+  onRemove: (id: number) => void;
+  onAddToCart: (id: number) => void;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const imageUrl = getProductImageUrl(product);
+
+  const formatPrice = (prix: number, devise: string = 'MGA') => {
+    return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const types: Record<string, string> = {
+      pc: "PC Gaming",
+      portable: "Laptop Gaming",
+      composant: "Composant",
+      peripherique: "Périphérique",
+      service: "Service"
+    };
+    return types[type] || "Produit";
+  };
 
   return (
     <div 
-      className="group relative bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-elevated hover:translate-y-[-2px]"
+      className="group relative bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Badge Premium/Pro */}
+      {/* Badge Premium/Pro (à adapter selon vos données) */}
       <div className="absolute top-3 left-3 z-10 flex gap-2">
-        {product.isPremium && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded-full">
+        {product.type_produit === 'pc' && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
             <Sparkles className="h-2.5 w-2.5" />
-            PREMIUM
+            GAMING
           </span>
         )}
-        {product.isPro && (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full">
-            <Shield className="h-2.5 w-2.5" />
-            PRO
+        {product.prix > 1000000 && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded-full">
+            PREMIUM
           </span>
         )}
       </div>
@@ -69,19 +111,21 @@ const FavoriteProductCard = ({
       </button>
 
       {/* Image */}
-      <Link to={`/produit/${product.id}`} className="block relative aspect-square overflow-hidden bg-secondary">
+      <Link to={`/produit/${product.id}`} className="block relative aspect-square overflow-hidden bg-gradient-to-br from-secondary to-muted">
         {!imageLoaded && (
           <div className="absolute inset-0 animate-pulse bg-muted" />
         )}
         <img
-          src={product.image}
-          alt={product.name}
+          src={imageUrl}
+          alt={product.nom}
           className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={() => setImageLoaded(true)}
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+          }}
         />
-        {/* Overlay gradient sur hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Link>
 
@@ -90,51 +134,47 @@ const FavoriteProductCard = ({
         {/* Catégorie */}
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {product.category}
+            {getTypeLabel(product.type_produit)}
           </span>
-          {product.rating && (
-            <div className="flex items-center gap-1">
-              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-              <span className="text-xs font-medium">{product.rating}</span>
-              {product.reviews && (
-                <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
-              )}
-            </div>
+          {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
+            <span className="text-[10px] text-orange-500 font-medium">Stock limité</span>
           )}
         </div>
 
         {/* Nom du produit */}
         <Link to={`/produit/${product.id}`}>
-          <h3 className="font-display font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">
-            {product.name}
+          <h3 className="font-semibold text-base line-clamp-2 hover:text-primary transition-colors">
+            {product.nom}
           </h3>
         </Link>
 
+        {/* Description courte */}
+        {product.description_courte && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {product.description_courte}
+          </p>
+        )}
+
         {/* Prix */}
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold font-display">
-            {product.price.toLocaleString('fr-FR')} €
+          <span className="text-xl font-bold text-primary">
+            {formatPrice(product.prix, product.devise)}
           </span>
-          {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
-              {product.originalPrice.toLocaleString('fr-FR')} €
-            </span>
-          )}
         </div>
 
         {/* Stock */}
         <div className="flex items-center gap-2">
-          <div className={`h-1.5 w-1.5 rounded-full ${product.inStock ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className={`h-1.5 w-1.5 rounded-full ${product.quantite_stock > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {product.inStock ? 'EN STOCK' : 'RUPTURE DE STOCK'}
+            {product.quantite_stock > 0 ? 'EN STOCK' : 'RUPTURE DE STOCK'}
           </span>
         </div>
 
         {/* Bouton Ajouter au panier */}
         <Button
           onClick={() => onAddToCart(product.id)}
-          disabled={!product.inStock}
-          className="w-full gap-2 btn-primary py-2.5 text-xs"
+          disabled={product.quantite_stock <= 0}
+          className="w-full gap-2 bg-foreground text-background hover:bg-foreground/90 py-2.5 text-xs rounded-lg"
         >
           <ShoppingBag className="h-4 w-4" />
           Ajouter au panier
@@ -144,72 +184,41 @@ const FavoriteProductCard = ({
   );
 };
 
-// Composant pour la liste vide - AVEC MASCOOTTE
+// Composant pour la liste vide
 const EmptyFavorites = () => {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
       <div className="relative mb-8">
-        {/* Mascotte animée à la place du cœur */}
         <div className="relative group">
           <div className="absolute inset-0 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 blur-2xl animate-pulse" />
           <img 
             src={mascot} 
             alt="Mascotte Les Casaniers" 
-            className="relative w-48 h-48 object-contain animate-float dropdown:animate-bounce"
+            className="relative w-48 h-48 object-contain animate-float"
           />
         </div>
-        
-        {/* Petites mascottes flottantes */}
         <div className="absolute -top-4 -right-4 animate-pulse-slow">
           <img src={mascot} alt="" className="w-12 h-12 object-contain opacity-60" />
         </div>
-        <div className="absolute -bottom-4 -left-4 animate-pulse-slow animation-delay-500">
+        <div className="absolute -bottom-4 -left-4 animate-pulse-slow">
           <img src={mascot} alt="" className="w-10 h-10 object-contain opacity-40" />
         </div>
       </div>
       
-      <h2 className="text-2xl font-display font-bold mb-2">
+      <h2 className="text-2xl font-bold mb-2">
         Votre liste de favoris est vide
       </h2>
       <p className="text-muted-foreground mb-8 max-w-md">
         Explorez notre catalogue et ajoutez vos produits préférés en cliquant sur le cœur.
-        <br />
-        <span className="text-xs opacity-70">La mascotte vous attend ! 🎮</span>
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4">
         <Link to="/catalogue">
-          <Button className="gap-2 btn-primary">
+          <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
             Explorer le catalogue
             <ArrowRight className="h-4 w-4" />
           </Button>
         </Link>
-        <Link to="/configurateur">
-          <Button variant="outline" className="gap-2">
-            
-            Configurer mon PC
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
-};
-
-// Composant de confirmation pour actions - AVEC MASCOOTTE
-const ActionToast = ({ message, type = 'success' }: { message: string; type?: 'success' | 'error' }) => {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="relative">
-        <img 
-          src={mascot} 
-          alt="" 
-          className="w-8 h-8 object-contain animate-bounce" 
-        />
-        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-      </div>
-      <div className="flex flex-col">
-        <span className="text-sm font-medium">{message}</span>
-        <span className="text-xs text-muted-foreground">Les Casaniers</span>
       </div>
     </div>
   );
@@ -217,89 +226,129 @@ const ActionToast = ({ message, type = 'success' }: { message: string; type?: 's
 
 // Composant principal des favoris
 export const Favorites = () => {
-  const { favorites, addToCart } = useShop();
+  const { addToCart } = useShop();
+  const { isAuthenticated, user } = useAuth();
+  const [favoris, setFavoris] = useState<Favori[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
 
-  // Simulation de chargement des produits favoris - AVEC MASCOOTTE
+  // Récupérer les favoris de l'utilisateur connecté
   useEffect(() => {
-    const loadFavorites = async () => {
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockProducts: Product[] = favorites.map((id, index) => ({
-        id,
-        name: `Produit ${index + 1}`,
-        price: Math.floor(Math.random() * 500) + 50,
-        originalPrice: Math.random() > 0.7 ? Math.floor(Math.random() * 600) + 100 : undefined,
-        image: `https://picsum.photos/id/${index + 10}/400/400`,
-        category: ['PC Gaming', 'Composants', 'Périphériques'][Math.floor(Math.random() * 3)],
-        inStock: Math.random() > 0.2,
-        isPremium: Math.random() > 0.8,
-        isPro: Math.random() > 0.85,
-        rating: 4 + Math.random(),
-        reviews: Math.floor(Math.random() * 500) + 10,
-      }));
-      
-      setProducts(mockProducts);
+    if (isAuthenticated) {
+      fetchFavoris();
+    } else {
       setIsLoading(false);
-    };
-    
-    loadFavorites();
-  }, [favorites]);
+    }
+  }, [isAuthenticated]);
 
-  const handleRemove = (productId: string) => {
-   
-    setProducts(prev => prev.filter(p => p.id !== productId));
-    setSelectedProducts(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(productId);
-      return newSet;
-    });
-    toast.custom((t) => (
-      <ActionToast message="Produit retiré des favoris" type="success" />
-    ));
+  const fetchFavoris = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/favoris');
+      console.log("Favoris récupérés:", response.data);
+      
+      let favorisData: Favori[] = [];
+      if (response.data.data && Array.isArray(response.data.data)) {
+        favorisData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        favorisData = response.data;
+      } else {
+        favorisData = [];
+      }
+      
+      setFavoris(favorisData);
+      
+      // Récupérer les détails des produits
+      if (favorisData.length > 0) {
+        const productIds = favorisData.map(f => f.produit_id);
+        const productsPromises = productIds.map(id => 
+          api.get(`/produits/${id}`).catch(() => ({ data: null }))
+        );
+        
+        const productsResponses = await Promise.all(productsPromises);
+        const productsData = productsResponses
+          .map(res => res.data?.data || res.data)
+          .filter(p => p !== null && p !== undefined);
+        
+        setProducts(productsData);
+      } else {
+        setProducts([]);
+      }
+      
+    } catch (error: any) {
+      console.error("Erreur chargement favoris:", error);
+      if (error.response?.status !== 401) {
+        toast.error("Impossible de charger vos favoris");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAddToCart = (productId: string) => {
+  const handleRemove = async (productId: number) => {
+    try {
+      const favori = favoris.find(f => f.produit_id === productId);
+      if (favori) {
+        await api.delete(`/favoris/${favori.id}`);
+        setFavoris(favoris.filter(f => f.produit_id !== productId));
+        setProducts(products.filter(p => p.id !== productId));
+        setSelectedProducts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+        toast.success("Produit retiré des favoris");
+      }
+    } catch (error) {
+      console.error("Erreur suppression favori:", error);
+      toast.error("Impossible de retirer le produit");
+    }
+  };
+
+  const handleAddToCart = (productId: number) => {
     const product = products.find(p => p.id === productId);
-    if (product && product.inStock) {
-      addToCart(productId, 1);
-      toast.custom((t) => (
-        <ActionToast message={`${product.name} ajouté au panier`} type="success" />
-      ));
+    if (product && product.quantite_stock > 0) {
+      addToCart(productId.toString(), 1);
+      toast.success(`${product.nom} ajouté au panier`);
+    } else {
+      toast.error("Produit non disponible");
     }
   };
 
   const handleAddSelectedToCart = () => {
     let addedCount = 0;
     products.forEach(product => {
-      if (selectedProducts.has(product.id) && product.inStock) {
-        addToCart(product.id, 1);
+      if (selectedProducts.has(product.id) && product.quantite_stock > 0) {
+        addToCart(product.id.toString(), 1);
         addedCount++;
       }
     });
     
     if (addedCount > 0) {
-      toast.custom((t) => (
-        <ActionToast message={`${addedCount} produit(s) ajouté(s) au panier`} type="success" />
-      ));
+      toast.success(`${addedCount} produit(s) ajouté(s) au panier`);
     }
   };
 
   const handleRemoveSelected = () => {
-    selectedProducts.forEach(productId => {
-     
-      setProducts(prev => prev.filter(p => p.id !== productId));
+    selectedProducts.forEach(async (productId) => {
+      const favori = favoris.find(f => f.produit_id === productId);
+      if (favori) {
+        try {
+          await api.delete(`/favoris/${favori.id}`);
+        } catch (error) {
+          console.error("Erreur suppression:", error);
+        }
+      }
     });
+    
+    setProducts(products.filter(p => !selectedProducts.has(p.id)));
+    setFavoris(favoris.filter(f => !selectedProducts.has(f.produit_id)));
     setSelectedProducts(new Set());
-    toast.custom((t) => (
-      <ActionToast message={`${selectedProducts.size} produit(s) retiré(s) des favoris`} type="success" />
-    ));
+    toast.success(`${selectedProducts.size} produit(s) retiré(s) des favoris`);
   };
 
-  const toggleSelectProduct = (productId: string) => {
+  const toggleSelectProduct = (productId: number) => {
     setSelectedProducts(prev => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
@@ -319,7 +368,7 @@ export const Favorites = () => {
     }
   };
 
-  // Skeleton loader - AVEC MASCOOTTE
+  // Skeleton loader
   if (isLoading) {
     return (
       <>
@@ -331,7 +380,6 @@ export const Favorites = () => {
               <div className="h-4 w-64 bg-muted rounded-lg animate-pulse" />
             </div>
             
-            {/* Mascotte loader */}
             <div className="flex justify-center mb-8">
               <div className="relative">
                 <img 
@@ -369,12 +417,41 @@ export const Favorites = () => {
     );
   }
 
+  // Non authentifié
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen">
+          <div className="container-x py-8">
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+              <div className="relative mb-8">
+                <img src={mascot} alt="Mascotte" className="w-48 h-48 object-contain animate-float" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Connectez-vous</h2>
+              <p className="text-muted-foreground mb-8 max-w-md">
+                Connectez-vous pour voir vos produits favoris
+              </p>
+              <Link to="/login">
+                <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
+                  Se connecter
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+
   return (
     <>
       <Header />
       <main className="min-h-screen">
         <div className="container-x py-8">
-          {/* Header avec mascotte */}
+          {/* Header */}
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -387,7 +464,7 @@ export const Favorites = () => {
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-display font-bold tracking-tight mb-2">
+                  <h1 className="text-3xl font-bold tracking-tight mb-2">
                     Mes favoris
                   </h1>
                   <p className="text-muted-foreground">
@@ -398,7 +475,7 @@ export const Favorites = () => {
               
               {/* Actions groupées */}
               {products.length > 0 && (
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
                   <Button
                     variant="outline"
                     size="sm"
@@ -434,7 +511,7 @@ export const Favorites = () => {
                       <Button
                         size="sm"
                         onClick={handleAddSelectedToCart}
-                        className="gap-2 btn-primary"
+                        className="gap-2 bg-foreground text-background hover:bg-foreground/90"
                       >
                         <ShoppingBag className="h-4 w-4" />
                         Ajouter au panier ({selectedProducts.size})
@@ -446,7 +523,6 @@ export const Favorites = () => {
             </div>
           </div>
 
-          {/* Si liste vide */}
           {products.length === 0 ? (
             <EmptyFavorites />
           ) : (
@@ -455,7 +531,6 @@ export const Favorites = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {products.map((product) => (
                   <div key={product.id} className="relative">
-                    {/* Checkbox de sélection */}
                     <button
                       onClick={() => toggleSelectProduct(product.id)}
                       className="absolute top-3 left-3 z-20 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm border-2 border-white flex items-center justify-center transition-all hover:scale-110"
@@ -476,7 +551,7 @@ export const Favorites = () => {
                 ))}
               </div>
 
-              {/* Recommandations avec mascotte */}
+              {/* Recommandations */}
               <div className="mt-16 pt-8 border-t border-border">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
@@ -486,11 +561,11 @@ export const Favorites = () => {
                       className="w-12 h-12 object-contain animate-float"
                     />
                     <div>
-                      <h2 className="text-2xl font-display font-bold tracking-tight">
+                      <h2 className="text-2xl font-bold tracking-tight">
                         Vous pourriez aussi aimer
                       </h2>
                       <p className="text-muted-foreground text-sm mt-1">
-                        La mascotte vous recommande ces produits !
+                        Découvrez d'autres produits similaires
                       </p>
                     </div>
                   </div>
@@ -502,16 +577,11 @@ export const Favorites = () => {
                   </Link>
                 </div>
                 
-                {/* Produits recommandés */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="group bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-elevated hover:translate-y-[-2px]">
-                      <div className="aspect-square bg-gradient-to-br from-secondary to-muted relative overflow-hidden">
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/50">
-                          <Button size="sm" className="btn-primary text-xs">
-                            Voir le produit
-                          </Button>
-                        </div>
+                    <div key={i} className="group bg-card border border-border rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                      <div className="aspect-square bg-gradient-to-br from-secondary to-muted relative overflow-hidden flex items-center justify-center">
+                        <img src={mascot} alt="" className="w-24 h-24 object-contain opacity-30" />
                       </div>
                       <div className="p-4">
                         <div className="h-4 w-24 bg-muted rounded mb-2" />

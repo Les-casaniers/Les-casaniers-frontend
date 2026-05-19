@@ -89,14 +89,6 @@ const AdminDashboard = () => {
   // KPI cards
   const kpiCards = [
     {
-      icon: DollarSign,
-      label: "Chiffre d'affaires",
-      value: formatMoney(cmdStats.ca),
-      sub: `${factureStats.payees} factures payées`,
-      color: "text-green-600",
-      bg: "bg-green-500/10",
-    },
-    {
       icon: ShoppingCart,
       label: "Commandes",
       value: String(cmdStats.total),
@@ -114,7 +106,7 @@ const AdminDashboard = () => {
     },
     {
       icon: Package,
-      label: "Produits en stock",
+      label: "Produits end stock",
       value: productStats.totalStock.toLocaleString(),
       sub: `${productStats.actifs} produits actifs`,
       color: "text-amber-600",

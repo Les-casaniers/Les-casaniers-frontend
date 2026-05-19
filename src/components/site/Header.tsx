@@ -1,14 +1,13 @@
-import { Search, User, Heart, ShoppingBag, Menu, Sparkles, Zap, Crown, Star, FileText, Headphones, BarChart2, Ship, Shield, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, User, Heart, ShoppingBag, Menu, Sparkles, Zap, Crown, Star, FileText, Headphones, BarChart2, Ship, Shield, ChevronDown, ChevronUp, LogOut, LayoutDashboard } from "lucide-react";
 import mascot from "@/assets/casaniers-mascot.png";
 import logo from "@/assets/casaniers-logo.png";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useShop } from "@/store/shop";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
-
-
+import api from "@/service/api";
 
 const menuData = [
   { 
@@ -44,19 +43,7 @@ const menuData = [
     isDirectLink: true,
     href: "/catalogue",
     icon: "",
-  },/*
-  { 
-    label: "Bénéfice Pro", 
-    items: [
-      { label: "Facturation Normée & TVA",   href: "/pro#facturation" },
-      { label: "SAV Prioritaire Entreprise", href: "/pro#sav"         },
-      { label: "Audit de Parc Informatique", href: "/pro#audit"       },
-      { label: "Contrats de maintenance",    href: "/pro#importation" },
-    ],
-    baseHref: "/pro",
-    icon: "",
-    isPro: true,
-  },*/
+  },
   { 
     label: "Guides", 
     items: [],
@@ -84,27 +71,72 @@ const menuData = [
 export const Header = () => {
   const [open, setOpen] = useState<string | null>(null);
   const { cartCount, favorites } = useShop();
-  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
+
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  const [showLogout, setShowLogout] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const location = useLocation();
-  
-  // Déterminer le label et le lien du bouton en fonction de l'état d'authentification
-  const compteLabel = user ? "Compte" : "Login";
-  const compteLink = user ? "/compte" : "/login";
   
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
+  // Vérifier si l'utilisateur connecté est dans la table admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (isAuthenticated && user) {
+        try {
+          // Appel API pour vérifier si l'utilisateur est dans la table admin
+          const response = await api.post('/admin/check-by-email', {
+            email: user.email
+          });
+          setIsAdminUser(response.data.isAdmin === true);
+        } catch (error) {
+          console.error("Erreur vérification admin:", error);
+          // Fallback: vérifier par email si l'API échoue
+          const adminEmails = [
+            'admin@lescasaniers.mg',
+            'admin@dupont.com',
+            'admin@lescasaniers.com'
+          ];
+          setIsAdminUser(adminEmails.includes(user.email || ''));
+        }
+      } else {
+        setIsAdminUser(false);
+      }
+      setIsCheckingRole(false);
+    };
+    
+    checkAdminStatus();
+  }, [isAuthenticated, user]);
+
+  // Récupérer le nom de l'utilisateur connecté
+  const getUserName = () => {
+    if (!isAuthenticated || !user) return "Compte";
+    
+    if (user.prenom && user.nom) return `${user.prenom}`;
+    if (user.nom) return user.nom;
+    if (user.prenom) return user.prenom;
+    if (user.email) return user.email.split('@')[0];
+    return "Compte";
+  };
+
+  const userData = {
+    name: getUserName(),
+    email: user?.email || "client@lescasaniers.mg"
+  };
+
   // Vérifie si un menu est actif (route courante correspond)
   const isMenuActive = (m: typeof menuData[0]) => {
     const pathname = location.pathname;
-    // Lien direct
     if (m.href) return pathname === m.href || pathname.startsWith(m.href + "/");
-    // Dropdown : vérifie le baseHref ou si un item correspond
     if (m.baseHref) return pathname === m.baseHref || pathname.startsWith(m.baseHref + "/");
-    // Fallback : vérifie les items
     return m.items?.some(item => item.href && pathname === item.href.split("#")[0]);
   };
 
@@ -123,7 +155,109 @@ export const Header = () => {
     }));
   };
   
-  // Gestion du swipe
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+    setShowLogout(false);
+    setMobileMenuOpen(false);
+  };
+
+  const getDashboardUrl = () => {
+    return isAdminUser ? "/DashboardAdmin" : "/DashboardClient";
+  };
+
+  const getDashboardLabel = () => {
+    return isAdminUser ? "Tableau de bord Admin" : "Tableau de bord";
+  };
+
+  // Composant CompteButton
+  const CompteButton = () => (
+    <div className="relative" ref={dropdownRef}>
+      {isAuthenticated ? (
+        // ========== UTILISATEUR CONNECTÉ ==========
+        <>
+          <button
+            ref={buttonRef}
+            onClick={() => setShowLogout(!showLogout)}
+            className="relative flex flex-col items-center gap-1 group"
+          >
+            <div className="relative">
+              <div className="p-2 rounded-full bg-secondary group-hover:bg-primary/20 transition-colors">
+                <User className="h-5 w-5" />
+              </div>
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
+            </div>
+            <span className="text-xs font-medium transition-colors group-hover:text-primary">
+              {getUserName()}
+            </span>
+          </button>
+
+          {/* Dropdown déconnexion */}
+          {showLogout && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+              <div className="px-4 py-2 border-b border-border">
+                <p className="text-sm font-medium text-foreground">{userData.name}</p>
+                <p className="text-xs text-muted-foreground">{userData.email}</p>
+              </div>
+              
+              {/* Bouton Dashboard - Redirige selon le rôle */}
+              <Link
+                to={getDashboardUrl()}
+                onClick={() => setShowLogout(false)}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                {getDashboardLabel()}
+              </Link>
+              
+              {/* Bouton Déconnexion en rouge */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+              >
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </button>
+            </div>
+          )}
+        </>
+      ) : (
+        // ========== UTILISATEUR NON CONNECTÉ ==========
+        <Link
+          to="/login"
+          className="relative flex flex-col items-center gap-1 group"
+        >
+          <div className="relative">
+            <div className="p-2 rounded-full bg-secondary group-hover:bg-primary/20 transition-colors">
+              <User className="h-5 w-5" />
+            </div>
+          </div>
+          <span className="text-xs font-medium transition-colors group-hover:text-primary">
+            Compte
+          </span>
+        </Link>
+      )}
+    </div>
+  );
+
+  // Gérer le clic en dehors pour fermer le dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLogout(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Gestion du swipe pour fermer le menu mobile
   useEffect(() => {
     let touchStartX = 0;
     let touchEndX = 0;
@@ -182,7 +316,6 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border theme-transition">
-
       <div className="container-x flex items-center gap-8 py-5">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 shrink-0 group">
@@ -213,12 +346,12 @@ export const Header = () => {
           />
         </div>
 
-        {/* Actions */}
+        {/* Actions Desktop */}
         <nav className="hidden md:flex items-center gap-6">
           <ThemeToggle />
-          <IconButton to="/login" icon={<User className="h-5 w-5" />} label="Compte" badge="Le Coucou" />
           <IconButton to="/favoris" icon={<Heart className="h-5 w-5" />} label="Favoris" badge="Le Câlin" count={favorites.length || undefined} />
           <IconButton to="/panier" icon={<ShoppingBag className="h-5 w-5" />} label="Panier" badge="Le Bond" count={cartCount || undefined} />
+          <CompteButton />
         </nav>
 
         {/* Mobile menu button */}
@@ -238,23 +371,19 @@ export const Header = () => {
       {/* Mobile menu - Drawer avec dropdowns */}
       {mobileMenuOpen && (
         <>
-          {/* Overlay backdrop */}
           <div 
             className="fixed inset-0 bg-black/50 z-50 lg:hidden animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
           />
           
-          {/* Menu panel */}
           <div 
             ref={mobileMenuRef}
             className="fixed top-0 right-0 h-full w-[85%] max-w-sm bg-background z-50 lg:hidden shadow-2xl animate-slide-in-right"
           >
-            {/* Swipe indicator */}
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gray-400/50 rounded-r-full opacity-50">
               <div className="w-full h-full bg-gray-500 rounded-r-full animate-pulse" />
             </div>
             
-            {/* Close button */}
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary transition-colors z-10"
@@ -272,7 +401,6 @@ export const Header = () => {
                   const isDirectLink = m.isDirectLink || (!hasItems && m.href);
                   const active = isMenuActive(m);
                   
-                  // Lien direct
                   if (isDirectLink && m.href) {
                     return (
                       <div key={m.label} className="mb-2">
@@ -283,15 +411,7 @@ export const Header = () => {
                             setOpenDropdowns({});
                           }}
                           className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-[0.2em] transition-all rounded-lg ${
-                            m.isPremium
-                              ? active
-                                ? "bg-gradient-to-r from-amber-500/40 to-orange-500/40 text-amber-600 dark:text-amber-400 border-2 border-amber-500"
-                                : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 border-2 border-amber-500/50"
-                              : m.isPro
-                              ? active
-                                ? "bg-gradient-to-r from-blue-500/25 to-blue-400/25 text-blue-600 dark:text-blue-400 border-2 border-blue-500"
-                                : "bg-gradient-to-r from-blue-500/10 to-blue-400/10 text-blue-600 dark:text-blue-400 border-2 border-blue-500/50"
-                              : active
+                            active
                               ? "bg-foreground text-background"
                               : "bg-secondary/50 text-foreground hover:bg-secondary"
                           }`}
@@ -299,11 +419,8 @@ export const Header = () => {
                           <span className="flex items-center gap-2">
                             <span>{m.icon}</span>
                             <span>{m.label}</span>
-                            {m.isPremium && <Sparkles className="h-3 w-3 text-amber-500" />}
-                            {m.isPro && <Shield className="h-3 w-3 text-blue-500" />}
                           </span>
-                          {/* Indicateur actif */}
-                          {active && !m.isPremium && !m.isPro && (
+                          {active && (
                             <span className="h-2 w-2 rounded-full bg-background shrink-0" />
                           )}
                         </Link>
@@ -311,97 +428,7 @@ export const Header = () => {
                     );
                   }
                   
-                  // Dropdown
-                  return (
-                    <div key={m.label} className="mb-2">
-                      <button
-                        onClick={() => toggleDropdown(m.label, hasItems)}
-                        className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-[0.2em] transition-all rounded-lg ${
-                          m.isPremium
-                            ? active
-                              ? "bg-gradient-to-r from-amber-500/40 to-orange-500/40 text-amber-600 dark:text-amber-400 border-2 border-amber-500"
-                              : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 dark:text-amber-400 border-2 border-amber-500/50"
-                            : m.isPro
-                            ? active
-                              ? "bg-gradient-to-r from-blue-500/25 to-blue-400/25 text-blue-600 dark:text-blue-400 border-2 border-blue-500"
-                              : "bg-gradient-to-r from-blue-500/10 to-blue-400/10 text-blue-600 dark:text-blue-400 border-2 border-blue-500/50"
-                            : active
-                            ? "bg-foreground text-background"
-                            : "bg-secondary/50 text-foreground hover:bg-secondary"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>{m.icon}</span>
-                          <span>{m.label}</span>
-                          {m.isPremium && <Sparkles className="h-3 w-3 text-amber-500" />}
-                          {m.isPro && <Shield className="h-3 w-3 text-blue-500" />}
-                          {/* Indicateur actif */}
-                          {active && !m.isPremium && !m.isPro && (
-                            <span className="h-2 w-2 rounded-full bg-background shrink-0" />
-                          )}
-                        </span>
-                        {hasItems && (
-                          openDropdowns[m.label] ? 
-                            <ChevronUp className="h-4 w-4 shrink-0" /> : 
-                            <ChevronDown className="h-4 w-4 shrink-0" />
-                        )}
-                      </button>
-                      
-                      {/* Dropdown content */}
-                      {hasItems && openDropdowns[m.label] && (
-                        <div className="ml-4 mt-2 space-y-1 border-l-2 border-border pl-3 animate-slide-down">
-                          {m.items.map((item, idx) => {
-                            const itemActive = isItemActive(item.href || "");
-                            return (
-                              <Link
-                                key={idx}
-                                to={item.href || (m.isPremium ? "/configurateur" : m.isPro ? "/pro" : "/catalogue")}
-                                onClick={() => {
-                                  setMobileMenuOpen(false);
-                                  setOpenDropdowns({});
-                                }}
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm transition-colors rounded-lg group ${
-                                  itemActive
-                                    ? m.isPro
-                                      ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 font-semibold"
-                                      : "bg-foreground/10 text-foreground font-semibold"
-                                    : "hover:bg-secondary"
-                                }`}
-                              >
-                                {m.isPremium && item.label === "Configurateur Premium" && (
-                                  <Star className="h-3 w-3 text-amber-500" />
-                                )}
-                                {m.isPremium && item.label === "Builds recommandées" && (
-                                  <Zap className="h-3 w-3 text-orange-500" />
-                                )}
-                                {m.isPro && item.label === "Facturation Normée & TVA" && (
-                                  <FileText className="h-3 w-3 text-blue-500" />
-                                )}
-                                {m.isPro && item.label === "SAV Prioritaire Entreprise" && (
-                                  <Headphones className="h-3 w-3 text-green-500" />
-                                )}
-                                {m.isPro && item.label === "Audit de Parc Informatique" && (
-                                  <BarChart2 className="h-3 w-3 text-purple-500" />
-                                )}
-                                <span className={`${!itemActive ? "group-hover:translate-x-1" : ""} transition-transform`}>
-                                  {item.label}
-                                </span>
-                                {/* Dot actif sur l'item */}
-                                {itemActive && (
-                                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-foreground shrink-0" />
-                                )}
-                                {m.isPremium && item.label === "Configurateur Premium" && (
-                                  <span className="text-[8px] bg-amber-500 text-black px-1.5 py-0.5 rounded-full ml-auto">
-                                    POPULAIRE
-                                  </span>
-                                )}
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
+                  return null;
                 })}
               </div>
 
@@ -420,7 +447,30 @@ export const Header = () => {
                 
                 {/* Mobile action icons */}
                 <div className="flex items-center justify-around pt-4">
-                  <IconButtonMobile to="/login" icon={<User className="h-5 w-5" />} label="Compte" />
+                  {isAuthenticated ? (
+                    <>
+                      <Link 
+                        to={getDashboardUrl()} 
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setOpenDropdowns({});
+                        }}
+                        className="flex flex-col items-center gap-1 px-4 py-2 hover:bg-secondary rounded-lg transition"
+                      >
+                        <LayoutDashboard className="h-5 w-5" />
+                        <span className="text-[10px] uppercase tracking-wider">Dashboard</span>
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex flex-col items-center gap-1 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span className="text-[10px] uppercase tracking-wider">Déconnexion</span>
+                      </button>
+                    </>
+                  ) : (
+                    <IconButtonMobile to="/login" icon={<User className="h-5 w-5" />} label="Compte" />
+                  )}
                   <IconButtonMobile to="/favoris" icon={<Heart className="h-5 w-5" />} label="Favoris" count={favorites.length || undefined} />
                   <IconButtonMobile to="/panier" icon={<ShoppingBag className="h-5 w-5" />} label="Panier" count={cartCount || undefined} />
                 </div>
@@ -438,118 +488,29 @@ export const Header = () => {
             const isDirectLink = m.isDirectLink || (!hasItems && m.href);
             const active = isMenuActive(m);
             
-            // Lien direct
             if (isDirectLink && m.href) {
               return (
                 <Link
                   key={m.label}
                   to={m.href}
                   className={`px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative flex items-center gap-1.5 ${
-                    m.isPremium
-                      ? "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400 rounded-t-lg"
-                      : m.isPro
-                      ? "bg-gradient-to-r from-blue-500/10 to-blue-400/10 text-blue-600 dark:text-blue-400 rounded-t-lg"
-                      : active
+                    active
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <span>{m.icon}</span>
-                  <span>{m.isPremium ? "SUPER CONFIG" : m.label}</span>
-                  {m.isPremium && <Sparkles className="h-3 w-3 text-amber-500 animate-pulse" />}
-                  {m.isPro && <Shield className="h-3 w-3 text-blue-500" />}
-                  {/* Barre active en bas */}
+                  <span>{m.label}</span>
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 transition-all duration-300 ${
                     active ? "w-full" : "w-0"
-                  } ${m.isPremium ? "bg-amber-500" : m.isPro ? "bg-blue-500" : "bg-foreground"}`} />
+                  } bg-foreground`} />
                 </Link>
               );
             }
             
-            // Dropdown
-            return (
-              <div key={m.label} className="relative">
-                <button
-                  onMouseEnter={() => setOpen(m.label)}
-                  className={`px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative flex items-center gap-1.5 ${
-                    m.isPremium
-                      ? "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400 rounded-t-lg"
-                      : m.isPro
-                      ? "bg-gradient-to-r from-blue-500/10 to-blue-400/10 text-blue-600 dark:text-blue-400 rounded-t-lg"
-                      : active
-                      ? "text-foreground"
-                      : open === m.label
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>{m.icon}</span>
-                  <span>{m.isPremium ? "SUPER CONFIG" : m.label}</span>
-                  {m.isPremium && <Sparkles className="h-3 w-3 text-amber-500 animate-pulse" />}
-                  {m.isPro && <Shield className="h-3 w-3 text-blue-500" />}
-                  {m.isPremium && (
-                    <span className="absolute -top-2 -right-2 h-2 w-2 bg-amber-500 rounded-full animate-ping" />
-                  )}
-                  {/* Barre active/hover en bas */}
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 transition-all duration-300 ${
-                    active ? "w-full" : open === m.label ? "w-8" : "w-0"
-                  } ${m.isPremium ? "bg-amber-500" : m.isPro ? "bg-blue-500" : "bg-foreground"}`} />
-                </button>
-
-                {open === m.label && hasItems && (
-                  <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-0 w-80 shadow-elevated p-2 animate-fade-in z-50 ${
-                    m.isPremium
-                      ? "bg-white dark:bg-black border-2 border-amber-500/30 rounded-xl"
-                      : m.isPro
-                      ? "bg-white dark:bg-black border-2 border-blue-500/30 rounded-xl"
-                      : "bg-white dark:bg-black border border-border rounded-xl"
-                  }`}>
-                    {m.items.map((item, idx) => {
-                      const itemActive = isItemActive(item.href || "");
-                      return (
-                        <a
-                          key={idx}
-                          href={item.href || (m.isPremium ? "/configurateur" : m.isPro ? "/pro" : "/catalogue")}
-                          onClick={() => setOpen(null)}
-                          className={`block px-9 py-2.5 text-sm transition-colors rounded-lg ${
-                            itemActive
-                              ? m.isPremium
-                                ? "bg-amber-500/15 text-amber-600 font-semibold"
-                                : m.isPro
-                                ? "bg-blue-500/15 text-blue-600 font-semibold"
-                                : "bg-black/10 dark:bg-white/10 text-gray-900 dark:text-white font-semibold"
-                              : m.isPremium
-                              ? "hover:bg-amber-500/10 hover:text-amber-600 text-gray-900 dark:text-white"
-                              : m.isPro
-                              ? "hover:bg-blue-500/10 hover:text-blue-600 text-gray-900 dark:text-white"
-                              : "hover:bg-black/10 dark:hover:bg-white/10 text-gray-900 dark:text-white"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {m.isPremium && item.label === "Configurateur Premium" && <Star className="h-3 w-3 text-amber-500" />}
-                            {m.isPremium && item.label === "Builds recommandées" && <Zap className="h-3 w-3 text-orange-500" />}
-                            {m.isPro && item.label === "Facturation Normée & TVA" && <FileText className="h-3 w-3 text-blue-500" />}
-                            {m.isPro && item.label === "SAV Prioritaire Entreprise" && <Headphones className="h-3 w-3 text-green-500" />}
-                            {m.isPro && item.label === "Audit de Parc Informatique" && <BarChart2 className="h-3 w-3 text-purple-500" />}
-                            <span>{item.label}</span>
-                            {/* Dot actif sur l'item du dropdown */}
-                            {itemActive && (
-                              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-current shrink-0" />
-                            )}
-                            {m.isPremium && item.label === "Configurateur Premium" && (
-                              <span className="text-[8px] bg-amber-500 text-black px-1.5 py-0.5 rounded-full">POPULAIRE</span>
-                            )}
-                          </div>
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
+            return null;
           })}
 
-          {/* Bouton DEVIS EXPRESS */}
           <Link 
             to="/configurateur" 
             className="ml-2 px-5 py-4 text-[11px] font-bold uppercase tracking-[0.2em] bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 transition-all flex items-center gap-2 shadow-glow"
