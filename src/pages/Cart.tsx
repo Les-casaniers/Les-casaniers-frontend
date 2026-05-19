@@ -672,7 +672,8 @@ const Cart = () => {
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
           
           {/* Boutons en bas de la colonne de gauche */}
           <div className="flex justify-between items-center pt-2">
