@@ -291,16 +291,6 @@ const Composants = () => {
 
       <section id="composants" className="py-12 scroll-mt-20">
         <div className="container-x">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
-              <Server className="h-8 w-8 text-yellow-500" />
-              Nos Composants
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Découvrez notre sélection de composants haute performance pour assembler ou améliorer votre PC.
-              CPU, GPU, RAM, stockage et cartes mères : tout ce qu'il vous faut.
-            </p>
-          </div>
 
           <div className="space-y-12">
             {/* Afficher les catégories avec des produits */}
