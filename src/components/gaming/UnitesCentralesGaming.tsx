@@ -1,4 +1,4 @@
-import { Cpu, Zap, HardDrive, MemoryStick, Eye, ShoppingCart, X, Loader2 } from "lucide-react";
+import { Cpu, Zap, HardDrive, MemoryStick, Eye, ShoppingCart, X, Loader2, Settings } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/service/api";
@@ -23,6 +23,20 @@ interface Product {
   images?: { id: number; url: string; alt: string; ordre: number }[];
 }
 
+// Interface pour les configurations
+interface Configuration {
+  id: number;
+  produit_id: number;
+  utilisateur_id: number;
+  nom_configuration: string;
+  nom_configuration_autre: string | null;
+  devise: string;
+  prix_total: number;
+  composants_json: any;
+  date_creation: string;
+  date_modification: string;
+}
+
 export const UnitesCentralesGaming = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +45,8 @@ export const UnitesCentralesGaming = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [configurations, setConfigurations] = useState<Configuration[]>([]);
+  const [isLoadingConfigs, setIsLoadingConfigs] = useState(false);
   const sectionRef = useRef(null);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -90,6 +106,44 @@ export const UnitesCentralesGaming = () => {
     }
   };
 
+  // Fonction pour récupérer les configurations d'un produit
+  // Fonction pour récupérer les configurations d'un produit
+const fetchConfigurations = async (produitId: number) => {
+  try {
+    setIsLoadingConfigs(true);
+    
+    console.log(`🔍 Recherche des configurations pour produit_id: ${produitId}`);
+    
+    // Récupérer TOUTES les configurations
+    const response = await api.get('/configurations');
+    
+    let allConfigs: Configuration[] = [];
+    if (response.data.data) {
+      allConfigs = Array.isArray(response.data.data) ? response.data.data : [];
+    } else if (Array.isArray(response.data)) {
+      allConfigs = response.data;
+    } else {
+      allConfigs = [];
+    }
+    
+    console.log(`📊 Total configurations dans la base: ${allConfigs.length}`);
+    
+    // Filtrer manuellement par produit_id
+    const filteredConfigs = allConfigs.filter(
+      (config: Configuration) => Number(config.produit_id) === Number(produitId)
+    );
+    
+    console.log(`✅ Configurations pour le produit ${produitId}:`, filteredConfigs);
+    setConfigurations(filteredConfigs);
+    
+  } catch (error) {
+    console.error("Erreur chargement configurations:", error);
+    setConfigurations([]);
+  } finally {
+    setIsLoadingConfigs(false);
+  }
+};
+
   const formatPrice = (prix: number, devise: string = 'MGA') => {
     return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
   };
@@ -105,25 +159,6 @@ export const UnitesCentralesGaming = () => {
       return mainImage.url;
     }
     return null;
-  };
-
-  const extractSpecs = (product: Product) => {
-    return {
-      processor: extractFromDescription(product.description, 'Processeur', 'CPU'),
-      ram: extractFromDescription(product.description, 'RAM', 'Mémoire'),
-      storage: extractFromDescription(product.description, 'Stockage', 'SSD', 'Disque'),
-      gpu: extractFromDescription(product.description, 'GPU', 'Carte graphique')
-    };
-  };
-
-  const extractFromDescription = (description: string, ...keywords: string[]) => {
-    if (!description) return 'Non spécifié';
-    for (const keyword of keywords) {
-      const regex = new RegExp(`${keyword}[\\s:]*([^\\n,]+)`, 'i');
-      const match = description.match(regex);
-      if (match) return match[1].trim();
-    }
-    return 'Non spécifié';
   };
 
   // Fonction pour ajouter au panier
@@ -167,14 +202,16 @@ export const UnitesCentralesGaming = () => {
     }
   };
 
-  const openModal = (product: Product) => {
+  const openModal = async (product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
+    await fetchConfigurations(product.id);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
+    setConfigurations([]);
   };
 
   if (isLoading) {
@@ -374,26 +411,44 @@ export const UnitesCentralesGaming = () => {
             <div className="p-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Section Configurations - style comme LaptopsGaming */}
                   <div className="bg-secondary/30 rounded-lg p-4">
-                    <h4 className="font-semibold mb-3 text-purple-600">Spécifications techniques</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Processeur :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).processor}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">RAM :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).ram}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Stockage :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).storage}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Carte graphique :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).gpu}</span>
-                      </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Settings className="h-5 w-5 text-purple-500" />
+                      <h4 className="font-semibold text-purple-600">Configurations disponibles</h4>
                     </div>
+                    
+                    {isLoadingConfigs ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
+                      </div>
+                    ) : configurations.length > 0 ? (
+                      <div className="space-y-3">
+                        {configurations.map((config) => (
+                          <div key={config.id} className="border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="font-medium text-purple-700 dark:text-purple-400">
+                                  {config.nom_configuration}
+                                </span>
+                                {config.nom_configuration_autre && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    ({config.nom_configuration_autre})
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm font-bold text-purple-600">
+                                {formatPrice(config.prix_total, config.devise)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">Aucune configuration disponible</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-secondary/30 rounded-lg p-4">
