@@ -1,4 +1,4 @@
-import { Laptop, Battery, Weight, Eye, Cpu, Zap, ShoppingCart, X, Loader2 } from "lucide-react";
+import { Laptop, Battery, Weight, Eye, Cpu, Zap, ShoppingCart, X, Loader2, Settings } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/service/api";
@@ -23,6 +23,20 @@ interface Product {
   images?: { id: number; url: string; alt: string; ordre: number }[];
 }
 
+// Interface pour les configurations
+interface Configuration {
+  id: number;
+  produit_id: number;
+  utilisateur_id: number;
+  nom_configuration: string;
+  nom_configuration_autre: string | null;
+  devise: string;
+  prix_total: number;
+  composants_json: any;
+  date_creation: string;
+  date_modification: string;
+}
+
 export const LaptopsGaming = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,6 +45,8 @@ export const LaptopsGaming = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [configurations, setConfigurations] = useState<Configuration[]>([]);
+  const [isLoadingConfigs, setIsLoadingConfigs] = useState(false);
   const sectionRef = useRef(null);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -90,6 +106,60 @@ export const LaptopsGaming = () => {
     }
   };
 
+  // Fonction pour récupérer les configurations d'un produit
+// Fonction pour récupérer les configurations d'un produit
+const fetchConfigurations = async (produitId: number) => {
+  try {
+    setIsLoadingConfigs(true);
+    
+    console.log(`🔍 Recherche des configurations pour produit_id: ${produitId}`);
+    
+    // Récupérer TOUTES les configurations
+    const response = await api.get('/configurations');
+    
+    console.log("📦 Réponse brute de l'API configurations:", response.data);
+    
+    let allConfigs: Configuration[] = [];
+    if (response.data.data) {
+      allConfigs = Array.isArray(response.data.data) ? response.data.data : [];
+    } else if (Array.isArray(response.data)) {
+      allConfigs = response.data;
+    } else {
+      allConfigs = [];
+    }
+    
+    console.log(`📊 Total configurations dans la base: ${allConfigs.length}`);
+    
+    // Afficher chaque configuration avec son produit_id pour debug
+    allConfigs.forEach((config: Configuration) => {
+      console.log(`  - ID: ${config.id}, Produit ID: ${config.produit_id}, Nom: ${config.nom_configuration}`);
+    });
+    
+    // Filtrer manuellement par produit_id
+    const filteredConfigs = allConfigs.filter(
+      (config: Configuration) => Number(config.produit_id) === Number(produitId)
+    );
+    
+    console.log(`✅ Configurations pour le produit ${produitId}: ${filteredConfigs.length} trouvée(s)`);
+    
+    if (filteredConfigs.length > 0) {
+      filteredConfigs.forEach((config: Configuration) => {
+        console.log(`  - ${config.nom_configuration}: ${formatPrice(config.prix_total, config.devise)}`);
+      });
+    } else {
+      console.log(`⚠️ Aucune configuration associée au produit ${produitId}`);
+    }
+    
+    setConfigurations(filteredConfigs);
+    
+  } catch (error) {
+    console.error("❌ Erreur chargement configurations:", error);
+    setConfigurations([]);
+  } finally {
+    setIsLoadingConfigs(false);
+  }
+};
+
   const formatPrice = (prix: number, devise: string = 'MGA') => {
     return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
   };
@@ -120,13 +190,13 @@ export const LaptopsGaming = () => {
   };
 
   const extractFromDescription = (description: string, ...keywords: string[]) => {
-    if (!description) return 'Non spécifié';
+    if (!description) return '—';
     for (const keyword of keywords) {
       const regex = new RegExp(`${keyword}[\\s:]*([^\\n,]+)`, 'i');
       const match = description.match(regex);
       if (match) return match[1].trim();
     }
-    return 'Non spécifié';
+    return '—';
   };
 
   const addToCart = async (product: Product, quantity: number = 1) => {
@@ -167,14 +237,16 @@ export const LaptopsGaming = () => {
     }
   };
 
-  const openModal = (product: Product) => {
+  const openModal = async (product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
+    await fetchConfigurations(product.id);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
+    setConfigurations([]);
   };
 
   if (isLoading) {
@@ -370,42 +442,64 @@ export const LaptopsGaming = () => {
             <div className="p-6">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Section Configurations */}
                   <div className="bg-secondary/30 rounded-lg p-4">
-                    <h4 className="font-semibold mb-3 text-blue-600">Caractéristiques principales</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Écran :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).screen}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Processeur :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).processor}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Carte graphique :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).gpu}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">RAM :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).ram}</span>
-                      </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Settings className="h-5 w-5 text-blue-500" />
+                      <h4 className="font-semibold text-blue-600">Configurations disponibles</h4>
                     </div>
+                    
+                    {isLoadingConfigs ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                      </div>
+                    ) : configurations.length > 0 ? (
+                      <div className="space-y-3">
+                        {configurations.map((config) => (
+                          <div key={config.id} className="border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <span className="font-medium text-blue-700 dark:text-blue-400">
+                                  {config.nom_configuration}
+                                </span>
+                                {config.nom_configuration_autre && (
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    ({config.nom_configuration_autre})
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-sm font-bold text-blue-600">
+                                {formatPrice(config.prix_total, config.devise)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">Aucune configuration disponible</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-secondary/30 rounded-lg p-4">
-                    <h4 className="font-semibold mb-3 text-blue-600">Stockage & Autonomie</h4>
+                    <h4 className="font-semibold mb-3 text-blue-600">Informations produit</h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Stockage :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).storage}</span>
+                        <span className="text-sm text-muted-foreground">Référence :</span>
+                        <span className="text-sm font-medium font-mono">{selectedProduct.reference}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Batterie :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).battery}</span>
+                        <span className="text-sm text-muted-foreground">Stock :</span>
+                        <span className="text-sm font-medium">
+                          {selectedProduct.quantite_stock > 0 ? `${selectedProduct.quantite_stock} unités` : 'Rupture de stock'}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Poids :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).weight}</span>
+                        <span className="text-sm text-muted-foreground">Disponibilité :</span>
+                        <span className={`text-sm font-medium ${selectedProduct.est_dispo ? 'text-green-600' : 'text-red-600'}`}>
+                          {selectedProduct.est_dispo ? 'Disponible' : 'Indisponible'}
+                        </span>
                       </div>
                       <div className="flex justify-between mt-3 pt-2 border-t border-border">
                         <span className="text-sm text-muted-foreground">Prix :</span>

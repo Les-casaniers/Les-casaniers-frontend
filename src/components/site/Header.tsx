@@ -87,24 +87,6 @@ export const Header = () => {
   
   // ✅ Un seul cartCount depuis useCartApi
   const { cartCount, isLoading, refreshCart } = useCartApi();
-
-    // Forcer le rechargement à chaque changement d'authentification
-  useEffect(() => {
-    if (isAuthenticated) {
-      refreshCart();
-    }
-  }, [isAuthenticated, refreshCart]);
-
-    // Forcer un rechargement périodique (optionnel)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isAuthenticated) {
-        refreshCart();
-      }
-    }, 5000); // Recharge toutes les 5 secondes
-    
-    return () => clearInterval(interval);
-  }, [isAuthenticated, refreshCart]);
   
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
