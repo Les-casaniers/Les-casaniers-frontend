@@ -31,7 +31,7 @@ export const WatercoolingCustom = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
-  const  = useRef(null);
+  const sectionRef = useRef(null);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
