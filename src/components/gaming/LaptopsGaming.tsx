@@ -249,26 +249,6 @@ export const LaptopsGaming = () => {
     <>
       <section ref={sectionRef} className="py-12 bg-secondary/30">
         <div className="container-x">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-3xl font-bold flex items-center gap-3">
-                <Laptop className="h-8 w-8 text-blue-500" />
-                Laptops Gaming
-              </h2>
-              <p className="text-muted-foreground mt-2">
-                La puissance du gaming en mobilité. Des laptops ultra-performants pour jouer partout.
-              </p>
-              <p className="text-xs text-blue-600 mt-1">
-                {products.length} laptop(s) trouvé(s) avec référence PC-
-              </p>
-            </div>
-            <Link to="/catalogue?type=portable">
-              <button className="group inline-flex items-center gap-2 px-5 py-2.5 bg-blue-500/10 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all duration-300 font-medium">
-                <span>Voir tout</span>
-                <Eye className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </Link>
-          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product, index) => {
