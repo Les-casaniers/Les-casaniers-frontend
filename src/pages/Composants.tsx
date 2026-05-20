@@ -329,7 +329,6 @@ return (
           <h2 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
             <Server className="h-8 w-8 text-yellow-500" />
             Nos Composants
-            <Zap className="h-8 w-8 text-yellow-500" />
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Découvrez notre sélection de composants haute performance pour assembler ou améliorer votre PC.

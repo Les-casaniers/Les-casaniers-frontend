@@ -1,4 +1,4 @@
-﻿import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck, Tag, Loader2, Heart, X, Check, MapPin, Home, Building, Package, Euro, DollarSign } from "lucide-react";
@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { useCartApi } from "@/hooks/useCartApi";
 import api from "@/service/api";
-import { useNavigate } from 'react-router-dom';//pour la navigation 
+import { useNavigate } from 'react-router-dom';
 
 // Types
 type Adresse = {
@@ -26,13 +26,22 @@ type Adresse = {
   par_defaut_expedition: boolean;
 };
 
-type DevisResponse = {
+type StockCheckResult = {
   id: number;
-  utilisateur_id: number;
-  panier_id: number;
-  statut: string;
-  montant_total: number;
-  devise: string;
+  nom: string;
+  quantite_demandee: number;
+  stock_actuel: number;
+  suffisant: boolean;
+  error?: boolean;
+};
+
+type StockUpdateResult = {
+  id: number;
+  nom: string;
+  ancien_stock: number;
+  nouveau_stock: number;
+  success: boolean;
+  error?: any;
 };
 
 const Cart = () => {
@@ -42,14 +51,12 @@ const Cart = () => {
   const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const [lastAddedProduct, setLastAddedProduct] = useState<string | null>(null);
   const previousCartCountRef = useRef(0);
-  //Eto ftsn aloha
   const navigate = useNavigate();
   
   // État du modal de devis
   const [showDevisModal, setShowDevisModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCommandeSent, setIsCommandeSent] = useState(false);
-  
   const [devisId, setDevisId] = useState<number | null>(null);
   const [devisValide, setDevisValide] = useState(false);
   
@@ -95,12 +102,16 @@ const Cart = () => {
     }
   };
 
+  // Modification de la quantité - utilise l'ID du panier (item.id)
   const handleSetQty = (itemId: number, newQty: number) => {
     if (newQty < 1) return;
+    console.log("🔍 Modification quantité - itemId (panier):", itemId, "nouvelle quantité:", newQty);
     updateQuantity(itemId, newQty);
   };
 
+  // Suppression - utilise l'ID du panier (item.id)
   const handleRemove = (itemId: number, productName: string) => {
+    console.log("🔍 Suppression - itemId (panier):", itemId);
     removeFromCart(itemId);
     toast({ title: "Article supprimé", description: `${productName} a été retiré de votre panier.` });
   };
@@ -119,7 +130,6 @@ const Cart = () => {
       else if (Array.isArray(response.data)) adressesData = response.data;
       setAdresses(adressesData);
       
-      // Sélectionner l'adresse par défaut si disponible
       const defaultAdresse = adressesData.find(a => a.par_defaut_expedition);
       if (defaultAdresse) {
         setDevisForm(prev => ({ ...prev, adresseId: defaultAdresse.id }));
@@ -151,7 +161,7 @@ const Cart = () => {
   // Calcul des frais de livraison
   const getLivraisonAmount = () => {
     if (!devisForm.besoinLivraison) return 0;
-    return 50000; // Frais fixes pour l'exemple
+    return 50000;
   };
 
   // Calcul du total avec livraison
@@ -169,299 +179,78 @@ const Cart = () => {
     return `${prix.toLocaleString('fr-FR')} Ar`;
   };
 
-  // Générer un numéro de commande unique
-  const generateOrderNumber = (prefix: string, lastNumber: number) => {
-    const newNumber = (lastNumber + 1).toString().padStart(3, '0');
-    return `${prefix}-${newNumber}`;
+  // Valider et enregistrer le devis
+  const handleValidateDevis = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      const userResponse = await api.get('/utilisateurs/profile');
+      const userData = userResponse.data.data || userResponse.data;
+      const userId = userData.id;
+      
+      const montantTotal = getTotalWithLivraison();
+      const firstCartItem = cartItems[0];
+      const panierId = firstCartItem?.id;
+      
+      const devisData = {
+        utilisateur_id: userId,
+        panier_id: panierId,
+        statut: 'en_attente',
+        note: devisForm.note || "",
+        montant_total: montantTotal,
+        devise: devisForm.devise
+      };
+      
+      console.log("📦 Envoi devis:", devisData);
+      
+      const response = await api.post('/devis', devisData);
+      
+      if (response.data.success && response.data.data) {
+        const newDevisId = response.data.data.id;
+        
+        if (newDevisId) {
+          setDevisId(newDevisId);
+          setDevisValide(true);
+          console.log("✅ Devis créé avec ID:", newDevisId);
+          
+          toast({ 
+            title: "✅ Devis enregistré", 
+            description: `Votre devis N°${newDevisId} a été enregistré avec succès !`,
+            duration: 3000
+          });
+        } else {
+          throw new Error("ID non trouvé dans la réponse");
+        }
+      } else {
+        throw new Error(response.data.message || "Erreur lors de la création");
+      }
+      
+    } catch (error: any) {
+      console.error("❌ Erreur création devis:", error);
+      
+      let errorMessage = "Impossible de créer le devis";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        const errors = Object.values(error.response.data.errors).flat();
+        errorMessage = errors.join(', ');
+      }
+      
+      toast({ 
+        title: "Erreur", 
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Valider et enregistrer le devis
-//   const handleValidateDevis = async () => {
-//   try {
-//     setIsSubmitting(true);
-    
-//     // Récupérer l'utilisateur
-//     const userResponse = await api.get('/utilisateurs/profile');
-//     const userData = userResponse.data.data || userResponse.data;
-//     const userId = userData.id;
-    
-//     // Calculer le montant total
-//     const montantTotal = getTotalWithLivraison();
-    
-//     // Récupérer l'ID du panier
-//     const firstCartItem = cartItems[0];
-//     const panierId = firstCartItem?.id;
-    
-//     // Données du devis
-//     const devisData = {
-//       utilisateur_id: userId,
-//       panier_id: panierId,
-//       statut: 'en_attente',
-//       note: devisForm.note || "",
-//       montant_total: montantTotal,
-//       devise: devisForm.devise
-//     };
-    
-//     console.log("📦 Envoi devis:", devisData);
-    
-//     const response = await api.post('/devis', devisData);
-    
-//     console.log("📦 Réponse devis:", response.data);
-    
-//     if (response.data.success && response.data.data) {
-//       const newDevisId = response.data.data.id;
-      
-//       if (newDevisId) {
-//         setDevisId(newDevisId);
-//         setDevisValide(true);
-//         console.log("✅ Devis créé avec ID:", newDevisId);
-        
-//         toast({ 
-//           title: "✅ Devis enregistré", 
-//           description: `Votre devis N°${newDevisId} a été enregistré avec succès !`,
-//           duration: 3000
-//         });
-//       } else {
-//         throw new Error("ID non trouvé dans la réponse");
-//       }
-//     } else {
-//       throw new Error(response.data.message || "Erreur lors de la création");
-//     }
-    
-//   } catch (error: any) {
-//     console.error("❌ Erreur création devis:", error);
-//     console.error("❌ Réponse erreur:", error.response?.data);
-//     console.error("❌ Status:", error.response?.status);
-    
-//     let errorMessage = "Impossible de créer le devis";
-    
-//     if (error.response?.data?.message) {
-//       errorMessage = error.response.data.message;
-//     } else if (error.response?.data?.errors) {
-//       const errors = Object.values(error.response.data.errors).flat();
-//       errorMessage = errors.join(', ');
-//     }
-    
-//     toast({ 
-//       title: "Erreur", 
-//       description: errorMessage,
-//       variant: "destructive"
-//     });
-//   } finally {
-//     setIsSubmitting(false);
-//   }
-// };
-  const handleValidateDevis = async () => {
-  try {
-    setIsSubmitting(true);
-    
-    // Récupérer l'utilisateur
-    const userResponse = await api.get('/utilisateurs/profile');
-    const userData = userResponse.data.data || userResponse.data;
-    const userId = userData.id;
-    
-    // Calculer le montant total
-    const montantTotal = getTotalWithLivraison();
-    
-    // Récupérer l'ID du panier
-    const firstCartItem = cartItems[0];
-    const panierId = firstCartItem?.id;
-    
-    // Données du devis
-    const devisData = {
-      utilisateur_id: userId,
-      panier_id: panierId,
-      statut: 'en_attente',
-      note: devisForm.note || "",
-      montant_total: montantTotal,
-      devise: devisForm.devise
-    };
-    
-    console.log("📦 Envoi devis:", devisData);
-    
-    const response = await api.post('/devis', devisData);
-    
-    console.log("📦 Réponse devis:", response.data);
-    
-    if (response.data.success && response.data.data) {
-      const newDevisId = response.data.data.id;
-      
-      if (newDevisId) {
-        setDevisId(newDevisId);
-        setDevisValide(true);
-        console.log("✅ Devis créé avec ID:", newDevisId);
-        
-        toast({ 
-          title: "✅ Devis enregistré", 
-          description: `Votre devis N°${newDevisId} a été enregistré avec succès !`,
-          duration: 3000
-        });
-      } else {
-        throw new Error("ID non trouvé dans la réponse");
-      }
-    } else {
-      throw new Error(response.data.message || "Erreur lors de la création");
-    }
-    
-  } catch (error: any) {
-    console.error("❌ Erreur création devis:", error);
-    
-    let errorMessage = "Impossible de créer le devis";
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.response?.data?.errors) {
-      const errors = Object.values(error.response.data.errors).flat();
-      errorMessage = errors.join(', ');
-    }
-    
-    toast({ 
-      title: "Erreur", 
-      description: errorMessage,
-      variant: "destructive"
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-  // Valider et lancer la commande //teto commente farany
-  //const handleCommander = async () => {
-//   // Validation 1 : Devis validé ?
-//   if (!devisId) {
-//     toast({ 
-//       title: "Validation requise", 
-//       description: "Veuillez d'abord valider le devis avant de commander.",
-//       variant: "destructive"
-//     });
-//     return;
-//   }
-  
-//   // Validation 2 : Adresse de livraison si besoin
-//   if (devisForm.besoinLivraison && devisForm.adresseId === 0 && !devisForm.adressePersonnalisee) {
-//     toast({ 
-//       title: "Adresse requise", 
-//       description: "Veuillez sélectionner ou saisir une adresse de livraison.",
-//       variant: "destructive"
-//     });
-//     return;
-//   }
-  
-//   try {
-//     setIsSubmitting(true);
-    
-//     // Calcul des totaux
-//     const sousTotal = calculateSubtotal() - discount;
-//     const livraison = getLivraisonAmount();
-    
-//     // Adresse de livraison
-//     let adresseExpeditionId = null;
-//     if (devisForm.besoinLivraison && devisForm.adresseId > 0) {
-//       adresseExpeditionId = devisForm.adresseId;
-//     }
-    
-//     // Préparer les données pour le backend
-//     const commandeData: any = {
-//       livraison: livraison,
-//       devise: devisForm.devise,
-//       adresse_expedition_id: adresseExpeditionId,
-//       adresse_facturation_id: null,
-//       devis_id: devisId,
-//     };
-    
-//     // Ajouter meta_json avec les détails
-//     commandeData.meta_json = {
-//       note: devisForm.note || null,
-//       date_creation: new Date().toISOString(),
-//       besoin_livraison: devisForm.besoinLivraison,
-//       adresse_personnalisee: devisForm.adressePersonnalisee || null,
-//       produits: cartDetailed.map(item => ({
-//         id: item.product.id,
-//         nom: item.product.name,
-//         quantite: item.qty,
-//         prix_unitaire: item.product.price,
-//         sous_total: item.subtotal
-//       }))
-//     };
-
-//     {/* Champ caché pour l'ID du devis */}
-//     {devisId && (
-//       <div className="bg-green-500/10 border border-green-500 rounded-xl p-3">
-//         <div className="flex items-center gap-2">
-//           <Check className="h-4 w-4 text-green-500" />
-//           <p className="text-sm text-green-600 dark:text-green-400">
-//             ✅ Devis validé N°{devisId}
-//           </p>
-//         </div>
-//       </div>
-//     )}
-    
-//     console.log("📦 Envoi commande au backend:", JSON.stringify(commandeData, null, 2));
-    
-//     const response = await api.post('/commandes', commandeData);
-    
-//     if (response.status === 200 || response.status === 201) {
-//       const commandeDataResponse = response.data.data;
-//       const commandeUuid = commandeDataResponse?.commande_uuid;
-      
-//       toast({ 
-//         title: "✅ Commande enregistrée !", 
-//         description: `Votre commande ${commandeUuid} a été créée avec succès.`,
-//         duration: 4000
-//       });
-      
-//       setShowDevisModal(false);
-      
-//       // Vider le panier après commande
-//       await clearCart();
-      
-//       // Rediriger vers le catalogue après 2 secondes
-//       setTimeout(() => {
-//         navigate('/catalogue', { 
-//           state: { 
-//             message: `Commande ${commandeUuid} créée avec succès !`,
-//             type: 'success' 
-//           } 
-//         });
-//       }, 2000);
-//     }
-    
-//   } catch (error: any) {
-//     console.error("❌ Erreur détaillée:", error);
-    
-//     if (error.response?.data?.errors) {
-//       const errors = error.response.data.errors;
-//       console.log("📋 Erreurs de validation:", errors);
-      
-//       Object.keys(errors).forEach(key => {
-//         toast({ 
-//           title: `Erreur: ${key}`, 
-//           description: errors[key][0],
-//           variant: "destructive"
-//         });
-//       });
-//     } else if (error.response?.data?.message) {
-//       toast({ 
-//         title: "Erreur", 
-//         description: error.response.data.message,
-//         variant: "destructive"
-//       });
-//     } else {
-//       toast({ 
-//         title: "Erreur", 
-//         description: "Impossible de créer la commande. Vérifiez votre connexion.",
-//         variant: "destructive"
-//       });
-//     }
-//   } finally {
-//     setIsSubmitting(false);
-//   }
-// };
-
+  // Lancer la commande avec vérification de stock
   const handleCommander = async () => {
     console.log("🔍 Vérification devisId:", devisId);
     console.log("🔍 devisValide:", devisValide);
     
-    // Validation 1 : Devis validé ?
     if (!devisId || !devisValide) {
       toast({ 
         title: "Validation requise", 
@@ -471,7 +260,6 @@ const Cart = () => {
       return;
     }
     
-    // Validation 2 : Adresse de livraison si besoin
     if (devisForm.besoinLivraison && devisForm.adresseId === 0 && !devisForm.adressePersonnalisee) {
       toast({ 
         title: "Adresse requise", 
@@ -484,37 +272,171 @@ const Cart = () => {
     try {
       setIsSubmitting(true);
       
-      // Calcul des totaux
+      // === ÉTAPE 1: Vérification des stocks ===
+      console.log("🔍 Vérification des stocks...");
+      
+      const stockChecks: StockCheckResult[] = await Promise.all(
+        cartDetailed.map(async (item) => {
+          try {
+            const response = await api.get(`/produits/${item.product.id}`);
+            const product = response.data.data || response.data;
+            const currentStock = product.quantite_stock;
+            
+            return {
+              id: item.product.id,
+              nom: item.product.name,
+              quantite_demandee: item.qty,
+              stock_actuel: currentStock,
+              suffisant: currentStock >= item.qty
+            };
+          } catch (error) {
+            console.error(`Erreur vérification stock produit ${item.product.id}:`, error);
+            return {
+              id: item.product.id,
+              nom: item.product.name,
+              quantite_demandee: item.qty,
+              stock_actuel: 0,
+              suffisant: false,
+              error: true
+            };
+          }
+        })
+      );
+      
+      // Vérifier si tous les stocks sont suffisants
+      const stockInsuffisant = stockChecks.filter(check => !check.suffisant);
+      
+      if (stockInsuffisant.length > 0) {
+        const messages = stockInsuffisant.map(check => 
+          `${check.nom}: demande ${check.quantite_demandee}, stock disponible ${check.stock_actuel}`
+        );
+        
+        toast({ 
+          title: "❌ Stock insuffisant", 
+          description: (
+            <div className="space-y-1">
+              <p>Les produits suivants n'ont pas assez de stock :</p>
+              <ul className="list-disc list-inside text-sm">
+                {messages.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 5000
+        });
+        
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log("✅ Tous les stocks sont suffisants");
+      
+      // === ÉTAPE 2: Réduction des stocks ===
+      console.log("📦 Réduction des stocks...");
+      
+      const stockUpdates: StockUpdateResult[] = await Promise.all(
+        cartDetailed.map(async (item) => {
+          try {
+            const getResponse = await api.get(`/produits/${item.product.id}`);
+            const product = getResponse.data.data || getResponse.data;
+            const nouveauStock = product.quantite_stock - item.qty;
+            
+            // Utiliser PUT au lieu de PATCH (correspond à votre route Laravel)
+            const updateResponse = await api.put(`/produits/${item.product.id}`, {
+              quantite_stock: nouveauStock,
+              est_dispo: nouveauStock > 0
+            });
+            
+            console.log(`✅ Stock mis à jour pour ${item.product.name}: ${product.quantite_stock} → ${nouveauStock}`);
+            
+            return {
+              id: item.product.id,
+              nom: item.product.name,
+              ancien_stock: product.quantite_stock,
+              nouveau_stock: nouveauStock,
+              success: true
+            };
+          } catch (error) {
+            console.error(`❌ Erreur mise à jour stock produit ${item.product.id}:`, error);
+            return {
+              id: item.product.id,
+              nom: item.product.name,
+              ancien_stock: 0,
+              nouveau_stock: 0,
+              success: false,
+              error: error
+            };
+          }
+        })
+      );
+      
+      // Vérifier si toutes les mises à jour ont réussi
+      const failedUpdates = stockUpdates.filter(update => !update.success);
+      
+      if (failedUpdates.length > 0) {
+        console.error("❌ Certaines mises à jour ont échoué, annulation...");
+        
+        // Rollback: restaurer les stocks
+        await Promise.all(
+          stockUpdates
+            .filter(update => update.success)
+            .map(async (update) => {
+              try {
+                await api.patch(`/produits/${update.id}`, {
+                  quantite_stock: update.ancien_stock,
+                  est_dispo: update.ancien_stock > 0
+                });
+                console.log(`🔄 Rollback: stock restauré pour ${update.nom}`);
+              } catch (rollbackError) {
+                console.error(`❌ Erreur rollback pour ${update.nom}:`, rollbackError);
+              }
+            })
+        );
+        
+        toast({ 
+          title: "Erreur", 
+          description: "Impossible de mettre à jour les stocks. Veuillez réessayer.",
+          variant: "destructive"
+        });
+        
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log("✅ Stocks mis à jour avec succès");
+      
+      // === ÉTAPE 3: Création de la commande ===
       const livraison = getLivraisonAmount();
       
-      // Adresse de livraison
       let adresseExpeditionId = null;
       if (devisForm.besoinLivraison && devisForm.adresseId > 0) {
         adresseExpeditionId = devisForm.adresseId;
       }
       
-      // Préparer les données pour le backend - INCLURE DEVIS_ID
       const commandeData: any = {
         livraison: livraison,
         devise: devisForm.devise,
         adresse_expedition_id: adresseExpeditionId,
         adresse_facturation_id: null,
-        devis_id: devisId,  // ← L'ID du devis est ici
+        devis_id: devisId,
       };
       
-      // Ajouter meta_json avec les détails
       commandeData.meta_json = {
         note: devisForm.note || null,
         date_creation: new Date().toISOString(),
         besoin_livraison: devisForm.besoinLivraison,
         adresse_personnalisee: devisForm.adressePersonnalisee || null,
-        devis_id: devisId,  // ← Ajouté aussi dans meta_json pour sécurité
+        devis_id: devisId,
         produits: cartDetailed.map(item => ({
           id: item.product.id,
           nom: item.product.name,
           quantite: item.qty,
           prix_unitaire: item.product.price,
-          sous_total: item.subtotal
+          sous_total: item.subtotal,
+          ancien_stock: stockUpdates.find(u => u.id === item.product.id)?.ancien_stock,
+          nouveau_stock: stockUpdates.find(u => u.id === item.product.id)?.nouveau_stock
         }))
       };
       
@@ -529,18 +451,16 @@ const Cart = () => {
         
         toast({ 
           title: "✅ Commande enregistrée !", 
-          description: `Votre commande ${commandeUuid} a été créée avec succès.`,
-          duration: 4000
+          description: `Votre commande ${commandeUuid} a été créée avec succès. Les stocks ont été mis à jour.`,
+          duration: 5000
         });
         
         setShowDevisModal(false);
         setDevisId(null);
         setDevisValide(false);
         
-        // Vider le panier après commande
         await clearCart();
         
-        // Rediriger vers le catalogue après 2 secondes
         setTimeout(() => {
           navigate('/catalogue', { 
             state: { 
@@ -623,62 +543,57 @@ const Cart = () => {
   return (
     <SiteLayout>
       <section className="container-x py-12">
-        {/* Header existant... */}
+        {/* Header */}
         <div className="mb-8">
           <div className="pill mb-3"><ShoppingBag className="h-3.5 w-3.5 text-accent" /> Le Bond</div>
           <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">Votre panier</h1>
           <p className="text-muted-foreground mt-2">{cartDetailed.length} article{cartDetailed.length > 1 ? 's' : ''} dans votre panier</p>
         </div>
 
-        {cartDetailed.length === 0 ? (
-          <div className="card-soft p-12 text-center max-w-xl mx-auto">
-            <img src={fosa} alt="" className="h-24 w-24 mx-auto animate-float mb-4" />
-            <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu iciâ€¦</h2>
-            <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite dÃ©couvrir nos configurations !</p>
-            <Button variant="hero" size="lg" asChild>
-              <Link to="/catalogue">Explorer le catalogue <ArrowRight /></Link>
-            </Button>
-          </div>
-        ) : (
-          <div className="grid lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-8 space-y-4">
-              {cartDetailed.map(({ product, qty, subtotal }) => (
-                <div key={product.id} className="card-soft p-5 flex gap-4 hover-lift">
-                  <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="shrink-0">
-                    <img src={product.image} alt={product.name} className="h-28 w-28 rounded-xl object-cover" />
+        <div className="grid lg:grid-cols-12 gap-8">
+          {/* Colonne de gauche - Liste des produits */}
+          <div className="lg:col-span-8 space-y-4">
+            {cartDetailed.map((item) => (
+              <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift">
+                <Link to={`/produit/${item.product.id}`} className="shrink-0">
+                  <img src={item.product.image} alt={item.product.name} className="h-28 w-28 rounded-xl object-cover" />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category}</div>
+                  <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
+                    {item.product.name}
                   </Link>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono uppercase tracking-wider text-accent">{product.category}</div>
-                    <Link to={/^\d+$/.test(product.id) ? `/produit/${product.id}` : "/configurateur"} className="font-display font-bold text-lg hover:text-accent transition-colors">{product.name}</Link>
-                    <p className="text-xs text-muted-foreground italic line-clamp-1">"{product.tagline}"</p>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center bg-secondary rounded-full">
-                        <button onClick={() => setQty(product.id, qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-8 text-center font-semibold tabular-nums text-sm">{qty}</span>
-                        <button onClick={() => setQty(product.id, qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="font-display font-bold">{formatAr(subtotal)}</div>
-                        <button onClick={() => removeFromCart(product.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                  <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline}"</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center bg-secondary rounded-full">
+                      <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
+                      <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="font-display font-bold">{formatAr(item.subtotal)}</div>
+                      <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
             ))}
-              <div className="flex justify-between items-center pt-2">
-                <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"><Trash2 className="h-3 w-3" /> Vider le panier</button>
-                <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
-              </div>
+            
+            {/* Boutons en bas de la colonne de gauche */}
+            <div className="flex justify-between items-center pt-2">
+              <button onClick={handleClearCart} className="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1">
+                <Trash2 className="h-3 w-3" /> Vider le panier
+              </button>
+              <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
             </div>
 
-            {/* Sidebar avec bouton Demander mon devis */}
-            <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
+          {/* Sidebar - Colonne de droite */}
+          <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
             <div className="card-soft p-6">
               <h3 className="font-display font-bold text-lg mb-4">Récapitulatif</h3>
               <div className="space-y-2 text-sm">
@@ -696,7 +611,6 @@ const Cart = () => {
                 <Button variant="soft" size="sm" onClick={applyPromo}><Tag className="h-3.5 w-3.5" /></Button>
               </div>
 
-              {/* Bouton Demander mon devis MODIFIÉ */}
               <Button variant="hero" size="lg" className="w-full mt-4 group" onClick={handleOpenDevisModal}>
                 Demander mon devis 
                 <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
@@ -783,9 +697,8 @@ const Cart = () => {
               {/* Adresse de livraison (si besoin) */}
               {devisForm.besoinLivraison && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-foreground">📍 Adresse de livraison</label>
+                  <label className="block text-sm font-medium text-foreground"> Adresse de livraison</label>
                   
-                  {/* Sélection des adresses existantes */}
                   {adresses.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Ou choisissez une adresse existante :</p>
@@ -817,7 +730,6 @@ const Cart = () => {
                     </div>
                   )}
 
-                  {/* Ou saisir manuellement */}
                   <div className="mt-3">
                     <p className="text-xs text-muted-foreground mb-2">Ou saisissez une nouvelle adresse :</p>
                     <textarea

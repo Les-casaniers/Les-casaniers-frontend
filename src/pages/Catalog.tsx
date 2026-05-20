@@ -113,6 +113,24 @@ const Catalog = () => {
     }
   };
 
+  // Fonction pour obtenir l'URL de l'image principale d'un produit
+  const getProductImageUrl = (product: any) => {
+    if (!product) return "/placeholder-pc.jpg";
+    
+    const images = product.images || [];
+    if (images.length === 0) return "/placeholder-pc.jpg";
+    
+    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
+    if (!mainImage?.url) return "/placeholder-pc.jpg";
+    
+    // Si l'URL commence par /storage, ajouter le domaine
+    if (mainImage.url.startsWith('/storage')) {
+      return `http://127.0.0.1:8000${mainImage.url}`;
+    }
+    
+    return mainImage.url;
+  };
+
   // Charger les voix disponibles
   useEffect(() => {
     speechSynthesisRef.current = window.speechSynthesis;
@@ -351,7 +369,7 @@ const Catalog = () => {
                       </span>
                     )}
                     
-                    {/* Bouton favori avec gestion API */}
+                    {/* Bouton favori */}
                     <button
                       onClick={(e) => { e.preventDefault(); toggleFavorite(String(p.id)); }}
                       className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
