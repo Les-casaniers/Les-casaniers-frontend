@@ -31,7 +31,7 @@ export const WatercoolingCustom = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
-  const sectionRef = useRef(null);
+  const  = useRef(null);
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
@@ -48,8 +48,8 @@ export const WatercoolingCustom = () => {
       { threshold: 0.1 }
     );
     
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+    if (.current) {
+      observer.observe(.current);
     }
     
     return () => observer.disconnect();
@@ -247,26 +247,6 @@ export const WatercoolingCustom = () => {
     <>
       <section ref={sectionRef} className="py-12 bg-secondary/30">
         <div className="container-x">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-3xl font-bold flex items-center gap-3">
-                <Droplet className="h-8 w-8 text-cyan-500" />
-                Watercooling Custom
-              </h2>
-              <p className="text-muted-foreground mt-2">
-                Le refroidissement liquide haute performance. Silence absolu et températures maîtrisées.
-              </p>
-              <p className="text-xs text-cyan-600 mt-1">
-                {products.length} produit(s) trouvé(s) avec référence CL-
-              </p>
-            </div>
-            <Link to="/catalogue?type=watercooling">
-              <button className="group inline-flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 text-cyan-600 rounded-xl hover:bg-cyan-600 hover:text-white transition-all duration-300 font-medium">
-                <span>Voir tout</span>
-                <Eye className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
-            </Link>
-          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {products.map((product, index) => {
