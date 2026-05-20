@@ -48,9 +48,9 @@ export const WatercoolingCustom = () => {
       { threshold: 0.1 }
     );
     
-    if (.current) {
-      observer.observe(.current);
-    }
+    if (sectionRef.current) {
+  observer.observe(sectionRef.current);
+}
     
     return () => observer.disconnect();
   }, []);
