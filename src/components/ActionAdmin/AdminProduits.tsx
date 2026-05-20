@@ -734,8 +734,6 @@ const AdminProduits = () => {
                 <tr className="border-b">
                   <th className="text-left p-3">Nom</th>
                   <th className="text-left p-3">Type</th>
-                  <th className="text-left p-3">Parent</th>
-                  <th className="text-left p-3">Ordre</th>
                   <th className="text-right p-3">Actions</th>
                 </tr>
               </thead>
@@ -744,8 +742,6 @@ const AdminProduits = () => {
                   <tr key={c.id} className="border-b">
                     <td className="p-3">{c.nom}</td>
                     <td className="p-3">{c.type}</td>
-                    <td className="p-3">{c.parent_id ?? "-"}</td>
-                    <td className="p-3">{c.ordre_tri ?? 0}</td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg"><Pencil className="h-4 w-4" /></button>

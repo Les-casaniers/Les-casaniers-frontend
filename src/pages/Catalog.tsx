@@ -12,6 +12,7 @@ import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
 
+
 // Configuration des types de filtres par référence
 const FILTER_CONFIG = [
   { 
@@ -496,10 +497,17 @@ const Catalog = () => {
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">à partir de</div>
                         <div className="font-display font-bold text-2xl">{formatAr(p.prix)}</div>
                       </div>
-                      <Button variant="hero" size="sm"
+                      {/* <Button variant="hero" size="sm"
                         onClick={() => { addToCart(String(p.id), 1, toCartProduct(p)); toast({ title: "Ajouté au panier", description: p.nom }); }}>
                         <ShoppingBag className="h-4 w-4" /> Ajouter
-                      </Button>
+                      </Button> */}
+                    <Button variant="hero" size="sm"
+                      onClick={async () => { 
+                        await addToCart(p.id, 1, p.prix, p.nom); 
+                        toast({ title: "Ajouté au panier", description: p.nom }); 
+                      }}>
+                      <ShoppingBag className="h-4 w-4" /> Ajouter
+                    </Button>
                     </div>
                   </div>
                 </article>
