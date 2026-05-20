@@ -1,130 +1,155 @@
+// Gaming.tsx
 import { useEffect, useState } from "react";
-import { Monitor, Laptop, Droplet, Gamepad2 } from "lucide-react";
+import { Monitor, Laptop, Droplet } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
 import { UnitesCentralesGaming } from "@/components/gaming/UnitesCentralesGaming";
 import { LaptopsGaming } from "@/components/gaming/LaptopsGaming";
 import { WatercoolingCustom } from "@/components/gaming/WatercoolingCustom";
+import { cn } from "@/lib/utils";
 
-type TabId = "unites-centrales" | "laptops" | "watercooling";
-
-const TABS: { id: TabId; label: string; color: string; activeColor: string }[] = [
+const TABS = [
   {
     id: "unites-centrales",
     label: "Unités Centrales",
-    color: "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
-    activeColor: "bg-purple-500/10 border-purple-500/60",
+    description: "PC Gaming sur mesure",
+    icon: Monitor,
+    accent: "purple",
+    accentClasses: {
+      bar: "bg-purple-500",
+      icon: "text-purple-500",
+      dot: "bg-purple-500",
+    },
   },
   {
     id: "laptops",
     label: "Laptops Gaming",
-    color: "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
-    activeColor: "bg-blue-500/10 border-blue-500/60",
+    description: "Portables puissants",
+    icon: Laptop,
+    accent: "blue",
+    accentClasses: {
+      bar: "bg-blue-500",
+      icon: "text-blue-500",
+      dot: "bg-blue-500",
+    },
   },
   {
     id: "watercooling",
     label: "Watercooling",
-    color: "text-cyan-500 border-cyan-500/30 hover:bg-cyan-500/10",
-    activeColor: "bg-cyan-500/10 border-cyan-500/60",
+    description: "Refroidissement liquide",
+    icon: Droplet,
+    accent: "cyan",
+    accentClasses: {
+      bar: "bg-cyan-500",
+      icon: "text-cyan-500",
+      dot: "bg-cyan-500",
+    },
   },
-];
+] as const;
 
-const SECTIONS: { id: TabId; component: React.ReactNode }[] = [
-  { id: "unites-centrales", component: <UnitesCentralesGaming /> },
-  { id: "laptops",          component: <LaptopsGaming /> },
-  { id: "watercooling",     component: <WatercoolingCustom /> },
-];
+type TabId = (typeof TABS)[number]["id"];
 
 const Gaming = () => {
   const [activeTab, setActiveTab] = useState<TabId>("unites-centrales");
-  const [visible, setVisible] = useState(true);
+  const [visibleTab, setVisibleTab] = useState<TabId>("unites-centrales");
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     document.title = "Gaming — Les Casaniers Madagascar";
   }, []);
 
   const switchTab = (id: TabId) => {
-    if (id === activeTab) return;
-    setVisible(false);
+    if (id === activeTab || isAnimating) return;
+    setIsAnimating(true);
+    setVisibleTab("" as TabId);
     setTimeout(() => {
       setActiveTab(id);
-      setVisible(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setVisibleTab(id);
+          setIsAnimating(false);
+        });
+      });
     }, 200);
   };
-
-  const currentSection = SECTIONS.find((s) => s.id === activeTab);
 
   return (
     <SiteLayout>
       <MiniHero
-        title={
-          <>
-            La puissance gaming{" "}
-            <span className="text-[#c8a96e]">, là où l'action commence.</span>
-          </>
-        }
-        description="Performances extrêmes, refroidissement sur-mesure et design agressif — nos configurations gaming sont prêtes à dominer tous vos jeux."
+        title="La puissance gaming, là où l'action commence."
+        description="Performances extrêmes, refroidissement sur-mesure et design agressif | nos configurations gaming sont prêtes à dominer tous vos jeux."
         bg="5.png"
-        pill={{ icon: <Gamepad2 className="h-3.5 w-3.5" />, label: "Gaming" }}
       />
 
-      {/* Barre de navigation */}
-      <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="container-x py-3">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
+        {/* Card wrapper */}
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
 
-          {/* Mobile : grille 3 colonnes */}
-          <div className="grid grid-cols-3 gap-2 sm:hidden">
+          {/* ── Navigation ── */}
+          <div className="flex items-center gap-1 px-4 pt-4 pb-0 border-b border-border bg-card">
             {TABS.map((tab) => {
+              const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => switchTab(tab.id)}
-                  className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
+                  className={cn(
+                    "relative flex items-center gap-2 px-4 py-2.5 mb-[-1px]",
+                    "text-sm font-medium rounded-t-lg border-x border-t",
+                    "transition-all duration-200 focus-visible:outline-none",
                     isActive
-                      ? `${tab.color} ${tab.activeColor}`
-                      : `${tab.color} opacity-60 hover:opacity-100`
-                  }`}
+                      ? "bg-card border-border text-foreground z-10"
+                      : "bg-transparent border-transparent text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  {tab.label}
+                  {/* Accent line on top when active */}
+                  {isActive && (
+                    <span
+                      className={cn(
+                        "absolute top-0 left-4 right-4 h-[2px] rounded-full",
+                        tab.accentClasses.bar
+                      )}
+                    />
+                  )}
+
+                  <Icon
+                    className={cn(
+                      "w-3.5 h-3.5 transition-colors",
+                      isActive ? tab.accentClasses.icon : "text-muted-foreground"
+                    )}
+                  />
+
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Desktop : ligne */}
-          <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
-            <Gamepad2 className="h-4 w-4 text-[#c8a96e] shrink-0 mr-1" />
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => switchTab(tab.id)}
-                  className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
-                    isActive
-                      ? `${tab.color} ${tab.activeColor}`
-                      : `${tab.color} opacity-60 hover:opacity-100`
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+          {/* ── Panel ── */}
+          <div className="p-5">
+            {TABS.map((tab) => (
+              <div
+                key={tab.id}
+                role="tabpanel"
+                className={cn(
+                  "transition-all duration-200 ease-out",
+                  activeTab === tab.id ? "block" : "hidden",
+                  visibleTab === tab.id
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 translate-y-1"
+                )}
+              >
+                {tab.id === "unites-centrales" && <UnitesCentralesGaming />}
+                {tab.id === "laptops" && <LaptopsGaming />}
+                {tab.id === "watercooling" && <WatercoolingCustom />}
+              </div>
+            ))}
           </div>
 
         </div>
-      </nav>
-
-      {/* Contenu avec fade-up */}
-      <div
-        style={{
-          transition: "opacity 200ms ease, transform 200ms ease",
-          opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0)" : "translateY(16px)",
-        }}
-      >
-        {currentSection?.component}
       </div>
     </SiteLayout>
   );

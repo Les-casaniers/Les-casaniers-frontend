@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Package, Truck, Clock, Shield, Search, FileText, Globe, CheckCircle, ArrowRight, Plus } from "lucide-react";
+import { Package, Truck, Clock, Shield, Search, FileText, Globe, CheckCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
@@ -68,11 +68,11 @@ const Importation = () => {
           "Support client disponible pour toute question"
         ],
         steps: [
-          { status: "Commande confirmée", icon: "", color: "text-green-500" },
-          { status: "Préparation en Europe", icon: "", color: "text-blue-500" },
-          { status: "Expédié", icon: "", color: "text-purple-500" },
-          { status: "Arrivé à Madagascar", icon: "", color: "text-amber-500" },
-          { status: "Prêt pour retrait/livraison", icon: "", color: "text-green-500" }
+          { status: "Commande confirmée", icon: "✅", color: "text-green-500" },
+          { status: "Préparation en Europe", icon: "📦", color: "text-blue-500" },
+          { status: "Expédié", icon: "✈️", color: "text-purple-500" },
+          { status: "Arrivé à Madagascar", icon: "🇲🇬", color: "text-amber-500" },
+          { status: "Prêt pour retrait/livraison", icon: "🏠", color: "text-green-500" }
         ]
       }
     },
@@ -89,12 +89,12 @@ const Importation = () => {
         points: [
           "Commande passée : 24-48h pour la confirmation",
           "Préparation en Europe : 3-5 jours ouvrés",
-          "Transport (Europe - Madagascar) : 10-14 jours ouvrés",
+          "Transport (Europe → Madagascar) : 10-14 jours ouvrés",
           "Dédouanement : 3-5 jours ouvrés",
           "Livraison finale : 24-48h sur Tananarive"
         ],
         total: "Délai total estimé : 3 à 4 semaines",
-        note: "Ces délais sont donnés à titre indicatif et peuvent varier selon les périodes (fêtes, grèves, etc.)"
+        note: "⚠️ Ces délais sont donnés à titre indicatif et peuvent varier selon les périodes (fêtes, grèves, etc.)"
       }
     },
     {
@@ -108,12 +108,12 @@ const Importation = () => {
       content: {
         intro: "Nous importons uniquement des composants conformes aux normes :",
         points: [
-          "Certification CE (Conformité Européenne)",
-          "Normes RoHS (sans substances dangereuses)",
-          "Composants neufs sous garantie constructeur",
-          "Emballage d'origine certifié",
-          "Traçabilité complète des produits",
-          "Conformité aux standards de sécurité électrique"
+          "✅ Certification CE (Conformité Européenne)",
+          "✅ Normes RoHS (sans substances dangereuses)",
+          "✅ Composants neufs sous garantie constructeur",
+          "✅ Emballage d'origine certifié",
+          "✅ Traçabilité complète des produits",
+          "✅ Conformité aux standards de sécurité électrique"
         ],
         garanties: [
           "Garantie constructeur 24 mois",
@@ -129,7 +129,7 @@ const Importation = () => {
     <SiteLayout>
       {/* Hero */}
       <MiniHero
-        title="Importation Europe - Madagascar."
+        title="Importation Europe → Madagascar."
         description="Accédez aux meilleurs composants européens avec nos services d'importation sur-mesure. Transparence, qualité et rapidité."
         bg="7.png"
       />
@@ -174,7 +174,7 @@ const Importation = () => {
                   {/* Process (pour commande) */}
                   {section.content.process && (
                     <div className="mt-6">
-                      <h3 className="font-bold mb-3">Processus de commande :</h3>
+                      <h3 className="font-bold mb-3">📋 Processus de commande :</h3>
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         {section.content.process.map((step) => (
                           <div key={step.step} className="text-center">
@@ -198,7 +198,7 @@ const Importation = () => {
                             <div className="text-2xl mb-1">{step.icon}</div>
                             <p className={`text-[10px] font-medium ${step.color}`}>{step.status}</p>
                             {idx < section.content.steps.length - 1 && (
-                              <div className="hidden md:block text-muted-foreground mt-1">-</div>
+                              <div className="hidden md:block text-muted-foreground mt-1">→</div>
                             )}
                           </div>
                         ))}
@@ -235,7 +235,7 @@ const Importation = () => {
                     to="/devis-express"
                     className={`inline-flex items-center gap-2 text-sm font-medium ${section.color} hover:underline`}
                   >
-                    En savoir plus <Plus className="h-3 w-3" />
+                    En savoir plus <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
               </div>

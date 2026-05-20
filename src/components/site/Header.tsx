@@ -8,7 +8,6 @@ import { useShop } from "@/store/shop";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
-import { useCartApi } from "@/hooks/useCartApi";
 
 const menuData = [
   { 
@@ -71,7 +70,7 @@ const menuData = [
 
 export const Header = () => {
   const [open, setOpen] = useState<string | null>(null);
-  const { favorites } = useShop(); // ✅ Enlever cartCount d'ici
+  const { cartCount, favorites } = useShop();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
   const [isAdminUser, setIsAdminUser] = useState(false);
@@ -85,9 +84,6 @@ export const Header = () => {
 
   const location = useLocation();
   
-  // ✅ Un seul cartCount depuis useCartApi
-  const { cartCount, isLoading, refreshCart } = useCartApi();
-  
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -96,12 +92,14 @@ export const Header = () => {
     const checkAdminStatus = async () => {
       if (isAuthenticated && user) {
         try {
+          // Appel API pour vérifier si l'utilisateur est dans la table admin
           const response = await api.post('/admin/check-by-email', {
             email: user.email
           });
           setIsAdminUser(response.data.isAdmin === true);
         } catch (error) {
           console.error("Erreur vérification admin:", error);
+          // Fallback: vérifier par email si l'API échoue
           const adminEmails = [
             'admin@lescasaniers.mg',
             'admin@dupont.com',
@@ -118,8 +116,10 @@ export const Header = () => {
     checkAdminStatus();
   }, [isAuthenticated, user]);
 
+  // Récupérer le nom de l'utilisateur connecté
   const getUserName = () => {
     if (!isAuthenticated || !user) return "Compte";
+    
     if (user.prenom && user.nom) return `${user.prenom}`;
     if (user.nom) return user.nom;
     if (user.prenom) return user.prenom;
@@ -132,6 +132,7 @@ export const Header = () => {
     email: user?.email || "client@lescasaniers.mg"
   };
 
+  // Vérifie si un menu est actif (route courante correspond)
   const isMenuActive = (m: typeof menuData[0]) => {
     const pathname = location.pathname;
     if (m.href) return pathname === m.href || pathname.startsWith(m.href + "/");
@@ -139,11 +140,13 @@ export const Header = () => {
     return m.items?.some(item => item.href && pathname === item.href.split("#")[0]);
   };
 
+  // Vérifie si un sous-item est actif
   const isItemActive = (href: string) => {
     const [path] = href.split("#");
     return location.pathname === path;
   };
   
+  // Toggle dropdown mobile
   const toggleDropdown = (label: string, hasItems: boolean) => {
     if (!hasItems) return;
     setOpenDropdowns(prev => ({
@@ -167,9 +170,11 @@ export const Header = () => {
     return isAdminUser ? "Tableau de bord Admin" : "Tableau de bord";
   };
 
+  // Composant CompteButton
   const CompteButton = () => (
     <div className="relative" ref={dropdownRef}>
       {isAuthenticated ? (
+        // ========== UTILISATEUR CONNECTÉ ==========
         <>
           <button
             ref={buttonRef}
@@ -187,12 +192,15 @@ export const Header = () => {
             </span>
           </button>
 
+          {/* Dropdown déconnexion */}
           {showLogout && (
             <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
               <div className="px-4 py-2 border-b border-border">
                 <p className="text-sm font-medium text-foreground">{userData.name}</p>
                 <p className="text-xs text-muted-foreground">{userData.email}</p>
               </div>
+              
+              {/* Bouton Dashboard - Redirige selon le rôle */}
               <Link
                 to={getDashboardUrl()}
                 onClick={() => setShowLogout(false)}
@@ -201,6 +209,8 @@ export const Header = () => {
                 <LayoutDashboard className="h-4 w-4" />
                 {getDashboardLabel()}
               </Link>
+              
+              {/* Bouton Déconnexion en rouge */}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
@@ -212,6 +222,7 @@ export const Header = () => {
           )}
         </>
       ) : (
+        // ========== UTILISATEUR NON CONNECTÉ ==========
         <Link
           to="/login"
           className="relative flex flex-col items-center gap-1 group"
@@ -229,6 +240,7 @@ export const Header = () => {
     </div>
   );
 
+  // Gérer le clic en dehors pour fermer le dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -245,6 +257,7 @@ export const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Gestion du swipe pour fermer le menu mobile
   useEffect(() => {
     let touchStartX = 0;
     let touchEndX = 0;
@@ -281,6 +294,7 @@ export const Header = () => {
     };
   }, [mobileMenuOpen]);
   
+  // Fermer le menu si on clique en dehors
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
@@ -303,6 +317,7 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-40 bg-background border-b border-border theme-transition">
       <div className="container-x flex items-center gap-8 py-5">
+        {/* Logo */}
         <Link to="/" className="flex items-center gap-3 shrink-0 group">
           <div className="rounded-lg p-1.5 transition-all duration-300 group-hover:scale-105">
             <img 
@@ -313,6 +328,7 @@ export const Header = () => {
           </div>
         </Link>
 
+        {/* Search */}
         <div className="relative flex-1 max-w-2xl group">
           <input
             type="search"
@@ -330,6 +346,7 @@ export const Header = () => {
           />
         </div>
 
+        {/* Actions Desktop */}
         <nav className="hidden md:flex items-center gap-6">
           <ThemeToggle />
           <IconButton to="/favoris" icon={<Heart className="h-5 w-5" />} label="Favoris" badge="Le Câlin" count={favorites.length || undefined} />
@@ -337,6 +354,7 @@ export const Header = () => {
           <CompteButton />
         </nav>
 
+        {/* Mobile menu button */}
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
           <Button 
@@ -350,6 +368,7 @@ export const Header = () => {
         </div>
       </div>
 
+      {/* Mobile menu - Drawer avec dropdowns */}
       {mobileMenuOpen && (
         <>
           <div 
@@ -413,6 +432,7 @@ export const Header = () => {
                 })}
               </div>
 
+              {/* Bottom CTA Buttons */}
               <div className="p-4 border-t border-border space-y-2 mt-auto">
                 <Link 
                   to="/configurateur" 
@@ -425,6 +445,7 @@ export const Header = () => {
                   ⚡ Configurer maintenant
                 </Link>
                 
+                {/* Mobile action icons */}
                 <div className="flex items-center justify-around pt-4">
                   {isAuthenticated ? (
                     <>
@@ -459,6 +480,7 @@ export const Header = () => {
         </>
       )}
 
+      {/* Bottom nav - Desktop */}
       <nav className="hidden lg:block border-t border-border" onMouseLeave={() => setOpen(null)}>
         <div className="container-x flex items-center justify-center gap-1 py-0">
           {menuData.map((m) => {

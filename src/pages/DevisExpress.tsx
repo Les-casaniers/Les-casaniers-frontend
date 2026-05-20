@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Send, Phone, Mail, User, FileText, MessageCircle, CheckCircle, AlertCircle, Building, Calendar, Building2, Wallet } from "lucide-react";
+import { Send, Phone, Mail, User, FileText, MessageCircle, CheckCircle, AlertCircle, Building, Calendar } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { MiniHero } from "@/components/layout/MiniHero";
@@ -53,13 +53,13 @@ const DevisExpress = () => {
     }, 1000);
   };
 
-  const whatsappNumber = "261329356242"; // Remplace par ton vrai numéro WhatsApp
-
   // Générer le message WhatsApp
   const generateWhatsAppMessage = () => {
-    const message = `Bonjour Les Casaniers !%0A%0A *Demande de devis express*%0A%0A *Nom et prénom:* ${formData.nom || "Non renseigné"}%0A *Email:* ${formData.email || "Non renseigné"}%0A *Téléphone:* ${formData.telephone || "Non renseigné"}%0A *Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A *Besoin spécifique:*%0A${formData.besoin || "Non renseigné"}%0A%0A *Budget estimé:* ${formData.budget || "Non renseigné"}%0A *Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A *Message complémentaire:*%0A${formData.message || "Non renseigné"}%0A%0A---%0AJe souhaite être recontacté rapidement.`;
-    return `https://wa.me/${whatsappNumber}?text=${message}`;
+    const message = `Bonjour Les Casaniers !%0A%0A📋 *Demande de devis express*%0A%0A👤 *Nom et prénom:* ${formData.nom || "Non renseigné"}%0A📧 *Email:* ${formData.email || "Non renseigné"}%0A📞 *Téléphone:* ${formData.telephone || "Non renseigné"}%0A🏢 *Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A🎯 *Besoin spécifique:*%0A${formData.besoin || "Non renseigné"}%0A%0A💰 *Budget estimé:* ${formData.budget || "Non renseigné"}%0A📅 *Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A📝 *Message complémentaire:*%0A${formData.message || "Non renseigné"}%0A%0A---%0AJe souhaite être recontacté rapidement.`;
+    return `https://wa.me/261341234567?text=${message}`;
   };
+
+  const whatsappNumber = "261341234567"; // Remplace par ton vrai numéro WhatsApp
 
   return (
     <SiteLayout>
@@ -158,7 +158,7 @@ const DevisExpress = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        <Building2 className="h-3 w-3" /> Entreprise (optionnel)
+                        <Building className="h-3 w-3" /> Entreprise (optionnel)
                       </label>
                       <input
                         type="text"
@@ -183,20 +183,20 @@ const DevisExpress = () => {
                       className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
                     >
                       <option value="">Sélectionnez votre besoin</option>
-                      <option value="PC Gaming sur-mesure">PC Gaming sur-mesure</option>
-                      <option value="Workstation professionnelle">Workstation professionnelle</option>
-                      <option value="Serveur / NAS">Serveur / NAS</option>
-                      <option value="Watercooling custom">Watercooling custom</option>
-                      <option value="Upgrade composants">Upgrade de composants</option>
-                      <option value="Parc informatique entreprise">Parc informatique entreprise</option>
-                      <option value="Autre service">Autre service</option>
+                      <option value="PC Gaming sur-mesure">🎮 PC Gaming sur-mesure</option>
+                      <option value="Workstation professionnelle">💼 Workstation professionnelle</option>
+                      <option value="Serveur / NAS">🖥️ Serveur / NAS</option>
+                      <option value="Watercooling custom">💧 Watercooling custom</option>
+                      <option value="Upgrade composants">🔧 Upgrade de composants</option>
+                      <option value="Parc informatique entreprise">🏢 Parc informatique entreprise</option>
+                      <option value="Autre service">❓ Autre service</option>
                     </select>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        <Wallet className="h-3 w-3" />Budget estimé
+                        💰 Budget estimé
                       </label>
                       <select
                         name="budget"
@@ -321,7 +321,7 @@ const DevisExpress = () => {
 
               {/* Horaires de contact */}
               <div className="bg-amber-50 dark:bg-amber-950/10 border border-amber-500/30 rounded-xl p-6">
-                <h3 className="font-bold mb-3">Nos horaires de réponse</h3>
+                <h3 className="font-bold mb-3">📞 Nos horaires de réponse</h3>
                 <div className="space-y-2 text-sm">
                   <p><strong>Lundi - Vendredi :</strong> 9h00 - 18h00</p>
                   <p><strong>Samedi :</strong> 9h00 - 17h00</p>

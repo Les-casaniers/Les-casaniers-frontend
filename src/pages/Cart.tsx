@@ -1,11 +1,11 @@
-﻿import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck, Tag, Loader2, Heart, X, Check, MapPin, Home, Building, Package, Euro, DollarSign } from "lucide-react";
 import { formatAr } from "@/lib/products";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
-import fosa from "@/assets/8.png";
+import fosa from "@/assets/casaniers-mascot.png";
 import { useCartApi } from "@/hooks/useCartApi";
 import api from "@/service/api";
 import { useNavigate } from 'react-router-dom';
@@ -52,25 +52,14 @@ const Cart = () => {
   const [lastAddedProduct, setLastAddedProduct] = useState<string | null>(null);
   const previousCartCountRef = useRef(0);
   const navigate = useNavigate();
-
+  
   // État du modal de devis
   const [showDevisModal, setShowDevisModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCommandeSent, setIsCommandeSent] = useState(false);
   const [devisId, setDevisId] = useState<number | null>(null);
   const [devisValide, setDevisValide] = useState(false);
-
-  // Pour supprimer
-  const handleRemove = async (itemId: number, productName: string) => {
-    await removeFromCart(itemId);
-  };
-
-  // Pour modifier la quantité
-  const handleSetQty = async (itemId: number, newQty: number) => {
-    if (newQty < 1) return;
-    await updateQuantity(itemId, newQty);
-  };
-
+  
   // État du formulaire de devis
   const [devisForm, setDevisForm] = useState({
     besoinLivraison: false,
@@ -79,30 +68,12 @@ const Cart = () => {
     note: "",
     devise: "MGA"
   });
-
+  
   const [adresses, setAdresses] = useState<Adresse[]>([]);
   const [isLoadingAdresses, setIsLoadingAdresses] = useState(false);
 
-  // Fonction pour obtenir l'URL de l'image principale d'un produit
-  const getProductImageUrl = (product: any) => {
-    if (!product) return "/placeholder-pc.jpg";
-
-    const images = product.images || [];
-    if (images.length === 0) return "/placeholder-pc.jpg";
-
-    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
-    if (!mainImage?.url) return "/placeholder-pc.jpg";
-
-    // Si l'URL commence par /storage, ajouter le domaine
-    if (mainImage.url.startsWith('/storage')) {
-      return `http://127.0.0.1:8000${mainImage.url}`;
-    }
-
-    return mainImage.url;
-  };
-
-  useEffect(() => {
-    document.title = "Mon panier — Les Casaniers Madagascar";
+  useEffect(() => { 
+    document.title = "Mon panier — Les Casaniers Madagascar"; 
   }, []);
 
   // Vérifier les nouveaux ajouts au panier
@@ -132,18 +103,18 @@ const Cart = () => {
   };
 
   // Modification de la quantité - utilise l'ID du panier (item.id)
-  // const handleSetQty = (itemId: number, newQty: number) => {
-  //   if (newQty < 1) return;
-  //   console.log("🔍 Modification quantité - itemId (panier):", itemId, "nouvelle quantité:", newQty);
-  //   updateQuantity(itemId, newQty);
-  // };
+  const handleSetQty = (itemId: number, newQty: number) => {
+    if (newQty < 1) return;
+    console.log("🔍 Modification quantité - itemId (panier):", itemId, "nouvelle quantité:", newQty);
+    updateQuantity(itemId, newQty);
+  };
 
-  // // Suppression - utilise l'ID du panier (item.id)
-  // const handleRemove = (itemId: number, productName: string) => {
-  //   console.log("🔍 Suppression - itemId (panier):", itemId);
-  //   removeFromCart(itemId);
-  //   toast({ title: "Article supprimé", description: `${productName} a été retiré de votre panier.` });
-  // };
+  // Suppression - utilise l'ID du panier (item.id)
+  const handleRemove = (itemId: number, productName: string) => {
+    console.log("🔍 Suppression - itemId (panier):", itemId);
+    removeFromCart(itemId);
+    toast({ title: "Article supprimé", description: `${productName} a été retiré de votre panier.` });
+  };
 
   const handleClearCart = () => {
     if (cartDetailed.length > 0) clearCart();
@@ -158,7 +129,7 @@ const Cart = () => {
       if (response.data.data) adressesData = Array.isArray(response.data.data) ? response.data.data : [];
       else if (Array.isArray(response.data)) adressesData = response.data;
       setAdresses(adressesData);
-
+      
       const defaultAdresse = adressesData.find(a => a.par_defaut_expedition);
       if (defaultAdresse) {
         setDevisForm(prev => ({ ...prev, adresseId: defaultAdresse.id }));
@@ -212,15 +183,15 @@ const Cart = () => {
   const handleValidateDevis = async () => {
     try {
       setIsSubmitting(true);
-
+      
       const userResponse = await api.get('/utilisateurs/profile');
       const userData = userResponse.data.data || userResponse.data;
       const userId = userData.id;
-
+      
       const montantTotal = getTotalWithLivraison();
       const firstCartItem = cartItems[0];
       const panierId = firstCartItem?.id;
-
+      
       const devisData = {
         utilisateur_id: userId,
         panier_id: panierId,
@@ -229,21 +200,21 @@ const Cart = () => {
         montant_total: montantTotal,
         devise: devisForm.devise
       };
-
+      
       console.log("📦 Envoi devis:", devisData);
-
+      
       const response = await api.post('/devis', devisData);
-
+      
       if (response.data.success && response.data.data) {
         const newDevisId = response.data.data.id;
-
+        
         if (newDevisId) {
           setDevisId(newDevisId);
           setDevisValide(true);
           console.log("✅ Devis créé avec ID:", newDevisId);
-
-          toast({
-            title: "✅ Devis enregistré",
+          
+          toast({ 
+            title: "✅ Devis enregistré", 
             description: `Votre devis N°${newDevisId} a été enregistré avec succès !`,
             duration: 3000
           });
@@ -253,10 +224,10 @@ const Cart = () => {
       } else {
         throw new Error(response.data.message || "Erreur lors de la création");
       }
-
+      
     } catch (error: any) {
       console.error("❌ Erreur création devis:", error);
-
+      
       let errorMessage = "Impossible de créer le devis";
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -264,9 +235,9 @@ const Cart = () => {
         const errors = Object.values(error.response.data.errors).flat();
         errorMessage = errors.join(', ');
       }
-
-      toast({
-        title: "Erreur",
+      
+      toast({ 
+        title: "Erreur", 
         description: errorMessage,
         variant: "destructive"
       });
@@ -279,38 +250,38 @@ const Cart = () => {
   const handleCommander = async () => {
     console.log("🔍 Vérification devisId:", devisId);
     console.log("🔍 devisValide:", devisValide);
-
+    
     if (!devisId || !devisValide) {
-      toast({
-        title: "Validation requise",
+      toast({ 
+        title: "Validation requise", 
         description: "Veuillez d'abord valider le devis avant de commander.",
         variant: "destructive"
       });
       return;
     }
-
+    
     if (devisForm.besoinLivraison && devisForm.adresseId === 0 && !devisForm.adressePersonnalisee) {
-      toast({
-        title: "Adresse requise",
+      toast({ 
+        title: "Adresse requise", 
         description: "Veuillez sélectionner ou saisir une adresse de livraison.",
         variant: "destructive"
       });
       return;
     }
-
+    
     try {
       setIsSubmitting(true);
-
+      
       // === ÉTAPE 1: Vérification des stocks ===
       console.log("🔍 Vérification des stocks...");
-
+      
       const stockChecks: StockCheckResult[] = await Promise.all(
         cartDetailed.map(async (item) => {
           try {
             const response = await api.get(`/produits/${item.product.id}`);
             const product = response.data.data || response.data;
             const currentStock = product.quantite_stock;
-
+            
             return {
               id: item.product.id,
               nom: item.product.name,
@@ -331,17 +302,17 @@ const Cart = () => {
           }
         })
       );
-
+      
       // Vérifier si tous les stocks sont suffisants
       const stockInsuffisant = stockChecks.filter(check => !check.suffisant);
-
+      
       if (stockInsuffisant.length > 0) {
-        const messages = stockInsuffisant.map(check =>
+        const messages = stockInsuffisant.map(check => 
           `${check.nom}: demande ${check.quantite_demandee}, stock disponible ${check.stock_actuel}`
         );
-
-        toast({
-          title: "❌ Stock insuffisant",
+        
+        toast({ 
+          title: "❌ Stock insuffisant", 
           description: (
             <div className="space-y-1">
               <p>Les produits suivants n'ont pas assez de stock :</p>
@@ -355,30 +326,31 @@ const Cart = () => {
           variant: "destructive",
           duration: 5000
         });
-
+        
         setIsSubmitting(false);
         return;
       }
-
+      
       console.log("✅ Tous les stocks sont suffisants");
-
+      
       // === ÉTAPE 2: Réduction des stocks ===
       console.log("📦 Réduction des stocks...");
-
+      
       const stockUpdates: StockUpdateResult[] = await Promise.all(
         cartDetailed.map(async (item) => {
           try {
             const getResponse = await api.get(`/produits/${item.product.id}`);
             const product = getResponse.data.data || getResponse.data;
             const nouveauStock = product.quantite_stock - item.qty;
-
-            await api.put(`/produits/${item.product.id}`, {
+            
+            // Utiliser PUT au lieu de PATCH (correspond à votre route Laravel)
+            const updateResponse = await api.put(`/produits/${item.product.id}`, {
               quantite_stock: nouveauStock,
               est_dispo: nouveauStock > 0
             });
-
+            
             console.log(`✅ Stock mis à jour pour ${item.product.name}: ${product.quantite_stock} → ${nouveauStock}`);
-
+            
             return {
               id: item.product.id,
               nom: item.product.name,
@@ -399,20 +371,20 @@ const Cart = () => {
           }
         })
       );
-
+      
       // Vérifier si toutes les mises à jour ont réussi
       const failedUpdates = stockUpdates.filter(update => !update.success);
-
+      
       if (failedUpdates.length > 0) {
         console.error("❌ Certaines mises à jour ont échoué, annulation...");
-
+        
         // Rollback: restaurer les stocks
         await Promise.all(
           stockUpdates
             .filter(update => update.success)
             .map(async (update) => {
               try {
-                await api.put(`/produits/${update.id}`, {
+                await api.patch(`/produits/${update.id}`, {
                   quantite_stock: update.ancien_stock,
                   est_dispo: update.ancien_stock > 0
                 });
@@ -422,27 +394,27 @@ const Cart = () => {
               }
             })
         );
-
-        toast({
-          title: "Erreur",
+        
+        toast({ 
+          title: "Erreur", 
           description: "Impossible de mettre à jour les stocks. Veuillez réessayer.",
           variant: "destructive"
         });
-
+        
         setIsSubmitting(false);
         return;
       }
-
+      
       console.log("✅ Stocks mis à jour avec succès");
-
+      
       // === ÉTAPE 3: Création de la commande ===
       const livraison = getLivraisonAmount();
-
+      
       let adresseExpeditionId = null;
       if (devisForm.besoinLivraison && devisForm.adresseId > 0) {
         adresseExpeditionId = devisForm.adresseId;
       }
-
+      
       const commandeData: any = {
         livraison: livraison,
         devise: devisForm.devise,
@@ -450,7 +422,7 @@ const Cart = () => {
         adresse_facturation_id: null,
         devis_id: devisId,
       };
-
+      
       commandeData.meta_json = {
         note: devisForm.note || null,
         date_creation: new Date().toISOString(),
@@ -467,58 +439,61 @@ const Cart = () => {
           nouveau_stock: stockUpdates.find(u => u.id === item.product.id)?.nouveau_stock
         }))
       };
-
+      
       console.log("📦 Envoi commande avec devis_id:", devisId);
-
+      console.log("📦 Commande data:", JSON.stringify(commandeData, null, 2));
+      
       const response = await api.post('/commandes', commandeData);
-
+      
       if (response.status === 200 || response.status === 201) {
         const commandeDataResponse = response.data.data;
         const commandeUuid = commandeDataResponse?.commande_uuid;
-
-        toast({
-          title: "✅ Commande enregistrée !",
+        
+        toast({ 
+          title: "✅ Commande enregistrée !", 
           description: `Votre commande ${commandeUuid} a été créée avec succès. Les stocks ont été mis à jour.`,
           duration: 5000
         });
-
+        
         setShowDevisModal(false);
         setDevisId(null);
         setDevisValide(false);
-
+        
         await clearCart();
-
+        
         setTimeout(() => {
-          navigate('/catalogue', {
-            state: {
+          navigate('/catalogue', { 
+            state: { 
               message: `Commande ${commandeUuid} créée avec succès !`,
-              type: 'success'
-            }
+              type: 'success' 
+            } 
           });
         }, 2000);
       }
-
+      
     } catch (error: any) {
       console.error("❌ Erreur détaillée:", error);
-
+      
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors;
+        console.log("📋 Erreurs de validation:", errors);
+        
         Object.keys(errors).forEach(key => {
-          toast({
-            title: `Erreur: ${key}`,
+          toast({ 
+            title: `Erreur: ${key}`, 
             description: errors[key][0],
             variant: "destructive"
           });
         });
       } else if (error.response?.data?.message) {
-        toast({
-          title: "Erreur",
+        toast({ 
+          title: "Erreur", 
           description: error.response.data.message,
           variant: "destructive"
         });
       } else {
-        toast({
-          title: "Erreur",
+        toast({ 
+          title: "Erreur", 
           description: "Impossible de créer la commande. Vérifiez votre connexion.",
           variant: "destructive"
         });
@@ -546,25 +521,13 @@ const Cart = () => {
       <SiteLayout>
         <section className="container-x py-12">
           <div className="relative card-soft p-12 text-center max-w-xl mx-auto overflow-hidden">
-            
-            <div className="relative">
-              <div className="relative inline-block mb-4">
-                <img src={fosa} alt="Le Fosa" className="h-40 w-40 mx-auto animate-float rounded-full" />
-                {[...Array(10)].map((_, i) => (
-                  <Heart
-                    key={i}
-                    className="absolute fill-rose-500 text-rose-500 animate-heart-orbit"
-                    style={{
-                      width: `${12 + (i % 3) * 8}px`,
-                      height: `${12 + (i % 3) * 8}px`,
-                      top: `${50 + 52 * Math.sin((i / 10) * 2 * Math.PI)}%`,
-                      left: `${50 + 52 * Math.cos((i / 10) * 2 * Math.PI)}%`,
-                      transform: 'translate(-50%, -50%)',
-                      animationDelay: `${i * 0.18}s`,
-                    }}
-                  />
-                ))}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5">
+                <Heart className="h-64 w-64 text-rose-500" />
               </div>
+            </div>
+            <div className="relative">
+              <img src={fosa} alt="Le Fosa" className="h-28 w-28 mx-auto animate-float mb-4" />
               <h2 className="font-display text-2xl font-bold mb-2">Le Fosa s'ennuie un peu ici…</h2>
               <p className="text-muted-foreground mb-6">Aucun article dans votre panier. Allez vite découvrir nos configurations !</p>
               <Button variant="hero" size="lg" asChild>
@@ -590,48 +553,37 @@ const Cart = () => {
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Colonne de gauche - Liste des produits */}
           <div className="lg:col-span-8 space-y-4">
-            {cartDetailed.map((item) => {
-              const imageUrl = getProductImageUrl(item.product);
-
-              return (
-                <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift">
-                  <Link to={`/produit/${item.product.id}`} className="shrink-0">
-                    <img
-                      src={imageUrl}
-                      alt={item.product.name}
-                      className="h-28 w-28 rounded-xl object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
-                      }}
-                    />
+            {cartDetailed.map((item) => (
+              <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift">
+                <Link to={`/produit/${item.product.id}`} className="shrink-0">
+                  <img src={item.product.image} alt={item.product.name} className="h-28 w-28 rounded-xl object-cover" />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category}</div>
+                  <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
+                    {item.product.name}
                   </Link>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category}</div>
-                    <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
-                      {item.product.name}
-                    </Link>
-                    <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline}"</p>
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center bg-secondary rounded-full">
-                        <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Minus className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
-                        <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="font-display font-bold">{formatAr(item.subtotal)}</div>
-                        <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                  <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline}"</p>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center bg-secondary rounded-full">
+                      <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
+                      <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="font-display font-bold">{formatAr(item.subtotal)}</div>
+                      <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
 
             {/* Boutons en bas de la colonne de gauche */}
             <div className="flex justify-between items-center pt-2">
@@ -662,7 +614,7 @@ const Cart = () => {
               </div>
 
               <Button variant="hero" size="lg" className="w-full mt-4 group" onClick={handleOpenDevisModal}>
-                Demander mon devis
+                Demander mon devis 
                 <ArrowRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button variant="soft" size="sm" className="w-full mt-2" asChild>
@@ -700,35 +652,23 @@ const Cart = () => {
               <div>
                 <h3 className="font-semibold text-foreground mb-3">📦 Produits sélectionnés</h3>
                 <div className="space-y-3">
-                  {cartDetailed.map((item) => {
-                    const imageUrl = getProductImageUrl(item.product);
-
-                    return (
-                      <div key={item.id} className="flex items-center gap-3 py-2 border-b border-border/50">
-                        <img
-                          src={imageUrl}
-                          alt={item.product.name}
-                          className="h-12 w-12 rounded-lg object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
-                          }}
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-foreground">{item.product.name}</p>
-                          <p className="text-xs text-muted-foreground">Quantité: {item.qty}</p>
-                        </div>
-                        <p className="font-semibold text-primary">{formatPriceWithDevise(item.subtotal, devisForm.devise)}</p>
+                  {cartDetailed.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center py-2 border-b border-border/50">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{item.product.name}</p>
+                        <p className="text-xs text-muted-foreground">Quantité: {item.qty}</p>
                       </div>
-                    );
-                  })}
+                      <p className="font-semibold text-primary">{formatPriceWithDevise(item.subtotal, devisForm.devise)}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Devise */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">💰 Devise</label>
-                <select
-                  value={devisForm.devise}
+                <select 
+                  value={devisForm.devise} 
                   onChange={(e) => setDevisForm(prev => ({ ...prev, devise: e.target.value }))}
                   className="w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
@@ -758,8 +698,8 @@ const Cart = () => {
               {/* Adresse de livraison (si besoin) */}
               {devisForm.besoinLivraison && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-foreground">📍 Adresse de livraison</label>
-
+                  <label className="block text-sm font-medium text-foreground"> Adresse de livraison</label>
+                  
                   {adresses.length > 0 && (
                     <div className="space-y-2">
                       <p className="text-xs text-muted-foreground">Ou choisissez une adresse existante :</p>
@@ -874,43 +814,19 @@ const Cart = () => {
 
       {/* Animation du mascotte */}
       {showHeartAnimation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none animate-slide-up">
-          <div className="relative flex items-center justify-center">
-            <img src={fosa} alt="Le Fosa" className="h-64 w-64 rounded-full shadow-2xl border-4 border-rose-400 animate-bounce-slow z-10 relative" />
-            {[...Array(12)].map((_, i) => (
-              <Heart
-                key={i}
-                className="absolute fill-rose-500 text-rose-500 animate-heart-orbit"
-                style={{
-                  width: `${16 + (i % 3) * 10}px`,
-                  height: `${16 + (i % 3) * 10}px`,
-                  top: `${50 + 45 * Math.sin((i / 12) * 2 * Math.PI)}%`,
-                  left: `${50 + 45 * Math.cos((i / 12) * 2 * Math.PI)}%`,
-                  transform: 'translate(-50%, -50%)',
-                  animationDelay: `${i * 0.15}s`,
-                  opacity: 0.7 + (i % 3) * 0.1,
-                }}
-              />
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <Heart
-                key={`float-${i}`}
-                className="absolute fill-rose-400 text-rose-400 animate-float-up"
-                style={{
-                  width: `${10 + (i % 4) * 8}px`,
-                  height: `${10 + (i % 4) * 8}px`,
-                  left: `${20 + i * 9}%`,
-                  bottom: '60%',
-                  animationDelay: `${i * 0.2}s`,
-                  animationDuration: `${1.2 + (i % 3) * 0.4}s`,
-                }}
-              />
-            ))}
-            {lastAddedProduct && (
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-2xl px-4 py-2 shadow-lg border border-rose-200 whitespace-nowrap">
-                <p className="text-sm font-medium text-rose-500">❤️ {lastAddedProduct} ajouté !</p>
-              </div>
-            )}
+        <div className="fixed bottom-24 right-6 z-50 animate-slide-up pointer-events-none">
+          <div className="relative">
+            <img src={fosa} alt="Le Fosa" className="h-20 w-20 rounded-full shadow-xl border-2 border-rose-400 animate-bounce-slow" />
+            <div className="absolute -top-6 -right-6 animate-heart-beat"><Heart className="h-8 w-8 text-rose-500 fill-rose-500" /></div>
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1">
+              <Heart className="h-3 w-3 text-rose-400 fill-rose-400 animate-float-up delay-0" />
+              <Heart className="h-2 w-2 text-rose-300 fill-rose-300 animate-float-up delay-100" />
+              <Heart className="h-4 w-4 text-rose-500 fill-rose-500 animate-float-up delay-200" />
+            </div>
+            <div className="absolute -top-16 -left-32 bg-white dark:bg-gray-800 rounded-2xl px-3 py-2 shadow-lg border border-rose-200 dark:border-rose-800 whitespace-nowrap">
+              <p className="text-sm font-medium text-rose-500">🐧 *fait un cœur* {lastAddedProduct && <span className="ml-1 text-xs text-muted-foreground">{lastAddedProduct} ajouté ! ❤️</span>}</p>
+              <div className="absolute bottom-0 right-4 translate-y-1/2 w-3 h-3 bg-white dark:bg-gray-800 border-r border-b border-rose-200 dark:border-rose-800 rotate-45"></div>
+            </div>
           </div>
         </div>
       )}
