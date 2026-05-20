@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+  import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye } from "lucide-react";
 import {
@@ -60,6 +60,278 @@ const initialCategoryForm: CategoryForm = {
 
 type Produit = APIProduct;
 
+// Configuration des préfixes de référence
+const REFERENCE_PREFIXES = [
+  { key: "CASE", label: "CASE-", description: "Unité Central", exemple: "CASE-001" },
+  { key: "CPU", label: "CPU-", description: "Processeur", exemple: "CPU-001" },
+  { key: "MB", label: "MB-", description: "Carte mère", exemple: "MB-001" },
+  { key: "CL", label: "CL-", description: "Refroidissement", exemple: "CL-001" },
+  { key: "RAM", label: "RAM-", description: "Mémoire RAM", exemple: "RAM-001" },
+  { key: "SD", label: "SD-", description: "Stockage (Disque Dur, NVMe)", exemple: "SD-001" },
+  { key: "GPU", label: "GPU-", description: "Carte graphique", exemple: "GPU-001" },
+  { key: "PSU", label: "PSU-", description: "Alimentation", exemple: "PSU-001" },
+  { key: "PC", label: "PC-", description: "Portable", exemple: "PC-001" },
+  { key: "CLV", label: "CLV-", description: "Clavier Gaming", exemple: "CLV-001" },
+  { key: "SR", label: "SR-", description: "Souris Gaming", exemple: "SR-001" },
+  { key: "ECR", label: "ECR-", description: "Ecran Gaming", exemple: "ECR-001" },
+  { key: "CHS", label: "CHS-", description: "Chaise Gaming", exemple: "CHS-001" },
+  { key: "EXP", label: "EXP-", description: "Produit Exception", exemple: "EXP-001" },
+  { key: "REF", label: "REF-", description: "Autres", exemple: "REF-001" },
+] as const;
+
+// ==================== COMPOSANTS EXTRAITS ====================
+
+// Composant ProductForm
+const ProductForm = ({ 
+  value, 
+  setValue, 
+  categories,
+  selectedPrefix,
+  setSelectedPrefix,
+  generatedReference,
+  generateReference,
+  isEditMode = false
+}: { 
+  value: ProduitForm; 
+  setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
+  categories: any[];
+  selectedPrefix: string;
+  setSelectedPrefix: React.Dispatch<React.SetStateAction<string>>;
+  generatedReference: string;
+  generateReference: (prefixKey: string) => Promise<void>;
+  isEditMode?: boolean;
+}) => {
+  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+
+  const handlePrefixChange = async (prefixKey: string) => {
+    setSelectedPrefix(prefixKey);
+    if (!isEditMode) {
+      await generateReference(prefixKey);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Dropdown pour le type de référence */}
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-muted-foreground">Type de référence</label>
+        <select 
+          className={inputClass}
+          value={selectedPrefix}
+          onChange={(e) => handlePrefixChange(e.target.value)}
+          disabled={isEditMode}
+        >
+          <option value="">Sélectionner un type de référence</option>
+          {REFERENCE_PREFIXES.map((prefix) => (
+            <option key={prefix.key} value={prefix.key}>
+              {prefix.label} - {prefix.description}
+            </option>
+          ))}
+        </select>
+        {generatedReference && !isEditMode && (
+          <p className="text-xs text-muted-foreground">
+            Référence générée : <span className="font-mono font-semibold text-primary">{generatedReference}</span>
+          </p>
+        )}
+        {isEditMode && value.reference && (
+          <p className="text-xs text-muted-foreground">
+            Référence actuelle : <span className="font-mono font-semibold text-primary">{value.reference}</span>
+          </p>
+        )}
+      </div>
+
+      {/* Champ référence caché */}
+      <input type="hidden" name="reference" value={value.reference} />
+
+      <input 
+        className={inputClass} 
+        placeholder="Nom" 
+        value={value.nom} 
+        onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))} 
+      />
+      
+      <select 
+        className={inputClass} 
+        value={value.type_produit} 
+        onChange={(e) => setValue((p) => ({ ...p, type_produit: e.target.value as ProduitForm["type_produit"] }))}
+      >
+        <option value="">Type produit</option>
+        {TYPES_PRODUIT.map((t) => (
+          <option key={t} value={t}>{t}</option>
+        ))}
+      </select>
+      
+      <select 
+        className={inputClass} 
+        value={value.categorie_id} 
+        onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}
+      >
+        <option value="">Catégorie</option>
+        {categories.map((c: any) => (
+          <option key={c.id} value={c.id}>{c.nom}</option>
+        ))}
+      </select>
+      
+      <input 
+        className={inputClass} 
+        placeholder="Prix" 
+        value={value.prix} 
+        onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} 
+      />
+      
+      <input 
+        className={inputClass} 
+        placeholder="Stock" 
+        value={value.quantite_stock} 
+        onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} 
+      />
+      
+      <textarea 
+        className={inputClass} 
+        placeholder="Description" 
+        value={value.description} 
+        onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} 
+        rows={4}
+      />
+    </div>
+  );
+};
+
+// Composant ImageUploadField
+const ImageUploadField = ({
+  files,
+  setFiles,
+  label = "Images du produit",
+}: {
+  files: File[];
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  label?: string;
+}) => {
+  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label}</label>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className={inputClass}
+        onChange={(e) => {
+          const selected = Array.from(e.target.files ?? []);
+          setFiles((prev) => [...prev, ...selected]);
+          e.currentTarget.value = "";
+        }}
+      />
+      {files.length > 0 && (
+        <div className="space-y-1">
+          {files.map((file, index) => (
+            <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
+              <span className="truncate pr-3">{file.name}</span>
+              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Composant ExistingImagesManager (CORRIGÉ - utilise les images correctement)
+const ExistingImagesManager = ({
+  selectedProduit,
+  existingImages,
+  setExistingImages,
+  setMainImage,
+  deleteImage,
+  handleApiError,
+  toast,
+}: {
+  selectedProduit: Produit | null;
+  existingImages: { id: number; url: string; alt: string; ordre?: number }[];
+  setExistingImages: React.Dispatch<React.SetStateAction<{ id: number; url: string; alt: string; ordre?: number }[]>>;
+  setMainImage: any;
+  deleteImage: any;
+  handleApiError: (error: any, fallback: string) => void;
+  toast: any;
+}) => {
+  if (!selectedProduit) return null;
+
+  // Fonction pour obtenir l'URL complète de l'image
+  const getFullImageUrl = (url: string) => {
+    if (!url) return "/placeholder-pc.jpg";
+    if (url.startsWith('/storage')) {
+      return `http://127.0.0.1:8000${url}`;
+    }
+    return url;
+  };
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Images existantes</h4>
+      {existingImages.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {existingImages
+            .slice()
+            .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
+            .map((img) => (
+              <div key={img.id} className="border rounded-xl p-2 space-y-2">
+                <img 
+                  src={getFullImageUrl(img.url)} 
+                  alt={img.alt || "image produit"} 
+                  className="h-28 w-full object-cover rounded-lg border" 
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                  }}
+                />
+                <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await setMainImage.mutateAsync({ produitId: selectedProduit.id, imageId: img.id });
+                        const details = await api.get(`/produits/${selectedProduit.id}`);
+                        setExistingImages(details?.data?.data?.images ?? []);
+                        toast({ title: "Image principale mise à jour" });
+                      } catch (e: any) {
+                        handleApiError(e, "Impossible de définir l'image principale.");
+                      }
+                    }}
+                    className="px-2 py-1 text-xs border rounded-lg"
+                  >
+                    Définir principale
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await deleteImage.mutateAsync(img.id);
+                        setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
+                        toast({ title: "Image supprimée" });
+                      } catch (e: any) {
+                        handleApiError(e, "Impossible de supprimer l'image.");
+                      }
+                    }}
+                    className="px-2 py-1 text-xs border rounded-lg text-destructive"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ==================== COMPOSANT PRINCIPAL ====================
+
 const AdminProduits = () => {
   const [activeTab, setActiveTab] = useState<"produits" | "categories">("produits");
   const [showModal, setShowModal] = useState(false);
@@ -76,6 +348,10 @@ const AdminProduits = () => {
   const [createImageFiles, setCreateImageFiles] = useState<File[]>([]);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<{ id: number; url: string; alt: string; ordre?: number }[]>([]);
+  
+  // États pour la gestion des références
+  const [selectedPrefix, setSelectedPrefix] = useState<string>("");
+  const [generatedReference, setGeneratedReference] = useState<string>("");
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -107,6 +383,16 @@ const AdminProduits = () => {
 
   const filteredProduits = normalizedProduits;
 
+  // Fonction pour obtenir l'URL complète de l'image (CORRIGÉE)
+  const getFullImageUrl = (url: string) => {
+    if (!url) return "/placeholder-pc.jpg";
+    if (url.startsWith('/storage')) {
+      return `http://127.0.0.1:8000${url}`;
+    }
+    return url;
+  };
+
+  // Fonction getMainImage corrigée (identique à l'ancien code)
   const getMainImage = (product: Produit) => {
     const images = product.images ?? [];
     if (images.length === 0) return null;
@@ -127,6 +413,59 @@ const AdminProduits = () => {
     toast({ title: "Erreur", description: message, variant: "destructive" });
   };
 
+  // Fonction pour générer la prochaine référence disponible
+  const generateNextReference = async (prefixKey: string): Promise<string> => {
+    if (!prefixKey) return "";
+    
+    const prefixConfig = REFERENCE_PREFIXES.find(p => p.key === prefixKey);
+    const prefix = prefixConfig?.label || `${prefixKey}-`;
+    
+    try {
+      const response = await api.get('/produits', {
+        params: {
+          per_page: 10000,
+          all: true
+        }
+      });
+      
+      const allProducts = response?.data?.data || [];
+      
+      const regex = new RegExp(`^${prefix}(\\d+)$`);
+      let maxNumber = 0;
+      
+      allProducts.forEach((product: any) => {
+        const match = product.reference?.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNumber) maxNumber = num;
+        }
+      });
+      
+      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+      return `${prefix}${nextNumber}`;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des produits:", error);
+      return `${prefix}001`;
+    }
+  };
+
+  // Fonction pour générer et mettre à jour la référence
+  const generateReference = async (prefixKey: string) => {
+    if (!prefixKey) {
+      setGeneratedReference("");
+      return;
+    }
+    
+    try {
+      const newReference = await generateNextReference(prefixKey);
+      setGeneratedReference(newReference);
+      setForm((prev) => ({ ...prev, reference: newReference }));
+    } catch (error) {
+      console.error("Erreur lors de la génération de la référence:", error);
+      toast({ title: "Erreur", description: "Impossible de générer la référence", variant: "destructive" });
+    }
+  };
+
   const buildFormData = (data: ProduitForm) => {
     const fd = new FormData();
     fd.append("categorie_id", data.categorie_id);
@@ -143,6 +482,11 @@ const AdminProduits = () => {
   };
 
   const handleCreate = async () => {
+    if (!form.reference) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner un type de référence", variant: "destructive" });
+      return;
+    }
+    
     try {
       const created = await createProductMutation.mutateAsync(buildFormData(form));
       const createdProductId = created?.data?.data?.id as number | undefined;
@@ -162,9 +506,11 @@ const AdminProduits = () => {
 
       setShowModal(false);
       setForm(initialForm);
+      setSelectedPrefix("");
+      setGeneratedReference("");
       setCreateImageFiles([]);
       await refetch();
-      toast({ title: "Produit créé" });
+      toast({ title: "Produit créé avec la référence " + form.reference });
     } catch (e: any) {
       handleApiError(e, "Impossible de créer le produit.");
     }
@@ -172,6 +518,17 @@ const AdminProduits = () => {
 
   const handleOpenEdit = async (p: Produit) => {
     setSelectedProduit(p);
+    
+    let existingPrefix = "";
+    for (const prefix of REFERENCE_PREFIXES) {
+      if (p.reference?.startsWith(prefix.label)) {
+        existingPrefix = prefix.key;
+        break;
+      }
+    }
+    
+    setSelectedPrefix(existingPrefix);
+    
     setEditForm({
       categorie_id: String(p.categorie_id ?? ""),
       reference: p.reference ?? "",
@@ -184,6 +541,7 @@ const AdminProduits = () => {
       quantite_stock: String(p.quantite_stock ?? ""),
       actif: p.actif ?? true,
     });
+    
     setEditImageFiles([]);
     try {
       const details = await api.get(`/produits/${p.id}`);
@@ -215,6 +573,7 @@ const AdminProduits = () => {
 
       setShowEditModal(false);
       setSelectedProduit(null);
+      setSelectedPrefix("");
       setEditImageFiles([]);
       setExistingImages([]);
       await refetch();
@@ -261,126 +620,6 @@ const AdminProduits = () => {
     }
   };
 
-  const ProductForm = ({ value, setValue }: { value: ProduitForm; setValue: React.Dispatch<React.SetStateAction<ProduitForm>> }) => (
-    <div className="space-y-3">
-      <input className={inputClass} placeholder="Nom" value={value.nom} onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))} />
-      <input className={inputClass} placeholder="Référence" value={value.reference} onChange={(e) => setValue((p) => ({ ...p, reference: e.target.value }))} />
-      <select className={inputClass} value={value.type_produit} onChange={(e) => setValue((p) => ({ ...p, type_produit: e.target.value as ProduitForm["type_produit"] }))}>
-        <option value="">Type produit</option>
-        {TYPES_PRODUIT.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
-      <select className={inputClass} value={value.categorie_id} onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}>
-        <option value="">Catégorie</option>
-        {normalizedCategories.map((c: any) => (
-          <option key={c.id} value={c.id}>
-            {c.nom}
-          </option>
-        ))}
-      </select>
-      <input className={inputClass} placeholder="Prix" value={value.prix} onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} />
-      <input className={inputClass} placeholder="Stock" value={value.quantite_stock} onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} />
-      <textarea className={inputClass} placeholder="Description" value={value.description} onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} />
-    </div>
-  );
-
-  const ImageUploadField = ({
-    files,
-    setFiles,
-    label = "Images du produit",
-  }: {
-    files: File[];
-    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
-    label?: string;
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">{label}</label>
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        className={inputClass}
-        onChange={(e) => {
-          const selected = Array.from(e.target.files ?? []);
-          setFiles((prev) => [...prev, ...selected]);
-          e.currentTarget.value = "";
-        }}
-      />
-      {files.length > 0 && (
-        <div className="space-y-1">
-          {files.map((file, index) => (
-            <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-              <span className="truncate pr-3">{file.name}</span>
-              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const ExistingImagesManager = () => {
-    if (!selectedProduit) return null;
-    return (
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Images existantes</h4>
-        {existingImages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {existingImages
-              .slice()
-              .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
-              .map((img) => (
-                <div key={img.id} className="border rounded-xl p-2 space-y-2">
-                  <img src={img.url} alt={img.alt || "image produit"} className="h-28 w-full object-cover rounded-lg border" />
-                  <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await setMainImage.mutateAsync({ produitId: selectedProduit.id, imageId: img.id });
-                          const details = await api.get(`/produits/${selectedProduit.id}`);
-                          setExistingImages(details?.data?.data?.images ?? []);
-                          toast({ title: "Image principale mise à jour" });
-                        } catch (e: any) {
-                          handleApiError(e, "Impossible de définir l'image principale.");
-                        }
-                      }}
-                      className="px-2 py-1 text-xs border rounded-lg"
-                    >
-                      Définir principale
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await deleteImage.mutateAsync(img.id);
-                          setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
-                          toast({ title: "Image supprimée" });
-                        } catch (e: any) {
-                          handleApiError(e, "Impossible de supprimer l'image.");
-                        }
-                      }}
-                      className="px-2 py-1 text-xs border rounded-lg text-destructive"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -425,6 +664,7 @@ const AdminProduits = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-3">Image</th>
+                  <th className="text-left p-3">Référence</th>
                   <th className="text-left p-3">Nom</th>
                   <th className="text-left p-3">Catégorie</th>
                   <th className="text-left p-3">Prix</th>
@@ -437,21 +677,23 @@ const AdminProduits = () => {
                 {filteredProduits.map((p) => {
                 const mainImage = getMainImage(p);
                 
-                // Afficher dans la console pour debug
-                console.log("Produit ID:", p.id);
-                console.log("Produit Nom:", p.nom);
-                console.log("mainImage:", mainImage);
-                console.log("mainImage?.url:", mainImage?.url);
-                
                 return (
                   <tr key={p.id} className="border-b">
                     <td className="p-3">
                       {mainImage?.url ? (
-                        <img src={mainImage.url} alt={mainImage.alt || p.nom} className="h-12 w-12 object-cover rounded-md border" />
+                        <img 
+                          src={getFullImageUrl(mainImage.url)} 
+                          alt={mainImage.alt || p.nom} 
+                          className="h-12 w-12 object-cover rounded-md border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                          }}
+                        />
                       ) : (
                         <div className="h-12 w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
                       )}
                     </td>
+                    <td className="p-3 font-mono text-xs">{p.reference || "-"}</td>
                     <td className="p-3">{p.nom}</td>
                     <td className="p-3">{p.categorie?.nom ?? "-"}</td>
                     <td className="p-3">{p.prix}</td>
@@ -474,7 +716,7 @@ const AdminProduits = () => {
                         </button>
                       </div>
                     </td>
-                  </tr>
+                   </tr>
                 );
               })}
               </tbody>
@@ -510,7 +752,7 @@ const AdminProduits = () => {
                         <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
-                  </tr>
+                   </tr>
                 ))}
               </tbody>
             </table>
@@ -518,6 +760,7 @@ const AdminProduits = () => {
         </div>
       )}
 
+      {/* Modal Ajout Produit */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
@@ -525,16 +768,34 @@ const AdminProduits = () => {
               <h2 className="text-xl font-bold">Ajouter produit</h2>
               <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <ProductForm value={form} setValue={setForm} />
+            <ProductForm 
+              value={form} 
+              setValue={setForm} 
+              categories={normalizedCategories}
+              selectedPrefix={selectedPrefix}
+              setSelectedPrefix={setSelectedPrefix}
+              generatedReference={generatedReference}
+              generateReference={generateReference}
+              isEditMode={false}
+            />
             <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setShowModal(false); setCreateImageFiles([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
+              <button onClick={() => { 
+                setShowModal(false); 
+                setCreateImageFiles([]);
+                setSelectedPrefix("");
+                setGeneratedReference("");
+                setForm(initialForm);
+              }} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2">
+                <Save className="h-4 w-4" /> Enregistrer
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal Modification Produit */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
@@ -542,17 +803,43 @@ const AdminProduits = () => {
               <h2 className="text-xl font-bold">Modifier produit</h2>
               <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <ProductForm value={editForm} setValue={setEditForm} />
-            <ExistingImagesManager />
+            <ProductForm 
+              value={editForm} 
+              setValue={setEditForm} 
+              categories={normalizedCategories}
+              selectedPrefix={selectedPrefix}
+              setSelectedPrefix={setSelectedPrefix}
+              generatedReference={generatedReference}
+              generateReference={generateReference}
+              isEditMode={true}
+            />
+            <ExistingImagesManager 
+              selectedProduit={selectedProduit}
+              existingImages={existingImages}
+              setExistingImages={setExistingImages}
+              setMainImage={setMainImage}
+              deleteImage={deleteImage}
+              handleApiError={handleApiError}
+              toast={toast}
+            />
             <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
             <div className="flex justify-end gap-2">
-              <button onClick={() => { setShowEditModal(false); setEditImageFiles([]); setExistingImages([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
+              <button onClick={() => { 
+                setShowEditModal(false); 
+                setEditImageFiles([]); 
+                setExistingImages([]);
+                setSelectedPrefix("");
+                setGeneratedReference("");
+              }} className="px-4 py-2 border rounded-xl">Annuler</button>
+              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2">
+                <Save className="h-4 w-4" /> Enregistrer
+              </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal Catégorie */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-xl p-6 space-y-4">
@@ -577,6 +864,7 @@ const AdminProduits = () => {
         </div>
       )}
 
+      {/* Modal Confirmation Suppression */}
       {showDeleteAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-md p-6 space-y-4">

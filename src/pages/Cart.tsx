@@ -1,4 +1,4 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ShieldCheck, Truck, Tag, Loader2, Heart, X, Check, MapPin, Home, Building, Package, Euro, DollarSign } from "lucide-react";
@@ -71,6 +71,24 @@ const Cart = () => {
   
   const [adresses, setAdresses] = useState<Adresse[]>([]);
   const [isLoadingAdresses, setIsLoadingAdresses] = useState(false);
+
+  // Fonction pour obtenir l'URL de l'image principale d'un produit
+  const getProductImageUrl = (product: any) => {
+    if (!product) return "/placeholder-pc.jpg";
+    
+    const images = product.images || [];
+    if (images.length === 0) return "/placeholder-pc.jpg";
+    
+    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
+    if (!mainImage?.url) return "/placeholder-pc.jpg";
+    
+    // Si l'URL commence par /storage, ajouter le domaine
+    if (mainImage.url.startsWith('/storage')) {
+      return `http://127.0.0.1:8000${mainImage.url}`;
+    }
+    
+    return mainImage.url;
+  };
 
   useEffect(() => { 
     document.title = "Mon panier — Les Casaniers Madagascar"; 
@@ -343,8 +361,7 @@ const Cart = () => {
             const product = getResponse.data.data || getResponse.data;
             const nouveauStock = product.quantite_stock - item.qty;
             
-            // Utiliser PUT au lieu de PATCH (correspond à votre route Laravel)
-            const updateResponse = await api.put(`/produits/${item.product.id}`, {
+            await api.put(`/produits/${item.product.id}`, {
               quantite_stock: nouveauStock,
               est_dispo: nouveauStock > 0
             });
@@ -384,7 +401,7 @@ const Cart = () => {
             .filter(update => update.success)
             .map(async (update) => {
               try {
-                await api.patch(`/produits/${update.id}`, {
+                await api.put(`/produits/${update.id}`, {
                   quantite_stock: update.ancien_stock,
                   est_dispo: update.ancien_stock > 0
                 });
@@ -441,7 +458,6 @@ const Cart = () => {
       };
       
       console.log("📦 Envoi commande avec devis_id:", devisId);
-      console.log("📦 Commande data:", JSON.stringify(commandeData, null, 2));
       
       const response = await api.post('/commandes', commandeData);
       
@@ -476,8 +492,6 @@ const Cart = () => {
       
       if (error.response?.data?.errors) {
         const errors = error.response.data.errors;
-        console.log("📋 Erreurs de validation:", errors);
-        
         Object.keys(errors).forEach(key => {
           toast({ 
             title: `Erreur: ${key}`, 
@@ -553,37 +567,48 @@ const Cart = () => {
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Colonne de gauche - Liste des produits */}
           <div className="lg:col-span-8 space-y-4">
-            {cartDetailed.map((item) => (
-              <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift">
-                <Link to={`/produit/${item.product.id}`} className="shrink-0">
-                  <img src={item.product.image} alt={item.product.name} className="h-28 w-28 rounded-xl object-cover" />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category}</div>
-                  <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
-                    {item.product.name}
+            {cartDetailed.map((item) => {
+              const imageUrl = getProductImageUrl(item.product);
+              
+              return (
+                <div key={item.id} className="card-soft p-5 flex gap-4 hover-lift">
+                  <Link to={`/produit/${item.product.id}`} className="shrink-0">
+                    <img 
+                      src={imageUrl} 
+                      alt={item.product.name} 
+                      className="h-28 w-28 rounded-xl object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                      }}
+                    />
                   </Link>
-                  <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline}"</p>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center bg-secondary rounded-full">
-                      <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
-                      <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="font-display font-bold">{formatAr(item.subtotal)}</div>
-                      <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-mono uppercase tracking-wider text-accent">{item.product.category}</div>
+                    <Link to={`/produit/${item.product.id}`} className="font-display font-bold text-lg hover:text-accent transition-colors">
+                      {item.product.name}
+                    </Link>
+                    <p className="text-xs text-muted-foreground italic line-clamp-1">"{item.product.tagline}"</p>
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center bg-secondary rounded-full">
+                        <button onClick={() => handleSetQty(item.id, item.qty - 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="w-8 text-center font-semibold tabular-nums text-sm">{item.qty}</span>
+                        <button onClick={() => handleSetQty(item.id, item.qty + 1)} className="h-9 w-9 flex items-center justify-center hover:text-accent">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="font-display font-bold">{formatAr(item.subtotal)}</div>
+                        <button onClick={() => handleRemove(item.id, item.product.name)} className="text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             
             {/* Boutons en bas de la colonne de gauche */}
             <div className="flex justify-between items-center pt-2">
@@ -652,15 +677,27 @@ const Cart = () => {
               <div>
                 <h3 className="font-semibold text-foreground mb-3">📦 Produits sélectionnés</h3>
                 <div className="space-y-3">
-                  {cartDetailed.map((item) => (
-                    <div key={item.id} className="flex justify-between items-center py-2 border-b border-border/50">
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground">Quantité: {item.qty}</p>
+                  {cartDetailed.map((item) => {
+                    const imageUrl = getProductImageUrl(item.product);
+                    
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 py-2 border-b border-border/50">
+                        <img 
+                          src={imageUrl} 
+                          alt={item.product.name} 
+                          className="h-12 w-12 rounded-lg object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                          }}
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{item.product.name}</p>
+                          <p className="text-xs text-muted-foreground">Quantité: {item.qty}</p>
+                        </div>
+                        <p className="font-semibold text-primary">{formatPriceWithDevise(item.subtotal, devisForm.devise)}</p>
                       </div>
-                      <p className="font-semibold text-primary">{formatPriceWithDevise(item.subtotal, devisForm.devise)}</p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
@@ -698,7 +735,7 @@ const Cart = () => {
               {/* Adresse de livraison (si besoin) */}
               {devisForm.besoinLivraison && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-foreground"> Adresse de livraison</label>
+                  <label className="block text-sm font-medium text-foreground">📍 Adresse de livraison</label>
                   
                   {adresses.length > 0 && (
                     <div className="space-y-2">
