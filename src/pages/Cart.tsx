@@ -59,6 +59,17 @@ const Cart = () => {
   const [isCommandeSent, setIsCommandeSent] = useState(false);
   const [devisId, setDevisId] = useState<number | null>(null);
   const [devisValide, setDevisValide] = useState(false);
+
+  // Pour supprimer
+  const handleRemove = async (itemId: number, productName: string) => {
+    await removeFromCart(itemId);
+  };
+
+  // Pour modifier la quantité
+  const handleSetQty = async (itemId: number, newQty: number) => {
+    if (newQty < 1) return;
+    await updateQuantity(itemId, newQty);
+  };
   
   // État du formulaire de devis
   const [devisForm, setDevisForm] = useState({
@@ -121,18 +132,18 @@ const Cart = () => {
   };
 
   // Modification de la quantité - utilise l'ID du panier (item.id)
-  const handleSetQty = (itemId: number, newQty: number) => {
-    if (newQty < 1) return;
-    console.log("🔍 Modification quantité - itemId (panier):", itemId, "nouvelle quantité:", newQty);
-    updateQuantity(itemId, newQty);
-  };
+  // const handleSetQty = (itemId: number, newQty: number) => {
+  //   if (newQty < 1) return;
+  //   console.log("🔍 Modification quantité - itemId (panier):", itemId, "nouvelle quantité:", newQty);
+  //   updateQuantity(itemId, newQty);
+  // };
 
-  // Suppression - utilise l'ID du panier (item.id)
-  const handleRemove = (itemId: number, productName: string) => {
-    console.log("🔍 Suppression - itemId (panier):", itemId);
-    removeFromCart(itemId);
-    toast({ title: "Article supprimé", description: `${productName} a été retiré de votre panier.` });
-  };
+  // // Suppression - utilise l'ID du panier (item.id)
+  // const handleRemove = (itemId: number, productName: string) => {
+  //   console.log("🔍 Suppression - itemId (panier):", itemId);
+  //   removeFromCart(itemId);
+  //   toast({ title: "Article supprimé", description: `${productName} a été retiré de votre panier.` });
+  // };
 
   const handleClearCart = () => {
     if (cartDetailed.length > 0) clearCart();
