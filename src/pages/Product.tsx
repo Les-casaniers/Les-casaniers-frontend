@@ -8,6 +8,8 @@ import { useShop } from "@/store/shop";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { Product, productImage, productSpec, useProduct, useProducts } from "@/hooks/useProducts";
+import api from "@/service/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 const specIcons = { 
   processeur: Cpu, 
@@ -38,13 +40,101 @@ const ProductPage = () => {
   const { data: product, isLoading, error } = useProduct(safeProductId);
   const { data: allProducts } = useProducts();
   
-  const { addToCart, toggleFavorite, favorites } = useShop();
+  const { addToCart: addToLocalCart, toggleFavorite, favorites } = useShop();
+  const { user, isAuthenticated } = useAuth();
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<"specs" | "story" | "garantie">("specs");
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   useEffect(() => {
     if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
   }, [product]);
+
+  // Fonction pour ajouter au panier dans la base de données
+  const addToCartDatabase = async (productId: number, quantite: number) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Connexion requise",
+        description: "Veuillez vous connecter pour ajouter au panier",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      setIsAddingToCart(true);
+      
+      // Appel à la route POST api/panier/ajouter
+      const response = await api.post('/panier/ajouter', {
+        produit_id: productId,
+        quantite: quantite,
+        utilisateur_id: user?.id,
+        prix_unitaire: product?.prix,
+        titre: product?.nom
+      });
+      
+      console.log("Réponse ajout panier:", response.data);
+      
+      toast({
+        title: "Ajouté au panier",
+        description: `${quantite} x ${product?.nom}`
+      });
+      
+      // Mettre à jour le store local également pour la cohérence
+      addToLocalCart(String(productId), quantite, toCartProduct(product!));
+      
+      return true;
+    } catch (error: any) {
+      console.error("Erreur lors de l'ajout au panier:", error);
+      toast({
+        title: "Erreur",
+        description: error.response?.data?.message || "Impossible d'ajouter au panier",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
+
+  // Fonction pour mettre à jour la quantité en temps réel
+  const updateCartQuantity = async (productId: number, newQuantity: number) => {
+    if (!isAuthenticated || !product) return;
+    
+    try {
+      // D'abord, récupérer l'ID de l'item dans le panier
+      const cartResponse = await api.get('/panier', {
+        params: {
+          utilisateur_id: user?.id
+        }
+      });
+      
+      const cartItems = cartResponse.data?.data || [];
+      const cartItem = cartItems.find((item: any) => item.produit_id === productId);
+      
+      if (cartItem) {
+        // Appel à la route PUT api/panier/modifier/{itemId}
+        await api.put(`/panier/modifier/${cartItem.id}`, {
+          quantite: newQuantity
+        });
+        
+        // Mettre à jour le store local
+        addToLocalCart(String(productId), newQuantity, toCartProduct(product));
+        
+        toast({
+          title: "Quantité mise à jour",
+          description: `${newQuantity} x ${product.nom}`
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la quantité:", error);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+    await addToCartDatabase(product.id, qty);
+  };
 
   if (isLoading) {
     return (
@@ -144,17 +234,33 @@ const ProductPage = () => {
 
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-secondary rounded-full">
-              <button onClick={() => setQty(Math.max(1, qty - 1))} className="h-12 w-12 flex items-center justify-center hover:text-accent">
+              <button 
+                onClick={() => setQty(Math.max(1, qty - 1))} 
+                className="h-12 w-12 flex items-center justify-center hover:text-accent"
+              >
                 <Minus className="h-4 w-4" />
               </button>
               <span className="w-10 text-center font-semibold tabular-nums">{qty}</span>
-              <button onClick={() => setQty(qty + 1)} className="h-12 w-12 flex items-center justify-center hover:text-accent">
+              <button 
+                onClick={() => setQty(qty + 1)} 
+                className="h-12 w-12 flex items-center justify-center hover:text-accent"
+              >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <Button variant="hero" size="lg" className="flex-1"
-              onClick={() => { addToCart(String(product.id), qty, toCartProduct(product)); toast({ title: "Ajoute au panier", description: `${qty} x ${product.nom}` }); }}>
-              <ShoppingBag /> Ajouter au panier
+            <Button 
+              variant="hero" 
+              size="lg" 
+              className="flex-1"
+              onClick={handleAddToCart}
+              disabled={isAddingToCart}
+            >
+              {isAddingToCart ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingBag className="h-4 w-4" />
+              )}
+              Ajouter au panier
             </Button>
             <Button variant="soft" size="icon" className="h-12 w-12" onClick={() => toggleFavorite(product.id.toString())}>
               <Heart className={fav ? "fill-accent text-accent" : ""} />
@@ -248,5 +354,3 @@ const ProductPage = () => {
 };
 
 export default ProductPage;
-
-

@@ -55,11 +55,13 @@ const getProductImageUrl = (product: Product) => {
 const FavoriteProductCard = ({ 
   product, 
   onRemove, 
-  onAddToCart 
+  onAddToCart,
+  isAddingToCart 
 }: { 
   product: Product; 
   onRemove: (id: number) => void;
   onAddToCart: (id: number) => void;
+  isAddingToCart: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -86,7 +88,7 @@ const FavoriteProductCard = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Badge Premium/Pro (à adapter selon vos données) */}
+      {/* Badge Premium/Pro */}
       <div className="absolute top-3 left-3 z-10 flex gap-2">
         {product.type_produit === 'pc' && (
           <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
@@ -173,10 +175,14 @@ const FavoriteProductCard = ({
         {/* Bouton Ajouter au panier */}
         <Button
           onClick={() => onAddToCart(product.id)}
-          disabled={product.quantite_stock <= 0}
+          disabled={product.quantite_stock <= 0 || isAddingToCart}
           className="w-full gap-2 bg-foreground text-background hover:bg-foreground/90 py-2.5 text-xs rounded-lg"
         >
-          <ShoppingBag className="h-4 w-4" />
+          {isAddingToCart ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ShoppingBag className="h-4 w-4" />
+          )}
           Ajouter au panier
         </Button>
       </div>
@@ -226,12 +232,14 @@ const EmptyFavorites = () => {
 
 // Composant principal des favoris
 export const Favorites = () => {
-  const { addToCart } = useShop();
+  const { addToCart: addToLocalCart } = useShop();
   const { isAuthenticated, user } = useAuth();
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
+  const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [isAddingSelected, setIsAddingSelected] = useState(false);
 
   // Récupérer les favoris de l'utilisateur connecté
   useEffect(() => {
@@ -286,6 +294,47 @@ export const Favorites = () => {
     }
   };
 
+  // Fonction pour ajouter au panier (identique à Product.tsx)
+  const addToCartDatabase = async (product: Product, quantity: number = 1) => {
+    if (!isAuthenticated) {
+      toast.error("Veuillez vous connecter pour ajouter au panier");
+      return false;
+    }
+
+    if (product.quantite_stock <= 0) {
+      toast.error("Ce produit n'est plus disponible");
+      return false;
+    }
+
+    try {
+      await api.post('/panier/ajouter', {
+        produit_id: product.id,
+        quantite: quantity,
+        utilisateur_id: user?.id,
+        prix_unitaire: product.prix,
+        titre: product.nom
+      });
+      
+      toast.success(`${quantity} x ${product.nom} ajouté au panier`);
+      
+      // Mettre à jour le store local
+      addToLocalCart(String(product.id), quantity, {
+        id: String(product.id),
+        name: product.nom,
+        category: product.type_produit,
+        tagline: product.description_courte || "Produit Les Casaniers",
+        price: Number(product.prix),
+        image: getProductImageUrl(product),
+      });
+      
+      return true;
+    } catch (error: any) {
+      console.error("Erreur lors de l'ajout au panier:", error);
+      toast.error(error.response?.data?.message || "Impossible d'ajouter au panier");
+      return false;
+    }
+  };
+
   const handleRemove = async (productId: number) => {
     try {
       const favori = favoris.find(f => f.produit_id === productId);
@@ -306,27 +355,45 @@ export const Favorites = () => {
     }
   };
 
-  const handleAddToCart = (productId: number) => {
+  const handleAddToCart = async (productId: number) => {
     const product = products.find(p => p.id === productId);
-    if (product && product.quantite_stock > 0) {
-      addToCart(productId.toString(), 1);
-      toast.success(`${product.nom} ajouté au panier`);
-    } else {
-      toast.error("Produit non disponible");
-    }
+    if (!product) return;
+    
+    setAddingToCart(productId);
+    await addToCartDatabase(product, 1);
+    setAddingToCart(null);
   };
 
-  const handleAddSelectedToCart = () => {
-    let addedCount = 0;
-    products.forEach(product => {
-      if (selectedProducts.has(product.id) && product.quantite_stock > 0) {
-        addToCart(product.id.toString(), 1);
-        addedCount++;
-      }
-    });
+  const handleAddSelectedToCart = async () => {
+    if (selectedProducts.size === 0) {
+      toast.error("Aucun produit sélectionné");
+      return;
+    }
     
-    if (addedCount > 0) {
-      toast.success(`${addedCount} produit(s) ajouté(s) au panier`);
+    setIsAddingSelected(true);
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const productId of selectedProducts) {
+      const product = products.find(p => p.id === productId);
+      if (product && product.quantite_stock > 0) {
+        const success = await addToCartDatabase(product, 1);
+        if (success) {
+          successCount++;
+        } else {
+          errorCount++;
+        }
+      } else {
+        errorCount++;
+      }
+    }
+    
+    setIsAddingSelected(false);
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} produit(s) ajouté(s) au panier${errorCount > 0 ? ` (${errorCount} erreur(s))` : ''}`);
+    } else {
+      toast.error("Aucun produit n'a pu être ajouté au panier");
     }
   };
 
@@ -511,9 +578,14 @@ export const Favorites = () => {
                       <Button
                         size="sm"
                         onClick={handleAddSelectedToCart}
+                        disabled={isAddingSelected}
                         className="gap-2 bg-foreground text-background hover:bg-foreground/90"
                       >
-                        <ShoppingBag className="h-4 w-4" />
+                        {isAddingSelected ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ShoppingBag className="h-4 w-4" />
+                        )}
                         Ajouter au panier ({selectedProducts.size})
                       </Button>
                     </>
@@ -546,6 +618,7 @@ export const Favorites = () => {
                       product={product}
                       onRemove={handleRemove}
                       onAddToCart={handleAddToCart}
+                      isAddingToCart={addingToCart === product.id}
                     />
                   </div>
                 ))}

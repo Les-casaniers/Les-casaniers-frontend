@@ -1,10 +1,8 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Keyboard, Mouse, Monitor, Armchair, Sparkles, Star, Zap, Loader2 } from "lucide-react";
+import { Keyboard, Mouse, Monitor, Armchair, Sparkles, Star, Zap, Loader2, Eye, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import atelierCasanier from "@/assets/atelierCasanier.jpg";
-import ecranGameurSimple from "@/assets/ecranGameurSimple.png";
 import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
 
@@ -24,6 +22,7 @@ interface Product {
   actif: boolean;
   date_creation: string;
   date_modification: string;
+  images?: { id: number; url: string; alt: string; ordre: number }[];
 }
 
 // Interface pour les catégories de périphériques
@@ -35,7 +34,7 @@ interface PeripheralCategory {
   bgColor: string;
   borderColor: string;
   description: string;
-  keywords: string[]; // Mots-clés pour identifier le type de périphérique
+  referencePrefix: string; // Préfixe de référence
   products: Product[];
 }
 
@@ -70,7 +69,9 @@ const Peripheriques = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await api.get('/produits');
+      const response = await api.get('/produits', {
+        params: { per_page: 1000 }
+      });
       
       console.log("Réponse API périphériques:", response.data);
       
@@ -86,15 +87,13 @@ const Peripheriques = () => {
         allProducts = [];
       }
       
-      // Filtrer uniquement les périphériques (type_produit = 'peripherique')
-      const peripheralProducts = allProducts.filter(
-        (product: Product) => 
-          product.type_produit === 'peripherique' && 
-          product.actif === true
+      // Filtrer les produits actifs
+      const activeProducts = allProducts.filter(
+        (product: Product) => product.actif === true
       );
       
-      console.log("Périphériques trouvés:", peripheralProducts);
-      setProducts(peripheralProducts);
+      console.log("Produits actifs trouvés:", activeProducts);
+      setProducts(activeProducts);
       
     } catch (error: any) {
       console.error("Erreur lors du chargement des périphériques:", error);
@@ -104,52 +103,35 @@ const Peripheriques = () => {
     }
   };
 
-  // Fonction pour déterminer le type de périphérique basé sur le nom et la description
-  const getPeripheralType = (product: Product): string => {
-    const searchText = `${product.nom} ${product.description_courte} ${product.description}`.toLowerCase();
+  // Fonction pour déterminer la catégorie basée sur la référence
+  const getPeripheralCategoryByReference = (product: Product): string => {
+    const reference = product.reference || '';
     
-    // Détection Clavier
-    if (searchText.includes('clavier') || 
-        searchText.includes('keyboard') ||
-        searchText.includes('corsair') && searchText.includes('k') ||
-        searchText.includes('logitech') && searchText.includes('g')) {
-      return 'claviers';
-    }
+    if (reference.startsWith('CLV-')) return 'claviers';
+    if (reference.startsWith('SR-')) return 'souris';
+    if (reference.startsWith('ECR-')) return 'ecrans';
+    if (reference.startsWith('CHS-')) return 'chaises';
     
-    // Détection Souris
-    if (searchText.includes('souris') || 
-        searchText.includes('mouse') ||
-        searchText.includes('g502') ||
-        searchText.includes('deathadder')) {
-      return 'souris';
-    }
-    
-    // Détection Écran
-    if (searchText.includes('ecran') || 
-        searchText.includes('écran') ||
-        searchText.includes('monitor') ||
-        searchText.includes('asus') && searchText.includes('vg') ||
-        searchText.includes('aoc') ||
-        searchText.includes('msi') ||
-        searchText.includes('samsung') && searchText.includes('odyssey')) {
-      return 'ecrans';
-    }
-    
-    // Détection Chaise
-    if (searchText.includes('chaise') || 
-        searchText.includes('fauteuil') ||
-        searchText.includes('gaming chair') ||
-        searchText.includes('gtplayer') ||
-        searchText.includes('secretlab') ||
-        searchText.includes('cougar')) {
-      return 'chaises';
-    }
-    
-    // Par défaut, non classé
     return 'uncategorized';
   };
 
-  // Définition des catégories de périphériques avec leurs mots-clés
+  // Fonction pour obtenir l'URL de l'image principale d'un produit
+  const getProductImageUrl = (product: Product) => {
+    const images = product.images || [];
+    if (images.length === 0) return null;
+    
+    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
+    if (!mainImage?.url) return null;
+    
+    // Si l'URL commence par /storage, ajouter le domaine
+    if (mainImage.url.startsWith('/storage')) {
+      return `http://127.0.0.1:8000${mainImage.url}`;
+    }
+    
+    return mainImage.url;
+  };
+
+  // Définition des catégories de périphériques avec leurs préfixes de référence
   const peripheralCategories: PeripheralCategory[] = [
     {
       id: "claviers",
@@ -159,7 +141,7 @@ const Peripheriques = () => {
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500",
       description: "Des claviers mécaniques et membranaires pour tous les styles de jeu.",
-      keywords: ["clavier", "keyboard", "mécanique", "membranaire"],
+      referencePrefix: "CLV-",
       products: []
     },
     {
@@ -170,7 +152,7 @@ const Peripheriques = () => {
       bgColor: "bg-blue-500/10",
       borderColor: "border-blue-500",
       description: "Précision et rapidité pour dominer vos adversaires.",
-      keywords: ["souris", "mouse", "dpi"],
+      referencePrefix: "SR-",
       products: []
     },
     {
@@ -181,7 +163,7 @@ const Peripheriques = () => {
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500",
       description: "Des écrans haute fréquence pour une immersion totale.",
-      keywords: ["ecran", "écran", "monitor", "asus", "aoc", "msi", "samsung"],
+      referencePrefix: "ECR-",
       products: []
     },
     {
@@ -192,53 +174,19 @@ const Peripheriques = () => {
       bgColor: "bg-red-500/10",
       borderColor: "border-red-500",
       description: "Confort et soutien pour vos longues sessions de jeu.",
-      keywords: ["chaise", "fauteuil", "gaming chair", "gtplayer", "secretlab"],
+      referencePrefix: "CHS-",
       products: []
     }
   ];
 
-  // Fonction pour extraire les spécifications du produit
-  const getProductSpecs = (product: Product) => {
-    const specs: Record<string, string> = {};
-    const searchText = `${product.nom} ${product.description_courte} ${product.description}`.toLowerCase();
-    
-    // Extraction des spécifications selon le type
-    if (searchText.includes('clavier') || peripheralCategories[0].keywords.some(k => searchText.includes(k))) {
-      if (searchText.includes('mécanique') || searchText.includes('mecanique')) specs.type = "Mécanique";
-      else if (searchText.includes('membranaire')) specs.type = "Membranaire";
-      else specs.type = "Gaming";
-      
-      if (searchText.includes('rgb')) specs.rgb = "RGB";
-      else specs.rgb = "Standard";
-      
-      specs.switches = extractSpecValue(searchText, ['cherry', 'gx', 'gateron', 'razer'], 'Switches');
-    }
-    else if (searchText.includes('souris') || peripheralCategories[1].keywords.some(k => searchText.includes(k))) {
-      specs.dpi = extractSpecValue(searchText, ['dpi'], 'DPI');
-      specs.buttons = extractSpecValue(searchText, ['boutons', 'buttons'], 'Boutons');
-      specs.weight = extractSpecValue(searchText, ['grammes', 'g'], 'Poids');
-    }
-    else if (searchText.includes('ecran') || searchText.includes('écran') || peripheralCategories[2].keywords.some(k => searchText.includes(k))) {
-      specs.size = extractSpecValue(searchText, ['pouces', '"'], 'Taille');
-      specs.refresh = extractSpecValue(searchText, ['hz'], 'Fréquence');
-      specs.resolution = extractSpecValue(searchText, ['hd', 'fhd', 'qhd', '4k'], 'Résolution');
-    }
-    else if (searchText.includes('chaise') || peripheralCategories[3].keywords.some(k => searchText.includes(k))) {
-      specs.type = extractSpecValue(searchText, ['bureau', 'course', 'premium'], 'Type');
-      specs.maxWeight = extractSpecValue(searchText, ['kg'], 'Poids max');
-    }
-    
-    return specs;
-  };
-
-  const extractSpecValue = (text: string, keywords: string[], label: string): string => {
-    for (const keyword of keywords) {
-      const regex = new RegExp(`(\\d+(?:\\.\\d+)?)\\s*${keyword}`, 'i');
-      const match = text.match(regex);
-      if (match) return `${match[1]} ${keyword.toUpperCase()}`;
-    }
-    return "Non spécifié";
-  };
+  // Classer les produits dans leurs catégories respectives
+  const categorizedProducts = peripheralCategories.map(category => ({
+    ...category,
+    products: products.filter(product => {
+      const productCategory = getPeripheralCategoryByReference(product);
+      return productCategory === category.id;
+    })
+  }));
 
   const formatPrice = (prix: number, devise: string = 'MGA') => {
     return new Intl.NumberFormat('fr-FR', {
@@ -249,14 +197,18 @@ const Peripheriques = () => {
     }).format(prix);
   };
 
-  // Classer les produits dans leurs catégories respectives
-  const categorizedProducts = peripheralCategories.map(category => ({
-    ...category,
-    products: products.filter(product => {
-      const productType = getPeripheralType(product);
-      return productType === category.id;
-    })
-  }));
+  // Extraire les spécifications de la description
+  const getSpecs = (product: Product) => {
+    if (product.description_courte && product.description_courte !== product.nom) {
+      return product.description_courte;
+    }
+    if (product.description) {
+      return product.description.length > 100 
+        ? product.description.substring(0, 100) + '...' 
+        : product.description;
+    }
+    return "Périphérique gaming haute performance";
+  };
 
   if (isLoading) {
     return (
@@ -303,6 +255,9 @@ const Peripheriques = () => {
     );
   }
 
+  // Filtrer les catégories qui ont des produits
+  const nonEmptyCategories = categorizedProducts.filter(cat => cat.products.length > 0);
+
   return (
     <SiteLayout>
       {/* Hero */}
@@ -316,7 +271,7 @@ const Peripheriques = () => {
       <section className="py-16">
         <div className="container-x">
           <div className="space-y-16">
-            {categorizedProducts.map((category) => (
+            {nonEmptyCategories.map((category) => (
               <div
                 key={category.id}
                 id={category.id}
@@ -332,95 +287,98 @@ const Peripheriques = () => {
                       {category.name}
                     </h2>
                     <p className="text-sm text-muted-foreground">{category.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {category.products.length} produit(s) disponible(s)
+                    </p>
                   </div>
                 </div>
 
                 {/* Grille des produits */}
-                {category.products.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {category.products.map((product) => {
-                      const specs = getProductSpecs(product);
-                      return (
-                        <div key={product.id} className="border border-border rounded-lg overflow-hidden hover:shadow-lg transition-all hover:scale-105 duration-300">
-                          {/* Image temporaire */}
-                          <div className="h-48 overflow-hidden bg-secondary">
-                            <img
-                              src={ecranGameurSimple}
-                              alt={product.nom}
-                              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {category.products.map((product) => {
+                    const imageUrl = getProductImageUrl(product);
+                    
+                    return (
+                      <div 
+                        key={product.id} 
+                        className="group bg-background border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+                      >
+                        {/* Image section */}
+                        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-500/10 to-secondary">
+                          {imageUrl ? (
+                            <img 
+                              src={imageUrl} 
+                              alt={product.nom} 
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             />
-                          </div>
-
-                          {/* Badge */}
-                          <div className="absolute mt-2 ml-2">
-                            <span className="bg-black/70 text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
-                              <Star className="h-2 w-2 fill-yellow-500 text-yellow-500" />
-                              {product.quantite_stock > 10 ? "Top vente" : "Stock limité"}
-                            </span>
-                          </div>
-
-                          {/* Infos produit */}
-                          <div className="p-4">
-                            <h3 className="font-bold text-lg mb-2 truncate">{product.nom}</h3>
-                            <div className="space-y-1 text-sm">
-                              {Object.entries(specs).map(([key, value]) => {
-                                const labels: Record<string, string> = {
-                                  type: "Type",
-                                  switches: "Switches",
-                                  rgb: "RGB",
-                                  dpi: "DPI",
-                                  buttons: "Boutons",
-                                  weight: "Poids",
-                                  size: "Taille",
-                                  refresh: "Fréquence",
-                                  resolution: "Résolution",
-                                  adjustable: "Réglages",
-                                  maxWeight: "Poids max"
-                                };
-                                return (
-                                  <div key={key} className="flex justify-between">
-                                    <span className="text-muted-foreground text-xs">{labels[key] || key}:</span>
-                                    <span className="font-medium text-xs">{value}</span>
-                                  </div>
-                                );
-                              })}
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              {category.icon}
                             </div>
-                            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                              <span className="text-lg font-bold text-primary">
+                          )}
+                          
+                          {/* Badge référence */}
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-mono">
+                            {product.reference}
+                          </div>
+                          
+                          {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
+                            <span className="absolute bottom-2 left-2 px-2 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded-full">
+                              Stock limité
+                            </span>
+                          )}
+                          {product.quantite_stock === 0 && (
+                            <span className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white text-[10px] font-semibold rounded-full">
+                              Rupture
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4">
+                          <h3 className="text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                            {product.nom}
+                          </h3>
+                          
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {getSpecs(product)}
+                          </p>
+                          
+                          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                            <div>
+                              <span className="text-xl font-bold text-primary">
                                 {formatPrice(product.prix, product.devise)}
                               </span>
+                            </div>
+                            <Link to={`/produit/${product.id}`}>
                               <button 
-                                className="px-3 py-1.5 text-xs bg-foreground text-background hover:opacity-90 transition rounded flex items-center gap-1"
+                                className="px-3 py-1.5 text-sm bg-foreground text-background hover:opacity-90 transition rounded-lg flex items-center gap-1"
                                 disabled={product.quantite_stock === 0}
                               >
-                                <Zap className="h-3 w-3" />
-                                {product.quantite_stock === 0 ? "Rupture" : "Ajouter"}
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>Voir</span>
                               </button>
-                            </div>
-                            {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
-                              <p className="text-xs text-orange-500 mt-2">Plus que {product.quantite_stock} en stock !</p>
-                            )}
+                            </Link>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-background/50 rounded-lg border border-dashed border-border">
-                    <div className={`${category.color} mb-2 flex justify-center`}>
-                      {category.icon}
-                    </div>
-                    <p className="text-muted-foreground">
-                      Aucun produit disponible pour le moment
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Revenez bientôt pour découvrir nos {category.name.toLowerCase()}
-                    </p>
-                  </div>
-                )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>
+
+          {/* Message si aucun produit dans aucune catégorie */}
+          {nonEmptyCategories.length === 0 && (
+            <div className="text-center py-20 bg-background rounded-xl border border-border">
+              <Keyboard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Aucun périphérique disponible pour le moment.</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Vérifiez que des produits avec les références CLV-, SR-, ECR-, CHS- existent dans la base.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -429,19 +387,19 @@ const Peripheriques = () => {
         <div className="container-x">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-3xl mb-2">🎮</div>
+              <div className="text-3xl mb-2"></div>
               <div className="font-bold text-sm">Compatibles PC/Console</div>
             </div>
             <div>
-              <div className="text-3xl mb-2">🚚</div>
+              <div className="text-3xl mb-2"></div>
               <div className="font-bold text-sm">Livraison gratuite</div>
             </div>
             <div>
-              <div className="text-3xl mb-2">✅</div>
+              <div className="text-3xl mb-2"></div>
               <div className="font-bold text-sm">Garantie 24 mois</div>
             </div>
             <div>
-              <div className="text-3xl mb-2">⚡</div>
+              <div className="text-3xl mb-2"></div>
               <div className="font-bold text-sm">Paiement à la livraison</div>
             </div>
           </div>

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { formatAr } from "@/lib/products";
 import { useShop } from "@/store/shop";
@@ -25,6 +26,7 @@ import { MiniHero } from "@/components/layout/MiniHero";
 import { Product, productImage } from "@/hooks/useProducts";
 import api from "@/service/api";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Mapping des références pour chaque catégorie
 const referenceMapping = {
@@ -123,8 +125,10 @@ const filterProductsByReference = (
 const Configurateur = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Selections>({});
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useShop();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   // Récupérer tous les produits depuis l'API
   const {
@@ -142,8 +146,6 @@ const Configurateur = () => {
       console.log("📦 Statut:", response.status);
       console.log("📦 Structure response.data:", Object.keys(response.data));
 
-      // === CORRECTION ICI ===
-      // La réponse est { success: true, data: [...] }
       let products = [];
 
       if (
@@ -176,7 +178,7 @@ const Configurateur = () => {
     },
   });
 
-  //Fonction pour récupérée
+  // Fonction pour récupérer l'image
   const getProductImageUrl = (product: Product) => {
     if (!product) return "/placeholder-pc.jpg";
 
@@ -186,7 +188,6 @@ const Configurateur = () => {
     const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
     if (!mainImage?.url) return "/placeholder-pc.jpg";
 
-    // Si l'URL commence par /storage, ajouter le domaine
     if (mainImage.url.startsWith("/storage")) {
       return `http://127.0.0.1:8000${mainImage.url}`;
     }
@@ -228,20 +229,18 @@ const Configurateur = () => {
   const currentStepData = stepsConfig[currentStep];
   const currentProducts = categorizedProducts[currentStepData?.key] || [];
 
-
   const total = useMemo(() => {
     return Object.values(selections).reduce((sum, product) => {
       if (!product) return sum;
-      
-      // Convertir en string et extraire tous les chiffres
+
       const priceStr = String(product.prix);
       const numbers = priceStr.match(/\d+/g);
-      
-      if (!numbers) return sum; // Pas de chiffres trouvés
-      
-      const numericPrice = parseInt(numbers.join(''), 10);
+
+      if (!numbers) return sum;
+
+      const numericPrice = parseInt(numbers.join(""), 10);
       if (isNaN(numericPrice)) return sum;
-      
+
       return sum + numericPrice;
     }, 0);
   }, [selections]);
@@ -249,6 +248,8 @@ const Configurateur = () => {
   const completedCount = Object.values(selections).filter(Boolean).length;
   const progress = (completedCount / stepsConfig.length) * 100;
   const allDone = completedCount === stepsConfig.length;
+  // Le bouton est activé si au moins un produit est sélectionné
+  const hasSelection = completedCount > 0;
 
   const handleSelect = (product: Product) => {
     setSelections((prev) => ({
@@ -270,56 +271,126 @@ const Configurateur = () => {
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!allDone) {
+  // Fonction pour ajouter tous les produits sélectionnés au panier
+const handleAddToCart = async () => {
+  if (!isAuthenticated) {
+    toast({
+      title: "Connexion requise",
+      description: "Veuillez vous connecter pour ajouter au panier",
+      variant: "destructive",
+    });
+    navigate("/connexion");
+    return;
+  }
+
+  if (!hasSelection) {
+    toast({
+      title: "Aucune sélection",
+      description: "Veuillez sélectionner au moins un composant",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setIsAddingToCart(true);
+
+  try {
+    // CORRECTION ICI : Filtrer correctement pour enlever les undefined/null
+    const selectedProducts = stepsConfig
+      .map((step) => selections[step.key])
+      .filter((product): product is Product => product !== null && product !== undefined);
+    
+    console.log("Produits sélectionnés à ajouter:", selectedProducts);
+    console.log("Nombre de produits à ajouter:", selectedProducts.length);
+
+    if (selectedProducts.length === 0) {
       toast({
-        title: "Configuration incomplète",
-        description:
-          "Veuillez sélectionner tous les composants avant d'ajouter au panier.",
+        title: "Erreur",
+        description: "Aucun produit valide sélectionné",
         variant: "destructive",
       });
+      setIsAddingToCart(false);
       return;
     }
 
-    try {
-      const selectedComponents = stepsConfig
-        .map((step) => {
-          const product = selections[step.key];
-          return product ? `${step.mascot}: ${product.nom}` : null;
-        })
-        .filter(Boolean);
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
 
-      const configData = {
-        nom: "Configuration PC personnalisée",
-        description: selectedComponents.join(" | "),
-        prix: total,
-        quantite: 1,
-        meta_json: {
-          type: "configurateur",
-          components: selections,
-          date_creation: new Date().toISOString(),
-        },
-      };
+    // Ajouter chaque produit un par un dans le panier
+    for (const product of selectedProducts) {
+      // Vérification supplémentaire pour chaque produit
+      if (!product || !product.id) {
+        console.error("Produit invalide:", product);
+        errorCount++;
+        errors.push("Produit invalide");
+        continue;
+      }
 
-      const response = await api.post("/panier/ajouter", configData);
-
-      if (response.data.success) {
-        toast({
-          title: "✅ Configuration ajoutée !",
-          description: "Votre PC sur-mesure a été ajouté au panier.",
+      try {
+        console.log(`Ajout du produit: ${product.nom} (ID: ${product.id})`);
+        
+        await api.post("/panier/ajouter", {
+          produit_id: product.id,
+          quantite: 1,
+          utilisateur_id: user?.id,
+          prix_unitaire: product.prix,
+          titre: product.nom,
         });
+        
+        successCount++;
+
+        // Mettre à jour le store local
+        addToCart(
+          String(product.id),
+          1,
+          {
+            id: String(product.id),
+            name: product.nom,
+            category: product.type_produit || "composant",
+            tagline: product.description_courte || "Composant PC",
+            price: Number(product.prix),
+            image: getProductImageUrl(product),
+          }
+        );
+        
+        console.log(`✅ Succès pour ${product.nom}`);
+      } catch (err: any) {
+        console.error(`Erreur pour ${product?.nom || "produit inconnu"}:`, err);
+        errorCount++;
+        errors.push(product?.nom || "Produit inconnu");
+      }
+    }
+
+    if (successCount > 0) {
+      toast({
+        title: "✅ Configuration ajoutée !",
+        description: `${successCount} composant(s) ajouté(s) au panier${errorCount > 0 ? ` (${errorCount} erreur(s))` : ""}`,
+      });
+
+      // Rediriger vers le panier seulement si tout a réussi
+      if (errorCount === 0) {
         navigate("/panier");
       }
-    } catch (error: any) {
-      console.error("Erreur ajout panier:", error);
+    } else {
       toast({
         title: "Erreur",
-        description:
-          error.response?.data?.message || "Impossible d'ajouter au panier",
+        description: `Impossible d'ajouter les composants: ${errors.join(", ")}`,
         variant: "destructive",
       });
     }
-  };
+  } catch (error: any) {
+    console.error("Erreur ajout panier:", error);
+    toast({
+      title: "Erreur",
+      description:
+        error.response?.data?.message || "Impossible d'ajouter au panier",
+      variant: "destructive",
+    });
+  } finally {
+    setIsAddingToCart(false);
+  }
+};
 
   if (isLoading) {
     return (
@@ -447,39 +518,10 @@ const Configurateur = () => {
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
-                {/* {currentProducts.map((product) => {
-                  const isSelected = selections[currentStepData.key]?.id === product.id;
-                  return (
-                    <button
-                      key={product.id}
-                      onClick={() => handleSelect(product)}
-                      className={`group text-left rounded-2xl border-2 transition-all hover-lift overflow-hidden ${
-                        isSelected
-                          ? "border-accent bg-accent/5 shadow-glow"
-                          : "border-border bg-card hover:border-accent/40"
-                      }`}
-                    >
-                      <div className="p-4">
-                        <div className="font-semibold text-sm line-clamp-2 mb-2">{product.nom}</div>
-                        <div className="flex items-center justify-between">
-                          <div className="font-display font-bold text-sm text-primary">
-                            {formatAr(product.prix)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {product.reference}
-                          </div>
-                          {isSelected && <Check className="h-4 w-4 text-accent ml-2" />}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })} */}
                 {currentProducts.map((product) => {
                   const isSelected =
                     selections[currentStepData.key]?.id === product.id;
                   const imageUrl = getProductImageUrl(product);
-                  console.log("--------------------------------");
-                  console.log(imageUrl);
                   return (
                     <button
                       key={product.id}
@@ -603,20 +645,38 @@ const Configurateur = () => {
                   <div className="font-display font-bold text-2xl text-primary">
                     {formatAr(total)}
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {completedCount} composant(s) sélectionné(s)
+                  </div>
                 </div>
                 <Button
                   variant="hero"
                   size="lg"
                   onClick={handleAddToCart}
-                  disabled={!allDone}
+                  disabled={!hasSelection || isAddingToCart}
+                  className="min-w-[140px]"
                 >
-                  Ajouter au panier <ChevronRight />
+                  {isAddingToCart ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Ajout...
+                    </>
+                  ) : (
+                    <>
+                      Ajouter <ChevronRight />
+                    </>
+                  )}
                 </Button>
               </div>
-              {!allDone && (
+              {!hasSelection && (
                 <p className="text-xs text-muted-foreground mt-3 text-center">
-                  {stepsConfig.length - completedCount} composant(s) à
-                  sélectionner
+                  Sélectionnez au moins un composant
+                </p>
+              )}
+              {hasSelection && !allDone && (
+                <p className="text-xs text-orange-500 mt-3 text-center">
+                  ⚠️ {stepsConfig.length - completedCount} composant(s)
+                  optionnel(s) non sélectionné(s)
                 </p>
               )}
             </div>
