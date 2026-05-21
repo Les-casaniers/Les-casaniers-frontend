@@ -359,37 +359,85 @@ const ConfigPc = () => {
     setShowConfigModal(false);
   }, []);
 
-  // ── FIX : nom_configuration_autre correctement transmis ──
+//   const handleCreateConfig = useCallback(async () => {
+//   if (!product || !cfgNom) return;
+//   setCfgSaving(true);
+//   try {
+//     const composants = cfgComposants
+//       .filter(c => c.nom.trim() !== "")
+//       .map(c => ({
+//         nom: c.nom.trim(),
+//         prix: parseFloat(c.prix.replace(",", ".")) || 0,
+//         quantite: parseInt(c.quantite, 10) || 1,
+//       }));
+
+//     // Construction explicite du payload
+//     const payload: any = {
+//       produit_id: product.id,
+//       nom_configuration: cfgNom,
+//       devise: cfgDevise || "MGA",
+//       composants_json: composants,
+//     };
+
+//     // TOUJOURS envoyer nom_configuration_autre si "autre"
+//     if (cfgNom === "autre") {
+//       payload.nom_configuration_autre = cfgNomAutre.trim() || ""; // Envoyer "" si vide
+//     }
+
+//     console.log("Payload complet:", payload);
+
+//     await createConfigMutation.mutateAsync(payload);
+//     await refetch();
+//     resetConfigModal();
+//     toast({ title: "Configuration créée avec succès" });
+//   } catch (e: any) {
+//     console.error("Erreur:", e.response?.data || e);
+//     const msg = e?.response?.data?.errors
+//       ? Object.values(e.response.data.errors).flat().join(", ")
+//       : e?.response?.data?.message || "Erreur lors de la création";
+//     toast({ title: "Erreur", description: msg, variant: "destructive" });
+//   } finally {
+//     setCfgSaving(false);
+//   }
+// }, [product, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, createConfigMutation, refetch, resetConfigModal, toast]);
+
   const handleCreateConfig = useCallback(async () => {
     if (!product || !cfgNom) return;
     setCfgSaving(true);
     try {
-      // Si le type est "autre" ET qu'un nom personnalisé est saisi → on l'envoie
-      // Sinon → null (Laravel stockera NULL en base)
-      const nomConfigurationAutre =
-        cfgNom === "autre" && cfgNomAutre.trim() !== ""
-          ? cfgNomAutre.trim()
-          : null;
+      const composants = cfgComposants
+        .filter(c => c.nom.trim() !== "")
+        .map(c => ({
+          nom: c.nom.trim(),
+          prix: parseFloat(c.prix.replace(",", ".")) || 0,
+          quantite: parseInt(c.quantite, 10) || 1,
+        }));
 
-      const payload: CreateConfigurationPayload = {
-        produit_id:               product.id,
-        nom_configuration:        cfgNom,
-        nom_configuration_autre:  nomConfigurationAutre,   // ← correctement renseigné
-        devise:                   cfgDevise || "MGA",
-        composants_json:          cfgComposants
-          .filter(c => c.nom.trim() !== "")
-          .map(c => ({
-            nom:      c.nom.trim(),
-            prix:     parseFloat(c.prix.replace(",", ".")) || 0,
-            quantite: parseInt(c.quantite, 10) || 1,
-          })),
+      // Construction explicite du payload
+      const payload: any = {
+        produit_id: product.id,
+        nom_configuration: cfgNom,
+        devise: cfgDevise || "MGA",
+        composants_json: composants,
       };
+
+      // 🔥 MODIFICATION ICI : Toujours envoyer nom_configuration_autre
+      // en prenant le nom du premier composant s'il existe
+      if (composants.length > 0 && composants[0].nom) {
+        payload.nom_configuration_autre = composants[0].nom;
+      } else if (cfgNom === "autre" && cfgNomAutre.trim() !== "") {
+        // Si pas de composant, utiliser le champ personnalisé (pour le cas "autre")
+        payload.nom_configuration_autre = cfgNomAutre.trim();
+      }
+
+      console.log("Payload complet:", payload);
 
       await createConfigMutation.mutateAsync(payload);
       await refetch();
       resetConfigModal();
       toast({ title: "Configuration créée avec succès" });
     } catch (e: any) {
+      console.error("Erreur:", e.response?.data || e);
       const msg = e?.response?.data?.errors
         ? Object.values(e.response.data.errors).flat().join(", ")
         : e?.response?.data?.message || "Erreur lors de la création";
