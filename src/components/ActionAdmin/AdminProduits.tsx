@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+﻿import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye } from "lucide-react";
 import {
@@ -15,8 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useToast } from "@/hooks/use-toast";
 
-const TYPES_PRODUIT = ["pc", "portable", "composant", "peripherique", "service"] as const;
-const CATEGORY_TYPES = ["pro", "gaming", "composants", "peripheriques", "services", "guides"] as const;
+const TYPES_PRODUIT = ["pc", "portable", "pro", "gaming", "composant", "peripherique", "service"] as const;
 
 type ProduitForm = {
   categorie_id: string;
@@ -33,9 +32,8 @@ type ProduitForm = {
 
 type CategoryForm = {
   nom: string;
-  type: (typeof CATEGORY_TYPES)[number] | "";
+  code: string;
   parent_id: string;
-  ordre_tri: string;
 };
 
 const initialForm: ProduitForm = {
@@ -53,12 +51,237 @@ const initialForm: ProduitForm = {
 
 const initialCategoryForm: CategoryForm = {
   nom: "",
-  type: "",
+  code: "",
   parent_id: "",
-  ordre_tri: "0",
 };
 
 type Produit = APIProduct;
+
+// Composants extraits en dehors pour éviter les re-rendus inutiles
+const ProductForm = React.memo(
+  ({
+    value,
+    setValue,
+    inputClass,
+    categories,
+  }: {
+    value: ProduitForm;
+    setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
+    inputClass: string;
+    categories: any[];
+  }) => {
+    const selectedCategory = categories.find((c: any) => String(c.id) === value.categorie_id);
+    const categoryCode = String(selectedCategory?.code ?? "").trim();
+    const referencePreview = categoryCode
+      ? `${categoryCode.toUpperCase().endsWith("-") ? categoryCode.toUpperCase() : `${categoryCode.toUpperCase()}-`}XXX`
+      : "Générée après sélection de la catégorie";
+
+    return (
+      <div className="space-y-3">
+      <input
+        className={inputClass}
+        placeholder="Nom"
+        value={value.nom}
+        onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))}
+      />
+      <input
+        className={inputClass}
+        placeholder="Référence générée automatiquement"
+        value={value.reference || referencePreview}
+        disabled
+      />
+      <select
+        className={inputClass}
+        value={value.type_produit}
+        onChange={(e) =>
+          setValue((p) => ({
+            ...p,
+            type_produit: e.target.value as ProduitForm["type_produit"],
+          }))
+        }
+      >
+        <option value="">Type produit</option>
+        {TYPES_PRODUIT.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+      <select
+        className={inputClass}
+        value={value.categorie_id}
+        onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}
+      >
+        <option value="">Catégorie</option>
+        {categories.map((c: any) => (
+          <option key={c.id} value={c.id}>
+            {c.nom}
+          </option>
+        ))}
+      </select>
+      <input
+        className={inputClass}
+        placeholder="Prix"
+        value={value.prix}
+        onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))}
+      />
+      <input
+        className={inputClass}
+        placeholder="Stock"
+        value={value.quantite_stock}
+        onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))}
+      />
+      <textarea
+        className={inputClass}
+        placeholder="Description"
+        value={value.description}
+        onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))}
+      />
+    </div>
+    );
+  }
+);
+ProductForm.displayName = "ProductForm";
+
+const ImageUploadField = React.memo(
+  ({
+    files,
+    setFiles,
+    label,
+    inputClass,
+  }: {
+    files: File[];
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+    label?: string;
+    inputClass: string;
+  }) => (
+    <div className="space-y-2">
+      <label className="text-sm font-medium">{label || "Images du produit"}</label>
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className={inputClass}
+        onChange={(e) => {
+          const selected = Array.from(e.target.files ?? []);
+          setFiles((prev) => [...prev, ...selected]);
+          e.currentTarget.value = "";
+        }}
+      />
+      {files.length > 0 && (
+        <div className="space-y-1">
+          {files.map((file, index) => (
+            <div
+              key={`${file.name}-${index}`}
+              className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+            >
+              <span className="truncate pr-3">{file.name}</span>
+              <button
+                type="button"
+                onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
+                className="p-1 border rounded"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+);
+ImageUploadField.displayName = "ImageUploadField";
+
+interface ExistingImagesManagerProps {
+  selectedProduit: Produit | null;
+  existingImages: { id: number; url: string; alt: string; ordre?: number }[];
+  setExistingImages: React.Dispatch<
+    React.SetStateAction<{ id: number; url: string; alt: string; ordre?: number }[]>
+  >;
+  setMainImage: any;
+  deleteImage: any;
+  toast: any;
+  handleApiError: (error: any, fallback: string) => void;
+  api: any;
+}
+
+const ExistingImagesManager = React.memo(
+  ({
+    selectedProduit,
+    existingImages,
+    setExistingImages,
+    setMainImage,
+    deleteImage,
+    toast,
+    handleApiError,
+    api,
+  }: ExistingImagesManagerProps) => {
+    if (!selectedProduit) return null;
+    return (
+      <div className="space-y-2">
+        <h4 className="text-sm font-medium">Images existantes</h4>
+        {existingImages.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {existingImages
+              .slice()
+              .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
+              .map((img) => (
+                <div key={img.id} className="border rounded-xl p-2 space-y-2">
+                  <img
+                    src={img.url}
+                    alt={img.alt || "image produit"}
+                    className="h-28 w-full object-cover rounded-lg border"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Ordre: {img.ordre ?? "-"}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await setMainImage.mutateAsync({
+                            produitId: selectedProduit.id,
+                            imageId: img.id,
+                          });
+                          const details = await api.get(`/produits/${selectedProduit.id}`);
+                          setExistingImages(details?.data?.data?.images ?? []);
+                          toast({ title: "Image principale mise à jour" });
+                        } catch (e: any) {
+                          handleApiError(e, "Impossible de définir l'image principale.");
+                        }
+                      }}
+                      className="px-2 py-1 text-xs border rounded-lg"
+                    >
+                      Définir principale
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await deleteImage.mutateAsync(img.id);
+                          setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
+                          toast({ title: "Image supprimée" });
+                        } catch (e: any) {
+                          handleApiError(e, "Impossible de supprimer l'image.");
+                        }
+                      }}
+                      className="px-2 py-1 text-xs border rounded-lg text-destructive"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+ExistingImagesManager.displayName = "ExistingImagesManager";
 
 const AdminProduits = () => {
   const [activeTab, setActiveTab] = useState<"produits" | "categories">("produits");
@@ -130,7 +353,6 @@ const AdminProduits = () => {
   const buildFormData = (data: ProduitForm) => {
     const fd = new FormData();
     fd.append("categorie_id", data.categorie_id);
-    fd.append("reference", data.reference);
     fd.append("nom", data.nom);
     fd.append("description_courte", data.description_courte);
     fd.append("description", data.description);
@@ -240,9 +462,8 @@ const AdminProduits = () => {
   const handleCategorySubmit = async () => {
     const payload = {
       nom: categoryForm.nom,
-      type: categoryForm.type,
+      code: categoryForm.code || null,
       parent_id: categoryForm.parent_id ? Number(categoryForm.parent_id) : null,
-      ordre_tri: Number(categoryForm.ordre_tri || 0),
     };
 
     try {
@@ -259,126 +480,6 @@ const AdminProduits = () => {
     } catch (e: any) {
       handleApiError(e, "Impossible d'enregistrer la catégorie.");
     }
-  };
-
-  const ProductForm = ({ value, setValue }: { value: ProduitForm; setValue: React.Dispatch<React.SetStateAction<ProduitForm>> }) => (
-    <div className="space-y-3">
-      <input className={inputClass} placeholder="Nom" value={value.nom} onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))} />
-      <input className={inputClass} placeholder="Référence" value={value.reference} onChange={(e) => setValue((p) => ({ ...p, reference: e.target.value }))} />
-      <select className={inputClass} value={value.type_produit} onChange={(e) => setValue((p) => ({ ...p, type_produit: e.target.value as ProduitForm["type_produit"] }))}>
-        <option value="">Type produit</option>
-        {TYPES_PRODUIT.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
-      <select className={inputClass} value={value.categorie_id} onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}>
-        <option value="">Catégorie</option>
-        {normalizedCategories.map((c: any) => (
-          <option key={c.id} value={c.id}>
-            {c.nom}
-          </option>
-        ))}
-      </select>
-      <input className={inputClass} placeholder="Prix" value={value.prix} onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} />
-      <input className={inputClass} placeholder="Stock" value={value.quantite_stock} onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} />
-      <textarea className={inputClass} placeholder="Description" value={value.description} onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} />
-    </div>
-  );
-
-  const ImageUploadField = ({
-    files,
-    setFiles,
-    label = "Images du produit",
-  }: {
-    files: File[];
-    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
-    label?: string;
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium">{label}</label>
-      <input
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple
-        className={inputClass}
-        onChange={(e) => {
-          const selected = Array.from(e.target.files ?? []);
-          setFiles((prev) => [...prev, ...selected]);
-          e.currentTarget.value = "";
-        }}
-      />
-      {files.length > 0 && (
-        <div className="space-y-1">
-          {files.map((file, index) => (
-            <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-              <span className="truncate pr-3">{file.name}</span>
-              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const ExistingImagesManager = () => {
-    if (!selectedProduit) return null;
-    return (
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium">Images existantes</h4>
-        {existingImages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {existingImages
-              .slice()
-              .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
-              .map((img) => (
-                <div key={img.id} className="border rounded-xl p-2 space-y-2">
-                  <img src={img.url} alt={img.alt || "image produit"} className="h-28 w-full object-cover rounded-lg border" />
-                  <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await setMainImage.mutateAsync({ produitId: selectedProduit.id, imageId: img.id });
-                          const details = await api.get(`/produits/${selectedProduit.id}`);
-                          setExistingImages(details?.data?.data?.images ?? []);
-                          toast({ title: "Image principale mise à jour" });
-                        } catch (e: any) {
-                          handleApiError(e, "Impossible de définir l'image principale.");
-                        }
-                      }}
-                      className="px-2 py-1 text-xs border rounded-lg"
-                    >
-                      Définir principale
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          await deleteImage.mutateAsync(img.id);
-                          setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
-                          toast({ title: "Image supprimée" });
-                        } catch (e: any) {
-                          handleApiError(e, "Impossible de supprimer l'image.");
-                        }
-                      }}
-                      className="px-2 py-1 text-xs border rounded-lg text-destructive"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -426,6 +527,7 @@ const AdminProduits = () => {
                 <tr className="border-b">
                   <th className="text-left p-3">Image</th>
                   <th className="text-left p-3">Nom</th>
+                  <th className="text-left p-3">Référence</th>
                   <th className="text-left p-3">Catégorie</th>
                   <th className="text-left p-3">Prix</th>
                   <th className="text-left p-3">Stock</th>
@@ -453,6 +555,7 @@ const AdminProduits = () => {
                       )}
                     </td>
                     <td className="p-3">{p.nom}</td>
+                    <td className="p-3">{p.reference ?? "-"}</td>
                     <td className="p-3">{p.categorie?.nom ?? "-"}</td>
                     <td className="p-3">{p.prix}</td>
                     <td className="p-3">{p.quantite_stock}</td>
@@ -491,9 +594,8 @@ const AdminProduits = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-3">Nom</th>
-                  <th className="text-left p-3">Type</th>
+                  <th className="text-left p-3">Code</th>
                   <th className="text-left p-3">Parent</th>
-                  <th className="text-left p-3">Ordre</th>
                   <th className="text-right p-3">Actions</th>
                 </tr>
               </thead>
@@ -501,12 +603,11 @@ const AdminProduits = () => {
                 {normalizedCategories.map((c: any) => (
                   <tr key={c.id} className="border-b">
                     <td className="p-3">{c.nom}</td>
-                    <td className="p-3">{c.type}</td>
+                    <td className="p-3">{c.code ?? "-"}</td>
                     <td className="p-3">{c.parent_id ?? "-"}</td>
-                    <td className="p-3">{c.ordre_tri ?? 0}</td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, code: c.code ?? "", parent_id: c.parent_id ? String(c.parent_id) : "" }); setShowCategoryModal(true); }} className="p-2 border rounded-lg"><Pencil className="h-4 w-4" /></button>
                         <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
@@ -525,8 +626,8 @@ const AdminProduits = () => {
               <h2 className="text-xl font-bold">Ajouter produit</h2>
               <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <ProductForm value={form} setValue={setForm} />
-            <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
+            <ProductForm value={form} setValue={setForm} inputClass={inputClass} categories={normalizedCategories} />
+            <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} inputClass={inputClass} />
             <div className="flex justify-end gap-2">
               <button onClick={() => { setShowModal(false); setCreateImageFiles([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
               <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
@@ -542,9 +643,9 @@ const AdminProduits = () => {
               <h2 className="text-xl font-bold">Modifier produit</h2>
               <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
             </div>
-            <ProductForm value={editForm} setValue={setEditForm} />
-            <ExistingImagesManager />
-            <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
+            <ProductForm value={editForm} setValue={setEditForm} inputClass={inputClass} categories={normalizedCategories} />
+            <ExistingImagesManager selectedProduit={selectedProduit} existingImages={existingImages} setExistingImages={setExistingImages} setMainImage={setMainImage} deleteImage={deleteImage} toast={toast} handleApiError={handleApiError} api={api} />
+            <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" inputClass={inputClass} />
             <div className="flex justify-end gap-2">
               <button onClick={() => { setShowEditModal(false); setEditImageFiles([]); setExistingImages([]); }} className="px-4 py-2 border rounded-xl">Annuler</button>
               <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
@@ -561,14 +662,8 @@ const AdminProduits = () => {
               <button onClick={() => setShowCategoryModal(false)}><X className="h-5 w-5" /></button>
             </div>
             <input className={inputClass} placeholder="Nom" value={categoryForm.nom} onChange={(e) => setCategoryForm((p) => ({ ...p, nom: e.target.value }))} />
-            <select className={inputClass} value={categoryForm.type} onChange={(e) => setCategoryForm((p) => ({ ...p, type: e.target.value as CategoryForm["type"] }))}>
-              <option value="">Type</option>
-              {CATEGORY_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            <input className={inputClass} placeholder="Code" value={categoryForm.code} onChange={(e) => setCategoryForm((p) => ({ ...p, code: e.target.value }))} />
             <input className={inputClass} placeholder="Parent ID" value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))} />
-            <input className={inputClass} placeholder="Ordre" value={categoryForm.ordre_tri} onChange={(e) => setCategoryForm((p) => ({ ...p, ordre_tri: e.target.value }))} />
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border rounded-xl">Annuler</button>
               <button onClick={handleCategorySubmit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>

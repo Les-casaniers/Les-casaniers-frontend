@@ -4,19 +4,19 @@ import api from "@/service/api";
 export interface Category {
   id: number;
   nom: string;
-  description?: string;
-  image?: string;
+  parent_id?: number | null;
+  code?: string | null;
+  date_modification?: string;
 }
 
 export interface ProductConfiguration {
   id: number;
   produit_id: number;
-  utilisateur_id: number;
   nom_configuration: string;
-  nom_configuration_autre?: string | null;
-  devise?: string | null;
-  prix_total: number;
-  composants_json: { nom?: string; prix?: number; quantite?: number }[];
+  type?: string | null;
+  detail?: string | null;
+  capacite?: string | null;
+  prix_total?: number | null;
   date_creation?: string;
   date_modification?: string;
 }
@@ -190,10 +190,13 @@ export const useProductAttributesActions = () => {
 
 export type CreateConfigurationPayload = {
   produit_id: number;
-  nom_configuration: string;
-  nom_configuration_autre?: string | null;
-  devise?: string;
-  composants_json: { nom?: string; prix?: number; quantite?: number }[];
+  configurations: {
+    nom_configuration: string;
+    type?: string | null;
+    detail?: string | null;
+    capacite?: string | null;
+    prix_total?: number | null;
+  }[];
 };
 
 export const useCreateConfiguration = () => {

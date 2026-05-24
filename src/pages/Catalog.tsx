@@ -1,7 +1,6 @@
 ﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
-import { useShop } from "@/store/shop";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Filter, Volume2, VolumeX, X, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,16 +27,21 @@ const Catalog = () => {
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [searchParams] = useSearchParams();
 
   const { data: categories = [], isLoading: isLoadingCats } = useCategories();
   const { data: products = [], isLoading: isLoadingProducts } = useProducts({
     categorie_id: catId === "Tout" ? undefined : catId,
-    search: q || undefined
   });
 
   useEffect(() => {
     document.title = "Catalogue PC sur-mesure — Les Casaniers Madagascar";
   }, []);
+
+  useEffect(() => {
+    const term = searchParams.get("q") ?? "";
+    setQ(term);
+  }, [searchParams]);
 
   // Charger les favoris de l'utilisateur connecté
   useEffect(() => {
@@ -240,13 +244,34 @@ const Catalog = () => {
     speakText(message);
   };
 
+  const normalizeText = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+
   const filtered = useMemo(() => {
     if (!products) return [];
-    let list = products.filter((p) => p.prix <= budget && p.est_dispo && p.quantite_stock > 0 && p.actif);
+
+    const query = normalizeText(q.trim());
+
+    let list = products.filter((p) => {
+      if (catId !== "Tout" && p.categorie_id !== catId) return false;
+      if (p.prix > budget || !p.est_dispo || p.quantite_stock <= 0 || !p.actif) return false;
+
+      if (!query) return true;
+
+      const nom = normalizeText(p.nom ?? "");
+      const reference = normalizeText(p.reference ?? "");
+      const categorie = normalizeText(p.categorie?.nom ?? "");
+
+      return nom.includes(query) || reference.includes(query) || categorie.includes(query);
+    });
+
     if (sort === "asc") list = [...list].sort((a, b) => a.prix - b.prix);
     if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
     return list;
-  }, [products, sort, budget]);
+  }, [products, sort, budget, q, catId]);
 
   return (
     <SiteLayout>
@@ -349,7 +374,7 @@ const Catalog = () => {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((p: Product, i: number) => {
-              const fav = favorites.includes(String(p.id));
+              const fav = favorites.includes(p.id);
               const cpu = productSpec(p, "processeur");
               const gpu = productSpec(p, "carte_graphique");
               const ram = productSpec(p, "ram");
@@ -371,7 +396,7 @@ const Catalog = () => {
                     
                     {/* Bouton favori */}
                     <button
-                      onClick={(e) => { e.preventDefault(); toggleFavorite(String(p.id)); }}
+                      onClick={(e) => { e.preventDefault(); toggleFavorite(p.id); }}
                       className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
                       aria-label="Favori">
@@ -395,6 +420,24 @@ const Catalog = () => {
                       {gpu && <span className="pill !py-1 !px-2">{gpu}</span>}
                       {ram && <span className="pill !py-1 !px-2">{ram}</span>}
                     </div>
+                    {p.configurations && p.configurations.length > 0 && (
+                      <div className="pt-1">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Configurations</div>
+                        <div className="mt-1 space-y-1 text-xs text-foreground/80">
+                          {p.configurations.slice(0, 3).map((config) => (
+                            <div key={config.id} className="flex items-center justify-between gap-2">
+                              <span className="truncate">{config.nom_configuration}</span>
+                              {config.prix_total !== null && config.prix_total !== undefined && (
+                                <span className="shrink-0 text-[10px] text-muted-foreground">{formatAr(config.prix_total)}</span>
+                              )}
+                            </div>
+                          ))}
+                          {p.configurations.length > 3 && (
+                            <div className="text-[10px] text-muted-foreground">+{p.configurations.length - 3} autres</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-end justify-between pt-2">
                       <div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">à partir de</div>
@@ -405,7 +448,7 @@ const Catalog = () => {
                         <ShoppingBag className="h-4 w-4" /> Ajouter
                       </Button> */}
                       <Button variant="hero" size="sm"
-                        onClick={() => { addToCart(String(p.id), 1, toCartProduct(p)); toast({ title: "Ajoute au panier", description: p.nom }); }}>
+                        onClick={() => { addToCart(p.id, 1, p.prix); toast({ title: "Ajoute au panier", description: p.nom }); }}>
                         <ShoppingBag className="h-4 w-4" /> Ajouter
                       </Button>
                     </div>

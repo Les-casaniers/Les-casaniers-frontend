@@ -224,6 +224,48 @@ const ProductPage = () => {
         </div>
       </section>
 
+      <section className="container-x pb-12">
+        <div className="card-soft p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wider">Configurations disponibles</div>
+              <h2 className="font-display text-2xl font-bold">Choisissez votre profil</h2>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {(product.configurations?.length || 0)} configuration(s)
+            </div>
+          </div>
+
+          {product.configurations && product.configurations.length > 0 ? (
+            <div className="mt-6 grid md:grid-cols-2 gap-4">
+              {product.configurations.map((config) => (
+                <div key={config.id} className="card-soft p-4 border border-border/60">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{config.type || "Configuration"}</div>
+                      <div className="font-semibold text-base">{config.nom_configuration}</div>
+                    </div>
+                    {config.prix_total !== null && config.prix_total !== undefined && (
+                      <div className="text-sm font-bold text-accent">{formatAr(config.prix_total)}</div>
+                    )}
+                  </div>
+                  {(config.detail || config.capacite) && (
+                    <div className="mt-3 text-sm text-muted-foreground space-y-1">
+                      {config.detail && <div>{config.detail}</div>}
+                      {config.capacite && <div>Capacite : {config.capacite}</div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 text-sm text-muted-foreground">
+              Aucune configuration detaillee disponible pour ce produit.
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Related */}
       {related.length > 0 && (
         <section className="container-x py-16 border-t border-border mt-8">

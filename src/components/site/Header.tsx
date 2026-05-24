@@ -75,6 +75,7 @@ export const Header = () => {
   const [openDropdowns, setOpenDropdowns] = useState<{ [key: string]: boolean }>({});
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -86,6 +87,11 @@ export const Header = () => {
   
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearchTerm(params.get("q") ?? "");
+  }, [location.search]);
 
   // Vérifier si l'utilisateur connecté est dans la table admin
   useEffect(() => {
@@ -159,6 +165,14 @@ export const Header = () => {
     logout();
     navigate("/login");
     setShowLogout(false);
+    setMobileMenuOpen(false);
+  };
+
+  const handleSearchSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    const term = searchTerm.trim();
+    const target = term ? `/catalogue?q=${encodeURIComponent(term)}` : "/catalogue";
+    navigate(target);
     setMobileMenuOpen(false);
   };
 
@@ -329,13 +343,19 @@ export const Header = () => {
         </Link>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-2xl group">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-2xl group">
           <input
             type="search"
             placeholder="Rechercher un PC, un composant, une marque…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-12 pl-5 pr-14 bg-secondary border border-transparent focus:border-foreground focus:outline-none focus:bg-background text-sm transition-all rounded-full theme-transition"
           />
-          <button className="absolute right-0 top-0 bottom-0 px-5 bg-foreground text-background hover:bg-foreground/80 transition-colors flex items-center justify-center rounded-r-full">
+          <button
+            type="submit"
+            className="absolute right-0 top-0 bottom-0 px-5 bg-foreground text-background hover:bg-foreground/80 transition-colors flex items-center justify-center rounded-r-full"
+            aria-label="Rechercher"
+          >
             <Search className="h-4 w-4" />
           </button>
           <img
@@ -344,7 +364,7 @@ export const Header = () => {
             aria-hidden
             className="absolute -top-8 right-20 h-24 w-auto object-contain pointer-events-none transition-all duration-500 group-focus-within:-translate-y-3 group-focus-within:scale-125"
           />
-        </div>
+        </form>
 
         {/* Actions Desktop */}
         <nav className="hidden md:flex items-center gap-6">
