@@ -582,7 +582,6 @@ const Cart = () => {
                     </div>
                   </div>
                 </div>
-              </div>
             ))}
 
             {/* Boutons en bas de la colonne de gauche */}
@@ -592,7 +591,6 @@ const Cart = () => {
               </button>
               <Link to="/catalogue" className="text-xs text-accent hover:underline">← Continuer mes achats</Link>
             </div>
-          </div>
 
           {/* Sidebar - Colonne de droite */}
           <aside className="lg:col-span-4 lg:sticky lg:top-32 self-start space-y-4">
@@ -628,6 +626,7 @@ const Cart = () => {
             </div>
           </aside>
         </div>
+        )}
       </section>
 
       {/* MODAL DEVIS */}
