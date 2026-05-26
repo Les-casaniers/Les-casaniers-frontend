@@ -8,7 +8,7 @@ import {
   useProduct, useUpdateProduct, useCategories,
   useProductImageActions, useProductAttributesActions,
   useCreateConfiguration, useDeleteConfiguration,
-  Product, CreateConfigurationPayload,
+  Product,
 } from "@/hooks/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
@@ -37,163 +37,140 @@ const inputClass =
 const labelClass  = "block text-sm font-medium text-foreground mb-1.5";
 const cardClass   = "bg-card border border-border rounded-2xl p-6 space-y-5";
 
+type AttrItem = {
+  cle_attr: string;
+  valeur_attr: string;
+  libelle_attr?: string;
+};
+
+const renderReadonly = (label: string, value: string | number | null | undefined) => (
+  <div>
+    <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
+    <p className="text-sm font-medium mt-0.5">{value ?? "—"}</p>
+  </div>
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ConfigModal — extrait en dehors du composant principal pour éviter
 // la recréation à chaque render (cause du bug "lettre par lettre")
 // ─────────────────────────────────────────────────────────────────────────────
-interface ComposantRow { nom: string; prix: string; quantite: string }
+interface ConfigRow {
+  nom_configuration: string;
+  type: string;
+  detail: string;
+  capacite: string;
+  prix_total: string;
+}
 
 interface ConfigModalProps {
   show: boolean;
-  cfgNom: string;
-  cfgNomAutre: string;
-  cfgDevise: string;
-  cfgComposants: ComposantRow[];
+  cfgRows: ConfigRow[];
   cfgSaving: boolean;
   onClose: () => void;
   onSave: () => void;
-  setCfgNom: (v: string) => void;
-  setCfgNomAutre: (v: string) => void;
-  setCfgDevise: (v: string) => void;
-  setCfgComposants: React.Dispatch<React.SetStateAction<ComposantRow[]>>;
+  setCfgRows: React.Dispatch<React.SetStateAction<ConfigRow[]>>;
 }
 
 const ConfigModal: React.FC<ConfigModalProps> = ({
-  show, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, cfgSaving,
-  onClose, onSave, setCfgNom, setCfgNomAutre, setCfgDevise, setCfgComposants,
+  show, cfgRows, cfgSaving, onClose, onSave, setCfgRows,
 }) => {
   if (!show) return null;
 
-  const updateComposant = (i: number, field: keyof ComposantRow, value: string) => {
-    setCfgComposants(prev =>
-      prev.map((c, idx) => idx === i ? { ...c, [field]: value } : c)
-    );
+  const updateRow = (i: number, field: keyof ConfigRow, value: string) => {
+    setCfgRows(prev => prev.map((row, idx) => idx === i ? { ...row, [field]: value } : row));
   };
 
-  const addComposant = () =>
-    setCfgComposants(prev => [...prev, { nom: "", prix: "", quantite: "1" }]);
+  const addRow = () =>
+    setCfgRows(prev => [...prev, { nom_configuration: "", type: "", detail: "", capacite: "", prix_total: "" }]);
 
-  const removeComposant = (i: number) =>
-    setCfgComposants(prev => prev.filter((_, idx) => idx !== i));
+  const removeRow = (i: number) =>
+    setCfgRows(prev => prev.filter((_, idx) => idx !== i));
 
-  // Filtre : n'autorise que des chiffres (et virgule/point pour décimales)
-  const handlePrixChange = (i: number, raw: string) => {
-    // Autorise chiffres, point et virgule uniquement
-    const filtered = raw.replace(/[^0-9.,]/g, "");
-    updateComposant(i, "prix", filtered);
+  const handlePriceChange = (i: number, raw: string) => {
+    updateRow(i, "prix_total", raw.replace(/[^0-9.,]/g, ""));
   };
 
-  const allNomEmpty = cfgComposants.every(c => !c.nom.trim());
+  const hasInvalidRow = cfgRows.some(row => !row.nom_configuration);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
-        {/* En-tête */}
+      <div className="bg-background border rounded-2xl w-full max-w-5xl p-6 space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">Nouvelle configuration</h2>
+          <h2 className="text-xl font-bold">Nouvelles configurations</h2>
           <button onClick={onClose} type="button">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Type + devise */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Type de configuration</label>
-            <select
-              className={inputClass}
-              value={cfgNom}
-              onChange={e => setCfgNom(e.target.value)}
-            >
-              <option value="">Choisir…</option>
-              {NOM_CONFIGURATIONS.map(n => (
-                <option key={n} value={n}>{n}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* ── FIX : nom_configuration_autre — affiché si "autre" sélectionné ── */}
-          {cfgNom === "autre" && (
-            <div>
-              <label className={labelClass}>Nom personnalisé</label>
-              <input
-                className={inputClass}
-                placeholder="Ex: Watercooling custom"
-                value={cfgNomAutre}
-                onChange={e => setCfgNomAutre(e.target.value)}
-              />
-            </div>
-          )}
-
-          <div>
-            <label className={labelClass}>Devise</label>
-            <input
-              className={inputClass}
-              value={cfgDevise}
-              onChange={e => setCfgDevise(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Composants */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Composants</label>
+            <label className="text-sm font-medium">Lignes de configuration</label>
             <button
               type="button"
-              onClick={addComposant}
+              onClick={addRow}
               className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border rounded-lg hover:bg-muted transition-colors"
             >
-              <PlusCircle className="h-3.5 w-3.5" /> Ajouter
+              <PlusCircle className="h-3.5 w-3.5" /> Ajouter ligne
             </button>
           </div>
 
-          {cfgComposants.map((comp, i) => (
-            <div key={i} className="grid grid-cols-[1fr_0.6fr_0.4fr_auto] gap-2 items-end">
-              {/* ── FIX saisie lettre par lettre : pas de debounce, état local stable ── */}
+          {cfgRows.map((row, i) => (
+            <div key={i} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1.3fr_0.8fr_0.8fr_auto] gap-2 items-end">
               <div>
-                <label className="text-xs text-muted-foreground">Nom</label>
+                <label className="text-xs text-muted-foreground">Nom configuration</label>
+                <select
+                  className={inputClass}
+                  value={row.nom_configuration}
+                  onChange={e => updateRow(i, "nom_configuration", e.target.value)}
+                >
+                  <option value="">Choisir...</option>
+                  {NOM_CONFIGURATIONS.map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Type</label>
                 <input
                   className={inputClass}
-                  placeholder="Ex: Ryzen 7 7800X3D"
-                  value={comp.nom}
-                  onChange={e => updateComposant(i, "nom", e.target.value)}
+                  placeholder="Ex: Ryzen 7"
+                  value={row.type}
+                  onChange={e => updateRow(i, "type", e.target.value)}
                 />
               </div>
-
-              {/* ── FIX prix : type="text" avec filtre numérique ── */}
               <div>
-                <label className="text-xs text-muted-foreground">Prix</label>
+                <label className="text-xs text-muted-foreground">Detail</label>
+                <input
+                  className={inputClass}
+                  placeholder="Ex: AMD Ryzen 7 7800X3D"
+                  value={row.detail}
+                  onChange={e => updateRow(i, "detail", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Capacite</label>
+                <input
+                  className={inputClass}
+                  placeholder="Ex: 32 Go"
+                  value={row.capacite}
+                  onChange={e => updateRow(i, "capacite", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Prix total</label>
                 <input
                   className={inputClass}
                   type="text"
                   inputMode="decimal"
                   placeholder="0"
-                  value={comp.prix}
-                  onChange={e => handlePrixChange(i, e.target.value)}
+                  value={row.prix_total}
+                  onChange={e => handlePriceChange(i, e.target.value)}
                 />
               </div>
-
-              <div>
-                <label className="text-xs text-muted-foreground">Qté</label>
-                <input
-                  className={inputClass}
-                  type="text"
-                  inputMode="numeric"
-                  min="1"
-                  placeholder="1"
-                  value={comp.quantite}
-                  onChange={e => {
-                    const filtered = e.target.value.replace(/[^0-9]/g, "");
-                    updateComposant(i, "quantite", filtered);
-                  }}
-                />
-              </div>
-
               <button
                 type="button"
-                onClick={() => removeComposant(i)}
-                disabled={cfgComposants.length <= 1}
+                onClick={() => removeRow(i)}
+                disabled={cfgRows.length <= 1}
                 className="p-2 border rounded-lg hover:bg-destructive/10 transition-colors mb-0.5"
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -202,7 +179,6 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex justify-end gap-2 pt-2 border-t">
           <button
             type="button"
@@ -214,7 +190,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
           <button
             type="button"
             onClick={onSave}
-            disabled={cfgSaving || !cfgNom || allNomEmpty}
+            disabled={cfgSaving || hasInvalidRow}
             className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {cfgSaving
@@ -228,6 +204,412 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
     </div>
   );
 };
+interface GeneralTabProps {
+  editing: boolean;
+  nom: string;
+  reference: string;
+  typeProduit: string;
+  actif: boolean;
+  descCourte: string;
+  description: string;
+  product: Product;
+  setNom: (value: string) => void;
+  setTypeProduit: (value: string) => void;
+  setActif: (value: boolean) => void;
+  setDescCourte: (value: string) => void;
+  setDescription: (value: string) => void;
+}
+
+const GeneralTab = ({
+  editing,
+  nom,
+  reference,
+  typeProduit,
+  actif,
+  descCourte,
+  description,
+  product,
+  setNom,
+  setTypeProduit,
+  setActif,
+  setDescCourte,
+  setDescription,
+}: GeneralTabProps) => (
+  <div className={cardClass}>
+    <h3 className="text-lg font-semibold">Informations générales</h3>
+    {editing ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass}>Nom</label>
+          <input className={inputClass} value={nom} onChange={(e) => setNom(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Référence</label>
+          <input className={inputClass} value={reference} disabled />
+        </div>
+        <div>
+          <label className={labelClass}>Type produit</label>
+          <select className={inputClass} value={typeProduit} onChange={(e) => setTypeProduit(e.target.value)}>
+            <option value="">—</option>
+            {TYPES_PRODUIT.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-3 pt-6">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={actif}
+              onChange={(e) => setActif(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-foreground transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+          </label>
+          <span className="text-sm">{actif ? "Actif" : "Inactif"}</span>
+        </div>
+        <div className="md:col-span-2">
+          <label className={labelClass}>Description courte</label>
+          <input className={inputClass} value={descCourte} onChange={(e) => setDescCourte(e.target.value)} />
+        </div>
+        <div className="md:col-span-2">
+          <label className={labelClass}>Description</label>
+          <textarea
+            className={inputClass + " min-h-[120px]"}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </div>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {renderReadonly("Nom", product.nom)}
+        {renderReadonly("Référence", product.reference)}
+        {renderReadonly("Type", product.type_produit)}
+        {renderReadonly("Statut", product.actif ? "Actif" : "Inactif")}
+        {renderReadonly("Créé le", product.date_creation)}
+        {renderReadonly("Modifié le", product.date_modification)}
+        <div className="md:col-span-2 lg:col-span-3">
+          {renderReadonly("Description courte", product.description_courte)}
+        </div>
+        <div className="md:col-span-2 lg:col-span-3">
+          {renderReadonly("Description", product.description)}
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+interface CategoryTabProps {
+  editing: boolean;
+  categorieId: string;
+  normalizedCategories: any[];
+  product: Product;
+  setCategorieId: (value: string) => void;
+}
+
+const CategoryTab = ({ editing, categorieId, normalizedCategories, product, setCategorieId }: CategoryTabProps) => (
+  <div className={cardClass}>
+    <h3 className="text-lg font-semibold">Catégorie associée</h3>
+    {editing ? (
+      <div>
+        <label className={labelClass}>Catégorie</label>
+        <select className={inputClass} value={categorieId} onChange={(e) => setCategorieId(e.target.value)}>
+          <option value="">—</option>
+          {normalizedCategories.map((c: any) => (
+            <option key={c.id} value={c.id}>
+              {c.nom}
+            </option>
+          ))}
+        </select>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderReadonly("Catégorie", product.categorie?.nom)}
+        {renderReadonly("ID Catégorie", product.categorie_id)}
+      </div>
+    )}
+  </div>
+);
+
+interface ConfigTabProps {
+  configs: any[];
+  onOpenModal: () => void;
+  onDeleteConfig: (configId: number) => void;
+}
+
+const ConfigTab = ({ configs, onOpenModal, onDeleteConfig }: ConfigTabProps) => (
+  <div className={cardClass}>
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold">Configurations PC associees</h3>
+      <button
+        onClick={onOpenModal}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity"
+      >
+        <PlusCircle className="h-4 w-4" /> Ajouter une configuration
+      </button>
+    </div>
+
+    {configs.length === 0 ? (
+      <p className="text-sm text-muted-foreground">Aucune configuration associee a ce produit.</p>
+    ) : (
+      <div className="space-y-4">
+        {configs.map((cfg) => (
+          <div key={cfg.id} className="border border-border rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm capitalize">
+                {cfg.nom_configuration}{cfg.type ? ` - ${cfg.type}` : ""}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs bg-muted px-2.5 py-1 rounded-full">
+                  {cfg.prix_total === null || cfg.prix_total === undefined ? "-" : `${Number(cfg.prix_total).toLocaleString()} MGA`}
+                </span>
+                <button
+                  onClick={() => onDeleteConfig(cfg.id)}
+                  className="p-1.5 border rounded-lg hover:bg-destructive/10 transition-colors"
+                  title="Supprimer"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </button>
+              </div>
+            </div>
+            {(cfg.detail || cfg.capacite) && (
+              <div className="border-t pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-muted/50 rounded-lg px-3 py-2">
+                    <span className="text-muted-foreground">Detail: </span>{cfg.detail ?? "-"}
+                  </div>
+                  <div className="bg-muted/50 rounded-lg px-3 py-2">
+                    <span className="text-muted-foreground">Capacite: </span>{cfg.capacite ?? "-"}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+interface SpecsTabProps {
+  editing: boolean;
+  attrs: AttrItem[];
+  standardKeys: any[];
+  setAttrs: React.Dispatch<React.SetStateAction<AttrItem[]>>;
+}
+
+const SpecsTab = ({ editing, attrs, standardKeys, setAttrs }: SpecsTabProps) => {
+  const addAttr = () => setAttrs((prev) => [...prev, { cle_attr: "", valeur_attr: "", libelle_attr: "" }]);
+  const removeAttr = (i: number) => setAttrs((prev) => prev.filter((_, idx) => idx !== i));
+  const updateAttr = (i: number, field: string, val: string) =>
+    setAttrs((prev) => prev.map((a, idx) => (idx === i ? { ...a, [field]: val } : a)));
+
+  return (
+    <div className={cardClass}>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Caractéristiques techniques</h3>
+        {editing && (
+          <button
+            onClick={addAttr}
+            className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border rounded-lg hover:bg-muted transition-colors"
+          >
+            <PlusCircle className="h-3.5 w-3.5" /> Ajouter
+          </button>
+        )}
+      </div>
+      {attrs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aucune caractéristique enregistrée.</p>
+      ) : editing ? (
+        <div className="space-y-3">
+          {attrs.map((a, i) => (
+            <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+              <div>
+                <label className="text-xs text-muted-foreground">Clé</label>
+                <select className={inputClass} value={a.cle_attr} onChange={(e) => updateAttr(i, "cle_attr", e.target.value)}>
+                  <option value="">Choisir…</option>
+                  {standardKeys.map((sk: any) => (
+                    <option key={sk.cle_attr} value={sk.cle_attr}>
+                      {sk.libelle_attr}
+                    </option>
+                  ))}
+                  {a.cle_attr && !standardKeys.find((sk: any) => sk.cle_attr === a.cle_attr) && (
+                    <option value={a.cle_attr}>{a.cle_attr}</option>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Valeur</label>
+                <input className={inputClass} value={a.valeur_attr} onChange={(e) => updateAttr(i, "valeur_attr", e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Libellé</label>
+                <input className={inputClass} value={a.libelle_attr ?? ""} onChange={(e) => updateAttr(i, "libelle_attr", e.target.value)} />
+              </div>
+              <button
+                onClick={() => removeAttr(i)}
+                className="p-2 border rounded-lg hover:bg-destructive/10 transition-colors mb-0.5"
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {attrs.map((a, i) => (
+            <div key={i} className="flex justify-between items-center bg-muted/50 rounded-xl px-4 py-3">
+              <span className="text-sm text-muted-foreground">{a.libelle_attr || a.cle_attr}</span>
+              <span className="text-sm font-medium">{a.valeur_attr}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface StockTabProps {
+  editing: boolean;
+  prix: string;
+  devise: string;
+  stock: string;
+  product: Product;
+  setPrix: (value: string) => void;
+  setDevise: (value: string) => void;
+  setStock: (value: string) => void;
+}
+
+const StockTab = ({ editing, prix, devise, stock, product, setPrix, setDevise, setStock }: StockTabProps) => (
+  <div className={cardClass}>
+    <h3 className="text-lg font-semibold">Stock & Prix</h3>
+    {editing ? (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label className={labelClass}>Prix</label>
+          <input className={inputClass} type="number" value={prix} onChange={(e) => setPrix(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Devise</label>
+          <input className={inputClass} value={devise} onChange={(e) => setDevise(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Quantité en stock</label>
+          <input className={inputClass} type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+        </div>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {renderReadonly("Prix", `${Number(product.prix).toLocaleString()} ${product.devise ?? "MGA"}`)}
+        {renderReadonly("Devise", product.devise)}
+        <div>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">Stock</span>
+          <p
+            className={`text-sm font-medium mt-0.5 ${
+              product.quantite_stock <= 0 ? "text-red-500" : product.quantite_stock < 5 ? "text-yellow-500" : ""
+            }`}
+          >
+            {product.quantite_stock} unité(s)
+          </p>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+interface ImagesTabProps {
+  editing: boolean;
+  images: any[];
+  newImageFiles: File[];
+  productId: number;
+  setMainImage: any;
+  deleteImage: any;
+  refetch: () => Promise<any>;
+  toast: any;
+  setNewImageFiles: React.Dispatch<React.SetStateAction<File[]>>;
+}
+
+const ImagesTab = ({
+  editing,
+  images,
+  newImageFiles,
+  productId,
+  setMainImage,
+  deleteImage,
+  refetch,
+  toast,
+  setNewImageFiles,
+}: ImagesTabProps) => (
+  <div className={cardClass}>
+    <h3 className="text-lg font-semibold">Images du produit</h3>
+    {images.length === 0 && !editing ? (
+      <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
+    ) : (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {images.map((img) => (
+          <div key={img.id} className="border rounded-xl overflow-hidden group relative">
+            <img src={img.url} alt={img.alt || "image"} className="h-40 w-full object-cover" />
+            <div className="p-2 text-xs text-muted-foreground">Ordre: {img.ordre ?? "—"}</div>
+            {editing && (
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={async () => {
+                    await setMainImage.mutateAsync({ produitId: productId, imageId: img.id });
+                    await refetch();
+                    toast({ title: "Image principale mise à jour" });
+                  }}
+                  className="p-1.5 bg-background/90 border rounded-lg text-xs"
+                  title="Définir principale"
+                >
+                  <Check className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={async () => {
+                    await deleteImage.mutateAsync(img.id);
+                    await refetch();
+                    toast({ title: "Image supprimée" });
+                  }}
+                  className="p-1.5 bg-background/90 border rounded-lg text-xs text-destructive"
+                  title="Supprimer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+    {editing && (
+      <div className="space-y-2 pt-2 border-t">
+        <label className="text-sm font-medium">Ajouter des images</label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          className={inputClass}
+          onChange={(e) => {
+            setNewImageFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
+            e.currentTarget.value = "";
+          }}
+        />
+        {newImageFiles.length > 0 && (
+          <div className="space-y-1">
+            {newImageFiles.map((f, i) => (
+              <div key={i} className="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
+                <span className="truncate">{f.name}</span>
+                <button onClick={() => setNewImageFiles((prev) => prev.filter((_, idx) => idx !== i))} className="p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Composant principal
@@ -253,11 +635,8 @@ const ConfigPc = () => {
 
   // État du modal configuration
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [cfgNom,          setCfgNom]          = useState<string>("");
-  const [cfgNomAutre,     setCfgNomAutre]     = useState("");
-  const [cfgDevise,       setCfgDevise]       = useState("MGA");
-  const [cfgComposants,   setCfgComposants]   = useState<ComposantRow[]>([
-    { nom: "", prix: "", quantite: "1" },
+  const [cfgRows, setCfgRows] = useState<ConfigRow[]>([
+    { nom_configuration: "", type: "", detail: "", capacite: "", prix_total: "" },
   ]);
   const [cfgSaving, setCfgSaving] = useState(false);
 
@@ -352,101 +731,38 @@ const ConfigPc = () => {
 
   // ── Helpers modal configuration ──────────────────────────
   const resetConfigModal = useCallback(() => {
-    setCfgNom("");
-    setCfgNomAutre("");
-    setCfgDevise("MGA");
-    setCfgComposants([{ nom: "", prix: "", quantite: "1" }]);
+    setCfgRows([{ nom_configuration: "", type: "", detail: "", capacite: "", prix_total: "" }]);
     setShowConfigModal(false);
   }, []);
 
-//   const handleCreateConfig = useCallback(async () => {
-//   if (!product || !cfgNom) return;
-//   setCfgSaving(true);
-//   try {
-//     const composants = cfgComposants
-//       .filter(c => c.nom.trim() !== "")
-//       .map(c => ({
-//         nom: c.nom.trim(),
-//         prix: parseFloat(c.prix.replace(",", ".")) || 0,
-//         quantite: parseInt(c.quantite, 10) || 1,
-//       }));
-
-//     // Construction explicite du payload
-//     const payload: any = {
-//       produit_id: product.id,
-//       nom_configuration: cfgNom,
-//       devise: cfgDevise || "MGA",
-//       composants_json: composants,
-//     };
-
-//     // TOUJOURS envoyer nom_configuration_autre si "autre"
-//     if (cfgNom === "autre") {
-//       payload.nom_configuration_autre = cfgNomAutre.trim() || ""; // Envoyer "" si vide
-//     }
-
-//     console.log("Payload complet:", payload);
-
-//     await createConfigMutation.mutateAsync(payload);
-//     await refetch();
-//     resetConfigModal();
-//     toast({ title: "Configuration créée avec succès" });
-//   } catch (e: any) {
-//     console.error("Erreur:", e.response?.data || e);
-//     const msg = e?.response?.data?.errors
-//       ? Object.values(e.response.data.errors).flat().join(", ")
-//       : e?.response?.data?.message || "Erreur lors de la création";
-//     toast({ title: "Erreur", description: msg, variant: "destructive" });
-//   } finally {
-//     setCfgSaving(false);
-//   }
-// }, [product, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, createConfigMutation, refetch, resetConfigModal, toast]);
-
   const handleCreateConfig = useCallback(async () => {
-    if (!product || !cfgNom) return;
+    if (!product) return;
     setCfgSaving(true);
     try {
-      const composants = cfgComposants
-        .filter(c => c.nom.trim() !== "")
-        .map(c => ({
-          nom: c.nom.trim(),
-          prix: parseFloat(c.prix.replace(",", ".")) || 0,
-          quantite: parseInt(c.quantite, 10) || 1,
-        }));
+      const configurations = cfgRows.map(row => ({
+        nom_configuration: row.nom_configuration,
+        type: row.type.trim() || null,
+        detail: row.detail.trim() || null,
+        capacite: row.capacite.trim() || null,
+        prix_total: row.prix_total.trim() ? parseFloat(row.prix_total.replace(",", ".")) || 0 : null,
+      }));
 
-      // Construction explicite du payload
-      const payload: any = {
+      await createConfigMutation.mutateAsync({
         produit_id: product.id,
-        nom_configuration: cfgNom,
-        devise: cfgDevise || "MGA",
-        composants_json: composants,
-      };
-
-      // 🔥 MODIFICATION ICI : Toujours envoyer nom_configuration_autre
-      // en prenant le nom du premier composant s'il existe
-      if (composants.length > 0 && composants[0].nom) {
-        payload.nom_configuration_autre = composants[0].nom;
-      } else if (cfgNom === "autre" && cfgNomAutre.trim() !== "") {
-        // Si pas de composant, utiliser le champ personnalisé (pour le cas "autre")
-        payload.nom_configuration_autre = cfgNomAutre.trim();
-      }
-
-      console.log("Payload complet:", payload);
-
-      await createConfigMutation.mutateAsync(payload);
+        configurations,
+      });
       await refetch();
       resetConfigModal();
-      toast({ title: "Configuration créée avec succès" });
+      toast({ title: "Configurations creees avec succes" });
     } catch (e: any) {
-      console.error("Erreur:", e.response?.data || e);
       const msg = e?.response?.data?.errors
         ? Object.values(e.response.data.errors).flat().join(", ")
-        : e?.response?.data?.message || "Erreur lors de la création";
+        : e?.response?.data?.message || "Erreur lors de la creation";
       toast({ title: "Erreur", description: msg, variant: "destructive" });
     } finally {
       setCfgSaving(false);
     }
-  }, [product, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, createConfigMutation, refetch, resetConfigModal, toast]);
-
+  }, [product, cfgRows, createConfigMutation, refetch, resetConfigModal, toast]);
   const handleDeleteConfig = useCallback(async (configId: number) => {
     try {
       await deleteConfigMutation.mutateAsync(configId);
@@ -485,343 +801,73 @@ const ConfigPc = () => {
   const normalizedCategories = categories ?? [];
   const standardKeys        = getStandardKeys.data ?? [];
 
-  const renderReadonly = (label: string, value: string | number | null | undefined) => (
-    <div>
-      <span className="text-xs text-muted-foreground uppercase tracking-wider">{label}</span>
-      <p className="text-sm font-medium mt-0.5">{value ?? "—"}</p>
-    </div>
-  );
-
-  // ─── TAB: General ────────────────────────────────────────
-  const GeneralTab = () => (
-    <div className={cardClass}>
-      <h3 className="text-lg font-semibold">Informations générales</h3>
-      {editing ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>Nom</label>
-            <input className={inputClass} value={nom} onChange={e => setNom(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>Référence</label>
-            <input className={inputClass} value={reference} disabled />
-          </div>
-          <div>
-            <label className={labelClass}>Type produit</label>
-            <select className={inputClass} value={typeProduit} onChange={e => setTypeProduit(e.target.value)}>
-              <option value="">—</option>
-              {TYPES_PRODUIT.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center gap-3 pt-6">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={actif}
-                onChange={e => setActif(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-foreground transition-colors after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-background after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-            </label>
-            <span className="text-sm">{actif ? "Actif" : "Inactif"}</span>
-          </div>
-          <div className="md:col-span-2">
-            <label className={labelClass}>Description courte</label>
-            <input className={inputClass} value={descCourte} onChange={e => setDescCourte(e.target.value)} />
-          </div>
-          <div className="md:col-span-2">
-            <label className={labelClass}>Description</label>
-            <textarea
-              className={inputClass + " min-h-[120px]"}
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {renderReadonly("Nom",         product.nom)}
-          {renderReadonly("Référence",   product.reference)}
-          {renderReadonly("Type",        product.type_produit)}
-          {renderReadonly("Statut",      product.actif ? "Actif" : "Inactif")}
-          {renderReadonly("Créé le",     product.date_creation)}
-          {renderReadonly("Modifié le",  product.date_modification)}
-          <div className="md:col-span-2 lg:col-span-3">
-            {renderReadonly("Description courte", product.description_courte)}
-          </div>
-          <div className="md:col-span-2 lg:col-span-3">
-            {renderReadonly("Description", product.description)}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── TAB: Category ───────────────────────────────────────
-  const CategoryTab = () => (
-    <div className={cardClass}>
-      <h3 className="text-lg font-semibold">Catégorie associée</h3>
-      {editing ? (
-        <div>
-          <label className={labelClass}>Catégorie</label>
-          <select className={inputClass} value={categorieId} onChange={e => setCategorieId(e.target.value)}>
-            <option value="">—</option>
-            {normalizedCategories.map((c: any) => (
-              <option key={c.id} value={c.id}>{c.nom}</option>
-            ))}
-          </select>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderReadonly("Catégorie",    product.categorie?.nom)}
-          {renderReadonly("ID Catégorie", product.categorie_id)}
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── TAB: Config PC ──────────────────────────────────────
-  // Le modal est rendu EN DEHORS de ce composant (voir <ConfigModal> plus haut)
-  // pour éviter le remontage à chaque render
-  const ConfigTab = () => (
-    <div className={cardClass}>
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Configurations PC associées</h3>
-        <button
-          onClick={() => setShowConfigModal(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity"
-        >
-          <PlusCircle className="h-4 w-4" /> Ajouter une configuration
-        </button>
-      </div>
-
-      {configs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucune configuration associée à ce produit.</p>
-      ) : (
-        <div className="space-y-4">
-          {configs.map(cfg => (
-            <div key={cfg.id} className="border border-border rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm capitalize">
-                  {cfg.nom_configuration}
-                  {cfg.nom_configuration_autre ? ` — ${cfg.nom_configuration_autre}` : ""}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs bg-muted px-2.5 py-1 rounded-full">
-                    {Number(cfg.prix_total).toLocaleString()} {cfg.devise ?? "MGA"}
-                  </span>
-                  <button
-                    onClick={() => handleDeleteConfig(cfg.id)}
-                    className="p-1.5 border rounded-lg hover:bg-destructive/10 transition-colors"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </button>
-                </div>
-              </div>
-              {Array.isArray(cfg.composants_json) && cfg.composants_json.length > 0 && (
-                <div className="border-t pt-2">
-                  <p className="text-xs text-muted-foreground mb-2">Composants :</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {cfg.composants_json.map((comp, i) => (
-                      <div key={i} className="flex justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-                        <span>{comp.nom ?? `Composant ${i + 1}`}</span>
-                        <span className="text-muted-foreground">
-                          {comp.quantite ?? 1}x — {Number(comp.prix ?? 0).toLocaleString()} MGA
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── TAB: Specs ──────────────────────────────────────────
-  const SpecsTab = () => {
-    const addAttr    = () => setAttrs(prev => [...prev, { cle_attr: "", valeur_attr: "", libelle_attr: "" }]);
-    const removeAttr = (i: number) => setAttrs(prev => prev.filter((_, idx) => idx !== i));
-    const updateAttr = (i: number, field: string, val: string) =>
-      setAttrs(prev => prev.map((a, idx) => idx === i ? { ...a, [field]: val } : a));
-
-    return (
-      <div className={cardClass}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Caractéristiques techniques</h3>
-          {editing && (
-            <button
-              onClick={addAttr}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 border rounded-lg hover:bg-muted transition-colors"
-            >
-              <PlusCircle className="h-3.5 w-3.5" /> Ajouter
-            </button>
-          )}
-        </div>
-        {attrs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune caractéristique enregistrée.</p>
-        ) : editing ? (
-          <div className="space-y-3">
-            {attrs.map((a, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
-                <div>
-                  <label className="text-xs text-muted-foreground">Clé</label>
-                  <select className={inputClass} value={a.cle_attr} onChange={e => updateAttr(i, "cle_attr", e.target.value)}>
-                    <option value="">Choisir…</option>
-                    {standardKeys.map((sk: any) => (
-                      <option key={sk.cle_attr} value={sk.cle_attr}>{sk.libelle_attr}</option>
-                    ))}
-                    {a.cle_attr && !standardKeys.find((sk: any) => sk.cle_attr === a.cle_attr) && (
-                      <option value={a.cle_attr}>{a.cle_attr}</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Valeur</label>
-                  <input className={inputClass} value={a.valeur_attr} onChange={e => updateAttr(i, "valeur_attr", e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Libellé</label>
-                  <input className={inputClass} value={a.libelle_attr ?? ""} onChange={e => updateAttr(i, "libelle_attr", e.target.value)} />
-                </div>
-                <button onClick={() => removeAttr(i)} className="p-2 border rounded-lg hover:bg-destructive/10 transition-colors mb-0.5">
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {attrs.map((a, i) => (
-              <div key={i} className="flex justify-between items-center bg-muted/50 rounded-xl px-4 py-3">
-                <span className="text-sm text-muted-foreground">{a.libelle_attr || a.cle_attr}</span>
-                <span className="text-sm font-medium">{a.valeur_attr}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ─── TAB: Stock & Prix ───────────────────────────────────
-  const StockTab = () => (
-    <div className={cardClass}>
-      <h3 className="text-lg font-semibold">Stock & Prix</h3>
-      {editing ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className={labelClass}>Prix</label>
-            <input className={inputClass} type="number" value={prix} onChange={e => setPrix(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>Devise</label>
-            <input className={inputClass} value={devise} onChange={e => setDevise(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>Quantité en stock</label>
-            <input className={inputClass} type="number" value={stock} onChange={e => setStock(e.target.value)} />
-          </div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {renderReadonly("Prix", `${Number(product.prix).toLocaleString()} ${product.devise ?? "MGA"}`)}
-          {renderReadonly("Devise", product.devise)}
-          <div>
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Stock</span>
-            <p className={`text-sm font-medium mt-0.5 ${
-              product.quantite_stock <= 0 ? "text-red-500" : product.quantite_stock < 5 ? "text-yellow-500" : ""
-            }`}>
-              {product.quantite_stock} unité(s)
-            </p>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  // ─── TAB: Images ─────────────────────────────────────────
-  const ImagesTab = () => (
-    <div className={cardClass}>
-      <h3 className="text-lg font-semibold">Images du produit</h3>
-      {images.length === 0 && !editing ? (
-        <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {images.map(img => (
-            <div key={img.id} className="border rounded-xl overflow-hidden group relative">
-              <img src={img.url} alt={img.alt || "image"} className="h-40 w-full object-cover" />
-              <div className="p-2 text-xs text-muted-foreground">Ordre: {img.ordre ?? "—"}</div>
-              {editing && (
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={async () => {
-                      await setMainImage.mutateAsync({ produitId: product.id, imageId: img.id });
-                      await refetch();
-                      toast({ title: "Image principale mise à jour" });
-                    }}
-                    className="p-1.5 bg-background/90 border rounded-lg text-xs"
-                    title="Définir principale"
-                  >
-                    <Check className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await deleteImage.mutateAsync(img.id);
-                      await refetch();
-                      toast({ title: "Image supprimée" });
-                    }}
-                    className="p-1.5 bg-background/90 border rounded-lg text-xs text-destructive"
-                    title="Supprimer"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-      {editing && (
-        <div className="space-y-2 pt-2 border-t">
-          <label className="text-sm font-medium">Ajouter des images</label>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className={inputClass}
-            onChange={e => {
-              setNewImageFiles(prev => [...prev, ...Array.from(e.target.files ?? [])]);
-              e.currentTarget.value = "";
-            }}
-          />
-          {newImageFiles.length > 0 && (
-            <div className="space-y-1">
-              {newImageFiles.map((f, i) => (
-                <div key={i} className="flex items-center justify-between border rounded-lg px-3 py-2 text-sm">
-                  <span className="truncate">{f.name}</span>
-                  <button onClick={() => setNewImageFiles(prev => prev.filter((_, idx) => idx !== i))} className="p-1">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-
   const tabContent: Record<Tab, React.ReactNode> = {
-    general:  <GeneralTab />,
-    category: <CategoryTab />,
-    config:   <ConfigTab />,
-    specs:    <SpecsTab />,
-    stock:    <StockTab />,
-    images:   <ImagesTab />,
+    general:  (
+      <GeneralTab
+        editing={editing}
+        nom={nom}
+        reference={reference}
+        typeProduit={typeProduit}
+        actif={actif}
+        descCourte={descCourte}
+        description={description}
+        product={product}
+        setNom={setNom}
+        setTypeProduit={setTypeProduit}
+        setActif={setActif}
+        setDescCourte={setDescCourte}
+        setDescription={setDescription}
+      />
+    ),
+    category: (
+      <CategoryTab
+        editing={editing}
+        categorieId={categorieId}
+        normalizedCategories={normalizedCategories}
+        product={product}
+        setCategorieId={setCategorieId}
+      />
+    ),
+    config: (
+      <ConfigTab
+        configs={configs}
+        onOpenModal={() => setShowConfigModal(true)}
+        onDeleteConfig={handleDeleteConfig}
+      />
+    ),
+    specs: (
+      <SpecsTab
+        editing={editing}
+        attrs={attrs}
+        standardKeys={standardKeys}
+        setAttrs={setAttrs}
+      />
+    ),
+    stock: (
+      <StockTab
+        editing={editing}
+        prix={prix}
+        devise={devise}
+        stock={stock}
+        product={product}
+        setPrix={setPrix}
+        setDevise={setDevise}
+        setStock={setStock}
+      />
+    ),
+    images: (
+      <ImagesTab
+        editing={editing}
+        images={images}
+        newImageFiles={newImageFiles}
+        productId={product.id}
+        setMainImage={setMainImage}
+        deleteImage={deleteImage}
+        refetch={refetch}
+        toast={toast}
+        setNewImageFiles={setNewImageFiles}
+      />
+    ),
   };
 
   return (
@@ -894,23 +940,21 @@ const ConfigPc = () => {
       {/* ── Modal configuration — rendu au niveau racine pour éviter le remontage ── */}
       <ConfigModal
         show={showConfigModal}
-        cfgNom={cfgNom}
-        cfgNomAutre={cfgNomAutre}
-        cfgDevise={cfgDevise}
-        cfgComposants={cfgComposants}
+        cfgRows={cfgRows}
         cfgSaving={cfgSaving}
         onClose={resetConfigModal}
         onSave={handleCreateConfig}
-        setCfgNom={setCfgNom}
-        setCfgNomAutre={setCfgNomAutre}
-        setCfgDevise={setCfgDevise}
-        setCfgComposants={setCfgComposants}
+        setCfgRows={setCfgRows}
       />
     </div>
   );
 };
 
 export default ConfigPc;
+
+
+
+
 
 
 

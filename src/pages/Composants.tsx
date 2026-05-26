@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Cpu, Gamepad, MemoryStick, HardDrive, CircuitBoard, Zap, Server, Loader2, Eye, ShoppingCart } from "lucide-react";
+import { Cpu, Gamepad, MemoryStick, HardDrive, CircuitBoard, Zap, Server, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
@@ -22,7 +22,6 @@ interface Product {
   actif: boolean;
   date_creation: string;
   date_modification: string;
-  images?: { id: number; url: string; alt: string; ordre: number }[];
 }
 
 // Interface pour les catégories de composants
@@ -34,7 +33,7 @@ interface ComponentCategory {
   bgColor: string;
   borderColor: string;
   description: string;
-  referencePrefix: string; // Préfixe de référence
+  keywords: string[]; // Mots-clés pour identifier le type de composant
   products: Product[];
 }
 
@@ -80,9 +79,7 @@ const Composants = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await api.get('/produits', {
-        params: { per_page: 1000 }
-      });
+      const response = await api.get('/produits');
       
       console.log("Réponse API complète:", response.data);
       
@@ -98,13 +95,15 @@ const Composants = () => {
         allProducts = [];
       }
       
-      // Filtrer les produits actifs
-      const activeProducts = allProducts.filter(
-        (product: Product) => product.actif === true
+      // Filtrer uniquement les composants (type_produit = 'composant')
+      const componentProducts = allProducts.filter(
+        (product: Product) => 
+          product.type_produit === 'composant' && 
+          product.actif === true
       );
       
-      console.log("Produits actifs trouvés:", activeProducts);
-      setProducts(activeProducts);
+      console.log("Composants trouvés:", componentProducts);
+      setProducts(componentProducts);
       
     } catch (error: any) {
       console.error("Erreur lors du chargement des composants:", error);
@@ -114,36 +113,71 @@ const Composants = () => {
     }
   };
 
-  // Fonction pour déterminer la catégorie basée sur la référence
-  const getComponentCategoryByReference = (product: Product): string => {
-    const reference = product.reference || '';
+  // Fonction pour déterminer le type de composant basé sur le nom et la description
+  const getComponentType = (product: Product): string => {
+    const searchText = `${product.nom} ${product.description_courte} ${product.description}`.toLowerCase();
     
-    if (reference.startsWith('CPU-')) return 'cpu';
-    if (reference.startsWith('RAM-')) return 'ram';
-    if (reference.startsWith('MB-')) return 'motherboard';
-    if (reference.startsWith('SD-')) return 'storage';
-    if (reference.startsWith('GPU-')) return 'gpu';
+    // Détection CPU / Processeur
+    if (searchText.includes('cpu') || 
+        searchText.includes('core') || 
+        searchText.includes('ryzen') || 
+        searchText.includes('processeur') ||
+        searchText.includes('intel') ||
+        searchText.includes('amd') ||
+        (searchText.includes('i3') || searchText.includes('i5') || searchText.includes('i7') || searchText.includes('i9')) ||
+        searchText.includes('threadripper')) {
+      return 'cpu';
+    }
     
+    // Détection GPU / Carte graphique
+    if (searchText.includes('gpu') || 
+        searchText.includes('rtx') || 
+        searchText.includes('gtx') || 
+        searchText.includes('radeon') ||
+        searchText.includes('carte graphique') ||
+        searchText.includes('graphics') ||
+        searchText.includes('geforce') ||
+        searchText.includes('rx')) {
+      return 'gpu';
+    }
+    
+    // Détection RAM / Mémoire
+    if (searchText.includes('ram') || 
+        searchText.includes('ddr') || 
+        searchText.includes('mémoire') ||
+        searchText.includes('memory') ||
+        searchText.includes('go ram') ||
+        searchText.includes('gb ram')) {
+      return 'ram';
+    }
+    
+    // Détection Stockage / Disque dur / SSD
+    if (searchText.includes('ssd') || 
+        searchText.includes('hdd') || 
+        searchText.includes('disque') ||
+        searchText.includes('stockage') ||
+        searchText.includes('nvme') ||
+        searchText.includes('tera') ||
+        searchText.includes('go') && (searchText.includes('stockage') || searchText.includes('disque')) ||
+        searchText.includes('sata')) {
+      return 'storage';
+    }
+    
+    // Détection Carte mère
+    if (searchText.includes('carte mère') || 
+        searchText.includes('motherboard') ||
+        searchText.includes('z790') ||
+        searchText.includes('b650') ||
+        searchText.includes('chipset') ||
+        searchText.includes('socket')) {
+      return 'motherboard';
+    }
+    
+    // Par défaut, non classé
     return 'uncategorized';
   };
 
-  // Fonction pour obtenir l'URL de l'image principale d'un produit
-  const getProductImageUrl = (product: Product) => {
-    const images = product.images || [];
-    if (images.length === 0) return null;
-    
-    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
-    if (!mainImage?.url) return null;
-    
-    // Si l'URL commence par /storage, ajouter le domaine
-    if (mainImage.url.startsWith('/storage')) {
-      return `http://127.0.0.1:8000${mainImage.url}`;
-    }
-    
-    return mainImage.url;
-  };
-
-  // Définition des catégories de composants avec leurs préfixes de référence
+  // Définition des catégories de composants avec leurs mots-clés
   const componentCategories: ComponentCategory[] = [
     {
       id: "cpu",
@@ -153,7 +187,7 @@ const Composants = () => {
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500",
       description: "Le cerveau de votre ordinateur. Performances et rapidité d'exécution.",
-      referencePrefix: "CPU-",
+      keywords: ["cpu", "processeur", "core", "ryzen", "intel", "amd", "i3", "i5", "i7", "i9", "threadripper"],
       products: []
     },
     {
@@ -164,7 +198,7 @@ const Composants = () => {
       bgColor: "bg-green-500/10",
       borderColor: "border-green-500",
       description: "Carte graphique pour le gaming et la création.",
-      referencePrefix: "GPU-",
+      keywords: ["gpu", "rtx", "gtx", "radeon", "carte graphique", "graphics", "geforce", "rx"],
       products: []
     },
     {
@@ -175,7 +209,7 @@ const Composants = () => {
       bgColor: "bg-blue-500/10",
       borderColor: "border-blue-500",
       description: "Mémoire vive pour le multitâche et la réactivité.",
-      referencePrefix: "RAM-",
+      keywords: ["ram", "ddr", "mémoire", "memory"],
       products: []
     },
     {
@@ -186,7 +220,7 @@ const Composants = () => {
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-500",
       description: "SSD et HDD pour vos données et applications.",
-      referencePrefix: "SD-",
+      keywords: ["ssd", "hdd", "disque", "stockage", "nvme", "sata", "tera", "go"],
       products: []
     },
     {
@@ -197,7 +231,7 @@ const Composants = () => {
       bgColor: "bg-red-500/10",
       borderColor: "border-red-500",
       description: "La base de votre configuration, compatible avec vos composants.",
-      referencePrefix: "MB-",
+      keywords: ["carte mère", "motherboard", "chipset", "socket", "z790", "b650", "b760", "x670"],
       products: []
     }
   ];
@@ -206,8 +240,8 @@ const Composants = () => {
   const categorizedProducts = componentCategories.map(category => ({
     ...category,
     products: products.filter(product => {
-      const productCategory = getComponentCategoryByReference(product);
-      return productCategory === category.id;
+      const productType = getComponentType(product);
+      return productType === category.id;
     })
   }));
 
@@ -281,133 +315,109 @@ const Composants = () => {
     );
   }
 
-  return (
-    <SiteLayout>
-      <MiniHero
-        title="Tous les composants pour votre PC."
-        description="Des processeurs aux cartes mères, en passant par les cartes graphiques et la RAM, trouvez tout ce qu'il vous faut pour une configuration sur mesure."
-        bg="7.png"
-      />
+return (
+  <SiteLayout>
+    <MiniHero
+      title="Tous les composants pour votre PC."
+      description="Des processeurs aux cartes mères, en passant par les cartes graphiques et la RAM, trouvez tout ce qu'il vous faut pour une configuration sur mesure."
+      bg="7.png"
+    />
 
-      <section id="composants" className="py-12 scroll-mt-20">
-        <div className="container-x">
+    <section id="composants" className="py-12 scroll-mt-20">
+      <div className="container-x">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3">
+            <Server className="h-8 w-8 text-yellow-500" />
+            Nos Composants
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Découvrez notre sélection de composants haute performance pour assembler ou améliorer votre PC.
+            CPU, GPU, RAM, stockage et cartes mères : tout ce qu'il vous faut.
+          </p>
+        </div>
 
-          <div className="space-y-12">
-            {/* Afficher les catégories avec des produits */}
-            {nonEmptyCategories.map((category) => {
-              return (
-                <div
-                  key={category.id}
-                  id={category.id}
-                  className={`border-l-4 ${category.borderColor} bg-secondary/20 rounded-r-lg p-6 hover:shadow-lg transition-shadow`}
-                >
-                  {/* En-tête de catégorie */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`p-3 rounded-full ${category.bgColor} ${category.color}`}>
-                      {category.icon}
-                    </div>
-                    <div>
-                      <h3 className={`text-2xl font-bold ${category.color}`}>
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{category.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {category.products.length} produit(s) disponible(s)
-                      </p>
-                    </div>
+        <div className="space-y-12">
+          {/* Afficher TOUTES les catégories, même vides */}
+          {componentCategories.map((category) => {
+            const categoryProducts = products.filter(product => {
+              const productType = getComponentType(product);
+              return productType === category.id;
+            });
+
+            return (
+              <div
+                key={category.id}
+                id={category.id}
+                className={`border-l-4 ${category.borderColor} bg-secondary/20 rounded-r-lg p-6 hover:shadow-lg transition-shadow`}
+              >
+                {/* En-tête de catégorie */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`p-3 rounded-full ${category.bgColor} ${category.color}`}>
+                    {category.icon}
                   </div>
-
-                  {/* Grille des produits */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-                    {category.products.map((product) => {
-                      const imageUrl = getProductImageUrl(product);
-                      
-                      return (
-                        <div 
-                          key={product.id} 
-                          className="group bg-background border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
-                        >
-                          {/* Image section */}
-                          <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-500/10 to-secondary">
-                            {imageUrl ? (
-                              <img 
-                                src={imageUrl} 
-                                alt={product.nom} 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                {category.icon}
-                              </div>
-                            )}
-                            
-                            {/* Badge référence */}
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-mono">
-                              {product.reference}
-                            </div>
-                            
-                            {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
-                              <span className="absolute bottom-2 left-2 px-2 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded-full">
-                                Stock limité
-                              </span>
-                            )}
-                            {product.quantite_stock === 0 && (
-                              <span className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white text-[10px] font-semibold rounded-full">
-                                Rupture
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Content */}
-                          <div className="p-4">
-                            <h3 className="text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                              {product.nom}
-                            </h3>
-                            
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {getSpecs(product)}
-                            </p>
-                            
-                            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                              <div>
-                                <span className="text-xl font-bold text-primary">
-                                  {formatPrice(product.prix, product.devise)}
-                                </span>
-                              </div>
-                              <Link to={`/produit/${product.id}`}>
-                                <button 
-                                  className="px-3 py-1.5 text-sm bg-foreground text-background hover:opacity-90 transition rounded-lg flex items-center gap-1"
-                                  disabled={product.quantite_stock === 0}
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Voir</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div>
+                    <h3 className={`text-2xl font-bold ${category.color}`}>
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{category.description}</p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Message si aucun produit dans aucune catégorie */}
-          {nonEmptyCategories.length === 0 && (
-            <div className="text-center py-20 bg-background rounded-xl border border-border">
-              <Server className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Aucun composant disponible pour le moment.</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Vérifiez que des produits avec les références CPU-, RAM-, MB-, SD-, GPU- existent dans la base.
-              </p>
-            </div>
-          )}
+                {/* Grille des produits ou message vide */}
+                {categoryProducts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-6">
+                    {categoryProducts.map((product) => (
+                      <div key={product.id} className="border border-border rounded-lg p-4 hover:bg-background hover:shadow-lg transition-all">
+                        <h4 className="font-bold text-lg mb-2 line-clamp-1">{product.nom}</h4>
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                          {getSpecs(product)}
+                        </p>
+                        <div className="text-xs text-muted-foreground mb-2">
+                          Réf: {product.reference}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                          <div>
+                            <span className="text-xl font-bold text-primary">
+                              {formatPrice(product.prix, product.devise)}
+                            </span>
+                            {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
+                              <p className="text-xs text-orange-500">Plus que {product.quantite_stock}</p>
+                            )}
+                            {product.quantite_stock === 0 && (
+                              <p className="text-xs text-red-500">Rupture de stock</p>
+                            )}
+                          </div>
+                          <button 
+                            className="px-3 py-1.5 text-sm bg-foreground text-background hover:opacity-90 transition rounded"
+                            disabled={product.quantite_stock === 0}
+                          >
+                            Ajouter
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 mt-4 bg-background/50 rounded-lg border border-dashed border-border">
+                    <div className={`${category.color} mb-2`}>
+                      {category.icon}
+                    </div>
+                    <p className="text-muted-foreground">
+                      Aucun produit disponible pour le moment
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Revenez bientôt pour découvrir nos {category.name.toLowerCase()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      </section>
-    </SiteLayout>
-  );
+      </div>
+    </section>
+  </SiteLayout>
+);
 };
 
 export default Composants;

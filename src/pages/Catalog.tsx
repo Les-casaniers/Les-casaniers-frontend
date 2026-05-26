@@ -1,7 +1,6 @@
 ﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
-import { useShop } from "@/store/shop";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Filter, Volume2, VolumeX, X, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,44 +12,11 @@ import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
 
 
-// Configuration des types de filtres par référence
-const FILTER_CONFIG = [
-  { 
-    id: "all", 
-    name: "Tout", 
-    referencePrefixes: null,
-    description: "Tous les produits du catalogue"
-  },
-  { 
-    id: "composants", 
-    name: "Composants", 
-    referencePrefixes: ["CPU-", "GPU-", "RAM-", "MB-"],
-    description: "Processeurs, cartes graphiques, mémoire RAM, cartes mères"
-  },
-  { 
-    id: "peripheriques", 
-    name: "Périphériques", 
-    referencePrefixes: ["CHS-", "CLV-", "SR-", "ECR-"],
-    description: "Chaises, claviers, souris, écrans"
-  },
-    { 
-    id: "exception", 
-    name: "Exception", 
-    referencePrefixes: ["EXP-"],
-    description: "Produits d'exception, éditions limitées"
-  },
-  { 
-    id: "autres", 
-    name: "Autres", 
-    referencePrefixes: ["REF-"],
-    description: "Autres produits et accessoires"
-  }
-];
-
 const Catalog = () => {
+  //const { addToCart } = useShop();
   const { addToCart } = useCartApi();
   const [favorites, setFavorites] = useState<number[]>([]);
-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const [catId, setCatId] = useState<number | "Tout">("Tout");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"pop" | "asc" | "desc">("pop");
   const [budget, setBudget] = useState(15000000);
@@ -58,41 +24,24 @@ const Catalog = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentMessage, setCurrentMessage] = useState("");
   const [showHelp, setShowHelp] = useState(false);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [searchParams] = useSearchParams();
+
+  const { data: categories = [], isLoading: isLoadingCats } = useCategories();
+  const { data: products = [], isLoading: isLoadingProducts } = useProducts({
+    categorie_id: catId === "Tout" ? undefined : catId,
+  });
 
   useEffect(() => {
     document.title = "Catalogue PC sur-mesure — Les Casaniers Madagascar";
-    fetchAllProducts();
   }, []);
 
-  // Récupérer tous les produits depuis l'API
-  const fetchAllProducts = async () => {
-    try {
-      setIsLoadingProducts(true);
-      const response = await api.get('/produits', {
-        params: { per_page: 1000 }
-      });
-      
-      let products = [];
-      if (response.data.data) {
-        products = Array.isArray(response.data.data) ? response.data.data : [];
-      } else if (Array.isArray(response.data)) {
-        products = response.data;
-      } else {
-        products = [];
-      }
-      
-      setAllProducts(products);
-    } catch (error) {
-      console.error("Erreur chargement produits:", error);
-    } finally {
-      setIsLoadingProducts(false);
-    }
-  };
+  useEffect(() => {
+    const term = searchParams.get("q") ?? "";
+    setQ(term);
+  }, [searchParams]);
 
   // Charger les favoris de l'utilisateur connecté
   useEffect(() => {
@@ -115,6 +64,7 @@ const Catalog = () => {
       const favoriteIds = favorisData.map((f: any) => f.produit_id);
       setFavorites(favoriteIds);
     } catch (error: any) {
+      // Si l'utilisateur n'est pas connecté, ce n'est pas une erreur
       if (error.response?.status !== 401) {
         console.error("Erreur chargement favoris:", error);
       }
@@ -177,60 +127,13 @@ const Catalog = () => {
     const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
     if (!mainImage?.url) return "/placeholder-pc.jpg";
     
+    // Si l'URL commence par /storage, ajouter le domaine
     if (mainImage.url.startsWith('/storage')) {
       return `http://127.0.0.1:8000${mainImage.url}`;
     }
     
     return mainImage.url;
   };
-
-  // Fonction pour filtrer les produits par référence
-  const filterProductsByReference = (products: Product[], filterId: string): Product[] => {
-    if (filterId === "all") return products;
-    
-    const filter = FILTER_CONFIG.find(f => f.id === filterId);
-    if (!filter || !filter.referencePrefixes) return [];
-    
-    return products.filter(product => {
-      if (!product.actif || !product.est_dispo || product.quantite_stock <= 0) return false;
-      const reference = product.reference || "";
-      return filter.referencePrefixes!.some(prefix => reference.startsWith(prefix));
-    });
-  };
-
-  // Filtrer par recherche textuelle
-  const filterBySearch = (products: Product[], searchTerm: string): Product[] => {
-    if (!searchTerm) return products;
-    const term = searchTerm.toLowerCase();
-    return products.filter(product => 
-      product.nom?.toLowerCase().includes(term) ||
-      product.description_courte?.toLowerCase().includes(term) ||
-      product.description?.toLowerCase().includes(term) ||
-      product.reference?.toLowerCase().includes(term)
-    );
-  };
-
-  // Application des filtres
-  const filtered = useMemo(() => {
-    let list = [...allProducts];
-    
-    // Filtre par référence (catégorie)
-    list = filterProductsByReference(list, selectedFilter);
-    
-    // Filtre par recherche
-    if (q) {
-      list = filterBySearch(list, q);
-    }
-    
-    // Filtre par budget
-    list = list.filter((p) => p.prix <= budget);
-    
-    // Tri
-    if (sort === "asc") list = [...list].sort((a, b) => a.prix - b.prix);
-    if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
-    
-    return list;
-  }, [allProducts, selectedFilter, q, sort, budget]);
 
   // Charger les voix disponibles
   useEffect(() => {
@@ -304,7 +207,7 @@ const Catalog = () => {
   const handleMascotClick = () => {
     setIsChatOpen(true);
     setShowHelp(false);
-    const message = "🐧 *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie : Composants (CPU, GPU, RAM, carte mère), Périphériques (chaises, claviers, souris, écrans) ou Autres. *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
+    const message = "🐧 *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie. *compte sur ses doigts* Tu peux aussi trier par prix ou popularité, et ajuster ton budget avec le curseur ! *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
     setCurrentMessage(message);
     speakText(message);
   };
@@ -312,7 +215,7 @@ const Catalog = () => {
   const handleHelpClick = () => {
     setShowHelp(!showHelp);
     if (!showHelp) {
-      const message = "🐧 *Je m'approche* Voici un petit guide ! *pointe* Les filtres en haut : choisis ta catégorie : Composants (CPU, GPU, RAM, carte mère), Périphériques (chaises, claviers, souris, écrans) ou Autres. *montre le curseur* Le curseur de budget ajuste les prix. *pointe les produits* Et chaque carte produit a un bouton cœur pour les favoris ! Des questions ?";
+      const message = "🐧 *Je m'approche* Voici un petit guide ! *pointe* Les filtres en haut : choisis ta catégorie pour voir les modèles. *montre le curseur* Le curseur de budget ajuste les prix. *pointe les produits* Et chaque carte produit a un bouton cœur pour les favoris ! Des questions ?";
       setCurrentMessage(message);
       speakText(message);
     }
@@ -335,11 +238,40 @@ const Catalog = () => {
     speakText(message);
   };
 
-  const speakAboutFilter = (filterName: string, description: string) => {
-    const message = `🐧 *J'ouvre les bras* ${filterName} ! ${description} *sourit* Trouve ce qui te correspond !`;
+  const speakAboutFilter = (name: string) => {
+    const message = `🐧 *J'ouvre les bras* La catégorie ${name} ! *sourit* Trouve celle qui te correspond !`;
     setCurrentMessage(message);
     speakText(message);
   };
+
+  const normalizeText = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .toLowerCase();
+
+  const filtered = useMemo(() => {
+    if (!products) return [];
+
+    const query = normalizeText(q.trim());
+
+    let list = products.filter((p) => {
+      if (catId !== "Tout" && p.categorie_id !== catId) return false;
+      if (p.prix > budget || !p.est_dispo || p.quantite_stock <= 0 || !p.actif) return false;
+
+      if (!query) return true;
+
+      const nom = normalizeText(p.nom ?? "");
+      const reference = normalizeText(p.reference ?? "");
+      const categorie = normalizeText(p.categorie?.nom ?? "");
+
+      return nom.includes(query) || reference.includes(query) || categorie.includes(query);
+    });
+
+    if (sort === "asc") list = [...list].sort((a, b) => a.prix - b.prix);
+    if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
+    return list;
+  }, [products, sort, budget, q, catId]);
 
   return (
     <SiteLayout>
@@ -362,20 +294,30 @@ const Catalog = () => {
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            {FILTER_CONFIG.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => {
-                  setSelectedFilter(filter.id);
-                  speakAboutFilter(filter.name, filter.description);
-                }}
-                className={`px-4 h-10 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.id ? "bg-gradient-accent text-accent-foreground shadow-glow" : "bg-secondary text-muted-foreground hover:text-foreground"
+            <button
+              onClick={() => {
+                setCatId("Tout");
+                speakAboutFilter("Toutes");
+              }}
+              className={`px-4 h-10 rounded-full text-sm font-medium transition-all ${catId === "Tout" ? "bg-gradient-accent text-accent-foreground shadow-glow" : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
+            >
+              Tout
+            </button>
+            {categories?.map((c: any) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setCatId(c.id);
+                  speakAboutFilter(c.nom);
+                }}
+                className={`px-4 h-10 rounded-full text-sm font-medium transition-all ${catId === c.id ? "bg-gradient-accent text-accent-foreground shadow-glow" : "bg-secondary text-muted-foreground hover:text-foreground"
+                  }`}
               >
-                {filter.name}
+                {c.nom}
               </button>
             ))}
-            {isLoadingProducts && (
+            {(isLoadingCats || isLoadingProducts) && (
               <div className="flex items-center ml-2">
                 <Loader2 className="h-5 w-5 animate-spin text-accent" />
               </div>
@@ -408,7 +350,7 @@ const Catalog = () => {
       {/* Grille */}
       <section className="container-x py-12">
         <div className="text-sm text-muted-foreground mb-6 flex items-center justify-between">
-          <span>{filtered.length} produits trouvés</span>
+          <span>{filtered.length} configurations trouvées</span>
           {showHelp && (
             <div className="card-soft p-3 max-w-md animate-fade-up">
               <div className="flex items-start gap-2 text-xs">
@@ -422,7 +364,7 @@ const Catalog = () => {
         {isLoadingProducts ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-accent" />
-            <p className="text-muted-foreground animate-pulse">Chargement des produits...</p>
+            <p className="text-muted-foreground animate-pulse">Chargement des configurations...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="card-soft p-12 text-center">
@@ -444,32 +386,18 @@ const Catalog = () => {
                   onMouseEnter={() => speakAboutProduct(p)}
                 >
                   <Link to={`/produit/${p.id}`} className="block relative aspect-[4/3] overflow-hidden bg-secondary">
-                    <img 
-                      src={getProductImageUrl(p)} 
-                      alt={p.nom} 
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
-                      }}
-                    />
+                    <img src={productImage(p)} alt={p.nom} loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     {p.badge && (
                       <span className="absolute top-3 left-3 pill bg-gradient-accent text-accent-foreground border-0">
                         ⚡ {p.badge}
                       </span>
                     )}
                     
-                    {/* Badge référence */}
-                    {p.reference && (
-                      <span className="absolute top-3 right-3 bg-black/70 text-white text-[9px] px-2 py-0.5 rounded-full font-mono">
-                        {p.reference}
-                      </span>
-                    )}
-                    
                     {/* Bouton favori */}
                     <button
                       onClick={(e) => { e.preventDefault(); toggleFavorite(p.id); }}
-                      className={`absolute bottom-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
+                      className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center backdrop-blur transition-all ${fav ? "bg-accent text-accent-foreground" : "bg-card/90 text-foreground hover:bg-accent hover:text-accent-foreground"
                         }`}
                       aria-label="Favori">
                       <Heart className={`h-4 w-4 ${fav ? "fill-current" : ""}`} />
@@ -478,36 +406,51 @@ const Catalog = () => {
                   <div className="p-5 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="text-xs font-mono uppercase tracking-wider text-accent">{p.reference?.split('-')[0] || p.categorie?.nom}</div>
-                        <h3 className="font-display text-xl font-bold mt-1 line-clamp-1">{p.nom}</h3>
+                        <div className="text-xs font-mono uppercase tracking-wider text-accent">{p.categorie?.nom}</div>
+                        <h3 className="font-display text-xl font-bold mt-1">{p.nom}</h3>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                         <Star className="h-3.5 w-3.5 fill-accent text-accent" />
                         <span className="font-semibold text-foreground">{p.note || 5.0}</span>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground italic line-clamp-2">"{p.description_courte || p.tagline || 'Un produit exceptionnel.'}"</p>
+                    <p className="text-sm text-muted-foreground italic">"{p.description_courte || p.tagline || 'Une configuration exceptionnelle.'}"</p>
                     <div className="flex flex-wrap gap-1.5 text-[11px]">
                       {cpu && <span className="pill !py-1 !px-2">{cpu}</span>}
                       {gpu && <span className="pill !py-1 !px-2">{gpu}</span>}
                       {ram && <span className="pill !py-1 !px-2">{ram}</span>}
                     </div>
+                    {p.configurations && p.configurations.length > 0 && (
+                      <div className="pt-1">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Configurations</div>
+                        <div className="mt-1 space-y-1 text-xs text-foreground/80">
+                          {p.configurations.slice(0, 3).map((config) => (
+                            <div key={config.id} className="flex items-center justify-between gap-2">
+                              <span className="truncate">{config.nom_configuration}</span>
+                              {config.prix_total !== null && config.prix_total !== undefined && (
+                                <span className="shrink-0 text-[10px] text-muted-foreground">{formatAr(config.prix_total)}</span>
+                              )}
+                            </div>
+                          ))}
+                          {p.configurations.length > 3 && (
+                            <div className="text-[10px] text-muted-foreground">+{p.configurations.length - 3} autres</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-end justify-between pt-2">
                       <div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">à partir de</div>
                         <div className="font-display font-bold text-2xl">{formatAr(p.prix)}</div>
                       </div>
                       {/* <Button variant="hero" size="sm"
-                        onClick={() => { addToCart(String(p.id), 1, toCartProduct(p)); toast({ title: "Ajouté au panier", description: p.nom }); }}>
+                        onClick={() => { addToCart(String(p.id)); toast({ title: "Ajouté au panier", description: p.nom }); }}>
                         <ShoppingBag className="h-4 w-4" /> Ajouter
                       </Button> */}
-                    <Button variant="hero" size="sm"
-                      onClick={async () => { 
-                        await addToCart(p.id, 1, p.prix, p.nom); 
-                        toast({ title: "Ajouté au panier", description: p.nom }); 
-                      }}>
-                      <ShoppingBag className="h-4 w-4" /> Ajouter
-                    </Button>
+                      <Button variant="hero" size="sm"
+                        onClick={() => { addToCart(p.id, 1, p.prix); toast({ title: "Ajoute au panier", description: p.nom }); }}>
+                        <ShoppingBag className="h-4 w-4" /> Ajouter
+                      </Button>
                     </div>
                   </div>
                 </article>
