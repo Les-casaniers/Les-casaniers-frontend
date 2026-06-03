@@ -1,4 +1,4 @@
-import { Search, User, Heart, ShoppingBag, Menu, Sparkles, Zap, Crown, Star, FileText, Headphones, BarChart2, Ship, Shield, ChevronDown, ChevronUp, LogOut, LayoutDashboard } from "lucide-react";
+import { Search, User, Heart, ShoppingBag, Menu, Sparkles, Zap, Crown, Star, FileText, Headphones, BarChart2, Ship, Shield, ChevronDown, ChevronUp, LogOut, LayoutDashboard, SlidersHorizontal } from "lucide-react";
 import mascot from "@/assets/casaniers-mascot.png";
 import logo from "@/assets/casaniers-logo.png";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
+import { useCategories } from "@/hooks/useProducts";
+
 
 const menuData = [
   { 
@@ -90,6 +92,48 @@ export const Header = () => {
   
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Multi-criteria search states
+  const { data: categories } = useCategories();
+  const [searchNom, setSearchNom] = useState("");
+  const [searchRef, setSearchRef] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const advancedRef = useRef<HTMLDivElement>(null);
+
+  // Sync search states with URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearchNom(params.get("nom") || "");
+    setSearchRef(params.get("ref") || "");
+    setSearchCategory(params.get("categorie") || "");
+  }, [location.search]);
+
+  // Close advanced dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutsideAdvanced = (event: MouseEvent) => {
+      if (
+        advancedRef.current && 
+        !advancedRef.current.contains(event.target as Node)
+      ) {
+        setShowAdvanced(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutsideAdvanced);
+    return () => document.removeEventListener("mousedown", handleClickOutsideAdvanced);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchNom.trim()) params.set("nom", searchNom.trim());
+    if (searchRef.trim()) params.set("ref", searchRef.trim());
+    if (searchCategory) params.set("categorie", searchCategory);
+    
+    setShowAdvanced(false);
+    navigate(`/catalogue?${params.toString()}`);
+  };
+
 
   // Vérifier si l'utilisateur connecté est dans la table admin
   useEffect(() => {
@@ -313,22 +357,85 @@ export const Header = () => {
           </div>
         </Link>
 
-        <div className="relative flex-1 max-w-2xl group">
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-2xl group flex items-center bg-secondary border border-transparent focus-within:border-foreground focus-within:bg-background h-12 rounded-full theme-transition pr-14 pl-5">
           <input
             type="search"
-            placeholder="Rechercher un PC, un composant, une marque…"
-            className="w-full h-12 pl-5 pr-14 bg-secondary border border-transparent focus:border-foreground focus:outline-none focus:bg-background text-sm transition-all rounded-full theme-transition"
+            value={searchNom}
+            onChange={(e) => setSearchNom(e.target.value)}
+            placeholder="Rechercher par nom, marque..."
+            className="w-full bg-transparent focus:outline-none text-sm text-foreground placeholder:text-muted-foreground/75 h-full mr-2"
           />
-          <button className="absolute right-0 top-0 bottom-0 px-5 bg-foreground text-background hover:bg-foreground/80 transition-colors flex items-center justify-center rounded-r-full">
+          
+          {/* Advanced Search Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
+              showAdvanced || searchRef || searchCategory
+                ? "bg-accent text-accent-foreground shadow-sm"
+                : "bg-background/50 hover:bg-background text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Filtres</span>
+            {(searchRef || searchCategory) && (
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0 animate-pulse" />
+            )}
+          </button>
+
+          {/* Search Submit Button */}
+          <button type="submit" className="absolute right-0 top-0 bottom-0 px-5 bg-foreground text-background hover:bg-foreground/80 transition-colors flex items-center justify-center rounded-r-full">
             <Search className="h-4 w-4" />
           </button>
+
+          {/* Advanced Search Dropdown Card */}
+          {showAdvanced && (
+            <div 
+              ref={advancedRef}
+              className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 flex flex-col sm:flex-row gap-4 animate-fade-in"
+            >
+              {/* Field: Référence */}
+              <div className="flex-1 flex flex-col gap-1.5 text-left">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Référence du produit</label>
+                <input
+                  type="text"
+                  value={searchRef}
+                  onChange={(e) => setSearchRef(e.target.value)}
+                  placeholder="Ex: CPU-INTEL, CHS-..."
+                  className="w-full h-10 px-3 rounded-lg bg-secondary text-sm border border-transparent focus:border-foreground focus:outline-none transition-colors font-mono"
+                />
+              </div>
+              
+              {/* Field: Catégorie */}
+              <div className="flex-1 flex flex-col gap-1.5 text-left">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Catégorie</label>
+                <div className="relative">
+                  <select
+                    value={searchCategory}
+                    onChange={(e) => setSearchCategory(e.target.value)}
+                    className="w-full h-10 pl-3 pr-8 rounded-lg bg-secondary text-sm border border-transparent focus:border-foreground focus:outline-none appearance-none cursor-pointer transition-colors"
+                  >
+                    <option value="">Toutes les catégories</option>
+                    {categories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.nom}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
+
           <img
             src={mascot}
             alt=""
             aria-hidden
             className="absolute -top-8 right-20 h-24 w-auto object-contain pointer-events-none transition-all duration-500 group-focus-within:-translate-y-3 group-focus-within:scale-125"
           />
-        </div>
+        </form>
+
 
         <nav className="hidden md:flex items-center gap-6">
           <ThemeToggle />

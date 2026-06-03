@@ -1,7 +1,7 @@
 ﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useShop } from "@/store/shop";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Heart, ShoppingBag, Star, SlidersHorizontal, Search, Filter, Volume2, VolumeX, X, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,13 @@ const FILTER_CONFIG = [
 
 const Catalog = () => {
   const { addToCart } = useCartApi();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: categories } = useCategories();
+
+  const searchNom = searchParams.get("nom") || "";
+  const searchRef = searchParams.get("ref") || "";
+  const searchCategory = searchParams.get("categorie") || "";
+
   const [favorites, setFavorites] = useState<number[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [q, setQ] = useState("");
@@ -221,6 +228,20 @@ const Catalog = () => {
     if (q) {
       list = filterBySearch(list, q);
     }
+
+    // Filtres transmis via URL (Multi-critères)
+    if (searchNom) {
+      const term = searchNom.toLowerCase();
+      list = list.filter(product => product.nom?.toLowerCase().includes(term));
+    }
+    if (searchRef) {
+      const term = searchRef.toLowerCase();
+      list = list.filter(product => product.reference?.toLowerCase().includes(term));
+    }
+    if (searchCategory) {
+      const catId = parseInt(searchCategory, 10);
+      list = list.filter(product => product.categorie_id === catId || product.categorie?.id === catId);
+    }
     
     // Filtre par budget
     list = list.filter((p) => p.prix <= budget);
@@ -230,7 +251,7 @@ const Catalog = () => {
     if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
     
     return list;
-  }, [allProducts, selectedFilter, q, sort, budget]);
+  }, [allProducts, selectedFilter, q, sort, budget, searchNom, searchRef, searchCategory]);
 
   // Charger les voix disponibles
   useEffect(() => {
@@ -404,6 +425,73 @@ const Catalog = () => {
           </div>
         </div>
       </section>
+
+      {/* Active Search Filters Indicator */}
+      {(searchNom || searchRef || searchCategory) && (
+        <div className="container-x pt-6">
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-accent/5 border border-accent/20 rounded-2xl animate-fade-in">
+            <span className="text-xs font-semibold uppercase tracking-wider text-accent flex items-center gap-1.5">
+              <Search className="h-3.5 w-3.5" />
+              Recherche active :
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {searchNom && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary text-foreground text-xs rounded-full border border-border">
+                  Nom : <strong className="font-semibold">{searchNom}</strong>
+                  <button 
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("nom");
+                      setSearchParams(newParams);
+                    }}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {searchRef && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary text-foreground text-xs rounded-full border border-border">
+                  Réf : <strong className="font-semibold">{searchRef}</strong>
+                  <button 
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("ref");
+                      setSearchParams(newParams);
+                    }}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {searchCategory && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary text-foreground text-xs rounded-full border border-border">
+                  Catégorie : <strong className="font-semibold">{categories?.find(c => String(c.id) === searchCategory)?.nom || `ID ${searchCategory}`}</strong>
+                  <button 
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete("categorie");
+                      setSearchParams(newParams);
+                    }}
+                    className="hover:text-red-500 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setSearchParams({});
+              }}
+              className="ml-auto text-xs text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
+            >
+              Réinitialiser la recherche
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Grille */}
       <section className="container-x py-12">

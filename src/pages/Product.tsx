@@ -43,12 +43,19 @@ const ProductPage = () => {
   const { addToCart: addToLocalCart, toggleFavorite, favorites } = useShop();
   const { user, isAuthenticated } = useAuth();
   const [qty, setQty] = useState(1);
-  const [tab, setTab] = useState<"specs" | "story" | "garantie">("specs");
+  const [tab, setTab] = useState<"specs" | "configs" | "story" | "garantie">("specs");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
 
   useEffect(() => {
     if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
   }, [product]);
+
+  const activeConfig = product?.configurations?.find((c) => c.id === selectedConfigId);
+  const displayedPrice = activeConfig ? Number(activeConfig.prix_total) : (product ? Number(product.prix) : 0);
+  const displayedTitle = activeConfig 
+    ? `${product?.nom} (${activeConfig.nom_configuration_autre || activeConfig.nom_configuration})`
+    : (product?.nom || "");
 
   // Fonction pour ajouter au panier dans la base de données
   const addToCartDatabase = async (productId: number, quantite: number) => {
@@ -69,19 +76,20 @@ const ProductPage = () => {
         produit_id: productId,
         quantite: quantite,
         utilisateur_id: user?.id,
-        prix_unitaire: product?.prix,
-        titre: product?.nom
+        configuration_id: selectedConfigId,
+        prix_unitaire: displayedPrice,
+        titre: displayedTitle
       });
       
       console.log("Réponse ajout panier:", response.data);
       
       toast({
         title: "Ajouté au panier",
-        description: `${quantite} x ${product?.nom}`
+        description: `${quantite} x ${displayedTitle}`
       });
       
       // Mettre à jour le store local également pour la cohérence
-      addToLocalCart(String(productId), quantite, toCartProduct(product!));
+      addToLocalCart(String(productId), quantite, toCartProduct({ ...product!, prix: displayedPrice, nom: displayedTitle }));
       
       return true;
     } catch (error: any) {
@@ -228,9 +236,65 @@ const ProductPage = () => {
 
           <div className="card-soft p-6 bg-gradient-to-br from-card to-secondary/30">
             <div className="text-xs text-muted-foreground uppercase tracking-wider">Prix tout compris</div>
-            <div className="font-display font-bold text-4xl mt-1">{formatAr(product.prix)}</div>
-            <div className="text-xs text-muted-foreground mt-1">ou 3× {formatAr(Math.round(product.prix / 3))} sans frais</div>
+            <div className="font-display font-bold text-4xl mt-1">{formatAr(displayedPrice)}</div>
+            <div className="text-xs text-muted-foreground mt-1">ou 3× {formatAr(Math.round(displayedPrice / 3))} sans frais</div>
           </div>
+
+          {/* Selector variants/configurations */}
+          {product.configurations && product.configurations.length > 0 && (
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Cpu className="h-3.5 w-3.5 text-accent" />
+                Choisir une configuration :
+              </div>
+              <div className="flex flex-col gap-2">
+                {/* Standard Config Button */}
+                <button
+                  onClick={() => setSelectedConfigId(null)}
+                  className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center ${
+                    selectedConfigId === null
+                      ? "border-accent bg-accent/5 ring-1 ring-accent"
+                      : "border-border bg-card/50 hover:bg-card"
+                  }`}
+                >
+                  <div>
+                    <div className="text-sm font-semibold">Configuration Standard (Base)</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Spécifications par défaut</div>
+                  </div>
+                  <div className="font-display font-bold text-base text-foreground">
+                    {formatAr(product.prix)}
+                  </div>
+                </button>
+
+                {/* Other Configs Buttons */}
+                {product.configurations.map((cfg) => (
+                  <button
+                    key={cfg.id}
+                    onClick={() => setSelectedConfigId(cfg.id)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center ${
+                      selectedConfigId === cfg.id
+                        ? "border-accent bg-accent/5 ring-1 ring-accent"
+                        : "border-border bg-card/50 hover:bg-card"
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold capitalize truncate">
+                        {cfg.nom_configuration_autre || cfg.nom_configuration}
+                      </div>
+                      {Array.isArray(cfg.composants_json) && cfg.composants_json.length > 0 && (
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-[280px] md:max-w-[360px]">
+                          {cfg.composants_json.map((c) => `${c.quantite || 1}x ${c.nom}`).join(" + ")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-display font-bold text-base text-accent shrink-0 ml-3">
+                      {formatAr(cfg.prix_total)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-secondary rounded-full">
@@ -281,11 +345,22 @@ const ProductPage = () => {
 
           {/* Tabs */}
           <div>
-            <div className="flex gap-1 border-b border-border">
-              {(["specs", "story", "garantie"] as const).map((t) => (
+            <div className="flex gap-1 border-b border-border overflow-x-auto scrollbar-none">
+              {([
+                "specs",
+                product.configurations && product.configurations.length > 0 ? "configs" : null,
+                "story",
+                "garantie"
+              ].filter(Boolean) as Array<"specs" | "configs" | "story" | "garantie">).map((t) => (
                 <button key={t} onClick={() => setTab(t)}
-                  className={`px-4 py-3 text-sm font-medium relative ${tab === t ? "text-foreground" : "text-muted-foreground"}`}>
-                  {t === "specs" ? "Composants" : t === "story" ? "L'histoire" : "Garantie & SAV"}
+                  className={`px-4 py-3 text-sm font-medium relative whitespace-nowrap ${tab === t ? "text-foreground" : "text-muted-foreground"}`}>
+                  {t === "specs" 
+                    ? "Composants" 
+                    : t === "configs" 
+                      ? `Configurations (${product.configurations?.length || 0})` 
+                      : t === "story" 
+                        ? "L'histoire" 
+                        : "Garantie & SAV"}
                   {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-accent rounded-full" />}
                 </button>
               ))}
@@ -309,6 +384,58 @@ const ProductPage = () => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+              {tab === "configs" && (
+                <div className="space-y-4">
+                  {product.configurations?.map((cfg) => (
+                    <div key={cfg.id} className="card-soft p-5 border border-border/80 hover:border-accent/40 transition-colors space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h4 className="font-display font-bold text-lg capitalize text-foreground">
+                            {cfg.nom_configuration_autre || cfg.nom_configuration}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Variante ID : <span className="font-mono">{cfg.id}</span> • Statut : <span className="text-tech font-semibold">Disponible</span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-display font-bold text-xl text-accent font-semibold">
+                            {formatAr(cfg.prix_total)}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedConfigId(cfg.id);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                              toast({
+                                title: "Configuration sélectionnée",
+                                description: `Vous avez choisi la variante: ${cfg.nom_configuration_autre || cfg.nom_configuration}`
+                              });
+                            }}
+                            className="text-xs text-accent hover:underline mt-1 font-medium"
+                          >
+                            Sélectionner cette variante ↑
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {Array.isArray(cfg.composants_json) && cfg.composants_json.length > 0 && (
+                        <div className="border-t border-border/50 pt-3">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">Composants inclus</span>
+                          <div className="grid sm:grid-cols-2 gap-2">
+                            {cfg.composants_json.map((c, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-xs bg-secondary/40 rounded-lg px-3 py-2 border border-border/30">
+                                <span className="font-medium text-foreground">{c.nom}</span>
+                                <span className="text-muted-foreground shrink-0 ml-2 font-mono">
+                                  {c.quantite || 1}x • {formatAr(c.prix || 0)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
               {tab === "story" && (
