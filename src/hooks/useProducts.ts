@@ -27,6 +27,7 @@ export interface Product {
   reference?: string | null;
   description_courte?: string | null;
   description: string;
+  atout?: string;
   prix: number;
   devise?: string | null;
   quantite_stock: number;

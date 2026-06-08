@@ -550,6 +550,21 @@ const handleAddToCart = async () => {
                         <div className="font-semibold text-sm line-clamp-2 mb-2">
                           {product.nom}
                         </div>
+                        
+                        {/* AFFICHAGE DE L'ATOUT - AJOUTÉ ICI */}
+                        {product.atout && product.atout.trim() !== "" && (
+                          <div className="mb-3">
+                            <div className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-full text-xs">
+                              <span className="text-orange-600 dark:text-orange-400 font-medium">
+                                Atout
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {product.atout}
+                            </p>
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-between">
                           <div className="font-display font-bold text-sm text-primary">
                             {formatAr(product.prix)}
@@ -675,7 +690,7 @@ const handleAddToCart = async () => {
               )}
               {hasSelection && !allDone && (
                 <p className="text-xs text-orange-500 mt-3 text-center">
-                  ⚠️ {stepsConfig.length - completedCount} composant(s)
+                  {stepsConfig.length - completedCount} composant(s)
                   optionnel(s) non sélectionné(s)
                 </p>
               )}

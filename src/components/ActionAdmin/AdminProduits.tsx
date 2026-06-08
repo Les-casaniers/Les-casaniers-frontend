@@ -1,6 +1,6 @@
-  import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye } from "lucide-react";
+import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye, Menu } from "lucide-react";
 import {
   useProducts,
   useCreateProduct,
@@ -24,6 +24,7 @@ type ProduitForm = {
   nom: string;
   description_courte: string;
   description: string;
+  atout: string;
   type_produit: (typeof TYPES_PRODUIT)[number] | "";
   prix: string;
   devise: string;
@@ -44,6 +45,7 @@ const initialForm: ProduitForm = {
   nom: "",
   description_courte: "",
   description: "",
+  atout: "",
   type_produit: "",
   prix: "",
   devise: "MGA",
@@ -112,7 +114,6 @@ const ProductForm = ({
 
   return (
     <div className="space-y-3">
-      {/* Dropdown pour le type de référence */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-muted-foreground">Type de référence</label>
         <select 
@@ -140,7 +141,6 @@ const ProductForm = ({
         )}
       </div>
 
-      {/* Champ référence caché */}
       <input type="hidden" name="reference" value={value.reference} />
 
       <input 
@@ -193,6 +193,13 @@ const ProductForm = ({
         onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} 
         rows={4}
       />
+
+      <input 
+        className={inputClass} 
+        placeholder="Atout du produit (ex: Garantie 2 ans, Livraison gratuite, etc.)" 
+        value={value.atout} 
+        onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))} 
+      />
     </div>
   );
 };
@@ -239,7 +246,7 @@ const ImageUploadField = ({
   );
 };
 
-// Composant ExistingImagesManager (CORRIGÉ - utilise les images correctement)
+// Composant ExistingImagesManager
 const ExistingImagesManager = ({
   selectedProduit,
   existingImages,
@@ -259,7 +266,6 @@ const ExistingImagesManager = ({
 }) => {
   if (!selectedProduit) return null;
 
-  // Fonction pour obtenir l'URL complète de l'image
   const getFullImageUrl = (url: string) => {
     if (!url) return "/placeholder-pc.jpg";
     if (url.startsWith('/storage')) {
@@ -349,7 +355,6 @@ const AdminProduits = () => {
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<{ id: number; url: string; alt: string; ordre?: number }[]>([]);
   
-  // États pour la gestion des références
   const [selectedPrefix, setSelectedPrefix] = useState<string>("");
   const [generatedReference, setGeneratedReference] = useState<string>("");
 
@@ -383,7 +388,6 @@ const AdminProduits = () => {
 
   const filteredProduits = normalizedProduits;
 
-  // Fonction pour obtenir l'URL complète de l'image (CORRIGÉE)
   const getFullImageUrl = (url: string) => {
     if (!url) return "/placeholder-pc.jpg";
     if (url.startsWith('/storage')) {
@@ -392,15 +396,13 @@ const AdminProduits = () => {
     return url;
   };
 
-  // Fonction getMainImage corrigée (identique à l'ancien code)
   const getMainImage = (product: Produit) => {
     const images = product.images ?? [];
     if (images.length === 0) return null;
     return images.find((img) => img.ordre === 0) ?? images.slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))[0];
   };
 
-  const inputClass =
-    "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   const handleApiError = (error: any, fallback: string) => {
     const responseData = error?.response?.data;
@@ -413,7 +415,6 @@ const AdminProduits = () => {
     toast({ title: "Erreur", description: message, variant: "destructive" });
   };
 
-  // Fonction pour générer la prochaine référence disponible
   const generateNextReference = async (prefixKey: string): Promise<string> => {
     if (!prefixKey) return "";
     
@@ -449,7 +450,6 @@ const AdminProduits = () => {
     }
   };
 
-  // Fonction pour générer et mettre à jour la référence
   const generateReference = async (prefixKey: string) => {
     if (!prefixKey) {
       setGeneratedReference("");
@@ -473,6 +473,7 @@ const AdminProduits = () => {
     fd.append("nom", data.nom);
     fd.append("description_courte", data.description_courte);
     fd.append("description", data.description);
+    fd.append("atout", data.atout);
     fd.append("type_produit", data.type_produit);
     fd.append("prix", data.prix);
     fd.append("devise", data.devise);
@@ -535,6 +536,7 @@ const AdminProduits = () => {
       nom: p.nom ?? "",
       description_courte: p.description_courte ?? "",
       description: p.description ?? "",
+      atout: p.atout ?? "",
       type_produit: (p.type_produit as ProduitForm["type_produit"]) ?? "",
       prix: String(p.prix ?? ""),
       devise: p.devise ?? "MGA",
@@ -621,35 +623,51 @@ const AdminProduits = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Package className="h-6 w-6" /> Gestion Catalogue
+    <div className="space-y-6 p-4 sm:p-6">
+      {/* En-tête responsive */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+          <Package className="h-5 w-5 sm:h-6 sm:w-6" /> Gestion Catalogue
         </h1>
-        <button onClick={() => setShowModal(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground">
+        <button 
+          onClick={() => setShowModal(true)} 
+          className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base w-full sm:w-auto justify-center"
+        >
           <PlusCircle className="h-4 w-4" /> Ajouter
         </button>
       </div>
 
-      <div className="flex gap-2">
-        <button onClick={() => setActiveTab("produits")} className="px-4 py-2 border rounded-xl">Produits</button>
-        <button onClick={() => setActiveTab("categories")} className="px-4 py-2 border rounded-xl">Catégories</button>
+      {/* Onglets responsive */}
+      <div className="flex gap-2 flex-wrap">
+        <button 
+          onClick={() => setActiveTab("produits")} 
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base ${activeTab === "produits" ? "bg-primary text-primary-foreground" : ""}`}
+        >
+          Produits
+        </button>
+        <button 
+          onClick={() => setActiveTab("categories")} 
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base ${activeTab === "categories" ? "bg-primary text-primary-foreground" : ""}`}
+        >
+          Catégories
+        </button>
       </div>
 
       {activeTab === "produits" && (
         <div className="space-y-4">
+          {/* Filtres responsive */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
               <input
-                className="w-full pl-10 pr-4 py-2 border rounded-xl"
+                className="w-full pl-10 pr-4 py-2 border rounded-xl text-sm"
                 placeholder="Rechercher..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <select
-              className="px-4 py-2 border rounded-xl bg-background min-w-[220px]"
+              className="px-4 py-2 border rounded-xl bg-background text-sm w-full sm:w-auto"
               value={dispoFilter}
               onChange={(e) => setDispoFilter(e.target.value as "all" | "available" | "unavailable")}
             >
@@ -659,10 +677,11 @@ const AdminProduits = () => {
             </select>
           </div>
 
-          <div className="border rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
+          {/* Tableau responsive avec scroll horizontal */}
+          <div className="border rounded-2xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
-                <tr className="border-b">
+                <tr className="border-b bg-muted/50">
                   <th className="text-left p-3">Image</th>
                   <th className="text-left p-3">Référence</th>
                   <th className="text-left p-3">Nom</th>
@@ -675,63 +694,73 @@ const AdminProduits = () => {
               </thead>
               <tbody>
                 {filteredProduits.map((p) => {
-                const mainImage = getMainImage(p);
-                
-                return (
-                  <tr key={p.id} className="border-b">
-                    <td className="p-3">
-                      {mainImage?.url ? (
-                        <img 
-                          src={getFullImageUrl(mainImage.url)} 
-                          alt={mainImage.alt || p.nom} 
-                          className="h-12 w-12 object-cover rounded-md border"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
-                          }}
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
-                      )}
-                    </td>
-                    <td className="p-3 font-mono text-xs">{p.reference || "-"}</td>
-                    <td className="p-3">{p.nom}</td>
-                    <td className="p-3">{p.categorie?.nom ?? "-"}</td>
-                    <td className="p-3">{p.prix}</td>
-                    <td className="p-3">{p.quantite_stock}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                        {p.est_dispo ? "Disponible" : "Indisponible"}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => handleOpenEdit(p)} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                   </tr>
-                );
-              })}
+                  const mainImage = getMainImage(p);
+                  return (
+                    <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-3">
+                        {mainImage?.url ? (
+                          <img 
+                            src={getFullImageUrl(mainImage.url)} 
+                            alt={mainImage.alt || p.nom} 
+                            className="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md border"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                            }}
+                          />
+                        ) : (
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
+                        )}
+                      </td>
+                      <td className="p-3 font-mono text-xs">{p.reference || "-"}</td>
+                      <td className="p-3 max-w-[200px] truncate">{p.nom}</td>
+                      <td className="p-3">{p.categorie?.nom ?? "-"}</td>
+                      <td className="p-3 whitespace-nowrap">{p.prix} {p.devise}</td>
+                      <td className="p-3">{p.quantite_stock}</td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                          {p.est_dispo ? "Disponible" : "Indisponible"}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
+                          <button onClick={() => handleOpenEdit(p)} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
+                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            {filteredProduits.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Aucun produit trouvé
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {activeTab === "categories" && (
         <div className="space-y-4">
-          <button onClick={() => { setSelectedCategory(null); setCategoryForm(initialCategoryForm); setShowCategoryModal(true); }} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground">Nouvelle catégorie</button>
-          <div className="border rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
+          <button 
+            onClick={() => { setSelectedCategory(null); setCategoryForm(initialCategoryForm); setShowCategoryModal(true); }} 
+            className="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base w-full sm:w-auto"
+          >
+            Nouvelle catégorie
+          </button>
+          
+          <div className="border rounded-2xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px]">
               <thead>
-                <tr className="border-b">
+                <tr className="border-b bg-muted/50">
                   <th className="text-left p-3">Nom</th>
                   <th className="text-left p-3">Type</th>
                   <th className="text-right p-3">Actions</th>
@@ -739,16 +768,20 @@ const AdminProduits = () => {
               </thead>
               <tbody>
                 {normalizedCategories.map((c: any) => (
-                  <tr key={c.id} className="border-b">
+                  <tr key={c.id} className="border-b hover:bg-muted/30 transition-colors">
                     <td className="p-3">{c.nom}</td>
                     <td className="p-3">{c.type}</td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-1.5 sm:p-2 border rounded-lg">
+                          <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </button>
+                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-1.5 sm:p-2 border rounded-lg">
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </button>
                       </div>
                     </td>
-                   </tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -756,11 +789,11 @@ const AdminProduits = () => {
         </div>
       )}
 
-      {/* Modal Ajout Produit */}
+      {/* Modals - Version responsive avec max-w et margins */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center">
+          <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
               <h2 className="text-xl font-bold">Ajouter produit</h2>
               <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -775,15 +808,15 @@ const AdminProduits = () => {
               isEditMode={false}
             />
             <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 sticky bottom-0 bg-background">
               <button onClick={() => { 
                 setShowModal(false); 
                 setCreateImageFiles([]);
                 setSelectedPrefix("");
                 setGeneratedReference("");
                 setForm(initialForm);
-              }} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2">
+              }} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
+              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
                 <Save className="h-4 w-4" /> Enregistrer
               </button>
             </div>
@@ -791,11 +824,10 @@ const AdminProduits = () => {
         </div>
       )}
 
-      {/* Modal Modification Produit */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background border rounded-2xl w-full max-w-2xl p-6 space-y-4">
-            <div className="flex justify-between items-center">
+          <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
+            <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
               <h2 className="text-xl font-bold">Modifier produit</h2>
               <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
             </div>
@@ -819,15 +851,15 @@ const AdminProduits = () => {
               toast={toast}
             />
             <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 sticky bottom-0 bg-background">
               <button onClick={() => { 
                 setShowEditModal(false); 
                 setEditImageFiles([]); 
                 setExistingImages([]);
                 setSelectedPrefix("");
                 setGeneratedReference("");
-              }} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2">
+              }} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
+              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
                 <Save className="h-4 w-4" /> Enregistrer
               </button>
             </div>
@@ -835,10 +867,9 @@ const AdminProduits = () => {
         </div>
       )}
 
-      {/* Modal Catégorie */}
       {showCategoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background border rounded-2xl w-full max-w-xl p-6 space-y-4">
+          <div className="bg-background border rounded-2xl w-full max-w-xl p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">Catégorie</h2>
               <button onClick={() => setShowCategoryModal(false)}><X className="h-5 w-5" /></button>
@@ -852,23 +883,24 @@ const AdminProduits = () => {
             </select>
             <input className={inputClass} placeholder="Parent ID" value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))} />
             <input className={inputClass} placeholder="Ordre" value={categoryForm.ordre_tri} onChange={(e) => setCategoryForm((p) => ({ ...p, ordre_tri: e.target.value }))} />
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleCategorySubmit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2"><Save className="h-4 w-4" /> Enregistrer</button>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
+              <button onClick={handleCategorySubmit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
+                <Save className="h-4 w-4" /> Enregistrer
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Confirmation Suppression */}
       {showDeleteAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-bold">Supprimer le produit</h3>
             <p>Confirmer la suppression de "{selectedProduit?.nom}" ?</p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowDeleteAlert(false)} className="px-4 py-2 border rounded-xl">Annuler</button>
-              <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground">Supprimer</button>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <button onClick={() => setShowDeleteAlert(false)} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
+              <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground order-1 sm:order-2">Supprimer</button>
             </div>
           </div>
         </div>
@@ -876,5 +908,4 @@ const AdminProduits = () => {
     </div>
   );
 };
-
 export default AdminProduits;
