@@ -1,5 +1,6 @@
 import { Search, User, Heart, ShoppingBag, Menu, Sparkles, Zap, Crown, Star, FileText, Headphones, BarChart2, Ship, Shield, ChevronDown, ChevronUp, LogOut, LayoutDashboard, SlidersHorizontal } from "lucide-react";
 import mascot from "@/assets/casaniers-mascot.png";
+import mascotListening from "@/assets/9.png";
 import logo from "@/assets/casaniers-logo.png";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
@@ -13,57 +14,57 @@ import { useCategories } from "@/hooks/useProducts";
 
 
 const menuData = [
-  { 
-    label: "Pro & Freelance", 
+  {
+    label: "Pro & Freelance",
     items: [],
     isDirectLink: true,
     href: "/pro-freelance",
   },
-  { 
-    label: "Gaming", 
+  {
+    label: "Gaming",
     items: [],
     isDirectLink: true,
     href: "/gaming",
     icon: ""
   },
-  { 
-    label: "Component", 
+  {
+    label: "Component",
     items: [],
     isDirectLink: true,
     href: "/composants",
     icon: ""
-  },  
-  { 
-    label: "Périphériques", 
+  },
+  {
+    label: "Périphériques",
     items: [],
     isDirectLink: true,
     href: "/peripheriques",
     icon: ""
   },
-  { 
-    label: "catalogue", 
+  {
+    label: "catalogue",
     items: [],
     isDirectLink: true,
     href: "/catalogue",
     icon: "",
   },
-  { 
-    label: "Guides", 
+  {
+    label: "Guides",
     items: [],
     isDirectLink: true,
     href: "/guides",
     baseHref: "/guides",
     icon: "",
   },
-  { 
-    label: "Importation", 
+  {
+    label: "Importation",
     items: [],
     isDirectLink: true,
     href: "/importation",
     icon: ""
   },
-  { 
-    label: "Devis express", 
+  {
+    label: "Devis express",
     items: [],
     isDirectLink: true,
     href: "/devis-express",
@@ -86,10 +87,10 @@ export const Header = () => {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const location = useLocation();
-  
+
   // ✅ Un seul cartCount depuis useCartApi
   const { cartCount, isLoading, refreshCart } = useCartApi();
-  
+
   // Ref pour le menu mobile
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +100,7 @@ export const Header = () => {
   const [searchRef, setSearchRef] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const advancedRef = useRef<HTMLDivElement>(null);
 
   // Sync search states with URL parameters
@@ -113,7 +115,7 @@ export const Header = () => {
   useEffect(() => {
     const handleClickOutsideAdvanced = (event: MouseEvent) => {
       if (
-        advancedRef.current && 
+        advancedRef.current &&
         !advancedRef.current.contains(event.target as Node)
       ) {
         setShowAdvanced(false);
@@ -129,7 +131,7 @@ export const Header = () => {
     if (searchNom.trim()) params.set("nom", searchNom.trim());
     if (searchRef.trim()) params.set("ref", searchRef.trim());
     if (searchCategory) params.set("categorie", searchCategory);
-    
+
     setShowAdvanced(false);
     navigate(`/catalogue?${params.toString()}`);
   };
@@ -158,7 +160,7 @@ export const Header = () => {
       }
       setIsCheckingRole(false);
     };
-    
+
     checkAdminStatus();
   }, [isAuthenticated, user]);
 
@@ -187,7 +189,7 @@ export const Header = () => {
     const [path] = href.split("#");
     return location.pathname === path;
   };
-  
+
   const toggleDropdown = (label: string, hasItems: boolean) => {
     if (!hasItems) return;
     setOpenDropdowns(prev => ({
@@ -195,7 +197,7 @@ export const Header = () => {
       [label]: !prev[label]
     }));
   };
-  
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -276,7 +278,7 @@ export const Header = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         buttonRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
@@ -292,22 +294,22 @@ export const Header = () => {
   useEffect(() => {
     let touchStartX = 0;
     let touchEndX = 0;
-    
+
     const handleTouchStart = (e: TouchEvent) => {
       touchStartX = e.changedTouches[0].screenX;
     };
-    
+
     const handleTouchMove = (e: TouchEvent) => {
       touchEndX = e.changedTouches[0].screenX;
     };
-    
+
     const handleTouchEnd = () => {
       const swipeDistance = touchStartX - touchEndX;
       if (swipeDistance > 50 && mobileMenuOpen) {
         setMobileMenuOpen(false);
       }
     };
-    
+
     if (mobileMenuOpen) {
       document.addEventListener('touchstart', handleTouchStart);
       document.addEventListener('touchmove', handleTouchMove);
@@ -316,7 +318,7 @@ export const Header = () => {
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     return () => {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
@@ -324,7 +326,7 @@ export const Header = () => {
       document.body.style.overflow = 'unset';
     };
   }, [mobileMenuOpen]);
-  
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
@@ -334,11 +336,11 @@ export const Header = () => {
         }
       }
     };
-    
+
     if (mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -349,10 +351,10 @@ export const Header = () => {
       <div className="container-x flex items-center gap-8 py-5">
         <Link to="/" className="flex items-center gap-3 shrink-0 group">
           <div className="rounded-lg p-1.5 transition-all duration-300 group-hover:scale-105">
-            <img 
-              src={logo} 
-              alt="Les Casaniers" 
-              className="h-16 w-auto object-contain dark:brightness-0 dark:invert" 
+            <img
+              src={logo}
+              alt="Les Casaniers"
+              className="h-16 w-auto object-contain dark:brightness-0 dark:invert"
             />
           </div>
         </Link>
@@ -362,19 +364,20 @@ export const Header = () => {
             type="search"
             value={searchNom}
             onChange={(e) => setSearchNom(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
             placeholder="Rechercher par nom, marque..."
             className="w-full bg-transparent focus:outline-none text-sm text-foreground placeholder:text-muted-foreground/75 h-full mr-2"
           />
-          
+
           {/* Advanced Search Toggle Button */}
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${
-              showAdvanced || searchRef || searchCategory
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 ${showAdvanced || searchRef || searchCategory
                 ? "bg-accent text-accent-foreground shadow-sm"
                 : "bg-background/50 hover:bg-background text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Filtres</span>
@@ -390,7 +393,7 @@ export const Header = () => {
 
           {/* Advanced Search Dropdown Card */}
           {showAdvanced && (
-            <div 
+            <div
               ref={advancedRef}
               className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 flex flex-col sm:flex-row gap-4 animate-fade-in"
             >
@@ -405,7 +408,7 @@ export const Header = () => {
                   className="w-full h-10 px-3 rounded-lg bg-secondary text-sm border border-transparent focus:border-foreground focus:outline-none transition-colors font-mono"
                 />
               </div>
-              
+
               {/* Field: Catégorie */}
               <div className="flex-1 flex flex-col gap-1.5 text-left">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Catégorie</label>
@@ -429,7 +432,7 @@ export const Header = () => {
           )}
 
           <img
-            src={mascot}
+            src={isSearchFocused ? mascotListening : mascot}
             alt=""
             aria-hidden
             className="absolute -top-8 right-20 h-24 w-auto object-contain pointer-events-none transition-all duration-500 group-focus-within:-translate-y-3 group-focus-within:scale-125"
@@ -446,9 +449,9 @@ export const Header = () => {
 
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             data-mobile-menu-button
           >
@@ -459,19 +462,19 @@ export const Header = () => {
 
       {mobileMenuOpen && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-50 lg:hidden animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
           />
-          
-          <div 
+
+          <div
             ref={mobileMenuRef}
             className="fixed top-0 right-0 h-full w-[85%] max-w-sm bg-background z-50 lg:hidden shadow-2xl animate-slide-in-right"
           >
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-gray-400/50 rounded-r-full opacity-50">
               <div className="w-full h-full bg-gray-500 rounded-r-full animate-pulse" />
             </div>
-            
+
             <button
               onClick={() => setMobileMenuOpen(false)}
               className="absolute top-4 right-4 p-2 rounded-full hover:bg-secondary transition-colors z-10"
@@ -481,14 +484,14 @@ export const Header = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            
+
             <div className="flex flex-col h-full overflow-y-auto">
               <div className="p-4 pt-16 flex-1">
                 {menuData.map((m) => {
                   const hasItems = m.items && m.items.length > 0;
                   const isDirectLink = m.isDirectLink || (!hasItems && m.href);
                   const active = isMenuActive(m);
-                  
+
                   if (isDirectLink && m.href) {
                     return (
                       <div key={m.label} className="mb-2">
@@ -498,11 +501,10 @@ export const Header = () => {
                             setMobileMenuOpen(false);
                             setOpenDropdowns({});
                           }}
-                          className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-[0.2em] transition-all rounded-lg ${
-                            active
+                          className={`w-full flex items-center justify-between px-4 py-3 text-sm font-bold uppercase tracking-[0.2em] transition-all rounded-lg ${active
                               ? "bg-foreground text-background"
                               : "bg-secondary/50 text-foreground hover:bg-secondary"
-                          }`}
+                            }`}
                         >
                           <span className="flex items-center gap-2">
                             <span>{m.icon}</span>
@@ -515,14 +517,14 @@ export const Header = () => {
                       </div>
                     );
                   }
-                  
+
                   return null;
                 })}
               </div>
 
               <div className="p-4 border-t border-border space-y-2 mt-auto">
-                <Link 
-                  to="/configurateur" 
+                <Link
+                  to="/configurateur"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setOpenDropdowns({});
@@ -531,12 +533,12 @@ export const Header = () => {
                 >
                   ⚡ Configurer maintenant
                 </Link>
-                
+
                 <div className="flex items-center justify-around pt-4">
                   {isAuthenticated ? (
                     <>
-                      <Link 
-                        to={getDashboardUrl()} 
+                      <Link
+                        to={getDashboardUrl()}
                         onClick={() => {
                           setMobileMenuOpen(false);
                           setOpenDropdowns({});
@@ -572,32 +574,30 @@ export const Header = () => {
             const hasItems = m.items && m.items.length > 0;
             const isDirectLink = m.isDirectLink || (!hasItems && m.href);
             const active = isMenuActive(m);
-            
+
             if (isDirectLink && m.href) {
               return (
                 <Link
                   key={m.label}
                   to={m.href}
-                  className={`px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative flex items-center gap-1.5 ${
-                    active
+                  className={`px-6 py-4 text-[11px] font-bold uppercase tracking-[0.2em] transition-all relative flex items-center gap-1.5 ${active
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <span>{m.icon}</span>
                   <span>{m.label}</span>
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 transition-all duration-300 ${
-                    active ? "w-full" : "w-0"
-                  } bg-foreground`} />
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 transition-all duration-300 ${active ? "w-full" : "w-0"
+                    } bg-foreground`} />
                 </Link>
               );
             }
-            
+
             return null;
           })}
 
-          <Link 
-            to="/configurateur" 
+          <Link
+            to="/configurateur"
             className="ml-2 px-5 py-4 text-[11px] font-bold uppercase tracking-[0.2em] bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 transition-all flex items-center gap-2 shadow-glow"
           >
             SUPER CONFIGURATEUR
