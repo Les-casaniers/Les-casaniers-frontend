@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye, Menu } from "lucide-react";
+import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye, Menu, ChevronDown } from "lucide-react";
 import {
   useProducts,
   useCreateProduct,
@@ -103,7 +103,7 @@ const ProductForm = ({
   generateReference: (prefixKey: string) => Promise<void>;
   isEditMode?: boolean;
 }) => {
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass = "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   const handlePrefixChange = async (prefixKey: string) => {
     setSelectedPrefix(prefixKey);
@@ -115,7 +115,7 @@ const ProductForm = ({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <label className="text-sm font-medium text-muted-foreground">Type de référence</label>
+        <label className="text-xs sm:text-sm font-medium text-muted-foreground">Type de référence</label>
         <select 
           className={inputClass}
           value={selectedPrefix}
@@ -191,7 +191,7 @@ const ProductForm = ({
         placeholder="Description" 
         value={value.description} 
         onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} 
-        rows={4}
+        rows={3}
       />
 
       <input 
@@ -214,11 +214,11 @@ const ImageUploadField = ({
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   label?: string;
 }) => {
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass = "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">{label}</label>
+      <label className="text-xs sm:text-sm font-medium">{label}</label>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -231,12 +231,12 @@ const ImageUploadField = ({
         }}
       />
       {files.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1 max-h-40 overflow-y-auto">
           {files.map((file, index) => (
             <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-              <span className="truncate pr-3">{file.name}</span>
-              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded">
-                <X className="h-4 w-4" />
+              <span className="truncate pr-3 text-xs sm:text-sm">{file.name}</span>
+              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded shrink-0">
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             </div>
           ))}
@@ -276,11 +276,11 @@ const ExistingImagesManager = ({
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium">Images existantes</h4>
+      <h4 className="text-xs sm:text-sm font-medium">Images existantes</h4>
       {existingImages.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aucune image enregistrée.</p>
+        <p className="text-xs sm:text-sm text-muted-foreground">Aucune image enregistrée.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
           {existingImages
             .slice()
             .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
@@ -289,13 +289,13 @@ const ExistingImagesManager = ({
                 <img 
                   src={getFullImageUrl(img.url)} 
                   alt={img.alt || "image produit"} 
-                  className="h-28 w-full object-cover rounded-lg border" 
+                  className="h-24 sm:h-28 w-full object-cover rounded-lg border" 
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
                   }}
                 />
                 <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={async () => {
@@ -332,6 +332,55 @@ const ExistingImagesManager = ({
             ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// Composant MobileCard pour l'affichage responsive sur mobile
+const ProductMobileCard = ({ product, onEdit, onDelete, onView, getMainImage, getFullImageUrl }: any) => {
+  const mainImage = getMainImage(product);
+  
+  return (
+    <div className="bg-card border rounded-xl p-4 space-y-3">
+      <div className="flex gap-3">
+        <div className="shrink-0">
+          {mainImage?.url ? (
+            <img 
+              src={getFullImageUrl(mainImage.url)} 
+              alt={mainImage.alt || product.nom} 
+              className="h-16 w-16 object-cover rounded-md border"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+              }}
+            />
+          ) : (
+            <div className="h-16 w-16 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">Aucune</div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-sm truncate">{product.nom}</div>
+          <div className="text-xs text-muted-foreground font-mono">{product.reference || "-"}</div>
+          <div className="text-xs mt-1">{product.categorie?.nom ?? "-"}</div>
+        </div>
+        <div className="text-right">
+          <div className="font-bold text-sm text-primary">{product.prix} {product.devise}</div>
+          <div className="text-xs">Stock: {product.quantite_stock}</div>
+          <span className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 ${product.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+            {product.est_dispo ? "Dispo" : "Indispo"}
+          </span>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 pt-2 border-t">
+        <button onClick={() => onView(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+          <Eye className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => onEdit(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button onClick={() => onDelete(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive" title="Supprimer">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   );
 };
@@ -623,10 +672,10 @@ const AdminProduits = () => {
   };
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* En-tête responsive */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
           <Package className="h-5 w-5 sm:h-6 sm:w-6" /> Gestion Catalogue
         </h1>
         <button 
@@ -641,13 +690,13 @@ const AdminProduits = () => {
       <div className="flex gap-2 flex-wrap">
         <button 
           onClick={() => setActiveTab("produits")} 
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base ${activeTab === "produits" ? "bg-primary text-primary-foreground" : ""}`}
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base transition-all ${activeTab === "produits" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
         >
           Produits
         </button>
         <button 
           onClick={() => setActiveTab("categories")} 
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base ${activeTab === "categories" ? "bg-primary text-primary-foreground" : ""}`}
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base transition-all ${activeTab === "categories" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
         >
           Catégories
         </button>
@@ -660,26 +709,26 @@ const AdminProduits = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4" />
               <input
-                className="w-full pl-10 pr-4 py-2 border rounded-xl text-sm"
-                placeholder="Rechercher..."
+                className="w-full pl-9 pr-3 py-2 border rounded-xl text-sm bg-background"
+                placeholder="Rechercher un produit..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <select
-              className="px-4 py-2 border rounded-xl bg-background text-sm w-full sm:w-auto"
+              className="px-3 py-2 border rounded-xl bg-background text-sm w-full sm:w-auto"
               value={dispoFilter}
               onChange={(e) => setDispoFilter(e.target.value as "all" | "available" | "unavailable")}
             >
               <option value="all">Tous les produits</option>
-              <option value="available">Produits disponibles</option>
-              <option value="unavailable">Produits indisponibles</option>
+              <option value="available"> Disponibles</option>
+              <option value="unavailable">Indisponibles</option>
             </select>
           </div>
 
-          {/* Tableau responsive avec scroll horizontal */}
-          <div className="border rounded-2xl overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
+          {/* Version Desktop - Tableau (caché sur mobile) */}
+          <div className="hidden md:block border rounded-2xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-3">Image</th>
@@ -702,19 +751,19 @@ const AdminProduits = () => {
                           <img 
                             src={getFullImageUrl(mainImage.url)} 
                             alt={mainImage.alt || p.nom} 
-                            className="h-10 w-10 sm:h-12 sm:w-12 object-cover rounded-md border"
+                            className="h-10 w-10 object-cover rounded-md border"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
                             }}
                           />
                         ) : (
-                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground">Aucune</div>
+                          <div className="h-10 w-10 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">Aucune</div>
                         )}
                       </td>
                       <td className="p-3 font-mono text-xs">{p.reference || "-"}</td>
-                      <td className="p-3 max-w-[200px] truncate">{p.nom}</td>
-                      <td className="p-3">{p.categorie?.nom ?? "-"}</td>
-                      <td className="p-3 whitespace-nowrap">{p.prix} {p.devise}</td>
+                      <td className="p-3 max-w-[200px] truncate font-medium">{p.nom}</td>
+                      <td className="p-3 text-xs">{p.categorie?.nom ?? "-"}</td>
+                      <td className="p-3 whitespace-nowrap font-semibold text-primary">{p.prix} {p.devise}</td>
                       <td className="p-3">{p.quantite_stock}</td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
@@ -723,14 +772,14 @@ const AdminProduits = () => {
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
-                            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+                            <Eye className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => handleOpenEdit(p)} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
-                            <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <button onClick={() => handleOpenEdit(p)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+                            <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-1.5 sm:p-2 border rounded-lg hover:bg-muted transition-colors" title="Supprimer">
-                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive" title="Supprimer">
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </td>
@@ -740,9 +789,35 @@ const AdminProduits = () => {
               </tbody>
             </table>
             {filteredProduits.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Aucun produit trouvé
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Aucun produit trouvé</p>
               </div>
+            )}
+          </div>
+
+          {/* Version Mobile - Cartes (visible seulement sur mobile) */}
+          <div className="md:hidden space-y-3">
+            {filteredProduits.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Aucun produit trouvé</p>
+              </div>
+            ) : (
+              filteredProduits.map((p) => (
+                <ProductMobileCard
+                  key={p.id}
+                  product={p}
+                  onEdit={handleOpenEdit}
+                  onDelete={(product: Produit) => {
+                    setSelectedProduit(product);
+                    setShowDeleteAlert(true);
+                  }}
+                  onView={(product: Produit) => navigate(`/DashboardAdmin/produits/${product.id}`)}
+                  getMainImage={getMainImage}
+                  getFullImageUrl={getFullImageUrl}
+                />
+              ))
             )}
           </div>
         </div>
@@ -752,13 +827,14 @@ const AdminProduits = () => {
         <div className="space-y-4">
           <button 
             onClick={() => { setSelectedCategory(null); setCategoryForm(initialCategoryForm); setShowCategoryModal(true); }} 
-            className="px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base w-full sm:w-auto"
+            className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base"
           >
-            Nouvelle catégorie
+            <PlusCircle className="h-4 w-4" /> Nouvelle catégorie
           </button>
           
-          <div className="border rounded-2xl overflow-hidden overflow-x-auto">
-            <table className="w-full text-sm min-w-[500px]">
+          {/* Version Desktop - Tableau catégories */}
+          <div className="hidden md:block border rounded-2xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-3">Nom</th>
@@ -769,15 +845,17 @@ const AdminProduits = () => {
               <tbody>
                 {normalizedCategories.map((c: any) => (
                   <tr key={c.id} className="border-b hover:bg-muted/30 transition-colors">
-                    <td className="p-3">{c.nom}</td>
-                    <td className="p-3">{c.type}</td>
+                    <td className="p-3 font-medium">{c.nom}</td>
+                    <td className="p-3">
+                      <span className="px-2 py-1 rounded-full text-xs bg-secondary">{c.type}</span>
+                    </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-1.5 sm:p-2 border rounded-lg">
-                          <Pencil className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-1.5 border rounded-lg hover:bg-muted">
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-1.5 sm:p-2 border rounded-lg">
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-1.5 border rounded-lg hover:bg-muted text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
@@ -786,15 +864,35 @@ const AdminProduits = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Version Mobile - Cartes catégories */}
+          <div className="md:hidden space-y-3">
+            {normalizedCategories.map((c: any) => (
+              <div key={c.id} className="bg-card border rounded-xl p-4 flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{c.nom}</div>
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-secondary mt-1">{c.type}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg hover:bg-muted">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg hover:bg-muted text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Modals - Version responsive avec max-w et margins */}
+      {/* Modals - Version responsive (inchangée, déjà responsive) */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
-              <h2 className="text-xl font-bold">Ajouter produit</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Ajouter produit</h2>
               <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
             </div>
             <ProductForm 
@@ -828,7 +926,7 @@ const AdminProduits = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
-              <h2 className="text-xl font-bold">Modifier produit</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Modifier produit</h2>
               <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
             </div>
             <ProductForm 
@@ -871,7 +969,7 @@ const AdminProduits = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-xl p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Catégorie</h2>
+              <h2 className="text-lg sm:text-xl font-bold">Catégorie</h2>
               <button onClick={() => setShowCategoryModal(false)}><X className="h-5 w-5" /></button>
             </div>
             <input className={inputClass} placeholder="Nom" value={categoryForm.nom} onChange={(e) => setCategoryForm((p) => ({ ...p, nom: e.target.value }))} />
@@ -895,9 +993,9 @@ const AdminProduits = () => {
 
       {showDeleteAlert && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-background border rounded-2xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-background border rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold">Supprimer le produit</h3>
-            <p>Confirmer la suppression de "{selectedProduit?.nom}" ?</p>
+            <p className="text-sm text-muted-foreground">Confirmer la suppression de "<span className="font-medium text-foreground">{selectedProduit?.nom}</span>" ?</p>
             <div className="flex flex-col sm:flex-row justify-end gap-2">
               <button onClick={() => setShowDeleteAlert(false)} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
               <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground order-1 sm:order-2">Supprimer</button>
@@ -908,4 +1006,5 @@ const AdminProduits = () => {
     </div>
   );
 };
+
 export default AdminProduits;

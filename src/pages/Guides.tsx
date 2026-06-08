@@ -256,7 +256,7 @@ const TutosMaintenanceSection = () => {
             <div className="p-4">
               <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                 {tuto.duree && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{tuto.duree}</span>}
-                {tuto.etapes && <span>{tuto.etapes.length} étapes</span>}
+                {tuto.etapes && Array.isArray(tuto.etapes) && <span>{tuto.etapes.length} étapes</span>}
               </div>
               <Link to={guidePath(tuto)} className="block text-sm font-bold leading-tight group-hover:text-primary transition-colors">
                 {tuto.titre}
