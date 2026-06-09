@@ -375,10 +375,16 @@ const ExistingImagesManager = ({
 }) => {
   if (!selectedProduit) return null;
 
+  // CORRECTION ICI - Utilisez la même fonction que dans le composant principal
   const getFullImageUrl = (url: string) => {
     if (!url) return "/placeholder-pc.jpg";
     if (url.startsWith("/storage")) {
-      return `http://127.0.0.1:8000${url}`;
+      const baseUrl =
+        import.meta.env.VITE_API_URL?.replace("/api", "") ||
+        (import.meta.env.PROD
+          ? "https://api.holines.xyz"
+          : "http://127.0.0.1:8000");
+      return `${baseUrl}${url}`;
     }
     return url;
   };
