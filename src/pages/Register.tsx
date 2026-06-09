@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserPlus, Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import {
+  UserPlus,
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  AlertCircle,
+} from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import api from "@/service/api";
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: "",      // Nom
-    lastname: "",  // Prénom
+    name: "", // Nom
+    lastname: "", // Prénom
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -19,15 +27,31 @@ const Register = () => {
     lastname: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [generalError, setGeneralError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [infoMessage, setInfoMessage] = useState(""); //infos newsletter
   const redirectTimeoutRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
 
   const navigate = useNavigate();
+
+  // MODIFIÉ : useEffect avec infoMessage et scroll
+  useEffect(() => {
+    const savedEmail = sessionStorage.getItem("newsletterEmail");
+    if (savedEmail && savedEmail.trim() !== "") {
+      setFormData((prev) => ({ ...prev, email: savedEmail }));
+      setInfoMessage(
+        "Complétez votre inscription pour recevoir notre newsletter !",
+      );
+      sessionStorage.removeItem("newsletterEmail");
+
+      // Défiler vers le haut
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -40,7 +64,13 @@ const Register = () => {
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { name: "", lastname: "", email: "", password: "", confirmPassword: "" };
+    const newErrors = {
+      name: "",
+      lastname: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    };
 
     if (!formData.name) {
       newErrors.name = "Le nom est requis";
@@ -66,8 +96,12 @@ const Register = () => {
       newErrors.email = "Format d'email invalide";
       isValid = false;
     }
-    if (formData.password && !/(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}/.test(formData.password)) {
-      newErrors.password = "Le mot de passe doit contenir 8 caracteres minimum, 1 majuscule, 1 chiffre et 1 symbole";
+    if (
+      formData.password &&
+      !/(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}/.test(formData.password)
+    ) {
+      newErrors.password =
+        "Le mot de passe doit contenir 8 caracteres minimum, 1 majuscule, 1 chiffre et 1 symbole";
       isValid = false;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -83,9 +117,9 @@ const Register = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
     if (generalError) setGeneralError("");
   };
@@ -101,33 +135,47 @@ const Register = () => {
     }
 
     try {
-      const response = await api.post('/utilisateurs/register', {
+      const response = await api.post("/utilisateurs/register", {
         prenom: formData.lastname,
         nom: formData.name,
         email: formData.email,
         mot_de_passe: formData.password,
-        mot_de_passe_confirmation: formData.confirmPassword
+        mot_de_passe_confirmation: formData.confirmPassword,
       });
 
       if (response.data.success) {
         if (isMountedRef.current) {
-          setErrors({ name: "", lastname: "", email: "", password: "", confirmPassword: "" });
+          setErrors({
+            name: "",
+            lastname: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+          });
           setGeneralError("");
           setShowSuccess(true);
-          setFormData({ name: "", lastname: "", email: "", password: "", confirmPassword: "" });
+          setFormData({
+            name: "",
+            lastname: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+          });
           redirectTimeoutRef.current = window.setTimeout(() => {
             navigate("/login");
           }, 2000);
         }
       } else {
         if (isMountedRef.current) {
-          setGeneralError(response.data.message || "Erreur lors de l'inscription");
+          setGeneralError(
+            response.data.message || "Erreur lors de l'inscription",
+          );
         }
       }
     } catch (error: any) {
       console.error("Registration error:", error);
       const responseData = error.response?.data;
-      
+
       if (responseData?.errors) {
         // Map backend errors to form fields
         const backendErrors = responseData.errors;
@@ -135,15 +183,21 @@ const Register = () => {
         if (backendErrors.nom) newErrors.name = backendErrors.nom[0];
         if (backendErrors.prenom) newErrors.lastname = backendErrors.prenom[0];
         if (backendErrors.email) newErrors.email = backendErrors.email[0];
-        if (backendErrors.mot_de_passe) newErrors.password = backendErrors.mot_de_passe[0];
-        if (backendErrors.mot_de_passe_confirmation) newErrors.confirmPassword = backendErrors.mot_de_passe_confirmation[0];
+        if (backendErrors.mot_de_passe)
+          newErrors.password = backendErrors.mot_de_passe[0];
+        if (backendErrors.mot_de_passe_confirmation)
+          newErrors.confirmPassword =
+            backendErrors.mot_de_passe_confirmation[0];
         if (isMountedRef.current) {
           setErrors(newErrors);
         }
       }
-      
+
       if (isMountedRef.current) {
-        setGeneralError(responseData?.message || "Erreur lors de l'inscription. Veuillez réessayer.");
+        setGeneralError(
+          responseData?.message ||
+            "Erreur lors de l'inscription. Veuillez réessayer.",
+        );
       }
     } finally {
       if (isMountedRef.current) {
@@ -163,7 +217,9 @@ const Register = () => {
                 <UserPlus className="h-6 w-6 text-foreground" />
               </div>
               <h1 className="text-3xl font-bold">Inscription</h1>
-              <p className="text-muted-foreground">Créez votre compte gratuitement</p>
+              <p className="text-muted-foreground">
+                Créez votre compte gratuitement
+              </p>
             </div>
 
             {/* Message de succès */}
@@ -175,11 +231,23 @@ const Register = () => {
               </div>
             )}
 
+            {/* NOUVEAU : Message d'information en vert */}
+            {infoMessage && (
+              <div className="mb-6 p-4 bg-green-500/10 border border-green-500 rounded-xl flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-green-500" />
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  {infoMessage}
+                </p>
+              </div>
+            )}
+
             {/* Message d'erreur */}
             {generalError && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-xl flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-red-500" />
-                <p className="text-sm text-red-600 dark:text-red-400">{generalError}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {generalError}
+                </p>
               </div>
             )}
 
@@ -188,7 +256,10 @@ const Register = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Nom */}
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Nom
                   </label>
                   <div className="relative">
@@ -202,7 +273,7 @@ const Register = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.name ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
+                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.name ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="Dupont"
                     />
                   </div>
@@ -213,7 +284,10 @@ const Register = () => {
 
                 {/* Prénom (NOUVEAU CHAMP) */}
                 <div>
-                  <label htmlFor="lastname" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="lastname"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Prénom
                   </label>
                   <div className="relative">
@@ -227,18 +301,23 @@ const Register = () => {
                       value={formData.lastname}
                       onChange={handleChange}
                       required
-                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.lastname ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
+                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.lastname ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="Jean"
                     />
                   </div>
                   {errors.lastname && (
-                    <p className="mt-1 text-xs text-red-500">{errors.lastname}</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.lastname}
+                    </p>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Email
                   </label>
                   <div className="relative">
@@ -252,7 +331,7 @@ const Register = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.email ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
+                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.email ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="exemple@email.com"
                     />
                   </div>
@@ -263,7 +342,10 @@ const Register = () => {
 
                 {/* Mot de passe */}
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Mot de passe
                   </label>
                   <div className="relative">
@@ -277,7 +359,7 @@ const Register = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.password ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
+                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.password ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="••••••••"
                     />
                     <button
@@ -293,13 +375,18 @@ const Register = () => {
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="mt-1 text-xs text-red-500">{errors.password}</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
                 {/* Confirmation mot de passe */}
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Confirmer le mot de passe
                   </label>
                   <div className="relative">
@@ -313,12 +400,14 @@ const Register = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
-                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.confirmPassword ? 'border-red-500' : 'border-border'} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
+                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.confirmPassword ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
                       placeholder="••••••••"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
                       {showConfirmPassword ? (
@@ -329,7 +418,9 @@ const Register = () => {
                     </button>
                   </div>
                   {errors.confirmPassword && (
-                    <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.confirmPassword}
+                    </p>
                   )}
                 </div>
 
@@ -357,7 +448,10 @@ const Register = () => {
               <div className="mt-6 text-center">
                 <p className="text-sm text-muted-foreground">
                   Déjà un compte ?{" "}
-                  <Link to="/login" className="text-foreground font-medium hover:underline">
+                  <Link
+                    to="/login"
+                    className="text-foreground font-medium hover:underline"
+                  >
                     Se connecter
                   </Link>
                 </p>
