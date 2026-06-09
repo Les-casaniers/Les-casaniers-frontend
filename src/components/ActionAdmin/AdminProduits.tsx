@@ -149,21 +149,12 @@ const REFERENCE_PREFIXES = [
 ] as const;
 
 // ==================== FONCTIONS UTILITAIRES ====================
-useEffect(() => {
-  console.log("ENV CHECK:", {
-    VITE_API_URL: import.meta.env.VITE_API_URL,
-    MODE: import.meta.env.MODE,
-    PROD: import.meta.env.PROD,
-  });
-}, []);
 
-// Fonction pour obtenir l'URL complète des images (fonctionne en local et en production)
 const getFullImageUrl = (url: string) => {
   if (!url) return "/placeholder-pc.jpg";
   if (url.startsWith("/storage") || url.startsWith("/image")) {
-    const base = import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
-      : "https://api.holines.xyz"; // fallback prod hardcodé
+    const base = (import.meta.env.VITE_API_URL as string | undefined)
+      ?.replace(/\/api\/?$/, "") ?? "https://api.holines.xyz";
     return `${base}${url}`;
   }
   return url;
@@ -577,6 +568,14 @@ const AdminProduits = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isAdmin, user, loading: authLoading, logout } = useAuth();
+
+  useEffect(() => {
+    console.log("ENV CHECK:", {
+      VITE_API_URL: import.meta.env.VITE_API_URL,
+      MODE: import.meta.env.MODE,
+      PROD: import.meta.env.PROD,
+    });
+  }, []);
 
   const apiFilters = useMemo<ProductFilters>(
     () => ({
