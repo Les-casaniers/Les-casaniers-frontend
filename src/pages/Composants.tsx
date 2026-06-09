@@ -38,11 +38,54 @@ interface ComponentCategory {
   products: Product[];
 }
 
+type TabId = "cpu" | "gpu" | "ram" | "storage" | "motherboard";
+
+// Configuration des onglets
+const TABS: { id: TabId; label: string; color: string; activeColor: string; icon: JSX.Element }[] = [
+  {
+    id: "cpu",
+    label: "CPU / Processeurs",
+    color: "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
+    activeColor: "bg-purple-500/10 border-purple-500/60",
+    icon: <Cpu className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "gpu",
+    label: "GPU / Cartes graphiques",
+    color: "text-green-500 border-green-500/30 hover:bg-green-500/10",
+    activeColor: "bg-green-500/10 border-green-500/60",
+    icon: <Gamepad className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "ram",
+    label: "RAM / Mémoire",
+    color: "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
+    activeColor: "bg-blue-500/10 border-blue-500/60",
+    icon: <MemoryStick className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "storage",
+    label: "Stockage / SSD & HDD",
+    color: "text-amber-500 border-amber-500/30 hover:bg-amber-500/10",
+    activeColor: "bg-amber-500/10 border-amber-500/60",
+    icon: <HardDrive className="h-3.5 w-3.5" />,
+  },
+  {
+    id: "motherboard",
+    label: "Cartes mères",
+    color: "text-red-500 border-red-500/30 hover:bg-red-500/10",
+    activeColor: "bg-red-500/10 border-red-500/60",
+    icon: <CircuitBoard className="h-3.5 w-3.5" />,
+  },
+];
+
 const Composants = () => {
   const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabId>("cpu");
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     document.title = "Composants PC — Les Casaniers Madagascar";
@@ -214,6 +257,19 @@ const Composants = () => {
   // Filtrer les catégories qui ont des produits
   const nonEmptyCategories = categorizedProducts.filter(cat => cat.products.length > 0);
 
+  // Fonction pour changer d'onglet avec animation
+  const switchTab = (id: TabId) => {
+    if (id === activeTab) return;
+    setVisible(false);
+    setTimeout(() => {
+      setActiveTab(id);
+      setVisible(true);
+    }, 200);
+  };
+
+  // Récupérer la catégorie active
+  const activeCategory = nonEmptyCategories.find(cat => cat.id === activeTab);
+
   const formatPrice = (prix: number, devise: string = 'MGA') => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -289,121 +345,166 @@ const Composants = () => {
         bg="7.png"
       />
 
-      <section id="composants" className="py-12 scroll-mt-20">
-        <div className="container-x">
-
-          <div className="space-y-12">
-            {/* Afficher les catégories avec des produits */}
-            {nonEmptyCategories.map((category) => {
+      {/* Barre de navigation sticky avec onglets */}
+      <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="container-x py-3">
+          {/* Mobile : grille responsive */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:hidden">
+            {TABS.filter(tab => nonEmptyCategories.some(cat => cat.id === tab.id)).map((tab) => {
+              const isActive = activeTab === tab.id;
               return (
-                <div
-                  key={category.id}
-                  id={category.id}
-                  className={`border-l-4 ${category.borderColor} bg-secondary/20 rounded-r-lg p-6 hover:shadow-lg transition-shadow`}
+                <button
+                  key={tab.id}
+                  onClick={() => switchTab(tab.id)}
+                  className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center flex items-center justify-center gap-1 ${
+                    isActive
+                      ? `${tab.color} ${tab.activeColor}`
+                      : `${tab.color} opacity-60 hover:opacity-100`
+                  }`}
                 >
-                  {/* En-tête de catégorie */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className={`p-3 rounded-full ${category.bgColor} ${category.color}`}>
-                      {category.icon}
-                    </div>
-                    <div>
-                      <h3 className={`text-2xl font-bold ${category.color}`}>
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{category.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {category.products.length} produit(s) disponible(s)
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Grille des produits */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-                    {category.products.map((product) => {
-                      const imageUrl = getProductImageUrl(product);
-                      
-                      return (
-                        <div 
-                          key={product.id} 
-                          className="group bg-background border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
-                        >
-                          {/* Image section */}
-                          <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-500/10 to-secondary">
-                            {imageUrl ? (
-                              <img 
-                                src={imageUrl} 
-                                alt={product.nom} 
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                {category.icon}
-                              </div>
-                            )}
-                            
-                            {/* Badge référence */}
-                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-mono">
-                              {product.reference}
-                            </div>
-                            
-                            {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
-                              <span className="absolute bottom-2 left-2 px-2 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded-full">
-                                Stock limité
-                              </span>
-                            )}
-                            {product.quantite_stock === 0 && (
-                              <span className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white text-[10px] font-semibold rounded-full">
-                                Rupture
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Content */}
-                          <div className="p-4">
-                            <h3 className="text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                              {product.nom}
-                            </h3>
-                            
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {getSpecs(product)}
-                            </p>
-                            
-                            <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
-                              <div>
-                                <span className="text-xl font-bold text-primary">
-                                  {formatPrice(product.prix, product.devise)}
-                                </span>
-                              </div>
-                              <Link to={`/produit/${product.id}`}>
-                                <button 
-                                  className="px-3 py-1.5 text-sm bg-foreground text-background hover:opacity-90 transition rounded-lg flex items-center gap-1"
-                                  disabled={product.quantite_stock === 0}
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Voir</span>
-                                </button>
-                              </Link>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                  {tab.icon}
+                  <span className="hidden xs:inline">{tab.label.split(' ')[0]}</span>
+                  <span className="xs:hidden">{tab.label.split(' ')[0]}</span>
+                </button>
               );
             })}
           </div>
 
-          {/* Message si aucun produit dans aucune catégorie */}
-          {nonEmptyCategories.length === 0 && (
-            <div className="text-center py-20 bg-background rounded-xl border border-border">
-              <Server className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Aucun composant disponible pour le moment.</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Vérifiez que des produits avec les références CPU-, RAM-, MB-, SD-, GPU- existent dans la base.
-              </p>
-            </div>
-          )}
+          {/* Desktop : ligne horizontale - taille police text-xs comme dans Gaming */}
+          <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
+            {TABS.filter(tab => nonEmptyCategories.some(cat => cat.id === tab.id)).map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => switchTab(tab.id)}
+                  className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all flex items-center gap-2 ${
+                    isActive
+                      ? `${tab.color} ${tab.activeColor}`
+                      : `${tab.color} opacity-60 hover:opacity-100`
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      <section id="composants" className="py-12 scroll-mt-20">
+        <div className="container-x">
+          {/* Contenu avec animation fade-up */}
+          <div
+            style={{
+              transition: "opacity 200ms ease, transform 200ms ease",
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateY(0)" : "translateY(16px)",
+            }}
+          >
+            {activeCategory ? (
+              <div
+                key={activeCategory.id}
+                id={activeCategory.id}
+                className={`border-l-4 ${activeCategory.borderColor} bg-secondary/20 rounded-r-lg p-6 hover:shadow-lg transition-shadow`}
+              >
+                {/* En-tête de catégorie */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className={`p-3 rounded-full ${activeCategory.bgColor} ${activeCategory.color}`}>
+                    {activeCategory.icon}
+                  </div>
+                  <div>
+                    <h3 className={`text-2xl font-bold ${activeCategory.color}`}>
+                      {activeCategory.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">{activeCategory.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {activeCategory.products.length} produit(s) disponible(s)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Grille des produits */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
+                  {activeCategory.products.map((product) => {
+                    const imageUrl = getProductImageUrl(product);
+                    
+                    return (
+                      <div 
+                        key={product.id} 
+                        className="group bg-background border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+                      >
+                        {/* Image section */}
+                        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-gray-500/10 to-secondary">
+                          {imageUrl ? (
+                            <img 
+                              src={imageUrl} 
+                              alt={product.nom} 
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              {activeCategory.icon}
+                            </div>
+                          )}
+                          
+                          {/* Badge référence */}
+                          <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-mono">
+                            {product.reference}
+                          </div>
+                          
+                          {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
+                            <span className="absolute bottom-2 left-2 px-2 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded-full">
+                              Stock limité
+                            </span>
+                          )}
+                          {product.quantite_stock === 0 && (
+                            <span className="absolute bottom-2 left-2 px-2 py-1 bg-red-500 text-white text-[10px] font-semibold rounded-full">
+                              Rupture
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-4">
+                          <h3 className="text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                            {product.nom}
+                          </h3>
+                          
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {getSpecs(product)}
+                          </p>
+                          
+                          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between">
+                            <div>
+                              <span className="text-xl font-bold text-primary">
+                                {formatPrice(product.prix, product.devise)}
+                              </span>
+                            </div>
+                            <Link to={`/produit/${product.id}`}>
+                              <button 
+                                className="px-3 py-1.5 text-sm bg-foreground text-background hover:opacity-90 transition rounded-lg flex items-center gap-1"
+                                disabled={product.quantite_stock === 0}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span>Voir</span>
+                              </button>
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-background rounded-xl border border-border">
+                <Server className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Aucun composant disponible dans cette catégorie.</p>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </SiteLayout>

@@ -134,7 +134,7 @@ export const WatercoolingCustom = () => {
         description: "Veuillez vous connecter pour ajouter au panier",
         variant: "destructive"
       });
-      navigate("/connexion");
+      navigate("/login");
       return;
     }
 

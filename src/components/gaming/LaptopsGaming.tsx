@@ -206,7 +206,7 @@ const fetchConfigurations = async (produitId: number) => {
         description: "Veuillez vous connecter pour ajouter au panier",
         variant: "destructive"
       });
-      navigate("/connexion");
+      navigate("/login");
       return;
     }
 
