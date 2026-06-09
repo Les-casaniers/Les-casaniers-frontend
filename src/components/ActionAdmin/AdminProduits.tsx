@@ -9,8 +9,6 @@ import {
   Trash2,
   Search,
   Eye,
-  Menu,
-  ChevronDown,
 } from "lucide-react";
 import {
   useProducts,
@@ -149,6 +147,26 @@ const REFERENCE_PREFIXES = [
   },
   { key: "REF", label: "REF-", description: "Autres", exemple: "REF-001" },
 ] as const;
+
+// ==================== FONCTIONS UTILITAIRES ====================
+
+// Fonction pour obtenir l'URL complète des images (fonctionne en local et en production)
+const getFullImageUrl = (url: string) => {
+  if (!url) return "/placeholder-pc.jpg";
+  
+  // Gère les chemins /storage et /image
+  if (url.startsWith("/storage") || url.startsWith("/image")) {
+    // En production sur Vercel, utilisez l'API déployée
+    // En développement, utilisez localhost
+    const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") ||
+      (import.meta.env.PROD
+        ? "https://api.holines.xyz"
+        : "http://127.0.0.1:8000");
+    return `${baseUrl}${url}`;
+  }
+  
+  return url;
+};
 
 // ==================== COMPOSANTS EXTRAITS ====================
 
@@ -375,20 +393,6 @@ const ExistingImagesManager = ({
 }) => {
   if (!selectedProduit) return null;
 
-  // CORRECTION ICI - Utilisez la même fonction que dans le composant principal
-  const getFullImageUrl = (url: string) => {
-    if (!url) return "/placeholder-pc.jpg";
-    if (url.startsWith("/storage")) {
-      const baseUrl =
-        import.meta.env.VITE_API_URL?.replace("/api", "") ||
-        (import.meta.env.PROD
-          ? "https://api.holines.xyz"
-          : "http://127.0.0.1:8000");
-      return `${baseUrl}${url}`;
-    }
-    return url;
-  };
-
   return (
     <div className="space-y-2">
       <h4 className="text-xs sm:text-sm font-medium">Images existantes</h4>
@@ -472,7 +476,6 @@ const ProductMobileCard = ({
   onDelete,
   onView,
   getMainImage,
-  getFullImageUrl,
 }: any) => {
   const mainImage = getMainImage(product);
 
@@ -601,29 +604,6 @@ const AdminProduits = () => {
 
   const filteredProduits = normalizedProduits;
 
-  // const getFullImageUrl = (url: string) => {
-  //   if (!url) return "/placeholder-pc.jpg";
-  //   if (url.startsWith('/storage')) {
-  //     return `http://127.0.0.1:8000${url}`;
-  //   }
-  //   return url;
-  // };
-  
-  const getFullImageUrl = (url: string) => {
-    if (!url) return "/placeholder-pc.jpg";
-
-    if (url.startsWith("/storage")) {
-      // Utilisez une variable d'environnement pour plus de flexibilité
-      const baseUrl =
-        import.meta.env.VITE_API_URL?.replace("/api", "") ||
-        (import.meta.env.PROD
-          ? "https://api.holines.xyz"
-          : "http://127.0.0.1:8000");
-      return `${baseUrl}${url}`;
-    }
-
-    return url;
-  };
   const getMainImage = (product: Produit) => {
     const images = product.images ?? [];
     if (images.length === 0) return null;
@@ -921,7 +901,7 @@ const AdminProduits = () => {
               }
             >
               <option value="all">Tous les produits</option>
-              <option value="available"> Disponibles</option>
+              <option value="available">Disponibles</option>
               <option value="unavailable">Indisponibles</option>
             </select>
           </div>
@@ -1048,7 +1028,6 @@ const AdminProduits = () => {
                     navigate(`/DashboardAdmin/produits/${product.id}`)
                   }
                   getMainImage={getMainImage}
-                  getFullImageUrl={getFullImageUrl}
                 />
               ))
             )}
@@ -1170,7 +1149,7 @@ const AdminProduits = () => {
         </div>
       )}
 
-      {/* Modals - Version responsive (inchangée, déjà responsive) */}
+      {/* Modals - Version responsive */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
