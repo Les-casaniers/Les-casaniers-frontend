@@ -13,6 +13,30 @@ import {
   useSubscribeNewsletter, GuideDifficulty,
 } from "@/hooks/useGuides";
 
+type TabId = "guides-achat" | "actualites-tech" | "tutos-maintenance";
+
+// Configuration des onglets
+const TABS: { id: TabId; label: string; color: string; activeColor: string }[] = [
+  {
+    id: "guides-achat",
+    label: "Guides d'achat",
+    color: "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
+    activeColor: "bg-purple-500/10 border-purple-500/60",
+  },
+  {
+    id: "actualites-tech",
+    label: "Actualités Tech",
+    color: "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
+    activeColor: "bg-blue-500/10 border-blue-500/60",
+  },
+  {
+    id: "tutos-maintenance",
+    label: "Tutos Maintenance",
+    color: "text-green-500 border-green-500/30 hover:bg-green-500/10",
+    activeColor: "bg-green-500/10 border-green-500/60",
+  },
+];
+
 /* ───────────── Helpers ───────────── */
 
 const fallbackImages: Record<GuideCategory, string> = {
@@ -339,6 +363,8 @@ const NewsletterSection = () => {
 const Guides = () => {
   const [params, setParams] = useSearchParams();
   const [searchDraft, setSearchDraft] = useState(params.get("search") ?? "");
+  const [activeTab, setActiveTab] = useState<TabId>("guides-achat");
+  const [visible, setVisible] = useState(true);
 
   const page = Number(params.get("page") ?? 1);
   const category = (params.get("categorie") ?? "") as GuideCategory | "";
@@ -378,9 +404,32 @@ const Guides = () => {
     updateParam("search", searchDraft.trim());
   };
 
+  const switchTab = (id: TabId) => {
+    if (id === activeTab) return;
+    setVisible(false);
+    setTimeout(() => {
+      setActiveTab(id);
+      setVisible(true);
+    }, 200);
+  };
+
   const guides = data?.data ?? [];
   const featured = guides[0];
   const remaining = featured ? guides.slice(1) : guides;
+
+  // Fonction pour afficher la section active
+  const renderActiveSection = () => {
+    switch (activeTab) {
+      case "guides-achat":
+        return <GuidesAchatSection />;
+      case "actualites-tech":
+        return <ActualitesTechSection />;
+      case "tutos-maintenance":
+        return <TutosMaintenanceSection />;
+      default:
+        return <GuidesAchatSection />;
+    }
+  };
 
   return (
     <SiteLayout>
@@ -389,6 +438,53 @@ const Guides = () => {
         description="Des conseils concrets pour choisir, importer, monter et entretenir votre matériel à Madagascar."
         bg="6.png"
       />
+
+      {/* Barre de navigation sticky avec onglets - UNIQUEMENT pour la vue sectionnée */}
+      {isSectionedView && (
+        <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+          <div className="container-x py-3">
+            {/* Mobile : grille 3 colonnes */}
+            <div className="grid grid-cols-3 gap-2 sm:hidden">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => switchTab(tab.id)}
+                    className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
+                      isActive
+                        ? `${tab.color} ${tab.activeColor}`
+                        : `${tab.color} opacity-60 hover:opacity-100`
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop : ligne */}
+            <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => switchTab(tab.id)}
+                    className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
+                      isActive
+                        ? `${tab.color} ${tab.activeColor}`
+                        : `${tab.color} opacity-60 hover:opacity-100`
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </nav>
+      )}
 
       <main className="container-x py-10">
         {/* ───── Search + Filters Bar ───── */}
@@ -416,11 +512,14 @@ const Guides = () => {
 
         {/* ───── Sectioned View (home-style) ───── */}
         {isSectionedView ? (
-          <div className="space-y-0">
-            <GuidesAchatSection />
-            <ActualitesTechSection />
-            <TutosMaintenanceSection />
-            <NewsletterSection />
+          <div
+            style={{
+              transition: "opacity 200ms ease, transform 200ms ease",
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateY(0)" : "translateY(16px)",
+            }}
+          >
+            {renderActiveSection()}
           </div>
         ) : (
           /* ───── Filtered / Search Results View ───── */
@@ -493,6 +592,9 @@ const Guides = () => {
             </aside>
           </div>
         )}
+        
+        {/* Newsletter seulement dans la vue sectionnée */}
+        {isSectionedView && activeTab === "guides-achat" && <NewsletterSection />}
       </main>
     </SiteLayout>
   );
