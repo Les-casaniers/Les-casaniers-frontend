@@ -1,6 +1,17 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, PlusCircle, X, Save, Pencil, Trash2, Search, Eye, Menu, ChevronDown } from "lucide-react";
+import {
+  Package,
+  PlusCircle,
+  X,
+  Save,
+  Pencil,
+  Trash2,
+  Search,
+  Eye,
+  Menu,
+  ChevronDown,
+} from "lucide-react";
 import {
   useProducts,
   useCreateProduct,
@@ -15,8 +26,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useToast } from "@/hooks/use-toast";
 
-const TYPES_PRODUIT = ["pc", "portable", "composant", "peripherique", "service"] as const;
-const CATEGORY_TYPES = ["pro", "gaming", "composants", "peripheriques", "services", "guides"] as const;
+const TYPES_PRODUIT = [
+  "pc",
+  "portable",
+  "composant",
+  "peripherique",
+  "service",
+] as const;
+const CATEGORY_TYPES = [
+  "pro",
+  "gaming",
+  "composants",
+  "peripheriques",
+  "services",
+  "guides",
+] as const;
 
 type ProduitForm = {
   categorie_id: string;
@@ -64,37 +88,82 @@ type Produit = APIProduct;
 
 // Configuration des préfixes de référence
 const REFERENCE_PREFIXES = [
-  { key: "CASE", label: "CASE-", description: "Unité Central", exemple: "CASE-001" },
+  {
+    key: "CASE",
+    label: "CASE-",
+    description: "Unité Central",
+    exemple: "CASE-001",
+  },
   { key: "CPU", label: "CPU-", description: "Processeur", exemple: "CPU-001" },
   { key: "MB", label: "MB-", description: "Carte mère", exemple: "MB-001" },
-  { key: "CL", label: "CL-", description: "Refroidissement", exemple: "CL-001" },
+  {
+    key: "CL",
+    label: "CL-",
+    description: "Refroidissement",
+    exemple: "CL-001",
+  },
   { key: "RAM", label: "RAM-", description: "Mémoire RAM", exemple: "RAM-001" },
-  { key: "SD", label: "SD-", description: "Stockage (Disque Dur, NVMe)", exemple: "SD-001" },
-  { key: "GPU", label: "GPU-", description: "Carte graphique", exemple: "GPU-001" },
-  { key: "PSU", label: "PSU-", description: "Alimentation", exemple: "PSU-001" },
+  {
+    key: "SD",
+    label: "SD-",
+    description: "Stockage (Disque Dur, NVMe)",
+    exemple: "SD-001",
+  },
+  {
+    key: "GPU",
+    label: "GPU-",
+    description: "Carte graphique",
+    exemple: "GPU-001",
+  },
+  {
+    key: "PSU",
+    label: "PSU-",
+    description: "Alimentation",
+    exemple: "PSU-001",
+  },
   { key: "PC", label: "PC-", description: "Portable", exemple: "PC-001" },
-  { key: "CLV", label: "CLV-", description: "Clavier Gaming", exemple: "CLV-001" },
+  {
+    key: "CLV",
+    label: "CLV-",
+    description: "Clavier Gaming",
+    exemple: "CLV-001",
+  },
   { key: "SR", label: "SR-", description: "Souris Gaming", exemple: "SR-001" },
-  { key: "ECR", label: "ECR-", description: "Ecran Gaming", exemple: "ECR-001" },
-  { key: "CHS", label: "CHS-", description: "Chaise Gaming", exemple: "CHS-001" },
-  { key: "EXP", label: "EXP-", description: "Produit Exception", exemple: "EXP-001" },
+  {
+    key: "ECR",
+    label: "ECR-",
+    description: "Ecran Gaming",
+    exemple: "ECR-001",
+  },
+  {
+    key: "CHS",
+    label: "CHS-",
+    description: "Chaise Gaming",
+    exemple: "CHS-001",
+  },
+  {
+    key: "EXP",
+    label: "EXP-",
+    description: "Produit Exception",
+    exemple: "EXP-001",
+  },
   { key: "REF", label: "REF-", description: "Autres", exemple: "REF-001" },
 ] as const;
 
 // ==================== COMPOSANTS EXTRAITS ====================
 
 // Composant ProductForm
-const ProductForm = ({ 
-  value, 
-  setValue, 
+const ProductForm = ({
+  value,
+  setValue,
   categories,
   selectedPrefix,
   setSelectedPrefix,
   generatedReference,
   generateReference,
-  isEditMode = false
-}: { 
-  value: ProduitForm; 
+  isEditMode = false,
+}: {
+  value: ProduitForm;
   setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
   categories: any[];
   selectedPrefix: string;
@@ -103,7 +172,8 @@ const ProductForm = ({
   generateReference: (prefixKey: string) => Promise<void>;
   isEditMode?: boolean;
 }) => {
-  const inputClass = "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass =
+    "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   const handlePrefixChange = async (prefixKey: string) => {
     setSelectedPrefix(prefixKey);
@@ -115,8 +185,10 @@ const ProductForm = ({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <label className="text-xs sm:text-sm font-medium text-muted-foreground">Type de référence</label>
-        <select 
+        <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+          Type de référence
+        </label>
+        <select
           className={inputClass}
           value={selectedPrefix}
           onChange={(e) => handlePrefixChange(e.target.value)}
@@ -131,74 +203,95 @@ const ProductForm = ({
         </select>
         {generatedReference && !isEditMode && (
           <p className="text-xs text-muted-foreground">
-            Référence générée : <span className="font-mono font-semibold text-primary">{generatedReference}</span>
+            Référence générée :{" "}
+            <span className="font-mono font-semibold text-primary">
+              {generatedReference}
+            </span>
           </p>
         )}
         {isEditMode && value.reference && (
           <p className="text-xs text-muted-foreground">
-            Référence actuelle : <span className="font-mono font-semibold text-primary">{value.reference}</span>
+            Référence actuelle :{" "}
+            <span className="font-mono font-semibold text-primary">
+              {value.reference}
+            </span>
           </p>
         )}
       </div>
 
       <input type="hidden" name="reference" value={value.reference} />
 
-      <input 
-        className={inputClass} 
-        placeholder="Nom" 
-        value={value.nom} 
-        onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))} 
+      <input
+        className={inputClass}
+        placeholder="Nom"
+        value={value.nom}
+        onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))}
       />
-      
-      <select 
-        className={inputClass} 
-        value={value.type_produit} 
-        onChange={(e) => setValue((p) => ({ ...p, type_produit: e.target.value as ProduitForm["type_produit"] }))}
+
+      <select
+        className={inputClass}
+        value={value.type_produit}
+        onChange={(e) =>
+          setValue((p) => ({
+            ...p,
+            type_produit: e.target.value as ProduitForm["type_produit"],
+          }))
+        }
       >
         <option value="">Type produit</option>
         {TYPES_PRODUIT.map((t) => (
-          <option key={t} value={t}>{t}</option>
+          <option key={t} value={t}>
+            {t}
+          </option>
         ))}
       </select>
-      
-      <select 
-        className={inputClass} 
-        value={value.categorie_id} 
-        onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value }))}
+
+      <select
+        className={inputClass}
+        value={value.categorie_id}
+        onChange={(e) =>
+          setValue((p) => ({ ...p, categorie_id: e.target.value }))
+        }
       >
         <option value="">Catégorie</option>
         {categories.map((c: any) => (
-          <option key={c.id} value={c.id}>{c.nom}</option>
+          <option key={c.id} value={c.id}>
+            {c.nom}
+          </option>
         ))}
       </select>
-      
-      <input 
-        className={inputClass} 
-        placeholder="Prix" 
-        value={value.prix} 
-        onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} 
+
+      <input
+        className={inputClass}
+        placeholder="Prix"
+        value={value.prix}
+        onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))}
       />
-      
-      <input 
-        className={inputClass} 
-        placeholder="Stock" 
-        value={value.quantite_stock} 
-        onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} 
+
+      <input
+        className={inputClass}
+        placeholder="Stock"
+        value={value.quantite_stock}
+        onChange={(e) =>
+          setValue((p) => ({ ...p, quantite_stock: e.target.value }))
+        }
       />
-      
-      <textarea 
-        className={inputClass} 
-        placeholder="Description" 
-        value={value.description} 
-        onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} 
+
+      <textarea
+        className={inputClass}
+        placeholder="Description"
+        value={value.description}
+        onChange={(e) =>
+          setValue((p) => ({ ...p, description: e.target.value }))
+        }
         rows={3}
       />
 
-      <input 
-        className={inputClass} 
-        placeholder="Atout du produit (ex: Garantie 2 ans, Livraison gratuite, etc.)" 
-        value={value.atout} 
-        onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))} 
+      <input
+        className={inputClass}
+        placeholder="Atout du produit (ex: Garantie 2 ans, Livraison gratuite, etc.)"
+        value={value.atout}
+        onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))}
       />
     </div>
   );
@@ -214,7 +307,8 @@ const ImageUploadField = ({
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   label?: string;
 }) => {
-  const inputClass = "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass =
+    "w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   return (
     <div className="space-y-2">
@@ -233,9 +327,20 @@ const ImageUploadField = ({
       {files.length > 0 && (
         <div className="space-y-1 max-h-40 overflow-y-auto">
           {files.map((file, index) => (
-            <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm">
-              <span className="truncate pr-3 text-xs sm:text-sm">{file.name}</span>
-              <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 border rounded shrink-0">
+            <div
+              key={`${file.name}-${index}`}
+              className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
+            >
+              <span className="truncate pr-3 text-xs sm:text-sm">
+                {file.name}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setFiles((prev) => prev.filter((_, i) => i !== index))
+                }
+                className="p-1 border rounded shrink-0"
+              >
                 <X className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             </div>
@@ -258,7 +363,11 @@ const ExistingImagesManager = ({
 }: {
   selectedProduit: Produit | null;
   existingImages: { id: number; url: string; alt: string; ordre?: number }[];
-  setExistingImages: React.Dispatch<React.SetStateAction<{ id: number; url: string; alt: string; ordre?: number }[]>>;
+  setExistingImages: React.Dispatch<
+    React.SetStateAction<
+      { id: number; url: string; alt: string; ordre?: number }[]
+    >
+  >;
   setMainImage: any;
   deleteImage: any;
   handleApiError: (error: any, fallback: string) => void;
@@ -268,7 +377,7 @@ const ExistingImagesManager = ({
 
   const getFullImageUrl = (url: string) => {
     if (!url) return "/placeholder-pc.jpg";
-    if (url.startsWith('/storage')) {
+    if (url.startsWith("/storage")) {
       return `http://127.0.0.1:8000${url}`;
     }
     return url;
@@ -278,7 +387,9 @@ const ExistingImagesManager = ({
     <div className="space-y-2">
       <h4 className="text-xs sm:text-sm font-medium">Images existantes</h4>
       {existingImages.length === 0 ? (
-        <p className="text-xs sm:text-sm text-muted-foreground">Aucune image enregistrée.</p>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Aucune image enregistrée.
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto">
           {existingImages
@@ -286,26 +397,36 @@ const ExistingImagesManager = ({
             .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))
             .map((img) => (
               <div key={img.id} className="border rounded-xl p-2 space-y-2">
-                <img 
-                  src={getFullImageUrl(img.url)} 
-                  alt={img.alt || "image produit"} 
-                  className="h-24 sm:h-28 w-full object-cover rounded-lg border" 
+                <img
+                  src={getFullImageUrl(img.url)}
+                  alt={img.alt || "image produit"}
+                  className="h-24 sm:h-28 w-full object-cover rounded-lg border"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
                   }}
                 />
-                <div className="text-xs text-muted-foreground">Ordre: {img.ordre ?? "-"}</div>
+                <div className="text-xs text-muted-foreground">
+                  Ordre: {img.ordre ?? "-"}
+                </div>
                 <div className="flex gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={async () => {
                       try {
-                        await setMainImage.mutateAsync({ produitId: selectedProduit.id, imageId: img.id });
-                        const details = await api.get(`/produits/${selectedProduit.id}`);
+                        await setMainImage.mutateAsync({
+                          produitId: selectedProduit.id,
+                          imageId: img.id,
+                        });
+                        const details = await api.get(
+                          `/produits/${selectedProduit.id}`,
+                        );
                         setExistingImages(details?.data?.data?.images ?? []);
                         toast({ title: "Image principale mise à jour" });
                       } catch (e: any) {
-                        handleApiError(e, "Impossible de définir l'image principale.");
+                        handleApiError(
+                          e,
+                          "Impossible de définir l'image principale.",
+                        );
                       }
                     }}
                     className="px-2 py-1 text-xs border rounded-lg"
@@ -317,7 +438,9 @@ const ExistingImagesManager = ({
                     onClick={async () => {
                       try {
                         await deleteImage.mutateAsync(img.id);
-                        setExistingImages((prev) => prev.filter((p) => p.id !== img.id));
+                        setExistingImages((prev) =>
+                          prev.filter((p) => p.id !== img.id),
+                        );
                         toast({ title: "Image supprimée" });
                       } catch (e: any) {
                         handleApiError(e, "Impossible de supprimer l'image.");
@@ -337,47 +460,74 @@ const ExistingImagesManager = ({
 };
 
 // Composant MobileCard pour l'affichage responsive sur mobile
-const ProductMobileCard = ({ product, onEdit, onDelete, onView, getMainImage, getFullImageUrl }: any) => {
+const ProductMobileCard = ({
+  product,
+  onEdit,
+  onDelete,
+  onView,
+  getMainImage,
+  getFullImageUrl,
+}: any) => {
   const mainImage = getMainImage(product);
-  
+
   return (
     <div className="bg-card border rounded-xl p-4 space-y-3">
       <div className="flex gap-3">
         <div className="shrink-0">
           {mainImage?.url ? (
-            <img 
-              src={getFullImageUrl(mainImage.url)} 
-              alt={mainImage.alt || product.nom} 
+            <img
+              src={getFullImageUrl(mainImage.url)}
+              alt={mainImage.alt || product.nom}
               className="h-16 w-16 object-cover rounded-md border"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
               }}
             />
           ) : (
-            <div className="h-16 w-16 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">Aucune</div>
+            <div className="h-16 w-16 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">
+              Aucune
+            </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-sm truncate">{product.nom}</div>
-          <div className="text-xs text-muted-foreground font-mono">{product.reference || "-"}</div>
+          <div className="text-xs text-muted-foreground font-mono">
+            {product.reference || "-"}
+          </div>
           <div className="text-xs mt-1">{product.categorie?.nom ?? "-"}</div>
         </div>
         <div className="text-right">
-          <div className="font-bold text-sm text-primary">{product.prix} {product.devise}</div>
+          <div className="font-bold text-sm text-primary">
+            {product.prix} {product.devise}
+          </div>
           <div className="text-xs">Stock: {product.quantite_stock}</div>
-          <span className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 ${product.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+          <span
+            className={`inline-block px-2 py-0.5 rounded-full text-xs mt-1 ${product.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+          >
             {product.est_dispo ? "Dispo" : "Indispo"}
           </span>
         </div>
       </div>
       <div className="flex justify-end gap-2 pt-2 border-t">
-        <button onClick={() => onView(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+        <button
+          onClick={() => onView(product)}
+          className="p-1.5 border rounded-lg hover:bg-muted transition-colors"
+          title="Voir détails"
+        >
           <Eye className="h-3.5 w-3.5" />
         </button>
-        <button onClick={() => onEdit(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+        <button
+          onClick={() => onEdit(product)}
+          className="p-1.5 border rounded-lg hover:bg-muted transition-colors"
+          title="Modifier"
+        >
           <Pencil className="h-3.5 w-3.5" />
         </button>
-        <button onClick={() => onDelete(product)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive" title="Supprimer">
+        <button
+          onClick={() => onDelete(product)}
+          className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive"
+          title="Supprimer"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -388,7 +538,9 @@ const ProductMobileCard = ({ product, onEdit, onDelete, onView, getMainImage, ge
 // ==================== COMPOSANT PRINCIPAL ====================
 
 const AdminProduits = () => {
-  const [activeTab, setActiveTab] = useState<"produits" | "categories">("produits");
+  const [activeTab, setActiveTab] = useState<"produits" | "categories">(
+    "produits",
+  );
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
@@ -397,13 +549,18 @@ const AdminProduits = () => {
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [form, setForm] = useState(initialForm);
   const [editForm, setEditForm] = useState(initialForm);
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(initialCategoryForm);
+  const [categoryForm, setCategoryForm] =
+    useState<CategoryForm>(initialCategoryForm);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dispoFilter, setDispoFilter] = useState<"all" | "available" | "unavailable">("all");
+  const [dispoFilter, setDispoFilter] = useState<
+    "all" | "available" | "unavailable"
+  >("all");
   const [createImageFiles, setCreateImageFiles] = useState<File[]>([]);
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<{ id: number; url: string; alt: string; ordre?: number }[]>([]);
-  
+  const [existingImages, setExistingImages] = useState<
+    { id: number; url: string; alt: string; ordre?: number }[]
+  >([]);
+
   const [selectedPrefix, setSelectedPrefix] = useState<string>("");
   const [generatedReference, setGeneratedReference] = useState<string>("");
 
@@ -414,7 +571,8 @@ const AdminProduits = () => {
   const apiFilters = useMemo<ProductFilters>(
     () => ({
       search: searchTerm || undefined,
-      est_dispo: dispoFilter === "all" ? undefined : dispoFilter === "available" ? 1 : 0,
+      est_dispo:
+        dispoFilter === "all" ? undefined : dispoFilter === "available" ? 1 : 0,
     }),
     [searchTerm, dispoFilter],
   );
@@ -437,21 +595,40 @@ const AdminProduits = () => {
 
   const filteredProduits = normalizedProduits;
 
+  // const getFullImageUrl = (url: string) => {
+  //   if (!url) return "/placeholder-pc.jpg";
+  //   if (url.startsWith('/storage')) {
+  //     return `http://127.0.0.1:8000${url}`;
+  //   }
+  //   return url;
+  // };
+  
   const getFullImageUrl = (url: string) => {
     if (!url) return "/placeholder-pc.jpg";
-    if (url.startsWith('/storage')) {
-      return `http://127.0.0.1:8000${url}`;
+
+    if (url.startsWith("/storage")) {
+      // Utilisez une variable d'environnement pour plus de flexibilité
+      const baseUrl =
+        import.meta.env.VITE_API_URL?.replace("/api", "") ||
+        (import.meta.env.PROD
+          ? "https://api.holines.xyz"
+          : "http://127.0.0.1:8000");
+      return `${baseUrl}${url}`;
     }
+
     return url;
   };
-
   const getMainImage = (product: Produit) => {
     const images = product.images ?? [];
     if (images.length === 0) return null;
-    return images.find((img) => img.ordre === 0) ?? images.slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))[0];
+    return (
+      images.find((img) => img.ordre === 0) ??
+      images.slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999))[0]
+    );
   };
 
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
+  const inputClass =
+    "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground";
 
   const handleApiError = (error: any, fallback: string) => {
     const responseData = error?.response?.data;
@@ -466,23 +643,23 @@ const AdminProduits = () => {
 
   const generateNextReference = async (prefixKey: string): Promise<string> => {
     if (!prefixKey) return "";
-    
-    const prefixConfig = REFERENCE_PREFIXES.find(p => p.key === prefixKey);
+
+    const prefixConfig = REFERENCE_PREFIXES.find((p) => p.key === prefixKey);
     const prefix = prefixConfig?.label || `${prefixKey}-`;
-    
+
     try {
-      const response = await api.get('/produits', {
+      const response = await api.get("/produits", {
         params: {
           per_page: 10000,
-          all: true
-        }
+          all: true,
+        },
       });
-      
+
       const allProducts = response?.data?.data || [];
-      
+
       const regex = new RegExp(`^${prefix}(\\d+)$`);
       let maxNumber = 0;
-      
+
       allProducts.forEach((product: any) => {
         const match = product.reference?.match(regex);
         if (match) {
@@ -490,8 +667,8 @@ const AdminProduits = () => {
           if (num > maxNumber) maxNumber = num;
         }
       });
-      
-      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+
+      const nextNumber = (maxNumber + 1).toString().padStart(3, "0");
       return `${prefix}${nextNumber}`;
     } catch (error) {
       console.error("Erreur lors de la récupération des produits:", error);
@@ -504,14 +681,18 @@ const AdminProduits = () => {
       setGeneratedReference("");
       return;
     }
-    
+
     try {
       const newReference = await generateNextReference(prefixKey);
       setGeneratedReference(newReference);
       setForm((prev) => ({ ...prev, reference: newReference }));
     } catch (error) {
       console.error("Erreur lors de la génération de la référence:", error);
-      toast({ title: "Erreur", description: "Impossible de générer la référence", variant: "destructive" });
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer la référence",
+        variant: "destructive",
+      });
     }
   };
 
@@ -533,12 +714,18 @@ const AdminProduits = () => {
 
   const handleCreate = async () => {
     if (!form.reference) {
-      toast({ title: "Erreur", description: "Veuillez sélectionner un type de référence", variant: "destructive" });
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un type de référence",
+        variant: "destructive",
+      });
       return;
     }
-    
+
     try {
-      const created = await createProductMutation.mutateAsync(buildFormData(form));
+      const created = await createProductMutation.mutateAsync(
+        buildFormData(form),
+      );
       const createdProductId = created?.data?.data?.id as number | undefined;
 
       if (createdProductId && createImageFiles.length > 0) {
@@ -568,7 +755,7 @@ const AdminProduits = () => {
 
   const handleOpenEdit = async (p: Produit) => {
     setSelectedProduit(p);
-    
+
     let existingPrefix = "";
     for (const prefix of REFERENCE_PREFIXES) {
       if (p.reference?.startsWith(prefix.label)) {
@@ -576,9 +763,9 @@ const AdminProduits = () => {
         break;
       }
     }
-    
+
     setSelectedPrefix(existingPrefix);
-    
+
     setEditForm({
       categorie_id: String(p.categorie_id ?? ""),
       reference: p.reference ?? "",
@@ -592,7 +779,7 @@ const AdminProduits = () => {
       quantite_stock: String(p.quantite_stock ?? ""),
       actif: p.actif ?? true,
     });
-    
+
     setEditImageFiles([]);
     try {
       const details = await api.get(`/produits/${p.id}`);
@@ -606,7 +793,10 @@ const AdminProduits = () => {
   const handleEdit = async () => {
     if (!selectedProduit) return;
     try {
-      await updateProductMutation.mutateAsync({ id: selectedProduit.id, updatedProduct: buildFormData(editForm) });
+      await updateProductMutation.mutateAsync({
+        id: selectedProduit.id,
+        updatedProduct: buildFormData(editForm),
+      });
 
       if (editImageFiles.length > 0) {
         const startOrder = existingImages.length;
@@ -678,8 +868,8 @@ const AdminProduits = () => {
         <h1 className="text-lg sm:text-2xl font-bold flex items-center gap-2">
           <Package className="h-5 w-5 sm:h-6 sm:w-6" /> Gestion Catalogue
         </h1>
-        <button 
-          onClick={() => setShowModal(true)} 
+        <button
+          onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base w-full sm:w-auto justify-center"
         >
           <PlusCircle className="h-4 w-4" /> Ajouter
@@ -688,14 +878,14 @@ const AdminProduits = () => {
 
       {/* Onglets responsive */}
       <div className="flex gap-2 flex-wrap">
-        <button 
-          onClick={() => setActiveTab("produits")} 
+        <button
+          onClick={() => setActiveTab("produits")}
           className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base transition-all ${activeTab === "produits" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
         >
           Produits
         </button>
-        <button 
-          onClick={() => setActiveTab("categories")} 
+        <button
+          onClick={() => setActiveTab("categories")}
           className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base transition-all ${activeTab === "categories" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
         >
           Catégories
@@ -718,7 +908,11 @@ const AdminProduits = () => {
             <select
               className="px-3 py-2 border rounded-xl bg-background text-sm w-full sm:w-auto"
               value={dispoFilter}
-              onChange={(e) => setDispoFilter(e.target.value as "all" | "available" | "unavailable")}
+              onChange={(e) =>
+                setDispoFilter(
+                  e.target.value as "all" | "available" | "unavailable",
+                )
+              }
             >
               <option value="all">Tous les produits</option>
               <option value="available"> Disponibles</option>
@@ -745,40 +939,71 @@ const AdminProduits = () => {
                 {filteredProduits.map((p) => {
                   const mainImage = getMainImage(p);
                   return (
-                    <tr key={p.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={p.id}
+                      className="border-b hover:bg-muted/30 transition-colors"
+                    >
                       <td className="p-3">
                         {mainImage?.url ? (
-                          <img 
-                            src={getFullImageUrl(mainImage.url)} 
-                            alt={mainImage.alt || p.nom} 
+                          <img
+                            src={getFullImageUrl(mainImage.url)}
+                            alt={mainImage.alt || p.nom}
                             className="h-10 w-10 object-cover rounded-md border"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                              (e.target as HTMLImageElement).src =
+                                "/placeholder-pc.jpg";
                             }}
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">Aucune</div>
+                          <div className="h-10 w-10 rounded-md border flex items-center justify-center text-[10px] text-muted-foreground bg-secondary">
+                            Aucune
+                          </div>
                         )}
                       </td>
-                      <td className="p-3 font-mono text-xs">{p.reference || "-"}</td>
-                      <td className="p-3 max-w-[200px] truncate font-medium">{p.nom}</td>
+                      <td className="p-3 font-mono text-xs">
+                        {p.reference || "-"}
+                      </td>
+                      <td className="p-3 max-w-[200px] truncate font-medium">
+                        {p.nom}
+                      </td>
                       <td className="p-3 text-xs">{p.categorie?.nom ?? "-"}</td>
-                      <td className="p-3 whitespace-nowrap font-semibold text-primary">{p.prix} {p.devise}</td>
+                      <td className="p-3 whitespace-nowrap font-semibold text-primary">
+                        {p.prix} {p.devise}
+                      </td>
                       <td className="p-3">{p.quantite_stock}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs whitespace-nowrap ${p.est_dispo ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
+                        >
                           {p.est_dispo ? "Disponible" : "Indisponible"}
                         </span>
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Voir détails">
+                          <button
+                            onClick={() =>
+                              navigate(`/DashboardAdmin/produits/${p.id}`)
+                            }
+                            className="p-1.5 border rounded-lg hover:bg-muted transition-colors"
+                            title="Voir détails"
+                          >
                             <Eye className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => handleOpenEdit(p)} className="p-1.5 border rounded-lg hover:bg-muted transition-colors" title="Modifier">
+                          <button
+                            onClick={() => handleOpenEdit(p)}
+                            className="p-1.5 border rounded-lg hover:bg-muted transition-colors"
+                            title="Modifier"
+                          >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
-                          <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive" title="Supprimer">
+                          <button
+                            onClick={() => {
+                              setSelectedProduit(p);
+                              setShowDeleteAlert(true);
+                            }}
+                            className="p-1.5 border rounded-lg hover:bg-muted transition-colors text-destructive"
+                            title="Supprimer"
+                          >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
@@ -813,7 +1038,9 @@ const AdminProduits = () => {
                     setSelectedProduit(product);
                     setShowDeleteAlert(true);
                   }}
-                  onView={(product: Produit) => navigate(`/DashboardAdmin/produits/${product.id}`)}
+                  onView={(product: Produit) =>
+                    navigate(`/DashboardAdmin/produits/${product.id}`)
+                  }
                   getMainImage={getMainImage}
                   getFullImageUrl={getFullImageUrl}
                 />
@@ -825,13 +1052,17 @@ const AdminProduits = () => {
 
       {activeTab === "categories" && (
         <div className="space-y-4">
-          <button 
-            onClick={() => { setSelectedCategory(null); setCategoryForm(initialCategoryForm); setShowCategoryModal(true); }} 
+          <button
+            onClick={() => {
+              setSelectedCategory(null);
+              setCategoryForm(initialCategoryForm);
+              setShowCategoryModal(true);
+            }}
             className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base"
           >
             <PlusCircle className="h-4 w-4" /> Nouvelle catégorie
           </button>
-          
+
           {/* Version Desktop - Tableau catégories */}
           <div className="hidden md:block border rounded-2xl overflow-hidden overflow-x-auto">
             <table className="w-full text-sm">
@@ -844,17 +1075,40 @@ const AdminProduits = () => {
               </thead>
               <tbody>
                 {normalizedCategories.map((c: any) => (
-                  <tr key={c.id} className="border-b hover:bg-muted/30 transition-colors">
+                  <tr
+                    key={c.id}
+                    className="border-b hover:bg-muted/30 transition-colors"
+                  >
                     <td className="p-3 font-medium">{c.nom}</td>
                     <td className="p-3">
-                      <span className="px-2 py-1 rounded-full text-xs bg-secondary">{c.type}</span>
+                      <span className="px-2 py-1 rounded-full text-xs bg-secondary">
+                        {c.type}
+                      </span>
                     </td>
                     <td className="p-3">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-1.5 border rounded-lg hover:bg-muted">
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(c);
+                            setCategoryForm({
+                              nom: c.nom,
+                              type: c.type,
+                              parent_id: c.parent_id ? String(c.parent_id) : "",
+                              ordre_tri: String(c.ordre_tri ?? 0),
+                            });
+                            setShowCategoryModal(true);
+                          }}
+                          className="p-1.5 border rounded-lg hover:bg-muted"
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-1.5 border rounded-lg hover:bg-muted text-destructive">
+                        <button
+                          onClick={async () => {
+                            await api.delete(`/categories/${c.id}`);
+                            await refetchCategories();
+                          }}
+                          className="p-1.5 border rounded-lg hover:bg-muted text-destructive"
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -868,16 +1122,39 @@ const AdminProduits = () => {
           {/* Version Mobile - Cartes catégories */}
           <div className="md:hidden space-y-3">
             {normalizedCategories.map((c: any) => (
-              <div key={c.id} className="bg-card border rounded-xl p-4 flex items-center justify-between">
+              <div
+                key={c.id}
+                className="bg-card border rounded-xl p-4 flex items-center justify-between"
+              >
                 <div className="flex-1">
                   <div className="font-medium text-sm">{c.nom}</div>
-                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-secondary mt-1">{c.type}</span>
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-secondary mt-1">
+                    {c.type}
+                  </span>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setSelectedCategory(c); setCategoryForm({ nom: c.nom, type: c.type, parent_id: c.parent_id ? String(c.parent_id) : "", ordre_tri: String(c.ordre_tri ?? 0) }); setShowCategoryModal(true); }} className="p-2 border rounded-lg hover:bg-muted">
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(c);
+                      setCategoryForm({
+                        nom: c.nom,
+                        type: c.type,
+                        parent_id: c.parent_id ? String(c.parent_id) : "",
+                        ordre_tri: String(c.ordre_tri ?? 0),
+                      });
+                      setShowCategoryModal(true);
+                    }}
+                    className="p-2 border rounded-lg hover:bg-muted"
+                  >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={async () => { await api.delete(`/categories/${c.id}`); await refetchCategories(); }} className="p-2 border rounded-lg hover:bg-muted text-destructive">
+                  <button
+                    onClick={async () => {
+                      await api.delete(`/categories/${c.id}`);
+                      await refetchCategories();
+                    }}
+                    className="p-2 border rounded-lg hover:bg-muted text-destructive"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -893,11 +1170,13 @@ const AdminProduits = () => {
           <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
               <h2 className="text-lg sm:text-xl font-bold">Ajouter produit</h2>
-              <button onClick={() => setShowModal(false)}><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowModal(false)}>
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <ProductForm 
-              value={form} 
-              setValue={setForm} 
+            <ProductForm
+              value={form}
+              setValue={setForm}
               categories={normalizedCategories}
               selectedPrefix={selectedPrefix}
               setSelectedPrefix={setSelectedPrefix}
@@ -905,16 +1184,27 @@ const AdminProduits = () => {
               generateReference={generateReference}
               isEditMode={false}
             />
-            <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
+            <ImageUploadField
+              files={createImageFiles}
+              setFiles={setCreateImageFiles}
+            />
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 sticky bottom-0 bg-background">
-              <button onClick={() => { 
-                setShowModal(false); 
-                setCreateImageFiles([]);
-                setSelectedPrefix("");
-                setGeneratedReference("");
-                setForm(initialForm);
-              }} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
-              <button onClick={handleCreate} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setCreateImageFiles([]);
+                  setSelectedPrefix("");
+                  setGeneratedReference("");
+                  setForm(initialForm);
+                }}
+                className="px-4 py-2 border rounded-xl order-2 sm:order-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreate}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center"
+              >
                 <Save className="h-4 w-4" /> Enregistrer
               </button>
             </div>
@@ -927,11 +1217,13 @@ const AdminProduits = () => {
           <div className="bg-background border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center sticky top-0 bg-background pb-2">
               <h2 className="text-lg sm:text-xl font-bold">Modifier produit</h2>
-              <button onClick={() => setShowEditModal(false)}><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowEditModal(false)}>
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <ProductForm 
-              value={editForm} 
-              setValue={setEditForm} 
+            <ProductForm
+              value={editForm}
+              setValue={setEditForm}
               categories={normalizedCategories}
               selectedPrefix={selectedPrefix}
               setSelectedPrefix={setSelectedPrefix}
@@ -939,7 +1231,7 @@ const AdminProduits = () => {
               generateReference={generateReference}
               isEditMode={true}
             />
-            <ExistingImagesManager 
+            <ExistingImagesManager
               selectedProduit={selectedProduit}
               existingImages={existingImages}
               setExistingImages={setExistingImages}
@@ -948,16 +1240,28 @@ const AdminProduits = () => {
               handleApiError={handleApiError}
               toast={toast}
             />
-            <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
+            <ImageUploadField
+              files={editImageFiles}
+              setFiles={setEditImageFiles}
+              label="Ajouter de nouvelles images"
+            />
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 sticky bottom-0 bg-background">
-              <button onClick={() => { 
-                setShowEditModal(false); 
-                setEditImageFiles([]); 
-                setExistingImages([]);
-                setSelectedPrefix("");
-                setGeneratedReference("");
-              }} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
-              <button onClick={handleEdit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditImageFiles([]);
+                  setExistingImages([]);
+                  setSelectedPrefix("");
+                  setGeneratedReference("");
+                }}
+                className="px-4 py-2 border rounded-xl order-2 sm:order-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleEdit}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center"
+              >
                 <Save className="h-4 w-4" /> Enregistrer
               </button>
             </div>
@@ -970,20 +1274,62 @@ const AdminProduits = () => {
           <div className="bg-background border rounded-2xl w-full max-w-xl p-4 sm:p-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg sm:text-xl font-bold">Catégorie</h2>
-              <button onClick={() => setShowCategoryModal(false)}><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowCategoryModal(false)}>
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <input className={inputClass} placeholder="Nom" value={categoryForm.nom} onChange={(e) => setCategoryForm((p) => ({ ...p, nom: e.target.value }))} />
-            <select className={inputClass} value={categoryForm.type} onChange={(e) => setCategoryForm((p) => ({ ...p, type: e.target.value as CategoryForm["type"] }))}>
+            <input
+              className={inputClass}
+              placeholder="Nom"
+              value={categoryForm.nom}
+              onChange={(e) =>
+                setCategoryForm((p) => ({ ...p, nom: e.target.value }))
+              }
+            />
+            <select
+              className={inputClass}
+              value={categoryForm.type}
+              onChange={(e) =>
+                setCategoryForm((p) => ({
+                  ...p,
+                  type: e.target.value as CategoryForm["type"],
+                }))
+              }
+            >
               <option value="">Type</option>
               {CATEGORY_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
-            <input className={inputClass} placeholder="Parent ID" value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))} />
-            <input className={inputClass} placeholder="Ordre" value={categoryForm.ordre_tri} onChange={(e) => setCategoryForm((p) => ({ ...p, ordre_tri: e.target.value }))} />
+            <input
+              className={inputClass}
+              placeholder="Parent ID"
+              value={categoryForm.parent_id}
+              onChange={(e) =>
+                setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))
+              }
+            />
+            <input
+              className={inputClass}
+              placeholder="Ordre"
+              value={categoryForm.ordre_tri}
+              onChange={(e) =>
+                setCategoryForm((p) => ({ ...p, ordre_tri: e.target.value }))
+              }
+            />
             <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
-              <button onClick={handleCategorySubmit} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center">
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="px-4 py-2 border rounded-xl order-2 sm:order-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCategorySubmit}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center"
+              >
                 <Save className="h-4 w-4" /> Enregistrer
               </button>
             </div>
@@ -995,10 +1341,26 @@ const AdminProduits = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border rounded-2xl w-full max-w-md p-5 sm:p-6 space-y-4">
             <h3 className="text-lg font-bold">Supprimer le produit</h3>
-            <p className="text-sm text-muted-foreground">Confirmer la suppression de "<span className="font-medium text-foreground">{selectedProduit?.nom}</span>" ?</p>
+            <p className="text-sm text-muted-foreground">
+              Confirmer la suppression de "
+              <span className="font-medium text-foreground">
+                {selectedProduit?.nom}
+              </span>
+              " ?
+            </p>
             <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button onClick={() => setShowDeleteAlert(false)} className="px-4 py-2 border rounded-xl order-2 sm:order-1">Annuler</button>
-              <button onClick={handleDelete} className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground order-1 sm:order-2">Supprimer</button>
+              <button
+                onClick={() => setShowDeleteAlert(false)}
+                className="px-4 py-2 border rounded-xl order-2 sm:order-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-xl bg-destructive text-destructive-foreground order-1 sm:order-2"
+              >
+                Supprimer
+              </button>
             </div>
           </div>
         </div>
