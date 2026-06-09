@@ -149,22 +149,23 @@ const REFERENCE_PREFIXES = [
 ] as const;
 
 // ==================== FONCTIONS UTILITAIRES ====================
+useEffect(() => {
+  console.log("ENV CHECK:", {
+    VITE_API_URL: import.meta.env.VITE_API_URL,
+    MODE: import.meta.env.MODE,
+    PROD: import.meta.env.PROD,
+  });
+}, []);
 
 // Fonction pour obtenir l'URL complète des images (fonctionne en local et en production)
 const getFullImageUrl = (url: string) => {
   if (!url) return "/placeholder-pc.jpg";
-  
-  // Gère les chemins /storage et /image
   if (url.startsWith("/storage") || url.startsWith("/image")) {
-    // En production sur Vercel, utilisez l'API déployée
-    // En développement, utilisez localhost
-    const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") ||
-      (import.meta.env.PROD
-        ? "https://api.holines.xyz"
-        : "http://127.0.0.1:8000");
-    return `${baseUrl}${url}`;
+    const base = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, "")
+      : "https://api.holines.xyz"; // fallback prod hardcodé
+    return `${base}${url}`;
   }
-  
   return url;
 };
 
