@@ -1,5 +1,6 @@
-import { Droplet, Eye, ShoppingCart, X, Loader2 } from "lucide-react";
+import { Droplet, Eye, ShoppingCart, X, Loader2, ChevronRight, Star, Check } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import api from "@/service/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,11 +50,36 @@ export const WatercoolingCustom = () => {
     );
     
     if (sectionRef.current) {
-  observer.observe(sectionRef.current);
-}
+      observer.observe(sectionRef.current);
+    }
     
     return () => observer.disconnect();
   }, []);
+
+  // Bloquer le scroll du body quand le modal est ouvert
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.width = '100%';
+      document.body.style.top = `-${window.scrollY}px`;
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0', 10) * -1);
+      }
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.top = '';
+    };
+  }, [isModalOpen]);
 
   const fetchWatercoolingProducts = async () => {
     try {
@@ -177,20 +203,21 @@ export const WatercoolingCustom = () => {
 
   if (isLoading) {
     return (
-      <section ref={sectionRef} className="py-12 bg-secondary/30">
+      <section ref={sectionRef} className="py-8 bg-secondary/20">
         <div className="container-x">
-          <div className="flex items-center justify-between mb-8">
-            <div className="h-10 w-64 bg-secondary animate-pulse rounded-lg" />
-            <div className="h-10 w-32 bg-secondary animate-pulse rounded-lg" />
+          <div className="flex items-center gap-2 mb-5">
+            <div className="h-6 w-6 bg-secondary animate-pulse rounded-full" />
+            <div className="h-6 w-32 bg-secondary animate-pulse rounded" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-card border border-border rounded-xl p-6 animate-pulse">
-                <div className="h-6 bg-secondary rounded w-3/4 mb-4" />
-                <div className="space-y-2">
-                  <div className="h-4 bg-secondary rounded w-full" />
-                  <div className="h-4 bg-secondary rounded w-5/6" />
-                  <div className="h-4 bg-secondary rounded w-4/6" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="bg-card border border-border/50 rounded-xl overflow-hidden animate-pulse">
+                <div className="aspect-square bg-secondary/50" />
+                <div className="p-2.5 space-y-2">
+                  <div className="h-3 bg-secondary rounded w-3/4" />
+                  <div className="h-2 bg-secondary rounded w-full" />
+                  <div className="h-2 bg-secondary rounded w-5/6" />
+                  <div className="h-4 bg-secondary rounded w-1/3 mt-2" />
                 </div>
               </div>
             ))}
@@ -202,17 +229,17 @@ export const WatercoolingCustom = () => {
 
   if (error) {
     return (
-      <section className="py-12 bg-secondary/30">
+      <section className="py-8 bg-secondary/20">
         <div className="container-x">
-          <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-            <Droplet className="h-8 w-8 text-cyan-500" />
-            Watercooling Custom
-          </h2>
-          <div className="bg-red-500/10 border border-red-500 rounded-xl p-6 text-center">
-            <p className="text-red-500 mb-4">{error}</p>
+          <div className="flex items-center gap-2 mb-5">
+            <Droplet className="h-5 w-5 text-cyan-500" />
+            <h2 className="text-lg font-bold">Watercooling Custom</h2>
+          </div>
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 text-center">
+            <p className="text-red-500 text-sm mb-3">{error}</p>
             <button 
               onClick={fetchWatercoolingProducts}
-              className="px-5 py-2.5 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition"
+              className="px-4 py-1.5 bg-cyan-600 text-white text-xs rounded-lg hover:bg-cyan-700 transition"
             >
               Réessayer
             </button>
@@ -224,18 +251,15 @@ export const WatercoolingCustom = () => {
 
   if (products.length === 0) {
     return (
-      <section className="py-12 bg-secondary/30">
+      <section className="py-8 bg-secondary/20">
         <div className="container-x">
-          <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
-            <Droplet className="h-8 w-8 text-cyan-500" />
-            Watercooling Custom
-          </h2>
-          <div className="bg-yellow-500/10 border border-yellow-500 rounded-xl p-12 text-center">
-            <p className="text-yellow-600 dark:text-yellow-400">
-              Aucun produit watercooling avec référence CL- disponible pour le moment.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Vérifiez que des produits avec référence commençant par "CL-" existent dans la base.
+          <div className="flex items-center gap-2 mb-5">
+            <Droplet className="h-5 w-5 text-cyan-500" />
+            <h2 className="text-lg font-bold">Watercooling Custom</h2>
+          </div>
+          <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-6 text-center">
+            <p className="text-yellow-600 dark:text-yellow-400 text-sm">
+              Aucun produit watercooling disponible pour le moment.
             </p>
           </div>
         </div>
@@ -245,81 +269,115 @@ export const WatercoolingCustom = () => {
 
   return (
     <>
-      <section ref={sectionRef} className="py-12 bg-secondary/30">
+      <section ref={sectionRef} className="py-8 bg-secondary/20">
         <div className="container-x">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* En-tête compact */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                <Droplet className="h-3.5 w-3.5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold">Watercooling Custom</h2>
+                <p className="text-[10px] text-muted-foreground">Refroidissement liquide haute performance</p>
+              </div>
+            </div>
+            <div className="text-[10px] text-muted-foreground">
+              {products.length} produit(s)
+            </div>
+          </div>
+
+          {/* Grille compacte */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {products.map((product, index) => {
               const imageUrl = getImageUrl(product);
               
               return (
                 <div 
                   key={product.id} 
-                  className={`group bg-background border border-border rounded-xl overflow-hidden hover:shadow-xl transition-all duration-500 hover:-translate-y-1
-                    ${isVisible ? 'animate-fade-up' : 'opacity-0 translate-y-10'}`}
-                  style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+                  className={`group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200
+                    ${isVisible ? 'animate-fade-up' : 'opacity-0 translate-y-5'}`}
+                  style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'forwards' }}
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-cyan-500/10 to-secondary">
+                  {/* Image */}
+                  <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-cyan-500/5 to-secondary/30">
                     {imageUrl ? (
                       <img 
                         src={imageUrl} 
                         alt={product.nom} 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Droplet className="h-16 w-16 text-cyan-500/30" />
+                        <Droplet className="h-8 w-8 text-cyan-500/20" />
                       </div>
                     )}
                     
-                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-mono">
+                    {/* Badge référence */}
+                    <div className="absolute top-1.5 right-1.5 bg-black/60 backdrop-blur-sm text-white text-[8px] px-1.5 py-0.5 rounded-full font-mono">
                       {product.reference}
                     </div>
                     
+                    {/* Stock badge */}
                     {product.quantite_stock <= 5 && product.quantite_stock > 0 && (
-                      <span className="absolute bottom-2 left-2 px-2 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded-full">
+                      <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-orange-500 text-white text-[8px] font-semibold rounded-full">
                         Stock limité
                       </span>
                     )}
+                    
+                    {/* Bouton œil - compact */}
+                    <button
+                      onClick={() => openModal(product)}
+                      className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-cyan-600"
+                    >
+                      <Eye className="h-3 w-3 text-white" />
+                    </button>
                   </div>
 
-                  <div className="p-5">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <h3 className="text-xl font-bold line-clamp-1 group-hover:text-cyan-600 transition-colors">
-                        {product.nom}
-                      </h3>
-                      
-                      <button
-                        onClick={() => openModal(product)}
-                        className="flex-shrink-0 p-1.5 bg-cyan-500/10 hover:bg-cyan-600 rounded-lg transition-all duration-300 hover:scale-110 group/eye"
-                      >
-                        <Eye className="h-4 w-4 text-cyan-600 group-hover/eye:text-white transition-colors" />
-                      </button>
-                    </div>
+                  {/* Contenu compact */}
+                  <div className="p-2.5 space-y-1.5">
+                    <h3 className="font-semibold text-xs leading-tight line-clamp-1 group-hover:text-cyan-600 transition-colors">
+                      {product.nom}
+                    </h3>
                     
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                      {product.description_courte || product.description?.substring(0, 100) || "Système de refroidissement liquide haute performance"}
+                    <p className="text-[9px] text-muted-foreground line-clamp-2 leading-relaxed">
+                      {product.description_courte || product.description?.substring(0, 60) || "Système de refroidissement liquide"}
                     </p>
                     
-                    <div className="flex items-center justify-between mt-4 pt-2 border-t border-border">
+                    {/* Spécifications rapides */}
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {extractSpecs(product).radiator !== 'Non spécifié' && (
+                        <span className="text-[8px] bg-secondary/50 px-1.5 py-0.5 rounded-full text-muted-foreground">
+                          {extractSpecs(product).radiator}
+                        </span>
+                      )}
+                      {extractSpecs(product).type !== 'Non spécifié' && (
+                        <span className="text-[8px] bg-secondary/50 px-1.5 py-0.5 rounded-full text-muted-foreground">
+                          {extractSpecs(product).type}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Prix et ajout */}
+                    <div className="flex items-center justify-between pt-1.5">
                       <div>
-                        <span className="text-2xl font-bold text-cyan-600">
+                        <span className="text-xs font-bold text-cyan-600">
                           {formatPrice(product.prix, product.devise)}
                         </span>
                         {product.quantite_stock === 0 && (
-                          <p className="text-xs text-red-500 mt-1">Rupture de stock</p>
+                          <p className="text-[8px] text-red-500">Rupture</p>
                         )}
                       </div>
                       
                       <button 
                         onClick={() => addToCart(product, 1)}
                         disabled={product.quantite_stock === 0 || addingToCart === product.id}
-                        className="bg-white text-black px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center gap-1.5 text-sm font-medium border border-gray-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-6 px-2 bg-white text-black text-[9px] font-medium rounded-lg hover:bg-gray-100 transition-all duration-200 flex items-center gap-1 border border-gray-200 shadow-sm disabled:opacity-50"
                       >
                         {addingToCart === product.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
                         ) : (
-                          <ShoppingCart className="h-3.5 w-3.5" />
+                          <ShoppingCart className="h-2.5 w-2.5" />
                         )}
                         <span>Ajouter</span>
                       </button>
@@ -335,7 +393,7 @@ export const WatercoolingCustom = () => {
           @keyframes fade-up {
             from {
               opacity: 0;
-              transform: translateY(30px);
+              transform: translateY(20px);
             }
             to {
               opacity: 1;
@@ -343,102 +401,143 @@ export const WatercoolingCustom = () => {
             }
           }
           .animate-fade-up {
-            animation: fade-up 0.6s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
+            animation: fade-up 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards;
           }
         `}</style>
       </section>
 
-      {/* Modal */}
-      {isModalOpen && selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-background rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-up">
-            <div className="sticky top-0 bg-background border-b border-border p-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <Droplet className="h-6 w-6 text-cyan-500" />
-                <div>
-                  <h3 className="text-xl font-bold">{selectedProduct.nom}</h3>
-                  <p className="text-xs text-muted-foreground font-mono">{selectedProduct.reference}</p>
+      {/* Modal avec Portal pour être au-dessus de tout */}
+      {isModalOpen && selectedProduct && createPortal(
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999]"
+            onClick={closeModal}
+          />
+          
+          {/* Modal container */}
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+            <div 
+              className="bg-background rounded-xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-2xl animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header compact */}
+              <div className="sticky top-0 bg-background border-b border-border/50 p-3 flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                    <Droplet className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold line-clamp-1">{selectedProduct.nom}</h3>
+                    <p className="text-[10px] text-muted-foreground font-mono">{selectedProduct.reference}</p>
+                  </div>
                 </div>
+                <button 
+                  onClick={closeModal} 
+                  className="p-1.5 hover:bg-secondary rounded-lg transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button onClick={closeModal} className="p-1 hover:bg-secondary rounded-lg transition-colors">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
 
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-secondary/30 rounded-lg p-4">
-                    <h4 className="font-semibold mb-3 text-cyan-600">Caractéristiques techniques</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Type :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).type}</span>
+              {/* Content */}
+              <div className="p-4 overflow-y-auto max-h-[calc(85vh-120px)]">
+                <div className="space-y-3">
+                  {/* Image mini dans modal */}
+                  <div className="aspect-video bg-secondary/30 rounded-lg overflow-hidden">
+                    {getImageUrl(selectedProduct) ? (
+                      <img 
+                        src={getImageUrl(selectedProduct)!} 
+                        alt={selectedProduct.nom}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Droplet className="h-12 w-12 text-cyan-500/30" />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Compatibilité :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).compatibility}</span>
+                    )}
+                  </div>
+
+                  {/* Spécifications */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-secondary/30 rounded-lg p-2">
+                      <h4 className="font-semibold text-[10px] text-cyan-600 mb-1.5 uppercase tracking-wider">Caractéristiques</h4>
+                      <div className="space-y-1 text-[10px]">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Type :</span>
+                          <span className="font-medium">{extractSpecs(selectedProduct).type}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Compatibilité :</span>
+                          <span className="font-medium text-right">{extractSpecs(selectedProduct).compatibility}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Radiateur :</span>
+                          <span className="font-medium">{extractSpecs(selectedProduct).radiator}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Pompe :</span>
+                          <span className="font-medium">{extractSpecs(selectedProduct).pump}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Radiateur :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).radiator}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Pompe :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).pump}</span>
+                    </div>
+
+                    <div className="bg-secondary/30 rounded-lg p-2">
+                      <h4 className="font-semibold text-[10px] text-cyan-600 mb-1.5 uppercase tracking-wider">Informations</h4>
+                      <div className="space-y-1 text-[10px]">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Matériau :</span>
+                          <span className="font-medium">{extractSpecs(selectedProduct).material}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Stock :</span>
+                          <span className="font-medium">{selectedProduct.quantite_stock > 0 ? `${selectedProduct.quantite_stock} unités` : 'Rupture'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Disponibilité :</span>
+                          <span className={`font-medium ${selectedProduct.est_dispo ? 'text-green-600' : 'text-red-600'}`}>
+                            {selectedProduct.est_dispo ? 'Disponible' : 'Indisponible'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-secondary/30 rounded-lg p-4">
-                    <h4 className="font-semibold mb-3 text-cyan-600">Informations produit</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Matériau :</span>
-                        <span className="text-sm font-medium">{extractSpecs(selectedProduct).material}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Stock :</span>
-                        <span className="text-sm font-medium">
-                          {selectedProduct.quantite_stock > 0 ? `${selectedProduct.quantite_stock} unités` : 'Rupture de stock'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Disponibilité :</span>
-                        <span className={`text-sm font-medium ${selectedProduct.est_dispo ? 'text-green-600' : 'text-red-600'}`}>
-                          {selectedProduct.est_dispo ? 'Disponible' : 'Indisponible'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between mt-3 pt-2 border-t border-border">
-                        <span className="text-sm text-muted-foreground">Prix :</span>
-                        <span className="text-lg font-bold text-cyan-600">{formatPrice(selectedProduct.prix, selectedProduct.devise)}</span>
-                      </div>
-                    </div>
+                  {/* Description */}
+                  <div className="bg-cyan-500/5 rounded-lg p-3 border border-cyan-500/10">
+                    <h4 className="font-semibold text-[10px] text-cyan-600 mb-1.5 uppercase tracking-wider">Description</h4>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {selectedProduct.description || selectedProduct.description_courte || "Aucune description disponible"}
+                    </p>
                   </div>
                 </div>
-
-                <div className="bg-cyan-500/10 rounded-lg p-4">
-                  <h4 className="font-semibold mb-2 text-cyan-600">Description</h4>
-                  <p className="text-sm text-foreground">{selectedProduct.description || selectedProduct.description_courte || "Aucune description disponible"}</p>
-                </div>
               </div>
-            </div>
 
-            <div className="sticky bottom-0 bg-background border-t border-border p-4 flex gap-3">
-              <button onClick={closeModal} className="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-secondary transition-colors">
-                Fermer
-              </button>
-              <button
-                onClick={() => addToCart(selectedProduct, 1)}
-                disabled={selectedProduct.quantite_stock === 0}
-                className="flex-1 bg-white text-black px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                Ajouter au panier
-              </button>
+              {/* Footer compact */}
+              <div className="sticky bottom-0 bg-background border-t border-border/50 p-3 flex gap-2">
+                <div className="flex-1">
+                  <div className="text-[9px] text-muted-foreground">Prix total</div>
+                  <div className="font-bold text-sm text-cyan-600">{formatPrice(selectedProduct.prix, selectedProduct.devise)}</div>
+                </div>
+                <button 
+                  onClick={closeModal} 
+                  className="px-4 py-1.5 border border-border rounded-lg text-xs hover:bg-secondary transition-colors"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={() => addToCart(selectedProduct, 1)}
+                  disabled={selectedProduct.quantite_stock === 0}
+                  className="px-4 py-1.5 bg-white text-black text-xs font-medium rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-1.5 border border-gray-200 disabled:opacity-50"
+                >
+                  <ShoppingCart className="h-3 w-3" />
+                  Ajouter
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>,
+        document.body
       )}
 
       <style>{`
@@ -451,7 +550,7 @@ export const WatercoolingCustom = () => {
           to { opacity: 1; transform: scale(1); }
         }
         .animate-fade-in { animation: fade-in 0.2s ease-out; }
-        .animate-scale-up { animation: scale-up 0.3s ease-out; }
+        .animate-scale-up { animation: scale-up 0.25s ease-out; }
       `}</style>
     </>
   );

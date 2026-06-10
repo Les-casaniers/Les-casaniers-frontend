@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Send, Phone, Mail, User, FileText, MessageCircle, CheckCircle, AlertCircle, Building, Calendar, Building2, Wallet } from "lucide-react";
+import { Send, Phone, Mail, User, FileText, MessageCircle, CheckCircle, AlertCircle, Building, Calendar, Building2, Wallet, Clock, Sparkles, Shield, Zap } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { MiniHero } from "@/components/layout/MiniHero";
@@ -36,152 +36,103 @@ const DevisExpress = () => {
   }, [location.pathname]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    // Simuler l'envoi du formulaire
     setTimeout(() => {
       setFormSubmitted(true);
       setIsSubmitting(false);
     }, 1000);
   };
 
-  const whatsappNumber = "261329356242"; // Remplace par ton vrai numéro WhatsApp
+  const whatsappNumber = "261329356242";
 
-  // Générer le message WhatsApp
   const generateWhatsAppMessage = () => {
-    const message = `Bonjour Les Casaniers !%0A%0A *Demande de devis express*%0A%0A *Nom et prénom:* ${formData.nom || "Non renseigné"}%0A *Email:* ${formData.email || "Non renseigné"}%0A *Téléphone:* ${formData.telephone || "Non renseigné"}%0A *Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A *Besoin spécifique:*%0A${formData.besoin || "Non renseigné"}%0A%0A *Budget estimé:* ${formData.budget || "Non renseigné"}%0A *Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A *Message complémentaire:*%0A${formData.message || "Non renseigné"}%0A%0A---%0AJe souhaite être recontacté rapidement.`;
+    const message = `Bonjour Les Casaniers !%0A%0A*Demande de devis express*%0A%0A*Nom:* ${formData.nom || "Non renseigné"}%0A*Email:* ${formData.email || "Non renseigné"}%0A*Téléphone:* ${formData.telephone || "Non renseigné"}%0A*Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A*Besoin:* ${formData.besoin || "Non renseigné"}%0A*Budget:* ${formData.budget || "Non renseigné"}%0A*Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A*Message:* ${formData.message || "Non renseigné"}`;
     return `https://wa.me/${whatsappNumber}?text=${message}`;
   };
 
   return (
     <SiteLayout>
-      {/* Hero */}
       <MiniHero
         title="Besoin d'un devis rapide ?"
         description="Pour les professionnels pressés ou les demandes spécifiques, contactez-nous directement. Réponse sous 24h ouvrées."
         bg="4.png"
+        pill={{ icon: <Zap className="h-3.5 w-3.5" />, label: "Devis Express" }}
       />
 
-      <section className="py-16">
+      <section className="py-8">
         <div className="container-x">
-          <div className="grid lg:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-6">
 
             {/* Formulaire */}
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">Formulaire de devis</h2>
-                <p className="text-muted-foreground">
-                  Remplissez ce formulaire et nous vous recontacterons dans les plus brefs délais.
-                </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Formulaire de devis</h2>
+                  <p className="text-[10px] text-muted-foreground">Remplissez et nous vous recontactons sous 24h</p>
+                </div>
               </div>
 
               {formSubmitted ? (
-                <div className="bg-green-50 dark:bg-green-950/20 border border-green-500 rounded-lg p-6 text-center">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
-                  <h3 className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">Demande envoyée !</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Merci pour votre confiance. Nous vous répondrons sous 24h ouvrées.
-                  </p>
-                  <div className="flex gap-3 justify-center">
-                    <a
-                      href={generateWhatsAppMessage()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Contacter directement sur WhatsApp
+                <div className="rounded-lg bg-green-500/10 border border-green-500/30 p-5 text-center">
+                  <div className="inline-flex h-12 w-12 rounded-full bg-green-500/20 items-center justify-center mb-3">
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                  </div>
+                  <h3 className="text-base font-bold text-green-600 dark:text-green-400 mb-1">Demande envoyée !</h3>
+                  <p className="text-xs text-muted-foreground mb-4">Merci pour votre confiance. Réponse sous 24h ouvrées.</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <a href={generateWhatsAppMessage()} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition">
+                      <MessageCircle className="h-3 w-3" /> WhatsApp
                     </a>
-                    <button
-                      onClick={() => setFormSubmitted(false)}
-                      className="px-4 py-2 border border-border rounded-lg hover:bg-secondary transition"
-                    >
+                    <button onClick={() => setFormSubmitted(false)} className="px-3 py-1.5 border border-border text-xs rounded-lg hover:bg-secondary transition">
                       Nouvelle demande
                     </button>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        <User className="h-3 w-3" /> Nom et prénom *
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
+                        <User className="h-3 w-3" /> Nom complet *
                       </label>
-                      <input
-                        type="text"
-                        name="nom"
-                        required
-                        value={formData.nom}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                        placeholder="Jean Rakoto"
-                      />
+                      <input type="text" name="nom" required value={formData.nom} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background" placeholder="Jean Rakoto" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
                         <Mail className="h-3 w-3" /> Email *
                       </label>
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                        placeholder="contact@entreprise.mg"
-                      />
+                      <input type="email" name="email" required value={formData.email} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background" placeholder="contact@email.mg" />
                     </div>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
                         <Phone className="h-3 w-3" /> Téléphone *
                       </label>
-                      <input
-                        type="tel"
-                        name="telephone"
-                        required
-                        value={formData.telephone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                        placeholder="034 12 345 67"
-                      />
+                      <input type="tel" name="telephone" required value={formData.telephone} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background" placeholder="034 12 345 67" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        <Building2 className="h-3 w-3" /> Entreprise (optionnel)
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
+                        <Building2 className="h-3 w-3" /> Entreprise
                       </label>
-                      <input
-                        type="text"
-                        name="entreprise"
-                        value={formData.entreprise}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                        placeholder="Nom de votre société"
-                      />
+                      <input type="text" name="entreprise" value={formData.entreprise} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background" placeholder="Nom société" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+                    <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" /> Besoin spécifique *
                     </label>
-                    <select
-                      name="besoin"
-                      required
-                      value={formData.besoin}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                    >
+                    <select name="besoin" required value={formData.besoin} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background">
                       <option value="">Sélectionnez votre besoin</option>
                       <option value="PC Gaming sur-mesure">PC Gaming sur-mesure</option>
                       <option value="Workstation professionnelle">Workstation professionnelle</option>
@@ -193,139 +144,112 @@ const DevisExpress = () => {
                     </select>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
-                        <Wallet className="h-3 w-3" />Budget estimé
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
+                        <Wallet className="h-3 w-3" /> Budget estimé
                       </label>
-                      <select
-                        name="budget"
-                        value={formData.budget}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                      >
+                      <select name="budget" value={formData.budget} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background">
                         <option value="">Sélectionnez un budget</option>
-                        <option value="Moins de 2 000 000 Ar">Moins de 2 000 000 Ar</option>
-                        <option value="2 000 000 - 3 500 000 Ar">2 000 000 - 3 500 000 Ar</option>
-                        <option value="3 500 000 - 5 000 000 Ar">3 500 000 - 5 000 000 Ar</option>
-                        <option value="5 000 000 - 8 000 000 Ar">5 000 000 - 8 000 000 Ar</option>
-                        <option value="Plus de 8 000 000 Ar">Plus de 8 000 000 Ar</option>
+                        <option value="Moins de 2 000 000 Ar">Moins de 2M Ar</option>
+                        <option value="2 000 000 - 3 500 000 Ar">2M - 3.5M Ar</option>
+                        <option value="3 500 000 - 5 000 000 Ar">3.5M - 5M Ar</option>
+                        <option value="5 000 000 - 8 000 000 Ar">5M - 8M Ar</option>
+                        <option value="Plus de 8 000 000 Ar">Plus de 8M Ar</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1 flex items-center gap-1">
+                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
                         <Calendar className="h-3 w-3" /> Date souhaitée
                       </label>
-                      <input
-                        type="date"
-                        name="dateSouhaitee"
-                        value={formData.dateSouhaitee}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                      />
+                      <input type="date" name="dateSouhaitee" value={formData.dateSouhaitee} onChange={handleChange} className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background" />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Message complémentaire</label>
-                    <textarea
-                      name="message"
-                      rows={4}
-                      value={formData.message}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:border-amber-500 bg-background"
-                      placeholder="Décrivez votre projet en quelques lignes..."
-                    />
+                    <label className="block text-[11px] font-medium mb-1">Message complémentaire</label>
+                    <textarea name="message" rows={3} value={formData.message} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background resize-none" placeholder="Décrivez votre projet..." />
                   </div>
 
-                  <div className="flex gap-3 pt-4">
-                    <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-600 hover:to-orange-600 flex items-center gap-2">
-                      <Send className="h-4 w-4" />
-                      {isSubmitting ? "Envoi en cours..." : "Envoyer ma demande"}
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button type="submit" className="h-9 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-medium hover:from-amber-600 hover:to-orange-600">
+                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      {isSubmitting ? "Envoi..." : "Envoyer ma demande"}
                     </Button>
-
-                    <a
-                      href={`https://wa.me/${whatsappNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-green-500 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-950/20 transition"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Contacter WhatsApp
+                    <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-green-500/50 text-green-600 text-xs rounded-lg hover:bg-green-500/10 transition">
+                      <MessageCircle className="h-3 w-3" /> WhatsApp
                     </a>
                   </div>
 
-                  <p className="text-xs text-muted-foreground">
-                    * Champs obligatoires. Vos informations sont confidentielles.
-                  </p>
+                  <p className="text-[9px] text-muted-foreground">* Champs obligatoires. Vos informations sont confidentielles.</p>
                 </form>
               )}
             </div>
 
-            {/* Section information */}
-            <div className="space-y-6">
+            {/* Section information compacte */}
+            <div className="space-y-4">
               {/* WhatsApp direct */}
-              <div className="bg-green-50 dark:bg-green-950/20 border border-green-500/30 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-green-500 rounded-full">
-                    <MessageCircle className="h-5 w-5 text-white" />
+              <div className="rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                    <MessageCircle className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold">Contact direct WhatsApp</h3>
+                  <h3 className="text-sm font-bold">Contact direct WhatsApp</h3>
                 </div>
-                <p className="text-muted-foreground mb-4">
-                  Vous préférez nous contacter directement ? C'est par ici !
-                </p>
-                <a
-                  href={`https://wa.me/${whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-lg font-semibold"
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  Écrire sur WhatsApp
+                <p className="text-[10px] text-muted-foreground mb-3">Une question ? Un besoin urgent ? Contactez-nous directement.</p>
+                <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition w-full justify-center">
+                  <MessageCircle className="h-3.5 w-3.5" /> Écrire sur WhatsApp
                 </a>
-                <p className="text-xs text-muted-foreground mt-3">
-                  Réponse garantie sous 30 minutes pendant les heures d'ouverture
-                </p>
+                <p className="text-[8px] text-muted-foreground mt-2 text-center">Réponse sous 30 min (horaire ouvré)</p>
               </div>
 
               {/* Pourquoi choisir le devis express */}
-              <div className="bg-secondary/30 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                  Pourquoi utiliser Devis Express ?
-                </h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm">Réponse sous 24h ouvrées</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm">Devis personnalisé selon votre besoin</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm">Pour les demandes spécifiques hors catalogue</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm">Solutions pour professionnels (parc informatique)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
-                    <span className="text-sm">Accompagnement personnalisé</span>
-                  </li>
-                </ul>
+              <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  </div>
+                  <h3 className="text-sm font-bold">Pourquoi Devis Express ?</h3>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    "Réponse sous 24h ouvrées",
+                    "Devis personnalisé",
+                    "Demandes spécifiques",
+                    "Solutions professionnelles",
+                    "Accompagnement personnalisé"
+                  ].map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
+                      <span className="text-[10px] text-muted-foreground">{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Horaires de contact */}
-              <div className="bg-amber-50 dark:bg-amber-950/10 border border-amber-500/30 rounded-xl p-6">
-                <h3 className="font-bold mb-3">Nos horaires de réponse</h3>
-                <div className="space-y-2 text-sm">
-                  <p><strong>Lundi - Vendredi :</strong> 9h00 - 18h00</p>
-                  <p><strong>Samedi :</strong> 9h00 - 17h00</p>
-                  <p className="text-muted-foreground">Hors de ces horaires, laissez-nous un message, nous vous répondons dès l'ouverture.</p>
+              <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-3.5 w-3.5 text-amber-500" />
+                  <h3 className="text-sm font-bold">Horaires de réponse</h3>
+                </div>
+                <div className="space-y-1 text-[10px]">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Lundi - Vendredi :</span><span className="font-medium">9h00 - 18h00</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Samedi :</span><span className="font-medium">9h00 - 17h00</span></div>
+                  <p className="text-[9px] text-muted-foreground mt-2">Hors horaires, laissez un message, réponse dès l'ouverture.</p>
+                </div>
+              </div>
+
+              {/* Garanties */}
+              <div className="rounded-lg border border-border/50 bg-card p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="h-3.5 w-3.5 text-primary" />
+                  <h3 className="text-sm font-bold">Nos garanties</h3>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">Confidentialité</span>
+                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">Sans engagement</span>
+                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">Réponse garantie</span>
                 </div>
               </div>
             </div>
