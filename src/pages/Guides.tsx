@@ -12,8 +12,9 @@ import {
   useGuides, useGuidesByCategory, usePopularGuides, useRecentGuides,
   useSubscribeNewsletter, GuideDifficulty,
 } from "@/hooks/useGuides";
+import ServicesSection from "@/components/guide/ServicesSection";
 
-type TabId = "guides-achat" | "actualites-tech" | "tutos-maintenance";
+type TabId = "guides-achat" | "actualites-tech" | "tutos-maintenance" | "services";
 
 // Configuration des onglets
 const TABS: { id: TabId; label: string; color: string; activeColor: string }[] = [
@@ -34,6 +35,12 @@ const TABS: { id: TabId; label: string; color: string; activeColor: string }[] =
     label: "Tutos Maintenance",
     color: "text-green-500 border-green-500/30 hover:bg-green-500/10",
     activeColor: "bg-green-500/10 border-green-500/60",
+  },
+  {
+    id: "services",
+    label: "Services",
+    color: "text-amber-500 border-amber-500/30 hover:bg-amber-500/10",
+    activeColor: "bg-amber-500/10 border-amber-500/60",
   },
 ];
 
@@ -400,9 +407,9 @@ const Guides = () => {
   const { data: popularGuides = [] } = usePopularGuides(4);
 
   useEffect(() => {
-    document.title = "Guides - Les Casaniers Madagascar";
+    document.title = "Guides & Services - Les Casaniers Madagascar";
     const meta = document.querySelector('meta[name="description"]') ?? document.head.appendChild(Object.assign(document.createElement("meta"), { name: "description" }));
-    meta.setAttribute("content", "Guides d'achat, actualités tech et tutoriels maintenance pour bien choisir et entretenir votre PC à Madagascar.");
+    meta.setAttribute("content", "Guides d'achat, actualités tech, tutoriels maintenance et services professionnels pour bien choisir et entretenir votre PC à Madagascar.");
   }, []);
 
   const updateParam = (key: string, value: string) => {
@@ -439,6 +446,7 @@ const Guides = () => {
       case "guides-achat": return <GuidesAchatSection key={key} />;
       case "actualites-tech": return <ActualitesTechSection key={key} />;
       case "tutos-maintenance": return <TutosMaintenanceSection key={key} />;
+      case "services": return <ServicesSection />;
       default: return <GuidesAchatSection key={key} />;
     }
   };
@@ -446,30 +454,26 @@ const Guides = () => {
   return (
     <SiteLayout>
       <MiniHero
-        title="Guides, Actualités & Tutos."
-        description="Des conseils concrets pour choisir, importer, monter et entretenir votre matériel à Madagascar."
+        title="Guides, Services & Actualités."
+        description="Des conseils concrets pour choisir, importer, monter et entretenir votre matériel à Madagascar, avec un accompagnement sur mesure."
         bg="6.png"
-        pill={{ icon: <BookOpen className="h-3.5 w-3.5" />, label: "Guides" }}
+        pill={{ icon: <BookOpen className="h-3.5 w-3.5" />, label: "Guides & Services" }}
       />
 
       {isSectionedView && (
         <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
           <div className="container-x py-3">
-            <div className="grid grid-cols-3 gap-2 sm:hidden">
+            <div className="flex flex-wrap items-center gap-2">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
-                  <button key={tab.id} onClick={() => switchTab(tab.id)} className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`}`}>
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button key={tab.id} onClick={() => switchTab(tab.id)} className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`}`}>
+                  <button
+                    key={tab.id}
+                    onClick={() => switchTab(tab.id)}
+                    className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
+                      isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`
+                    }`}
+                  >
                     {tab.label}
                   </button>
                 );
@@ -480,21 +484,23 @@ const Guides = () => {
       )}
 
       <main className="container-x py-6">
-        {/* Search + Filters Bar compact */}
-        <div className="mb-6 flex flex-wrap gap-2 items-center">
-          <form onSubmit={submitSearch} className="relative flex-1 min-w-[180px]">
-            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} placeholder="Rechercher..." className="h-8 w-full border border-border bg-background pl-8 pr-3 text-xs rounded-lg focus:border-primary outline-none" />
-          </form>
-          <select value={category} onChange={(e) => updateParam("categorie", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
-            <option value="">Toutes</option>
-            {GUIDE_CATEGORIES.map((item) => (<option key={item} value={item}>{guideCategoryLabels[item]}</option>))}
-          </select>
-          <select value={sort} onChange={(e) => updateParam("sort", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
-            <option value="recent">Plus récents</option>
-            <option value="popular">Populaires</option>
-          </select>
-        </div>
+        {/* Search + Filters Bar compact (masqué dans la vue services car non pertinent) */}
+        {activeTab !== "services" && (
+          <div className="mb-6 flex flex-wrap gap-2 items-center">
+            <form onSubmit={submitSearch} className="relative flex-1 min-w-[180px]">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} placeholder="Rechercher..." className="h-8 w-full border border-border bg-background pl-8 pr-3 text-xs rounded-lg focus:border-primary outline-none" />
+            </form>
+            <select value={category} onChange={(e) => updateParam("categorie", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
+              <option value="">Toutes</option>
+              {GUIDE_CATEGORIES.map((item) => (<option key={item} value={item}>{guideCategoryLabels[item]}</option>))}
+            </select>
+            <select value={sort} onChange={(e) => updateParam("sort", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
+              <option value="recent">Plus récents</option>
+              <option value="popular">Populaires</option>
+            </select>
+          </div>
+        )}
 
         {isSectionedView ? (
           <div style={{ transition: "opacity 200ms ease, transform 200ms ease", opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)" }}>
@@ -551,7 +557,7 @@ const Guides = () => {
           </div>
         )}
         
-        {isSectionedView && activeTab === "guides-achat" && <NewsletterSection />}
+        {isSectionedView && (activeTab === "guides-achat" || activeTab === "services") && <NewsletterSection />}
       </main>
     </SiteLayout>
   );
