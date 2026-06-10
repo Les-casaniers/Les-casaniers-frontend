@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, ArrowRight, Calendar, CheckCircle, Clock, Eye, ExternalLink,
   MessageCircle, Play, Share2, UserRound, Wrench, Heart, BookmarkPlus,
-  ChevronRight, AlertCircle, Shield, Truck, CreditCard, Headphones,
+  ChevronRight, AlertCircle, Shield, Truck, CreditCard, Headphones, X,
 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import {
@@ -26,7 +26,7 @@ const extractYoutubeId = (url?: string | null): string | null => {
 
 const guidePath = (guide: { id: number; slug?: string | null }) => `/guides/${guide.slug || guide.id}`;
 
-// Composant Table des matières
+// Composant Table des matières compact
 const TableOfContents = ({ content }: { content: string }) => {
   const [headings, setHeadings] = useState<{ text: string; level: number; id: string }[]>([]);
 
@@ -35,11 +35,7 @@ const TableOfContents = ({ content }: { content: string }) => {
     const extracted = matches.map((match, idx) => {
       const isH2 = match.startsWith("## ");
       const text = match.replace(/^##+ /, "");
-      return {
-        text,
-        level: isH2 ? 2 : 3,
-        id: `section-${idx}`,
-      };
+      return { text, level: isH2 ? 2 : 3, id: `section-${idx}` };
     });
     setHeadings(extracted);
   }, [content]);
@@ -47,15 +43,15 @@ const TableOfContents = ({ content }: { content: string }) => {
   if (headings.length === 0) return null;
 
   return (
-    <div className="mb-8 rounded-xl border border-border bg-secondary/20 p-5">
-      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-muted-foreground">Sommaire</h2>
-      <ul className="space-y-2">
+    <div className="mb-6 rounded-lg border border-border/50 bg-secondary/20 p-4">
+      <h2 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sommaire</h2>
+      <ul className="space-y-1">
         {headings.map((heading, idx) => (
           <li key={idx}>
             <a
               href={`#section-${idx}`}
-              className={`text-sm transition-colors hover:text-primary ${
-                heading.level === 2 ? "font-medium" : "ml-4 text-muted-foreground"
+              className={`text-[11px] transition-colors hover:text-primary ${
+                heading.level === 2 ? "font-medium" : "ml-3 text-muted-foreground"
               }`}
               onClick={(e) => {
                 e.preventDefault();
@@ -75,16 +71,16 @@ const TableOfContents = ({ content }: { content: string }) => {
 const GuideDetail = () => {
   const { id } = useParams();
   const { data: guide, isLoading, isError } = useGuide(id);
-  const { data: popularGuides = [] } = usePopularGuides(5);
+  const { data: popularGuides = [] } = usePopularGuides(4);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     if (!guide) return;
     document.title = `${guide.titre} - Les Casaniers Madagascar`;
-    const meta =
-      document.querySelector('meta[name="description"]') ??
-      document.head.appendChild(Object.assign(document.createElement("meta"), { name: "description" }));
+    const meta = document.querySelector('meta[name="description"]') ?? document.head.appendChild(
+      Object.assign(document.createElement("meta"), { name: "description" })
+    );
     meta.setAttribute("content", guide.resume);
   }, [guide]);
 
@@ -92,179 +88,159 @@ const GuideDetail = () => {
 
   return (
     <SiteLayout>
-      <main className="container-x py-8">
-        {/* Breadcrumb */}
-        <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+      <main className="container-x py-6">
+        {/* Breadcrumb compact */}
+        <nav className="mb-5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <Link to="/" className="hover:text-primary transition-colors">Accueil</Link>
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-2.5 w-2.5" />
           <Link to="/guides" className="hover:text-primary transition-colors">Guides</Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground">{guide?.titre?.slice(0, 50) || "Guide"}</span>
+          <ChevronRight className="h-2.5 w-2.5" />
+          <span className="text-foreground truncate max-w-[200px]">{guide?.titre?.slice(0, 40) || "Guide"}</span>
         </nav>
 
         {isLoading && (
-          <div className="flex flex-col items-center justify-center border border-border p-12">
-            <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            <p className="mt-4 text-muted-foreground">Chargement du guide...</p>
+          <div className="flex flex-col items-center justify-center border border-border/50 rounded-lg p-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-3 border-primary border-t-transparent" />
+            <p className="mt-3 text-xs text-muted-foreground">Chargement du guide...</p>
           </div>
         )}
         
         {isError && (
-          <div className="flex flex-col items-center justify-center border border-destructive/30 bg-destructive/10 p-12 text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-            <h2 className="text-xl font-bold mb-2">Guide introuvable</h2>
-            <p className="text-muted-foreground mb-4">Le guide que vous recherchez n'existe pas ou a été supprimé.</p>
-            <Link to="/guides" className="inline-flex items-center gap-2 bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition">
-              <ArrowLeft className="h-4 w-4" /> Retour aux guides
+          <div className="flex flex-col items-center justify-center border border-destructive/30 bg-destructive/5 rounded-lg p-8 text-center">
+            <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+            <h2 className="text-lg font-bold mb-1">Guide introuvable</h2>
+            <p className="text-xs text-muted-foreground mb-4">Le guide que vous recherchez n'existe pas ou a été supprimé.</p>
+            <Link to="/guides" className="inline-flex items-center gap-1.5 bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground rounded-lg hover:opacity-90 transition">
+              <ArrowLeft className="h-3.5 w-3.5" /> Retour aux guides
             </Link>
           </div>
         )}
 
         {guide && (
-          <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
             {/* ───── Main Article ───── */}
             <article>
-              {/* Meta badges - version améliorée */}
-              <div className="mb-6 flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {/* Meta badges compacts */}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
                   {guideCategoryLabels[guide.categorie]}
                 </span>
                 {guide.badge && (
-                  <span className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
+                  <span className="rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
                     ⭐ {guide.badge}
                   </span>
                 )}
                 {guide.difficulte && (
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${guideDifficultyColors[guide.difficulte]}`}>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${guideDifficultyColors[guide.difficulte]}`}>
                     {guideDifficultyLabels[guide.difficulte]}
                   </span>
                 )}
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl font-bold leading-tight md:text-4xl lg:text-5xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <h1 className="text-2xl font-bold leading-tight md:text-3xl lg:text-4xl">
                 {guide.titre}
               </h1>
               
-              {/* Info bar */}
-              <div className="mt-4 flex flex-wrap items-center gap-4 border-b border-border pb-4 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" /> {formatDate(guide.publie_le)}
-                </span>
-                {guide.temps_lecture && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" /> {guide.temps_lecture}
-                  </span>
-                )}
-                {guide.auteur && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <UserRound className="h-4 w-4" /> {guide.auteur}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5">
-                  <Eye className="h-4 w-4" /> {guide.vues?.toLocaleString()} vues
-                </span>
+              {/* Info bar compacte */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 border-b border-border/50 pb-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" /> {formatDate(guide.publie_le)}</span>
+                {guide.temps_lecture && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {guide.temps_lecture}</span>}
+                {guide.auteur && <span className="inline-flex items-center gap-1"><UserRound className="h-3 w-3" /> {guide.auteur}</span>}
+                <span className="inline-flex items-center gap-1"><Eye className="h-3 w-3" /> {guide.vues?.toLocaleString()} vues</span>
               </div>
 
               {/* Resume */}
-              <div className="mt-6 rounded-xl bg-gradient-to-r from-primary/5 via-transparent to-transparent border-l-4 border-primary p-5">
-                <p className="text-base leading-relaxed text-muted-foreground md:text-lg">
-                  {guide.resume}
-                </p>
+              <div className="mt-4 rounded-lg bg-primary/5 border-l-3 border-primary p-4">
+                <p className="text-sm leading-relaxed text-muted-foreground">{guide.resume}</p>
               </div>
 
               {/* Tags */}
               {guide.tags && guide.tags.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-1.5">
                   {guide.tags.map((tag, idx) => (
-                    <span key={idx} className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80">
+                    <span key={idx} className="rounded-full bg-secondary/50 px-2 py-0.5 text-[9px] font-medium text-secondary-foreground">
                       #{tag}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Action buttons */}
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              {/* Action buttons compacts */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setIsLiked(!isLiked)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all ${
-                    isLiked ? "border-red-500 bg-red-500/10 text-red-500" : "border-border hover:bg-secondary"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition-all ${
+                    isLiked ? "border-red-500 bg-red-500/10 text-red-500" : "border-border/70 hover:bg-secondary"
                   }`}
                 >
-                  <Heart className={`h-4 w-4 ${isLiked ? "fill-red-500" : ""}`} />
+                  <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-red-500" : ""}`} />
                   {isLiked ? "Aimé" : "J'aime"}
                 </button>
                 <button
                   onClick={() => setIsBookmarked(!isBookmarked)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all ${
-                    isBookmarked ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-secondary"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] transition-all ${
+                    isBookmarked ? "border-primary bg-primary/10 text-primary" : "border-border/70 hover:bg-secondary"
                   }`}
                 >
-                  <BookmarkPlus className="h-4 w-4" />
+                  <BookmarkPlus className="h-3.5 w-3.5" />
                   {isBookmarked ? "Enregistré" : "Enregistrer"}
                 </button>
                 <button
                   onClick={() => navigator.share?.({ title: guide.titre, url: window.location.href }).catch(() => {})}
-                  className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm hover:bg-secondary transition-all"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[11px] hover:bg-secondary transition-all"
                 >
-                  <Share2 className="h-4 w-4" /> Partager
+                  <Share2 className="h-3.5 w-3.5" /> Partager
                 </button>
               </div>
 
-              {/* Cover image with overlay gradient */}
-              <div className="group relative mt-8 overflow-hidden rounded-xl">
+              {/* Cover image */}
+              <div className="group relative mt-5 overflow-hidden rounded-lg">
                 <img
                   src={guide.image_url || fallbackImage}
                   alt={guide.image_alt || guide.titre}
-                  className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  style={{ maxHeight: "500px" }}
+                  className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ maxHeight: "400px" }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               </div>
 
-              {/* Budget range - card stylisée */}
+              {/* Budget range */}
               {guide.budget_range && (
-                <div className="mt-8 overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-primary/5 to-transparent border border-primary/30 p-6">
-                  <p className="text-sm font-medium text-muted-foreground">Budget recommandé</p>
-                  <p className="text-2xl font-bold text-primary">{guide.budget_range}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">*Prix indicatifs pouvant varier selon les disponibilités</p>
+                <div className="mt-5 rounded-lg bg-gradient-to-r from-primary/15 to-transparent border-l-3 border-primary p-4">
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Budget recommandé</p>
+                  <p className="text-xl font-bold text-primary">{guide.budget_range}</p>
                 </div>
               )}
 
               {/* Table des matières */}
               <TableOfContents content={guide.contenu || ""} />
 
-              {/* Components list - amélioré */}
+              {/* Components list */}
               {guide.composants_recommandes && guide.composants_recommandes.length > 0 && (
-                <div className="mt-8 rounded-xl border border-border bg-gradient-to-br from-secondary/30 to-transparent p-6">
-                  <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                    <div className="rounded-lg bg-primary/10 p-2">
-                      <Wrench className="h-5 w-5 text-primary" />
-                    </div>
+                <div className="mt-5 rounded-lg border border-border/50 bg-secondary/20 p-4">
+                  <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold">
+                    <Wrench className="h-4 w-4 text-primary" />
                     Composants recommandés
                   </h2>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-2 md:grid-cols-2">
                     {guide.composants_recommandes.map((comp, idx) => (
-                      <div key={idx} className="flex items-start gap-3 rounded-lg border border-border/50 bg-background/50 p-3 transition-all hover:border-primary/30 hover:shadow-sm">
-                        <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
-                        <span className="text-sm">{comp}</span>
+                      <div key={idx} className="flex items-start gap-2">
+                        <CheckCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-500" />
+                        <span className="text-[11px]">{comp}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* YouTube video - amélioré */}
+              {/* YouTube video */}
               {youtubeId && (
-                <div className="mt-8">
-                  <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                    <div className="rounded-lg bg-red-500/10 p-2">
-                      <Play className="h-5 w-5 text-red-500" />
-                    </div>
+                <div className="mt-5">
+                  <h2 className="mb-3 flex items-center gap-1.5 text-sm font-bold">
+                    <Play className="h-4 w-4 text-red-500" />
                     Vidéo tutoriel
                   </h2>
-                  <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-lg">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-lg shadow-md">
                     <iframe
                       src={`https://www.youtube.com/embed/${youtubeId}`}
                       title={guide.titre}
@@ -276,116 +252,87 @@ const GuideDetail = () => {
                 </div>
               )}
 
-              {/* Steps - amélioré */}
+              {/* Steps */}
               {guide.etapes && guide.etapes.length > 0 && (
-                <div className="mt-8">
-                  <h2 className="mb-6 flex items-center gap-2 text-xl font-bold">
-                    <div className="rounded-lg bg-primary/10 p-2">
-                      <span className="text-lg">📋</span>
-                    </div>
+                <div className="mt-5">
+                  <h2 className="mb-4 flex items-center gap-1.5 text-sm font-bold">
+                    <span className="text-base">📋</span>
                     Étapes du tutoriel
                   </h2>
-                  <div className="relative space-y-4 before:absolute before:left-4 before:top-4 before:h-[calc(100%-2rem)] before:w-0.5 before:bg-gradient-to-b before:from-primary before:to-primary/20 md:before:left-6">
+                  <div className="space-y-3">
                     {guide.etapes.map((step, idx) => (
-                      <div key={idx} className="relative flex gap-5 rounded-xl border border-border bg-card p-5 transition-all hover:shadow-md">
-                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-lg md:h-12 md:w-12 md:text-base">
+                      <div key={idx} className="flex gap-3 rounded-lg border border-border/50 p-3 transition-all hover:border-primary/30 hover:shadow-sm">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                           {idx + 1}
                         </div>
-                        <p className="flex-1 text-sm leading-relaxed md:text-base">{step}</p>
+                        <p className="flex-1 text-[11px] leading-relaxed">{step}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Article content - amélioré */}
-              <div className="prose prose-neutral prose-headings:scroll-mt-20 prose-headings:font-bold prose-h2:mt-8 prose-h2:text-xl prose-h3:mt-6 prose-h3:text-lg prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground mt-8 max-w-none dark:prose-invert">
+              {/* Article content */}
+              <div className="prose prose-sm prose-headings:scroll-mt-16 prose-headings:font-bold prose-h2:text-base prose-h3:text-sm prose-p:text-xs prose-p:text-muted-foreground prose-strong:text-foreground prose-li:text-muted-foreground mt-5 max-w-none dark:prose-invert">
                 {guide.contenu.split(/\n{2,}/).map((paragraph, index) => {
                   if (paragraph.startsWith("## ")) {
-                    return (
-                      <h2 key={index} id={`section-${index}`} className="scroll-mt-20">
-                        {paragraph.replace("## ", "")}
-                      </h2>
-                    );
+                    return <h2 key={index} id={`section-${index}`} className="scroll-mt-16">{paragraph.replace("## ", "")}</h2>;
                   }
                   if (paragraph.startsWith("### ")) {
-                    return (
-                      <h3 key={index} id={`section-${index}`} className="scroll-mt-20">
-                        {paragraph.replace("### ", "")}
-                      </h3>
-                    );
+                    return <h3 key={index} id={`section-${index}`} className="scroll-mt-16">{paragraph.replace("### ", "")}</h3>;
                   }
                   if (paragraph.startsWith("- ") || paragraph.match(/^\d+\. /)) {
                     return (
-                      <ul key={index} className="space-y-2">
+                      <ul key={index} className="space-y-1">
                         {paragraph.split("\n").map((item, i) => (
-                          <li key={i}>{item.replace(/^[-•]\s*|^\d+\.\s*/, "")}</li>
+                          <li key={i} className="text-xs">{item.replace(/^[-•]\s*|^\d+\.\s*/, "")}</li>
                         ))}
                       </ul>
                     );
                   }
-                  return <p key={index}>{paragraph}</p>;
+                  return <p key={index} className="text-xs leading-relaxed">{paragraph}</p>;
                 })}
               </div>
 
-              {/* Share / CTA buttons - amélioré */}
-              <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-8">
-                <div className="flex flex-wrap gap-3">
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(guide.titre + " - " + window.location.href)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-green-600 to-green-700 px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                  >
-                    <MessageCircle className="h-4 w-4" /> Partager sur WhatsApp
+              {/* Share buttons footer */}
+              <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border/50 pt-5">
+                <div className="flex flex-wrap gap-2">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(guide.titre + " - " + window.location.href)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-green-600 px-3 py-1.5 text-[10px] font-medium text-white transition-all hover:-translate-y-0.5">
+                    <MessageCircle className="h-3 w-3" /> WhatsApp
                   </a>
-                  <a
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#1877f2] px-5 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                  >
-                    <Share2 className="h-4 w-4" /> Facebook
+                  <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#1877f2] px-3 py-1.5 text-[10px] font-medium text-white transition-all hover:-translate-y-0.5">
+                    <Share2 className="h-3 w-3" /> Facebook
                   </a>
                 </div>
-                <Link
-                  to="/devis-express"
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Demander un devis <ArrowRight className="h-4 w-4" />
+                <Link to="/devis-express" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-[10px] font-medium text-primary-foreground transition-all hover:-translate-y-0.5">
+                  Demander un devis <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
             </article>
 
-            {/* ───── Sidebar améliorée ───── */}
-            <aside className="space-y-6">
+            {/* ───── Sidebar compacte ───── */}
+            <aside className="space-y-4">
               {/* Info card */}
               {(guide.duree || guide.difficulte || guide.niveau) && (
-                <div className="sticky top-24 rounded-xl border border-border bg-gradient-to-br from-secondary/50 to-transparent p-5">
-                  <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                    <Clock className="h-4 w-4" /> Informations
+                <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
+                  <h2 className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" /> Informations
                   </h2>
-                  <dl className="space-y-3 text-sm">
+                  <dl className="space-y-2 text-[11px]">
                     {guide.duree && (
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                      <div className="flex items-center justify-between border-b border-border/30 pb-2">
                         <dt className="text-muted-foreground">Durée estimée</dt>
-                        <dd className="flex items-center gap-1 font-medium">
-                          <Clock className="h-3.5 w-3.5 text-primary" /> {guide.duree}
-                        </dd>
+                        <dd className="flex items-center gap-1 font-medium">{guide.duree}</dd>
                       </div>
                     )}
                     {guide.difficulte && (
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                      <div className="flex items-center justify-between border-b border-border/30 pb-2">
                         <dt className="text-muted-foreground">Difficulté</dt>
-                        <dd>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${guideDifficultyColors[guide.difficulte]}`}>
-                            {guideDifficultyLabels[guide.difficulte]}
-                          </span>
-                        </dd>
+                        <dd><span className={`rounded-full px-2 py-0.5 text-[9px] font-semibold ${guideDifficultyColors[guide.difficulte]}`}>{guideDifficultyLabels[guide.difficulte]}</span></dd>
                       </div>
                     )}
                     {guide.niveau && (
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                      <div className="flex items-center justify-between border-b border-border/30 pb-2">
                         <dt className="text-muted-foreground">Niveau requis</dt>
                         <dd className="font-medium">{guide.niveau}</dd>
                       </div>
@@ -393,34 +340,26 @@ const GuideDetail = () => {
                     {guide.etapes && (
                       <div className="flex items-center justify-between">
                         <dt className="text-muted-foreground">Nombre d'étapes</dt>
-                        <dd className="flex items-center gap-1 font-medium">
-                          <CheckCircle className="h-3.5 w-3.5 text-green-500" /> {guide.etapes.length}
-                        </dd>
+                        <dd className="flex items-center gap-1 font-medium">{guide.etapes.length}</dd>
                       </div>
                     )}
                   </dl>
                 </div>
               )}
 
-              {/* Popular guides - amélioré */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                  <Eye className="h-4 w-4" /> Populaires
+              {/* Popular guides */}
+              <div className="rounded-lg border border-border/50 bg-card p-4">
+                <h2 className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <Eye className="h-3.5 w-3.5" /> Populaires
                 </h2>
-                <div className="space-y-3">
-                  {popularGuides.filter(g => g.id !== guide.id).slice(0, 5).map((item) => (
-                    <Link
-                      key={item.id}
-                      to={guidePath(item)}
-                      className="group block border-b border-border/50 pb-3 last:border-0 transition-all hover:pl-2"
-                    >
-                      <p className="text-sm font-medium leading-tight text-foreground transition-colors group-hover:text-primary">
+                <div className="space-y-2">
+                  {popularGuides.filter(g => g.id !== guide.id).slice(0, 4).map((item) => (
+                    <Link key={item.id} to={guidePath(item)} className="group block border-b border-border/30 pb-2 last:border-0">
+                      <p className="text-[11px] font-medium leading-tight line-clamp-2 group-hover:text-primary transition-colors">
                         {item.titre}
                       </p>
-                      <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <Eye className="h-3 w-3" /> {item.vues?.toLocaleString()}
-                        </span>
+                      <div className="mt-1 flex items-center gap-2 text-[9px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-0.5"><Eye className="h-2.5 w-2.5" /> {item.vues?.toLocaleString()}</span>
                         <span>{formatDate(item.publie_le)}</span>
                       </div>
                     </Link>
@@ -428,77 +367,46 @@ const GuideDetail = () => {
                 </div>
               </div>
 
-              {/* CTA Card - améliorée */}
-              <div className="rounded-xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-6 text-center">
-                <div className="inline-flex rounded-full bg-primary/20 p-3 mb-4">
-                  <MessageCircle className="h-8 w-8 text-primary" />
+              {/* CTA Card */}
+              <div className="rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-4 text-center">
+                <div className="inline-flex rounded-full bg-primary/20 p-2 mb-3">
+                  <MessageCircle className="h-5 w-5 text-primary" />
                 </div>
-                <h2 className="text-lg font-bold">Besoin d'un conseil personnalisé ?</h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  Notre équipe d'experts est là pour vous guider dans le choix des composants adaptés à votre budget et vos besoins.
+                <h2 className="text-sm font-bold">Besoin d'aide ?</h2>
+                <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                  Notre équipe d'experts vous guide dans vos choix.
                 </p>
-                <Link
-                  to="/devis-express"
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
-                >
-                  Demander un devis gratuit <ArrowRight className="h-4 w-4" />
+                <Link to="/devis-express" className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[10px] font-medium text-primary-foreground transition-all hover:-translate-y-0.5">
+                  Demander un devis <ArrowRight className="h-3 w-3" />
                 </Link>
-                <div className="mt-4 pt-4 border-t border-primary/20">
-                  <p className="text-xs text-muted-foreground">Ou contactez-nous directement</p>
-                  <a
-                    href="https://wa.me/261341234567"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-green-600 bg-transparent px-4 py-2.5 text-sm font-medium text-green-600 transition-all hover:bg-green-600 hover:text-white"
-                  >
-                    <MessageCircle className="h-4 w-4" /> WhatsApp
-                  </a>
-                </div>
               </div>
 
               {/* Avantages Casaniers */}
-              <div className="rounded-xl border border-border bg-card p-5">
-                <h2 className="mb-4 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                  <Shield className="h-4 w-4" /> Pourquoi Les Casaniers ?
+              <div className="rounded-lg border border-border/50 bg-card p-4">
+                <h2 className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <Shield className="h-3.5 w-3.5" /> Pourquoi Les Casaniers ?
                 </h2>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Truck className="mt-0.5 h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Livraison rapide</p>
-                      <p className="text-xs text-muted-foreground">À Madagascar sous 48-72h</p>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Truck className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                    <div><p className="text-[11px] font-medium">Livraison rapide</p><p className="text-[9px] text-muted-foreground">À Madagascar sous 48-72h</p></div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <CreditCard className="mt-0.5 h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Paiement sécurisé</p>
-                      <p className="text-xs text-muted-foreground">À la livraison ou en ligne</p>
-                    </div>
+                  <div className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                    <div><p className="text-[11px] font-medium">Paiement sécurisé</p><p className="text-[9px] text-muted-foreground">À la livraison ou en ligne</p></div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <Headphones className="mt-0.5 h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Support expert</p>
-                      <p className="text-xs text-muted-foreground">Conseils avant et après vente</p>
-                    </div>
+                  <div className="flex items-start gap-2">
+                    <Headphones className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                    <div><p className="text-[11px] font-medium">Support expert</p><p className="text-[9px] text-muted-foreground">Conseils avant et après vente</p></div>
                   </div>
                 </div>
               </div>
 
               {/* Video link if not embedded */}
               {guide.video_url && !youtubeId && (
-                <div className="rounded-xl border border-border bg-card p-5">
-                  <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                    <Play className="h-4 w-4" /> Ressource vidéo
-                  </h2>
-                  <a
-                    href={guide.video_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/10 px-4 py-3 text-sm font-medium text-red-500 transition-all hover:bg-red-500 hover:text-white"
-                  >
-                    <ExternalLink className="h-4 w-4" /> Voir la vidéo
+                <div className="rounded-lg border border-border/50 bg-card p-4">
+                  <a href={guide.video_url} target="_blank" rel="noreferrer" className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-2 text-[11px] font-medium text-red-500 transition-all hover:bg-red-500 hover:text-white">
+                    <ExternalLink className="h-3.5 w-3.5" /> Voir la vidéo
                   </a>
                 </div>
               )}

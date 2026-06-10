@@ -37,6 +37,13 @@ const TABS: { id: TabId; label: string; color: string; activeColor: string }[] =
   },
 ];
 
+// Couleurs des catégories pour les cartes
+const CARD_COLORS: Record<GuideCategory, { gradient: string; badge: string }> = {
+  "guides-achat": { gradient: "from-purple-500/10 to-transparent", badge: "bg-purple-500/10 text-purple-500" },
+  "actualites-tech": { gradient: "from-blue-500/10 to-transparent", badge: "bg-blue-500/10 text-blue-500" },
+  "tutos-maintenance": { gradient: "from-green-500/10 to-transparent", badge: "bg-green-500/10 text-green-500" },
+};
+
 /* ───────────── Helpers ───────────── */
 
 const fallbackImages: Record<GuideCategory, string> = {
@@ -51,12 +58,6 @@ const categoryIcons: Record<GuideCategory, typeof Gamepad> = {
   "tutos-maintenance": Wrench,
 };
 
-const categoryColors: Record<GuideCategory, { border: string; bg: string; text: string }> = {
-  "guides-achat": { border: "border-l-purple-500", bg: "bg-purple-500/10", text: "text-purple-500" },
-  "actualites-tech": { border: "border-l-blue-500", bg: "bg-blue-500/10", text: "text-blue-500" },
-  "tutos-maintenance": { border: "border-l-green-500", bg: "bg-green-500/10", text: "text-green-500" },
-};
-
 const formatDate = (date?: string | null) => {
   if (!date) return "Non publié";
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(date));
@@ -64,243 +65,287 @@ const formatDate = (date?: string | null) => {
 
 const guidePath = (guide: Guide) => `/guides/${guide.slug || guide.id}`;
 
-/* ───────────── Guide Card (used in listing) ───────────── */
+/* ───────────── Guide Card Compact ───────────── */
 
-const GuideCard = ({ guide, featured = false }: { guide: Guide; featured?: boolean }) => (
-  <article
-    className={`group overflow-hidden border border-border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-      featured ? "md:grid md:grid-cols-[1.05fr_0.95fr]" : ""
-    }`}
-  >
-    <Link to={guidePath(guide)} className="relative block overflow-hidden bg-muted">
+const GuideCardCompact = ({ guide }: { guide: Guide }) => (
+  <article className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+    <Link to={guidePath(guide)} className="relative block overflow-hidden aspect-[16/9]">
       <img
         src={guide.image_url || fallbackImages[guide.categorie]}
         alt={guide.image_alt || guide.titre}
-        className={`w-full object-cover transition duration-500 group-hover:scale-105 ${featured ? "h-full min-h-72" : "h-52"}`}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
       {guide.badge && (
-        <span className="absolute left-3 top-3 bg-foreground px-3 py-1 text-xs font-bold text-background">
+        <span className="absolute top-2 left-2 bg-foreground px-2 py-0.5 text-[9px] font-bold text-background rounded-full">
           {guide.badge}
         </span>
       )}
-      {guide.mis_en_avant && !guide.badge && (
-        <span className="absolute left-3 top-3 bg-amber-500 px-3 py-1 text-xs font-bold text-white">
-          ⭐ En vedette
+      <span className={`absolute top-2 right-2 px-2 py-0.5 text-[9px] font-medium rounded-full ${CARD_COLORS[guide.categorie]?.badge || "bg-secondary/80 text-foreground"}`}>
+        {guideCategoryLabels[guide.categorie]}
+      </span>
+    </Link>
+    <div className="p-3 space-y-1.5">
+      <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+        <span className="inline-flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{formatDate(guide.publie_le)}</span>
+        {guide.temps_lecture && <span className="inline-flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{guide.temps_lecture}</span>}
+        <span className="inline-flex items-center gap-0.5 ml-auto"><Eye className="h-2.5 w-2.5" />{guide.vues ?? 0}</span>
+      </div>
+      <Link to={guidePath(guide)} className="block text-sm font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+        {guide.titre}
+      </Link>
+      <p className="text-[10px] text-muted-foreground line-clamp-2">{guide.resume}</p>
+      <Link to={guidePath(guide)} className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline">
+        Lire <ArrowRight className="h-2.5 w-2.5" />
+      </Link>
+    </div>
+  </article>
+);
+
+// Guide Card pour featured (plus grand)
+const GuideCardFeatured = ({ guide }: { guide: Guide }) => (
+  <article className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 md:grid md:grid-cols-[1fr_1.2fr]">
+    <Link to={guidePath(guide)} className="relative block overflow-hidden aspect-video md:aspect-auto">
+      <img
+        src={guide.image_url || fallbackImages[guide.categorie]}
+        alt={guide.image_alt || guide.titre}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+      {guide.badge && (
+        <span className="absolute top-3 left-3 bg-foreground px-2.5 py-1 text-[10px] font-bold text-background rounded-full">
+          {guide.badge}
         </span>
       )}
     </Link>
-    <div className="flex min-h-full flex-col p-5">
-      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className={`border px-2 py-1 ${categoryColors[guide.categorie].bg} ${categoryColors[guide.categorie].text} border-transparent font-medium`}>
+    <div className="p-4 space-y-2">
+      <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+        <span className={`px-2 py-0.5 rounded-full ${CARD_COLORS[guide.categorie]?.badge || "bg-secondary/80"}`}>
           {guideCategoryLabels[guide.categorie]}
         </span>
-        <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{formatDate(guide.publie_le)}</span>
-        {guide.temps_lecture && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{guide.temps_lecture}</span>}
-        {guide.difficulte && (
-          <span className={`px-2 py-0.5 text-[10px] font-semibold uppercase ${guideDifficultyColors[guide.difficulte]}`}>
-            {guideDifficultyLabels[guide.difficulte]}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{formatDate(guide.publie_le)}</span>
+        {guide.temps_lecture && <span className="inline-flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{guide.temps_lecture}</span>}
       </div>
-      <Link to={guidePath(guide)} className="text-xl font-bold leading-tight hover:text-primary md:text-2xl">
+      <Link to={guidePath(guide)} className="block text-xl font-bold leading-tight group-hover:text-primary transition-colors">
         {guide.titre}
       </Link>
-      {guide.budget_range && (
-        <p className="mt-2 text-sm font-semibold text-primary">{guide.budget_range}</p>
-      )}
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">{guide.resume}</p>
-      {guide.composants_recommandes && guide.composants_recommandes.length > 0 && (
-        <div className="mt-3 space-y-1">
-          {guide.composants_recommandes.slice(0, 3).map((comp, idx) => (
-            <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
-              <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
-              <span className="truncate">{comp}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="mt-auto flex items-center justify-between pt-5 text-sm">
-        <span className="inline-flex items-center gap-1 text-muted-foreground"><Eye className="h-4 w-4" />{guide.vues ?? 0}</span>
-        <Link to={guidePath(guide)} className="inline-flex items-center gap-2 font-medium text-primary hover:underline">
-          {guide.categorie === "tutos-maintenance" ? "Voir le tuto" : "Lire"} <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
+      <p className="text-xs text-muted-foreground line-clamp-3">{guide.resume}</p>
+      <Link to={guidePath(guide)} className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline">
+        Lire l'article <ArrowRight className="h-3 w-3" />
+      </Link>
     </div>
   </article>
 );
 
 const CompactGuide = ({ guide }: { guide: Guide }) => (
-  <Link to={guidePath(guide)} className="grid grid-cols-[76px_1fr] gap-3 border-b border-border py-3 last:border-0 group">
-    <img src={guide.image_url || fallbackImages[guide.categorie]} alt={guide.image_alt || guide.titre} className="h-16 w-full rounded object-cover" />
-    <span className="min-w-0">
-      <span className="block text-xs text-muted-foreground">{guideCategoryLabels[guide.categorie]}</span>
-      <span className="line-clamp-2 text-sm font-medium leading-5 group-hover:text-primary transition-colors">{guide.titre}</span>
-    </span>
+  <Link to={guidePath(guide)} className="flex gap-3 border-b border-border/50 py-2.5 last:border-0 group">
+    <img src={guide.image_url || fallbackImages[guide.categorie]} alt={guide.image_alt || guide.titre} className="h-12 w-12 rounded-lg object-cover shrink-0" />
+    <div className="min-w-0 flex-1">
+      <span className="block text-[9px] text-muted-foreground">{guideCategoryLabels[guide.categorie]}</span>
+      <span className="line-clamp-2 text-xs font-medium leading-tight group-hover:text-primary transition-colors">{guide.titre}</span>
+    </div>
   </Link>
 );
 
-/* ───────────── Category Section (Guides d'achat view) ───────────── */
+/* ───────────── Category Sections (avec clé pour forcer le re-render) ───────────── */
 
-const GuidesAchatSection = () => {
-  const { data: guides = [] } = useGuidesByCategory("guides-achat", 6);
+const GuidesAchatSection = ({ key }: { key: string }) => {
+  const { data: guides = [], refetch } = useGuidesByCategory("guides-achat", 6);
+
+  // Recharger les données quand la clé change (quand l'onglet devient actif)
+  useEffect(() => {
+    refetch();
+  }, [key, refetch]);
 
   const fallbackGuides = [
-    { id: "gaming", title: "PC Gaming", icon: Gamepad, color: "text-purple-500", bgColor: "bg-purple-500/10", borderColor: "border-l-purple-500", description: "Pour les passionnés de jeux vidéo", price: "2 490 000 Ar - 8 990 000 Ar", features: ["Carte graphique RTX 4060 → RTX 4090", "Processeur Intel i5/i7/i9 ou AMD Ryzen", "RAM 16GB à 32GB DDR5", "SSD NVMe 512GB à 2TB"] },
-    { id: "bureautique", title: "PC Bureautique", icon: Briefcase, color: "text-blue-500", bgColor: "bg-blue-500/10", borderColor: "border-l-blue-500", description: "Pour le travail et le multitâche", price: "1 200 000 Ar - 2 500 000 Ar", features: ["Processeur Intel i3/i5 ou AMD Ryzen 3/5", "RAM 8GB à 16GB", "SSD 256GB à 512GB", "Connectique USB, HDMI, Ethernet"] },
-    { id: "workstation", title: "Station de travail", icon: Cpu, color: "text-green-500", bgColor: "bg-green-500/10", borderColor: "border-l-green-500", description: "Pour les pros (montage, 3D, data)", price: "5 000 000 Ar - 15 000 000 Ar", features: ["Intel i9 / AMD Threadripper", "RAM 32GB à 128GB ECC", "SSD NVMe + HDD", "Carte pro RTX / Quadro"] },
+    { id: "gaming", title: "PC Gaming", icon: Gamepad, color: "purple", description: "Pour les passionnés de jeux vidéo", price: "2 490 000 Ar - 8 990 000 Ar", features: ["RTX 4060 → 4090", "Intel i5/i7/i9 ou Ryzen", "16-32GB DDR5", "SSD NVMe 512GB-2TB"] },
+    { id: "bureautique", title: "PC Bureautique", icon: Briefcase, color: "blue", description: "Pour le travail et le multitâche", price: "1 200 000 Ar - 2 500 000 Ar", features: ["Intel i3/i5 ou Ryzen 3/5", "8-16GB RAM", "SSD 256-512GB"] },
+    { id: "workstation", title: "Station de travail", icon: Cpu, color: "green", description: "Pour les pros (montage, 3D)", price: "5 000 000 Ar - 15 000 000 Ar", features: ["Intel i9 / Threadripper", "32-128GB ECC RAM", "SSD NVMe + HDD"] },
   ];
 
+  const colorMap: Record<string, string> = { purple: "from-purple-500 to-indigo-500", blue: "from-blue-500 to-cyan-500", green: "from-green-500 to-emerald-500" };
+
   return (
-    <section id="guides-achat" className="py-12 scroll-mt-20">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-purple-500/10 rounded-lg">
-          <Gamepad className="h-6 w-6 text-purple-500" />
+    <section id="guides-achat" className="py-8 scroll-mt-20">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
+          <Gamepad className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold">Guides d'achat</h2>
-          <p className="text-sm text-muted-foreground">Choisissez la configuration idéale selon votre budget</p>
+          <h2 className="text-lg font-bold">Guides d'achat</h2>
+          <p className="text-[10px] text-muted-foreground">Choisissez la configuration idéale</p>
         </div>
       </div>
 
       {guides.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {guides.map((g) => <GuideCard key={g.id} guide={g} />)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {guides.map((g) => <GuideCardCompact key={g.id} guide={g} />)}
         </div>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {fallbackGuides.map((guide) => (
-            <div key={guide.id} className={`border-l-4 ${guide.borderColor} bg-card border border-border p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}>
-              <div className={`inline-flex p-2.5 rounded-lg ${guide.bgColor} ${guide.color} mb-4`}>
-                <guide.icon className="h-6 w-6" />
+            <div key={guide.id} className="bg-card border border-border/50 rounded-xl p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
+              <div className={`inline-flex h-8 w-8 rounded-lg bg-gradient-to-br ${colorMap[guide.color]} items-center justify-center mb-3`}>
+                <guide.icon className="h-4 w-4 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2">{guide.title}</h3>
-              <p className="text-sm text-muted-foreground mb-3">{guide.description}</p>
-              <p className="text-lg font-bold text-primary mb-4">{guide.price}</p>
-              <div className="space-y-2 mb-5">
-                {guide.features.map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                    <span>{feature}</span>
+              <h3 className="font-bold text-sm mb-1">{guide.title}</h3>
+              <p className="text-[10px] text-muted-foreground mb-2">{guide.description}</p>
+              <p className="text-xs font-bold text-primary mb-3">{guide.price}</p>
+              <div className="space-y-1 mb-3">
+                {guide.features.slice(0, 2).map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-1.5 text-[9px]">
+                    <CheckCircle className="h-2.5 w-2.5 text-green-500 shrink-0" />
+                    <span className="text-muted-foreground">{feature}</span>
                   </div>
                 ))}
               </div>
-              <Link to="/configurateur" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
-                Configurer mon PC <ArrowRight className="h-4 w-4" />
+              <Link to="/configurateur" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                Configurer <ArrowRight className="h-2.5 w-2.5" />
               </Link>
             </div>
           ))}
         </div>
       )}
 
-      <div className="mt-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-500/30 p-4 rounded-lg">
-        <p className="text-sm flex items-center gap-2">
-          <Zap className="h-4 w-4 text-amber-500 shrink-0" />
-          <span><strong>Conseil Casanier :</strong> Privilégiez les composants avec garantie internationale et un bon SAV local à Madagascar !</span>
+      <div className="mt-5 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+        <p className="text-[10px] flex items-center gap-1.5">
+          <Zap className="h-3 w-3 text-amber-500 shrink-0" />
+          <span><strong>Conseil Casanier :</strong> Privilégiez les composants avec garantie internationale !</span>
         </p>
       </div>
     </section>
   );
 };
 
-/* ───────────── Actualités Tech Section ───────────── */
+const ActualitesTechSection = ({ key }: { key: string }) => {
+  const { data: articles = [], refetch } = useGuidesByCategory("actualites-tech", 6);
+  
+  useEffect(() => {
+    refetch();
+  }, [key, refetch]);
 
-const ActualitesTechSection = () => {
-  const { data: articles = [] } = useGuidesByCategory("actualites-tech", 4);
+  const fallbackArticles = [
+    { id: "1", title: "Nouveautés NVIDIA RTX 5000", icon: Newspaper, color: "blue", description: "Les prochaines cartes graphiques arrivent", date: "15 Mai 2024", views: 1250 },
+    { id: "2", title: "AMD Ryzen 9000 series", icon: Newspaper, color: "blue", description: "Performance record annoncée", date: "10 Mai 2024", views: 980 },
+    { id: "3", title: "Windows 12 : premières infos", icon: Newspaper, color: "blue", description: "Ce qui change dans le nouvel OS", date: "5 Mai 2024", views: 2100 },
+  ];
 
-  if (articles.length === 0) return null;
-
-  return (
-    <section id="actualites-tech" className="py-12 scroll-mt-20 border-t border-border">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-blue-500/10 rounded-lg">
-          <Newspaper className="h-6 w-6 text-blue-500" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold">Actualités Tech</h2>
-          <p className="text-sm text-muted-foreground">Les dernières nouvelles du monde informatique</p>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-5">
-        {articles.map((article, idx) => (
-          <GuideCard key={article.id} guide={article} featured={idx === 0} />
-        ))}
-      </div>
-
-      <div className="mt-6 text-center">
-        <Link to="/guides?categorie=actualites-tech" className="btn-secondary px-6 py-2.5 text-sm">
-          Voir toutes les actualités <ArrowRight className="h-4 w-4 ml-1" />
-        </Link>
-      </div>
-    </section>
-  );
-};
-
-/* ───────────── Tutos Maintenance Section ───────────── */
-
-const TutosMaintenanceSection = () => {
-  const { data: tutos = [] } = useGuidesByCategory("tutos-maintenance", 4);
-
-  if (tutos.length === 0) return null;
+  const colorMap: Record<string, string> = { 
+    purple: "from-purple-500 to-indigo-500", 
+    blue: "from-blue-500 to-cyan-500", 
+    green: "from-green-500 to-emerald-500" 
+  };
 
   return (
-    <section id="tutos-maintenance" className="py-12 scroll-mt-20 border-t border-border">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-green-500/10 rounded-lg">
-          <Wrench className="h-6 w-6 text-green-500" />
+    <section id="actualites-tech" className="py-8 scroll-mt-20 border-t border-border">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <Newspaper className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold">Tutos Maintenance</h2>
-          <p className="text-sm text-muted-foreground">Apprenez à entretenir et optimiser votre matériel</p>
+          <h2 className="text-lg font-bold">Actualités Tech</h2>
+          <p className="text-[10px] text-muted-foreground">Les dernières nouvelles</p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-        {tutos.map((tuto) => (
-          <article key={tuto.id} className="group border border-border bg-card overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-            <Link to={guidePath(tuto)} className="relative block overflow-hidden">
-              <img
-                src={tuto.image_url || fallbackImages["tutos-maintenance"]}
-                alt={tuto.image_alt || tuto.titre}
-                className="h-40 w-full object-cover transition duration-500 group-hover:scale-105"
-              />
-              {tuto.video_url && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
-                    <Play className="h-5 w-5 text-foreground ml-0.5" />
-                  </div>
-                </div>
-              )}
-              {tuto.difficulte && (
-                <span className={`absolute right-3 top-3 px-2 py-0.5 text-[10px] font-bold uppercase ${guideDifficultyColors[tuto.difficulte]}`}>
-                  {guideDifficultyLabels[tuto.difficulte]}
-                </span>
-              )}
-            </Link>
-            <div className="p-4">
-              <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-                {tuto.duree && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{tuto.duree}</span>}
-                {tuto.etapes && Array.isArray(tuto.etapes) && <span>{tuto.etapes.length} étapes</span>}
+      {articles.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {articles.map((article) => <GuideCardCompact key={article.id} guide={article} />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {fallbackArticles.map((article) => (
+            <div key={article.id} className="bg-card border border-border/50 rounded-xl p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
+              <div className={`inline-flex h-8 w-8 rounded-lg bg-gradient-to-br ${colorMap[article.color]} items-center justify-center mb-3`}>
+                <article.icon className="h-4 w-4 text-white" />
               </div>
-              <Link to={guidePath(tuto)} className="block text-sm font-bold leading-tight group-hover:text-primary transition-colors">
-                {tuto.titre}
+              <h3 className="font-bold text-sm mb-1 line-clamp-1">{article.title}</h3>
+              <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-2">
+                <span className="inline-flex items-center gap-0.5"><Calendar className="h-2.5 w-2.5" />{article.date}</span>
+                <span className="inline-flex items-center gap-0.5"><Eye className="h-2.5 w-2.5" />{article.views}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-3 line-clamp-2">{article.description}</p>
+              <Link to="/guides" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                Lire l'article <ArrowRight className="h-2.5 w-2.5" />
               </Link>
-              <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{tuto.resume}</p>
             </div>
-          </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div className="mt-6 text-center">
-        <Link to="/guides?categorie=tutos-maintenance" className="btn-secondary px-6 py-2.5 text-sm">
-          Voir tous les tutos <ArrowRight className="h-4 w-4 ml-1" />
-        </Link>
+      <div className="mt-5 bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+        <p className="text-[10px] flex items-center gap-1.5">
+          <Zap className="h-3 w-3 text-blue-500 shrink-0" />
+          <span><strong>À la une :</strong> Restez informés des dernières innovations technologiques !</span>
+        </p>
       </div>
     </section>
   );
 };
 
-/* ───────────── Newsletter Section ───────────── */
+const TutosMaintenanceSection = ({ key }: { key: string }) => {
+  const { data: tutos = [], refetch } = useGuidesByCategory("tutos-maintenance", 6);
+  
+  useEffect(() => {
+    refetch();
+  }, [key, refetch]);
+
+  const fallbackTutos = [
+    { id: "1", title: "Nettoyer son PC", icon: Wrench, color: "green", description: "Guide complet pour dépoussiérer", duration: "15 min", difficulty: "Facile" },
+    { id: "2", title: "Changer la pâte thermique", icon: Wrench, color: "green", description: "Améliorez les performances", duration: "30 min", difficulty: "Moyen" },
+    { id: "3", title: "Optimiser Windows", icon: Wrench, color: "green", description: "Boostez les performances", duration: "20 min", difficulty: "Facile" },
+  ];
+
+  const colorMap: Record<string, string> = { 
+    purple: "from-purple-500 to-indigo-500", 
+    blue: "from-blue-500 to-cyan-500", 
+    green: "from-green-500 to-emerald-500" 
+  };
+
+  return (
+    <section id="tutos-maintenance" className="py-8 scroll-mt-20 border-t border-border">
+      <div className="flex items-center gap-2 mb-5">
+        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+          <Wrench className="h-4 w-4 text-white" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">Tutos Maintenance</h2>
+          <p className="text-[10px] text-muted-foreground">Entretenez votre matériel</p>
+        </div>
+      </div>
+
+      {tutos.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {tutos.map((tuto) => <GuideCardCompact key={tuto.id} guide={tuto} />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {fallbackTutos.map((tuto) => (
+            <div key={tuto.id} className="bg-card border border-border/50 rounded-xl p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
+              <div className={`inline-flex h-8 w-8 rounded-lg bg-gradient-to-br ${colorMap[tuto.color]} items-center justify-center mb-3`}>
+                <tuto.icon className="h-4 w-4 text-white" />
+              </div>
+              <h3 className="font-bold text-sm mb-1 line-clamp-1">{tuto.title}</h3>
+              <div className="flex items-center gap-2 text-[9px] text-muted-foreground mb-2">
+                <span className="inline-flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{tuto.duration}</span>
+                <span className="inline-flex items-center gap-0.5"><CheckCircle className="h-2.5 w-2.5 text-green-500" />{tuto.difficulty}</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-3 line-clamp-2">{tuto.description}</p>
+              <Link to="/guides" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                Voir le tuto <ArrowRight className="h-2.5 w-2.5" />
+              </Link>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-5 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+        <p className="text-[10px] flex items-center gap-1.5">
+          <Zap className="h-3 w-3 text-green-500 shrink-0" />
+          <span><strong>Astuce :</strong> Un entretien régulier prolonge la durée de vie de votre PC !</span>
+        </p>
+      </div>
+    </section>
+  );
+};
 
 const NewsletterSection = () => {
   const [email, setEmail] = useState("");
@@ -309,50 +354,25 @@ const NewsletterSection = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    subscribe.mutate(email.trim(), {
-      onSuccess: () => { setEmail(""); },
-    });
+    subscribe.mutate(email.trim(), { onSuccess: () => setEmail("") });
   };
 
   return (
-    <section className="py-12 border-t border-border">
-      <div className="max-w-2xl mx-auto text-center">
-        <div className="inline-flex p-3 bg-primary/5 rounded-full mb-4">
-          <Mail className="h-8 w-8 text-primary" />
+    <section className="py-8 border-t border-border">
+      <div className="max-w-md mx-auto text-center">
+        <div className="inline-flex p-2 bg-primary/10 rounded-full mb-3">
+          <Mail className="h-5 w-5 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Restez informé</h2>
-        <p className="text-muted-foreground mb-6">
-          Recevez nos derniers guides, bons plans et actualités tech directement dans votre boîte mail.
-        </p>
-        <form onSubmit={handleSubmit} className="flex gap-2 max-w-md mx-auto">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="votre@email.com"
-            required
-            className="flex-1 h-11 border border-border bg-background px-4 text-sm outline-none focus:border-primary transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={subscribe.isPending}
-            className="h-11 inline-flex items-center gap-2 bg-primary px-5 text-sm font-medium text-primary-foreground disabled:opacity-60 transition-all hover:-translate-y-0.5"
-          >
-            <Send className="h-4 w-4" />
+        <h2 className="text-lg font-bold mb-1">Restez informé</h2>
+        <p className="text-[10px] text-muted-foreground mb-4">Recevez nos derniers guides et bons plans</p>
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="votre@email.com" required className="flex-1 h-9 border border-border bg-background px-3 text-xs rounded-lg focus:border-primary outline-none" />
+          <button type="submit" disabled={subscribe.isPending} className="h-9 px-4 bg-primary text-xs font-medium text-primary-foreground rounded-lg disabled:opacity-60 transition-all hover:-translate-y-0.5">
             {subscribe.isPending ? "..." : "S'inscrire"}
           </button>
         </form>
-        {subscribe.isSuccess && (
-          <p className="mt-3 text-sm text-green-600 dark:text-green-400 animate-fade-up">
-            ✓ Inscription réussie ! Merci de votre confiance.
-          </p>
-        )}
-        {subscribe.isError && (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400 animate-fade-up">
-            {(subscribe.error as any)?.response?.data?.message || "Une erreur est survenue. Veuillez réessayer."}
-          </p>
-        )}
-        <p className="mt-3 text-xs text-muted-foreground">Pas de spam, désabonnement en un clic.</p>
+        {subscribe.isSuccess && <p className="mt-2 text-[10px] text-green-600">✓ Inscription réussie !</p>}
+        {subscribe.isError && <p className="mt-2 text-[10px] text-red-600">Une erreur est survenue</p>}
       </div>
     </section>
   );
@@ -365,29 +385,23 @@ const Guides = () => {
   const [searchDraft, setSearchDraft] = useState(params.get("search") ?? "");
   const [activeTab, setActiveTab] = useState<TabId>("guides-achat");
   const [visible, setVisible] = useState(true);
+  const [tabKey, setTabKey] = useState(0); // Clé pour forcer le rechargement des sections
 
   const page = Number(params.get("page") ?? 1);
   const category = (params.get("categorie") ?? "") as GuideCategory | "";
   const sort = (params.get("sort") as "recent" | "popular" | null) ?? "recent";
   const search = params.get("search") ?? "";
 
-  // Show sectioned view when there are no filters
   const isSectionedView = !category && !search && page === 1;
 
-  const filters = useMemo(
-    () => ({ page, per_page: 9, categorie: category, search, sort }),
-    [page, category, search, sort],
-  );
-
+  const filters = useMemo(() => ({ page, per_page: 9, categorie: category, search, sort }), [page, category, search, sort]);
   const { data, isLoading, isError } = useGuides(filters);
   const { data: recentGuides = [] } = useRecentGuides(4);
   const { data: popularGuides = [] } = usePopularGuides(4);
 
   useEffect(() => {
     document.title = "Guides - Les Casaniers Madagascar";
-    const meta =
-      document.querySelector('meta[name="description"]') ??
-      document.head.appendChild(Object.assign(document.createElement("meta"), { name: "description" }));
+    const meta = document.querySelector('meta[name="description"]') ?? document.head.appendChild(Object.assign(document.createElement("meta"), { name: "description" }));
     meta.setAttribute("content", "Guides d'achat, actualités tech et tutoriels maintenance pour bien choisir et entretenir votre PC à Madagascar.");
   }, []);
 
@@ -409,6 +423,7 @@ const Guides = () => {
     setVisible(false);
     setTimeout(() => {
       setActiveTab(id);
+      setTabKey(prev => prev + 1); // Incrémenter la clé pour forcer le rechargement
       setVisible(true);
     }, 200);
   };
@@ -417,17 +432,14 @@ const Guides = () => {
   const featured = guides[0];
   const remaining = featured ? guides.slice(1) : guides;
 
-  // Fonction pour afficher la section active
+  // Fonction pour afficher la section active avec une clé unique
   const renderActiveSection = () => {
+    const key = `${activeTab}-${tabKey}`;
     switch (activeTab) {
-      case "guides-achat":
-        return <GuidesAchatSection />;
-      case "actualites-tech":
-        return <ActualitesTechSection />;
-      case "tutos-maintenance":
-        return <TutosMaintenanceSection />;
-      default:
-        return <GuidesAchatSection />;
+      case "guides-achat": return <GuidesAchatSection key={key} />;
+      case "actualites-tech": return <ActualitesTechSection key={key} />;
+      case "tutos-maintenance": return <TutosMaintenanceSection key={key} />;
+      default: return <GuidesAchatSection key={key} />;
     }
   };
 
@@ -437,46 +449,27 @@ const Guides = () => {
         title="Guides, Actualités & Tutos."
         description="Des conseils concrets pour choisir, importer, monter et entretenir votre matériel à Madagascar."
         bg="6.png"
+        pill={{ icon: <BookOpen className="h-3.5 w-3.5" />, label: "Guides" }}
       />
 
-      {/* Barre de navigation sticky avec onglets - UNIQUEMENT pour la vue sectionnée */}
       {isSectionedView && (
         <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
           <div className="container-x py-3">
-            {/* Mobile : grille 3 colonnes */}
             <div className="grid grid-cols-3 gap-2 sm:hidden">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => switchTab(tab.id)}
-                    className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
-                      isActive
-                        ? `${tab.color} ${tab.activeColor}`
-                        : `${tab.color} opacity-60 hover:opacity-100`
-                    }`}
-                  >
+                  <button key={tab.id} onClick={() => switchTab(tab.id)} className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`}`}>
                     {tab.label}
                   </button>
                 );
               })}
             </div>
-
-            {/* Desktop : ligne */}
             <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => switchTab(tab.id)}
-                    className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
-                      isActive
-                        ? `${tab.color} ${tab.activeColor}`
-                        : `${tab.color} opacity-60 hover:opacity-100`
-                    }`}
-                  >
+                  <button key={tab.id} onClick={() => switchTab(tab.id)} className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`}`}>
                     {tab.label}
                   </button>
                 );
@@ -486,114 +479,78 @@ const Guides = () => {
         </nav>
       )}
 
-      <main className="container-x py-10">
-        {/* ───── Search + Filters Bar ───── */}
-        <div className="mb-8 grid gap-4 lg:grid-cols-[1fr_auto_auto]">
-          <form onSubmit={submitSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={searchDraft}
-              onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Rechercher un guide, une actualité, un tuto..."
-              className="h-11 w-full border border-border bg-background pl-10 pr-4 text-sm outline-none focus:border-primary transition-colors"
-            />
+      <main className="container-x py-6">
+        {/* Search + Filters Bar compact */}
+        <div className="mb-6 flex flex-wrap gap-2 items-center">
+          <form onSubmit={submitSearch} className="relative flex-1 min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} placeholder="Rechercher..." className="h-8 w-full border border-border bg-background pl-8 pr-3 text-xs rounded-lg focus:border-primary outline-none" />
           </form>
-          <select value={category} onChange={(event) => updateParam("categorie", event.target.value)} className="h-11 border border-border bg-background px-3 text-sm">
-            <option value="">Toutes les catégories</option>
-            {GUIDE_CATEGORIES.map((item) => (
-              <option key={item} value={item}>{guideCategoryLabels[item]}</option>
-            ))}
+          <select value={category} onChange={(e) => updateParam("categorie", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
+            <option value="">Toutes</option>
+            {GUIDE_CATEGORIES.map((item) => (<option key={item} value={item}>{guideCategoryLabels[item]}</option>))}
           </select>
-          <select value={sort} onChange={(event) => updateParam("sort", event.target.value)} className="h-11 border border-border bg-background px-3 text-sm">
+          <select value={sort} onChange={(e) => updateParam("sort", e.target.value)} className="h-8 border border-border bg-background px-2 text-xs rounded-lg">
             <option value="recent">Plus récents</option>
             <option value="popular">Populaires</option>
           </select>
         </div>
 
-        {/* ───── Sectioned View (home-style) ───── */}
         {isSectionedView ? (
-          <div
-            style={{
-              transition: "opacity 200ms ease, transform 200ms ease",
-              opacity: visible ? 1 : 0,
-              transform: visible ? "translateY(0)" : "translateY(16px)",
-            }}
-          >
+          <div style={{ transition: "opacity 200ms ease, transform 200ms ease", opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(16px)" }}>
             {renderActiveSection()}
           </div>
         ) : (
-          /* ───── Filtered / Search Results View ───── */
-          <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
             <section>
-              <div className="mb-5 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-2xl font-bold"><BookOpen className="h-6 w-6" /> Guides</h2>
-                <span className="text-sm text-muted-foreground">{data?.total ?? 0} résultat(s)</span>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="flex items-center gap-1.5 text-base font-bold"><BookOpen className="h-4 w-4" /> Guides</h2>
+                <span className="text-[10px] text-muted-foreground">{data?.total ?? 0} résultat(s)</span>
               </div>
 
-              {isLoading && <div className="border border-border p-8 text-center text-muted-foreground animate-pulse">Chargement des guides...</div>}
-              {isError && <div className="border border-destructive p-8 text-center text-destructive">Impossible de charger les guides.</div>}
-              {!isLoading && !isError && guides.length === 0 && (
-                <div className="border border-border p-8 text-center text-muted-foreground">Aucun guide ne correspond à votre recherche.</div>
-              )}
+              {isLoading && <div className="border border-border p-6 text-center text-muted-foreground">Chargement...</div>}
+              {isError && <div className="border border-destructive p-6 text-center text-destructive">Erreur de chargement</div>}
+              {!isLoading && !isError && guides.length === 0 && <div className="border border-border p-6 text-center text-muted-foreground">Aucun guide trouvé</div>}
 
-              {featured && <GuideCard guide={featured} featured />}
+              {featured && <GuideCardFeatured guide={featured} />}
               {remaining.length > 0 && (
-                <div className="mt-6 grid gap-5 md:grid-cols-2">
-                  {remaining.map((guide) => <GuideCard key={guide.id} guide={guide} />)}
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {remaining.map((guide) => <GuideCardCompact key={guide.id} guide={guide} />)}
                 </div>
               )}
 
               {data && data.last_page > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  <button
-                    disabled={data.current_page <= 1}
-                    onClick={() => updateParam("page", String(data.current_page - 1))}
-                    className="border border-border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-secondary transition-colors"
-                  >
-                    Précédent
-                  </button>
-                  <span className="px-3 text-sm text-muted-foreground">Page {data.current_page} / {data.last_page}</span>
-                  <button
-                    disabled={data.current_page >= data.last_page}
-                    onClick={() => updateParam("page", String(data.current_page + 1))}
-                    className="border border-border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 hover:bg-secondary transition-colors"
-                  >
-                    Suivant
-                  </button>
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <button disabled={data.current_page <= 1} onClick={() => updateParam("page", String(data.current_page - 1))} className="border border-border px-3 py-1 text-xs rounded-lg disabled:opacity-50 hover:bg-secondary">Précédent</button>
+                  <span className="text-xs text-muted-foreground">{data.current_page} / {data.last_page}</span>
+                  <button disabled={data.current_page >= data.last_page} onClick={() => updateParam("page", String(data.current_page + 1))} className="border border-border px-3 py-1 text-xs rounded-lg disabled:opacity-50 hover:bg-secondary">Suivant</button>
                 </div>
               )}
             </section>
 
-            <aside className="space-y-6">
-              <div className="border border-border p-5">
-                <h3 className="mb-2 flex items-center gap-2 font-bold"><Filter className="h-4 w-4" /> Catégories</h3>
-                <div className="grid gap-2">
-                  <button onClick={() => updateParam("categorie", "")} className={`border border-border px-3 py-2 text-left text-sm transition-colors ${!category ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
-                    Toutes les catégories
-                  </button>
+            <aside className="space-y-4">
+              <div className="border border-border rounded-lg p-3">
+                <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold"><Filter className="h-3 w-3" /> Catégories</h3>
+                <div className="space-y-1">
+                  <button onClick={() => updateParam("categorie", "")} className={`w-full px-2 py-1 text-left text-[10px] rounded ${!category ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>Toutes</button>
                   {GUIDE_CATEGORIES.map((item) => {
                     const Icon = categoryIcons[item];
-                    return (
-                      <button key={item} onClick={() => updateParam("categorie", item)} className={`flex items-center gap-2 border border-border px-3 py-2 text-left text-sm transition-colors ${category === item ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}>
-                        <Icon className="h-4 w-4" /> {guideCategoryLabels[item]}
-                      </button>
-                    );
+                    return (<button key={item} onClick={() => updateParam("categorie", item)} className={`flex items-center gap-1.5 w-full px-2 py-1 text-left text-[10px] rounded ${category === item ? "bg-primary text-primary-foreground" : "hover:bg-secondary"}`}><Icon className="h-3 w-3" /> {guideCategoryLabels[item]}</button>);
                   })}
                 </div>
               </div>
-              <div className="border border-border p-5">
-                <h3 className="mb-1 flex items-center gap-2 font-bold"><Star className="h-4 w-4" /> Populaires</h3>
+              <div className="border border-border rounded-lg p-3">
+                <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold"><Star className="h-3 w-3" /> Populaires</h3>
                 {popularGuides.map((guide) => <CompactGuide key={guide.id} guide={guide} />)}
               </div>
-              <div className="border border-border p-5">
-                <h3 className="mb-1 font-bold">Récents</h3>
+              <div className="border border-border rounded-lg p-3">
+                <h3 className="mb-2 text-xs font-bold">Récents</h3>
                 {recentGuides.map((guide) => <CompactGuide key={guide.id} guide={guide} />)}
               </div>
             </aside>
           </div>
         )}
         
-        {/* Newsletter seulement dans la vue sectionnée */}
         {isSectionedView && activeTab === "guides-achat" && <NewsletterSection />}
       </main>
     </SiteLayout>
