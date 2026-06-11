@@ -630,7 +630,7 @@ export const Header = () => {
                   <Search className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <img src={isSearchFocused ? mascotListening : mascot} alt="" aria-hidden className="hidden lg:block absolute -top-8 -right-4 h-20 w-auto object-contain pointer-events-none transition-all duration-300" />
+              <img src={isSearchFocused ? mascotListening : mascot} alt="" aria-hidden className="hidden lg:block absolute -top-6 right-20 h-20 w-auto object-contain pointer-events-none transition-all duration-300" />
             </div>
 
             {showAdvanced && (
