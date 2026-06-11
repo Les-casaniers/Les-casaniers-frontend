@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { MarqueTop } from "../layout/MarqueTop";
 import { BandeauMarques } from "../layout/BandeauMarques";
 import { useState, useEffect } from "react";
 
@@ -318,10 +317,6 @@ export const Hero = () => {
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
             </div>
           ))}
-        </div>
-
-        <div className="relative z-20">
-          <MarqueTop />
         </div>
 
         <div className="relative z-10 flex flex-col min-h-[60vh]">
