@@ -451,6 +451,7 @@ const megaMenuCategories = [
 
 // Liens rapides dans la navbar secondaire
 const quickNavLinks = [
+  { label: "Pro & Freelance", href: "/pro-freelance", icon: <Briefcase className="h-3.5 w-3.5" /> },
   { label: "Gaming", href: "/gaming", icon: <Gamepad2 className="h-3.5 w-3.5" />, accent: true },
   { label: "Importation", href: "/importation", icon: <Package className="h-3.5 w-3.5" /> },
   { label: "Guides", href: "/guides", icon: <BookOpen className="h-3.5 w-3.5" /> },
