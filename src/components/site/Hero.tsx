@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { Link } from "react-router-dom";
-import { MarqueTop } from "../layout/MarqueTop";
 import { BandeauMarques } from "../layout/BandeauMarques";
 import { useState, useEffect } from "react";
 
@@ -22,7 +21,7 @@ const slides = [
     titre: "Aurora Gaming",
     description: "Puissance et élégance pour les gamers exigeants. Équipée du dernier processeur Intel Core i9 et RTX 4090 pour des performances exceptionnelles.",
     prix: "6 990 000 Ar",
-    boutonTexte: "Configurer cette version",
+    boutonTexte: "Qui sommes-nous ?",
   },
   {
     id: 2,
@@ -32,7 +31,7 @@ const slides = [
     titre: "Workstation Pro",
     description: "La station de travail ultime pour les créatifs et professionnels. 64 Go RAM, stockage NVMe et carte graphique professionnelle.",
     prix: "8 490 000 Ar",
-    boutonTexte: "Configurer cette version",
+    boutonTexte: "Qui sommes-nous ?",
   },
   {
     id: 3,
@@ -42,7 +41,7 @@ const slides = [
     titre: "Essential Gaming",
     description: "Le meilleur rapport qualité-prix pour découvrir le gaming PC. Performances solides à prix accessible.",
     prix: "3 990 000 Ar",
-    boutonTexte: "Configurer cette version",
+    boutonTexte: "Qui sommes-nous ?",
   },
 ];
 
@@ -92,7 +91,6 @@ export const Hero = () => {
 
   return (
     <>
-      {/* Import Lato depuis Google Fonts */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700&display=swap');
 
@@ -107,12 +105,12 @@ export const Hero = () => {
         .hero-badge {
           font-family: 'Lato', sans-serif;
           font-weight: 700;
-          font-size: 10px;
+          font-size: 9px;
           letter-spacing: 0.4em;
           text-transform: uppercase;
           color: rgba(255,255,255,0.7);
           border-bottom: 2px solid rgba(255,255,255,0.35);
-          padding-bottom: 6px;
+          padding-bottom: 5px;
           display: inline-flex;
           align-items: center;
           gap: 8px;
@@ -120,8 +118,8 @@ export const Hero = () => {
 
         .hero-badge::before {
           content: '';
-          width: 6px;
-          height: 6px;
+          width: 5px;
+          height: 5px;
           border-radius: 50%;
           background: #f59e0b;
           display: inline-block;
@@ -131,8 +129,8 @@ export const Hero = () => {
         .hero-title-main {
           font-family: 'Lato', sans-serif;
           font-weight: 900;
-          font-size: clamp(2.8rem, 8vw, 5.5rem);
-          line-height: 0.92;
+          font-size: clamp(2rem, 5vw, 3.5rem);
+          line-height: 1;
           letter-spacing: -0.03em;
           color: #ffffff;
         }
@@ -141,40 +139,39 @@ export const Hero = () => {
           font-family: 'Lato', sans-serif;
           font-weight: 300;
           font-style: italic;
-          font-size: clamp(1.8rem, 5vw, 3.5rem);
+          font-size: clamp(1.2rem, 3.5vw, 2rem);
           line-height: 1.1;
           color: rgba(255,255,255,0.65);
-          margin-top: 8px;
+          margin-top: 4px;
         }
 
         .hero-description {
           font-family: 'Lato', sans-serif;
           font-weight: 400;
-          font-size: 1.05rem;
-          line-height: 1.7;
+          font-size: 0.85rem;
+          line-height: 1.4;
           color: rgba(255,255,255,0.85);
-          max-width: 520px;
+          max-width: 480px;
         }
 
         .hero-price {
           font-family: 'Lato', sans-serif;
           font-weight: 700;
-          font-size: 1.6rem;
+          font-size: 1.2rem;
           color: #f59e0b;
           letter-spacing: -0.01em;
         }
 
-        /* Bouton principal CTA */
         .hero-btn-primary {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          padding: 14px 28px;
+          padding: 8px 20px;
           background: #ffffff;
           color: #0a0a0a;
           font-family: 'Lato', sans-serif;
           font-weight: 700;
-          font-size: 13px;
+          font-size: 10px;
           letter-spacing: 0.1em;
           text-transform: uppercase;
           border: none;
@@ -193,59 +190,35 @@ export const Hero = () => {
           box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
 
-        /* Bouton secondaire catalogue */
-        .hero-btn-secondary {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-family: 'Lato', sans-serif;
-          font-weight: 700;
-          font-size: 12px;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.85);
-          text-decoration: none;
-          border-bottom: 2px solid rgba(255,255,255,0.4);
-          padding-bottom: 3px;
-          transition: all 0.2s ease;
-        }
-        .hero-btn-secondary:hover {
-          color: #ffffff;
-          border-bottom-color: #ffffff;
-        }
-
-        /* Bouton "Qui sommes-nous ?" */
         .hero-btn-about {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          padding: 11px 22px;
-          background: rgba(255,255,255,0.08);
-          backdrop-filter: blur(8px);
-          color: rgba(255,255,255,0.9);
+          padding: 7px 16px;
+          background: linear-gradient(135deg, #3b82f6, #6366f1);
+          color: #ffffff;
           font-family: 'Lato', sans-serif;
           font-weight: 700;
-          font-size: 12px;
+          font-size: 10px;
           letter-spacing: 0.15em;
           text-transform: uppercase;
-          border: 1px solid rgba(255,255,255,0.25);
+          border: none;
           cursor: pointer;
           transition: all 0.25s ease;
           text-decoration: none;
           border-radius: 2px;
+          box-shadow: 0 4px 12px rgba(59,130,246,0.3);
         }
         .hero-btn-about:hover {
-          background: rgba(255,255,255,0.15);
-          border-color: rgba(255,255,255,0.5);
-          color: #ffffff;
-          transform: translateY(-1px);
+          background: linear-gradient(135deg, #2563eb, #4f46e5);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(59,130,246,0.4);
         }
 
-        /* Stats */
         .hero-stat-value {
           font-family: 'Lato', sans-serif;
           font-weight: 900;
-          font-size: 1.5rem;
+          font-size: 1.1rem;
           color: #ffffff;
           letter-spacing: -0.02em;
         }
@@ -253,24 +226,23 @@ export const Hero = () => {
         .hero-stat-label {
           font-family: 'Lato', sans-serif;
           font-weight: 400;
-          font-size: 10px;
+          font-size: 7px;
           letter-spacing: 0.25em;
           text-transform: uppercase;
           color: rgba(255,255,255,0.5);
-          margin-top: 3px;
+          margin-top: 2px;
         }
 
-        /* Slide dot indicator actif */
         .hero-dot-active {
-          width: 40px;
-          height: 4px;
+          width: 32px;
+          height: 3px;
           border-radius: 2px;
           background: #ffffff;
           transition: all 0.3s ease;
         }
         .hero-dot {
-          width: 8px;
-          height: 4px;
+          width: 6px;
+          height: 3px;
           border-radius: 2px;
           background: rgba(255,255,255,0.35);
           transition: all 0.3s ease;
@@ -280,46 +252,12 @@ export const Hero = () => {
           background: rgba(255,255,255,0.6);
         }
 
-        /* Nav arrow buttons */
-        .hero-arrow {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 44px;
-          height: 44px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255,255,255,0.08);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.2);
-          color: white;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          border-radius: 50%;
-          z-index: 20;
-        }
-        .hero-arrow:hover {
-          background: rgba(255,255,255,0.18);
-          border-color: rgba(255,255,255,0.45);
-          transform: translateY(-50%) scale(1.05);
-        }
-
-        /* Slide number */
         .hero-slide-counter {
           font-family: 'Lato', sans-serif;
           font-weight: 700;
-          font-size: 11px;
+          font-size: 10px;
           letter-spacing: 0.3em;
           color: rgba(255,255,255,0.45);
-        }
-
-        /* Décoratif : ligne verticale */
-        .hero-divider-line {
-          width: 1px;
-          height: 60px;
-          background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.3), transparent);
-          margin: 0 auto;
         }
 
         @keyframes hero-pulse {
@@ -328,39 +266,37 @@ export const Hero = () => {
         }
 
         @keyframes hero-fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .hero-animate-up {
-          animation: hero-fadeUp 0.7s ease-out both;
+          animation: hero-fadeUp 0.6s ease-out both;
         }
         .hero-animate-up-delay {
-          animation: hero-fadeUp 0.7s ease-out 0.15s both;
+          animation: hero-fadeUp 0.6s ease-out 0.1s both;
         }
         .hero-animate-up-delay2 {
-          animation: hero-fadeUp 0.7s ease-out 0.3s both;
+          animation: hero-fadeUp 0.6s ease-out 0.2s both;
         }
 
         @keyframes hero-float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
-          33% { transform: translateY(-14px) rotate(1.5deg); }
-          66% { transform: translateY(-7px) rotate(-1deg); }
+          33% { transform: translateY(-10px) rotate(1.5deg); }
+          66% { transform: translateY(-5px) rotate(-1deg); }
         }
         .hero-float { animation: hero-float 4s ease-in-out infinite; }
 
-        /* Transition contenu */
         .hero-content-transition {
           transition: opacity 0.2s ease, transform 0.2s ease;
         }
         .hero-content-hidden {
           opacity: 0;
-          transform: translateY(8px);
+          transform: translateY(6px);
         }
       `}</style>
 
-      <section className="hero-root relative min-h-screen overflow-hidden">
+      <section className="hero-root relative min-h-[60vh] overflow-hidden">
 
-        {/* Carrousel backgrounds */}
         <div className="absolute inset-0 z-0">
           {slides.map((slide, index) => (
             <div
@@ -377,77 +313,53 @@ export const Hero = () => {
                   backgroundPosition: "center",
                 }}
               />
-              {/* Overlay adapté dark/light */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/15 dark:from-black/90 dark:via-black/60 dark:to-black/25" />
-              {/* Vignette bas */}
-              <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/40 to-transparent" />
             </div>
           ))}
         </div>
 
-        {/* Marquee top */}
-        <div className="relative z-20">
-          <MarqueTop />
-        </div>
-
-        {/* Contenu principal */}
-        <div className="relative z-10 flex flex-col min-h-screen">
+        <div className="relative z-10 flex flex-col min-h-[60vh]">
           <div className="flex-1 flex items-center">
-            <div className="w-full px-8 md:px-12 lg:px-16 xl:px-24 py-12">
-              <div className="w-full flex flex-col lg:flex-row justify-between items-center gap-12 lg:gap-20">
+            <div className="w-full px-6 md:px-10 lg:px-16 xl:px-20 py-6">
+              <div className="w-full flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-12">
 
-                {/* GAUCHE — Texte */}
                 <div
-                  className={`lg:w-1/2 max-w-2xl space-y-7 hero-content-transition ${isTransitioning ? "hero-content-hidden" : ""
+                  className={`lg:w-1/2 max-w-xl space-y-4 hero-content-transition ${isTransitioning ? "hero-content-hidden" : ""
                     }`}
                 >
-                  {/* Badge */}
                   <div className="hero-animate-up">
                     <span className="hero-badge">{currentSlide.badge}</span>
                   </div>
 
-                  {/* Titre */}
                   <div className="hero-animate-up-delay space-y-0">
                     <h1 className="hero-title-main">{currentSlide.titre}</h1>
                     <p className="hero-title-sub">Le PC, redéfini</p>
                   </div>
 
-                  {/* Description */}
                   <p className="hero-description hero-animate-up-delay">
                     {currentSlide.description}
                   </p>
 
-                  {/* Prix */}
                   <div className="hero-animate-up-delay">
                     <span className="hero-price">À partir de {currentSlide.prix}</span>
                   </div>
 
-                  {/* CTA Buttons */}
-                  <div className="hero-animate-up-delay2 flex flex-wrap gap-4 items-center pt-2">
-                    {/* Bouton principal */}
+                  <div className="hero-animate-up-delay2 flex flex-wrap gap-3 items-center pt-1">
                     <Link
-                      to={`/configurateur?config=${currentSlide.id}`}
+                      to={`/qui-sommes-nous`}
                       className="hero-btn-primary"
                     >
                       {currentSlide.boutonTexte}
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowRight className="h-3 w-3" />
                     </Link>
 
-                    {/* Séparateur vertical */}
-                    <div className="w-px h-8 bg-white/20 hidden sm:block" />
-
-                    {/* Catalogue */}
-                    <Link to="/qui-sommes-nous" className="hero-btn-secondary">
-                      Qui sommes-nous ?
-                    </Link>
                   </div>
 
-                  {/* Ligne déco */}
-                  <div className="pt-4">
-                    <div className="w-12 h-px bg-white/20" />
+                  <div className="pt-1">
+                    <div className="w-10 h-px bg-white/20" />
                   </div>
 
-                  {/* Stats */}
                   <div className="hero-animate-up-delay2 grid grid-cols-3 gap-0 max-w-md">
                     {[
                       { v: "500+", l: "PC livrés" },
@@ -456,7 +368,7 @@ export const Hero = () => {
                     ].map((s, i) => (
                       <div
                         key={s.l}
-                        className={`py-3 ${i > 0 ? "border-l border-white/15 pl-5" : "pr-5"}`}
+                        className={`py-1 ${i > 0 ? "border-l border-white/15 pl-4" : "pr-4"}`}
                       >
                         <div className="hero-stat-value">{s.v}</div>
                         <div className="hero-stat-label">{s.l}</div>
@@ -465,27 +377,24 @@ export const Hero = () => {
                   </div>
                 </div>
 
-                {/* DROITE — Mascotte */}
                 <div
                   className={`lg:w-1/2 flex justify-center lg:justify-end items-center hero-content-transition ${isTransitioning ? "hero-content-hidden" : ""
                     }`}
                 >
                   <div className="relative">
-                    {/* Halo décoratif — ambre pour coïncider avec le navbar premium */}
-                    <div className="absolute inset-0 -m-8 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
+                    <div className="absolute inset-0 -m-6 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
                     <img
                       key={currentSlide.id}
                       src={currentSlide.mascotte}
                       alt={`Mascotte ${currentSlide.titre}`}
-                      className="w-56 h-56 md:w-72 md:h-72 lg:w-88 lg:h-88 xl:w-96 xl:h-96 object-contain drop-shadow-2xl hero-float relative z-10"
-                      style={{ width: "clamp(220px, 30vw, 380px)", height: "clamp(220px, 30vw, 380px)" }}
+                      className="object-contain drop-shadow-2xl hero-float relative z-10"
+                      style={{ width: "clamp(150px, 20vw, 240px)", height: "clamp(150px, 20vw, 240px)" }}
                     />
-                    {/* Label sous mascotte */}
-                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-center whitespace-nowrap z-10">
+                    <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-center whitespace-nowrap z-10">
                       <p
                         style={{
                           fontFamily: "'Lato', sans-serif",
-                          fontSize: "11px",
+                          fontSize: "8px",
                           letterSpacing: "0.2em",
                           textTransform: "uppercase",
                           color: "rgba(255,255,255,0.45)",
@@ -501,16 +410,13 @@ export const Hero = () => {
             </div>
           </div>
 
-          {/* Bottom bar : counter + dots + flèches */}
-          <div className="relative z-20 pb-8 px-8 md:px-12 lg:px-16 xl:px-24">
-            <div className="flex items-center justify-between max-w-2xl">
-              {/* Counter */}
+          <div className="relative z-20 pb-4 px-6 md:px-10 lg:px-16 xl:px-20">
+            <div className="flex items-center justify-between max-w-md">
               <span className="hero-slide-counter">
                 {String(currentIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
               </span>
 
-              {/* Dots */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {slides.map((_, index) => (
                   <button
                     key={index}
@@ -521,8 +427,7 @@ export const Hero = () => {
                 ))}
               </div>
 
-              {/* Flèches compactes */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={goToPrevious}
                   aria-label="Slide précédent"
@@ -530,8 +435,8 @@ export const Hero = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "36px",
-                    height: "36px",
+                    width: "28px",
+                    height: "28px",
                     borderRadius: "50%",
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.2)",
@@ -540,7 +445,7 @@ export const Hero = () => {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3 w-3" />
                 </button>
                 <button
                   onClick={goToNext}
@@ -549,8 +454,8 @@ export const Hero = () => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "36px",
-                    height: "36px",
+                    width: "28px",
+                    height: "28px",
                     borderRadius: "50%",
                     background: "rgba(255,255,255,0.08)",
                     border: "1px solid rgba(255,255,255,0.2)",
@@ -559,14 +464,13 @@ export const Hero = () => {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3 w-3" />
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bandeau marques */}
         <div className="relative z-20">
           <BandeauMarques />
         </div>

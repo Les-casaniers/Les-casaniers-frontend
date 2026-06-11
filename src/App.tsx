@@ -60,6 +60,7 @@ import AdminAvis from "@/components/ActionAdmin/AdminAvis";
 import AdminDevisExpress from "@/components/ActionAdmin/AdminDevisExpress";
 import AdminUtilisateurs from "@/components/ActionAdmin/AdminUtilisateurs";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner"; //Cookie Banner
+import QuiSommesNous from "./components/site/QuiSommesNous.tsx";
 
 const queryClient = new QueryClient();
 

@@ -2,7 +2,7 @@ export const BandeauMarques = () => {
   return (
     <section className="relative bg-background overflow-hidden theme-transition">
       {/* Bandeau marques */}
-      <div className="border-y border-border bg-secondary/30 mt-8 theme-transition">
+      <div className="border-y border-border bg-secondary/30 theme-transition">
         <div className="container-x grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
           {[
             { t: "Importation", s: "Directe d'Europe" },
