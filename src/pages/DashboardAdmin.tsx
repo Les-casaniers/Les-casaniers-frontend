@@ -328,6 +328,7 @@ const DashboardAdmin = () => {
     { icon: ClipboardList, label: "Devis", path: "/DashboardAdmin/devis" },
     { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
     { icon: Users, label: "Favoris", path: "/DashboardAdmin/favoris" },
+    { icon: ShoppingCart, label: "Paniers", path: "/DashboardAdmin/paniers" },
     { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
     { icon: Star, label: "Avis clients", path: "/DashboardAdmin/avis" },
     { icon: FileText, label: "Devis express", path: "/DashboardAdmin/devis-express" },
