@@ -31,47 +31,47 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
   }, []);
 
   const handleChoice = async (choix: 'accepter' | 'refuser') => {
-  // Sauvegarder le choix dans localStorage
-  localStorage.setItem('cookie_consent', choix);
-  localStorage.setItem('cookie_consent_timestamp', Date.now().toString());
-  
-  // URL CORRIGÉE - correspond à votre route Laravel
-  const API_URL = 'http://localhost:8000'; // Port de votre Laravel
-  
-  try {
-    const response = await fetch(`${API_URL}/api/cookies/consent`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ 
-        choix: choix,
-        timestamp: new Date().toISOString()
-      })
-    });
+    // Sauvegarder le choix dans localStorage
+    localStorage.setItem('cookie_consent', choix);
+    localStorage.setItem('cookie_consent_timestamp', Date.now().toString());
     
-    if (!response.ok) {
-      console.warn('Erreur serveur:', response.status);
-    } else {
-      console.log('Consentement enregistré avec succès');
+    // URL CORRIGÉE - correspond à votre route Laravel
+    const API_URL = 'http://localhost:8000'; // Port de votre Laravel
+    
+    try {
+      const response = await fetch(`${API_URL}/api/cookies/consent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+          choix: choix,
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      if (!response.ok) {
+        console.warn('Erreur serveur:', response.status);
+      } else {
+        console.log('Consentement enregistré avec succès');
+      }
+    } catch (error) {
+      console.warn('Erreur lors de l\'enregistrement du consentement', error);
     }
-  } catch (error) {
-    console.warn('Erreur lors de l\'enregistrement du consentement', error);
-  }
-  
-  // Appliquer les règles de cookies
-  if (choix === 'accepter') {
-    enableTrackingCookies();
-    if (onAccept) onAccept();
-  } else {
-    disableTrackingCookies();
-    if (onRefuse) onRefuse();
-  }
-  
-  // Masquer le banner
-  setVisible(false);
-};
+    
+    // Appliquer les règles de cookies
+    if (choix === 'accepter') {
+      enableTrackingCookies();
+      if (onAccept) onAccept();
+    } else {
+      disableTrackingCookies();
+      if (onRefuse) onRefuse();
+    }
+    
+    // Masquer le banner
+    setVisible(false);
+  };
 
   const enableTrackingCookies = () => {
     // Exemple pour Google Analytics
@@ -123,11 +123,11 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom-full duration-300">
-      {/* Overlay semi-transparent */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+      {/* Overlay semi-transparent noir */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
-      {/* Banner principal */}
-      <div className="relative bg-gradient-to-r from-gray-900 to-gray-800 border-t-4 border-amber-500 shadow-2xl">
+      {/* Banner principal - Noir et Blanc uniquement */}
+      <div className="relative bg-black border-t-4 border-white shadow-2xl">
         <div className="container mx-auto px-4 py-5">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
             
@@ -140,7 +140,7 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
               
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl"></span>
+                  <span className="text-2xl">🐱</span>
                   <h3 className="text-white font-semibold text-lg">
                     Le Fosa veille sur vos données
                   </h3>
@@ -152,33 +152,33 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
                   et vous proposer des conseils personnalisés. Vous gardez le contrôle.
                 </p>
                 
-                {/* Liens vers politiques */}
+                {/* Liens vers politiques - Noir et Blanc */}
                 <div className="flex flex-wrap gap-4 mt-3 text-xs">
                   <Link 
                     to="/confidentialite" 
-                    className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1 underline"
                     onClick={() => setVisible(false)}
                   >
-                     Politique de Confidentialité
+                    📜 Politique de Confidentialité
                   </Link>
                   <Link 
                     to="/cgv" 
-                    className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1"
+                    className="text-gray-300 hover:text-white transition-colors flex items-center gap-1 underline"
                     onClick={() => setVisible(false)}
                   >
-                     Conditions Générales de Vente
+                    📋 Conditions Générales de Vente
                   </Link>
                   <button
                     onClick={() => setShowDetails(!showDetails)}
-                    className="text-gray-400 hover:text-gray-300 transition-colors"
+                    className="text-gray-400 hover:text-white transition-colors"
                   >
                     {showDetails ? 'Masquer les détails' : '🍪 En savoir plus sur les cookies'}
                   </button>
                 </div>
                 
-                {/* Détails des cookies */}
+                {/* Détails des cookies - Noir et Blanc */}
                 {showDetails && (
-                  <div className="mt-3 p-3 bg-gray-800/50 rounded-lg text-xs text-gray-400 space-y-2">
+                  <div className="mt-3 p-3 bg-gray-900 rounded-lg text-xs text-gray-400 space-y-2 border border-gray-800">
                     <p><strong className="text-white">Cookies essentiels :</strong> Authentification, panier, paiement - Toujours actifs</p>
                     <p><strong className="text-white">Cookies de performance :</strong> Analyse d'audience, performance du site - Optionnels</p>
                     <p><strong className="text-white">Cookies fonctionnels :</strong> Préférences, historique de navigation - Optionnels</p>
@@ -188,19 +188,19 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
               </div>
             </div>
             
-            {/* Boutons d'action */}
+            {/* Boutons d'action - Noir et Blanc */}
             <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
               <button
                 onClick={() => handleChoice('refuser')}
-                className="px-6 py-2.5 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-all duration-200 transform hover:scale-105"
+                className="px-6 py-2.5 text-sm font-medium text-black bg-white hover:bg-gray-200 rounded-lg transition-all duration-200 transform hover:scale-105"
               >
-                 Refuser
+                ❌ Refuser
               </button>
               <button
                 onClick={() => handleChoice('accepter')}
-                className="px-6 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className="px-6 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-all duration-200 transform hover:scale-105 border border-white"
               >
-                 Accepter
+                ✅ Accepter
               </button>
             </div>
           </div>
@@ -209,7 +209,7 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
         {/* Bouton fermeture */}
         <button
           onClick={() => handleChoice('refuser')}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-300 transition-colors"
+          className="absolute top-3 right-3 text-gray-500 hover:text-white transition-colors"
           aria-label="Fermer"
         >
           <X size={18} />

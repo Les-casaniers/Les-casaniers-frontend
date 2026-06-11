@@ -41,6 +41,7 @@ import ConfigPc from "@/components/ActionAdmin/ConfigPc";
 import AdminCommandes from "@/components/ActionAdmin/AdminCommandes";
 import AdminClients from "@/components/ActionAdmin/AdminClients";
 import AdminFavoris from "@/components/ActionAdmin/AdminFavoris";//favoris
+import AdminPaniers from "@/components/ActionAdmin/AdminPaniers";//Paniers
 import AdminFactures from "@/components/ActionAdmin/AdminFactures";
 import AdminDevis from "@/components/ActionAdmin/AdminDevis";
 import AdminNotifications from "@/components/ActionAdmin/AdminNotifications";
@@ -114,6 +115,7 @@ const App = () => (
                 <Route path="commandes" element={<AdminCommandes />} />
                 <Route path="clients" element={<AdminClients />} />
                 <Route path="favoris" element={<AdminFavoris />} /> // ← AJOUTER
+                <Route path="paniers" element={<AdminPaniers />} /> // ← AJOUTER
                 <Route path="devis" element={<AdminDevis />} />
                 <Route path="factures" element={<AdminFactures />} />
                 <Route path="avis" element={<AdminAvis />} /> // ← AJOUTER
