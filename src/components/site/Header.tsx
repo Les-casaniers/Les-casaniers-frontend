@@ -56,7 +56,6 @@ const useTheme = () => {
 };
 
 // ─── Mega Menu Data ────────────────────────────────────────────────────────────
-// Structure: catégories latérales → panel de sous-catégories groupées
 const megaMenuCategories = [
   {
     id: "assemblés",
@@ -64,7 +63,7 @@ const megaMenuCategories = [
     icon: <Monitor className="h-4 w-4" />,
     href: "/pc-assembles",
     panel: {
-      type: "visual", // affiche des cards avec images
+      type: "visual",
       title: "PC de Bureau Assemblés",
       groups: [
         {
@@ -449,7 +448,6 @@ const megaMenuCategories = [
   }
 ];
 
-// Liens rapides dans la navbar secondaire
 const quickNavLinks = [
   { label: "Pro & Freelance", href: "/pro-freelance", icon: <Briefcase className="h-3.5 w-3.5" /> },
   { label: "Gaming", href: "/gaming", icon: <Gamepad2 className="h-3.5 w-3.5" />, accent: true },
@@ -468,6 +466,7 @@ export const Header = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [activeCategoryId, setActiveCategoryId] = useState<string>(megaMenuCategories[0].id);
+  const [activeColumnId, setActiveColumnId] = useState<number | null>(null);
   const [openMobileSubmenu, setOpenMobileSubmenu] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
@@ -598,15 +597,13 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border theme-transition">
 
-      {/* ── Main header ─────────────────────────────────── */}
+      {/* Main header */}
       <div className="container-x py-3 lg:py-3.5">
         <div className="flex items-center gap-3 lg:gap-5">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
             <img src={logo} alt="Les Casaniers" className="h-10 sm:h-11 lg:h-20 w-auto object-contain dark:brightness-0 dark:invert transition-transform duration-300 group-hover:scale-105" />
           </Link>
 
-          {/* Search */}
           <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-2xl">
             <div className="relative flex items-center">
               <div className="relative flex-1">
@@ -662,7 +659,6 @@ export const Header = () => {
             )}
           </form>
 
-          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-1 lg:gap-2">
             <ThemeToggle />
             <ActionButton to="/favoris" icon={<Heart className="h-5 w-5" />} label="Favoris" count={favorites?.length} />
@@ -707,7 +703,6 @@ export const Header = () => {
             </div>
           </div>
 
-          {/* Mobile buttons */}
           <div className="flex items-center gap-1 md:hidden">
             <Link to="/favoris" className="relative p-2">
               <Heart className="h-5 w-5" />
@@ -722,12 +717,12 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* ── Desktop Navigation Bar ───────────────────────── */}
+      {/* Desktop Navigation Bar - SOUS-MENU AMÉLIORÉ */}
       <nav className="hidden lg:block border-t border-border bg-background">
         <div className="container-x">
           <div className="flex items-center gap-0">
 
-            {/* ── "Nos Produits" mega trigger ── */}
+            {/* "Nos Produits" mega trigger - CONSERVÉ IDENTIQUE */}
             <div
               className="relative"
               onMouseEnter={openMegaMenu}
@@ -746,113 +741,156 @@ export const Header = () => {
                 <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${megaMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* ── Mega Menu Panel ── */}
+              {/* ── MEGA MENU PANEL AMÉLIORÉ ── */}
               {megaMenuOpen && (
                 <div
                   ref={megaMenuRef}
                   onMouseEnter={keepMegaMenuOpen}
                   onMouseLeave={closeMegaMenu}
                   className="absolute left-0 top-full z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  style={{ width: '900px' }}
+                  style={{ width: '1000px' }}
                 >
-                  {/* bridge invisible pour éviter le gap */}
-                  <div className="h-1 w-full" />
-                  <div className="flex bg-popover border border-border rounded-b-2xl shadow-2xl overflow-hidden" style={{ maxHeight: '540px' }}>
+                  <div className="mt-1 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
+                    <div className="flex" style={{ maxHeight: '560px' }}>
 
-                    {/* ── Sidebar catégories ── */}
-                    <div className="w-56 shrink-0 bg-secondary/60 border-r border-border overflow-y-auto">
-                      {megaMenuCategories.map((cat) => (
-                        <button
-                          key={cat.id}
-                          onMouseEnter={() => setActiveCategoryId(cat.id)}
-                          onClick={() => { navigate(cat.href); setMegaMenuOpen(false); }}
-                          className={`
-                            w-full flex items-center justify-between gap-2 px-4 py-2.5 text-sm transition-all text-left
-                            ${activeCategoryId === cat.id
-                              ? 'bg-background text-primary font-semibold border-r-2 border-primary'
-                              : 'text-foreground hover:bg-background/70'}
-                          `}
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <span className={activeCategoryId === cat.id ? 'text-primary' : 'text-muted-foreground'}>
-                              {cat.icon}
+                      {/* Sidebar catégories - STYLE ÉLÉGANT */}
+                      <div className="w-64 shrink-0 bg-gradient-to-b from-secondary/40 to-secondary/20 border-r border-border/50 overflow-y-auto">
+                        {megaMenuCategories.map((cat) => (
+                          <button
+                            key={cat.id}
+                            onMouseEnter={() => setActiveCategoryId(cat.id)}
+                            onClick={() => { navigate(cat.href); setMegaMenuOpen(false); }}
+                            className={`
+                              w-full flex items-center justify-between gap-2 px-5 py-3 text-sm transition-all duration-200 text-left
+                              ${activeCategoryId === cat.id
+                                ? 'bg-gradient-to-r from-primary/10 to-transparent text-primary font-semibold border-l-4 border-primary'
+                                : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'}
+                            `}
+                          >
+                            <span className="flex items-center gap-3">
+                              <span className={`transition-colors duration-200 ${activeCategoryId === cat.id ? 'text-primary' : 'text-muted-foreground'}`}>
+                                {cat.icon}
+                              </span>
+                              <span className="font-medium">{cat.label}</span>
                             </span>
-                            {cat.label}
-                          </span>
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        </button>
-                      ))}
-                    </div>
+                            <ChevronRight className={`h-3.5 w-3.5 transition-all duration-200 ${activeCategoryId === cat.id ? 'text-primary translate-x-0.5' : 'text-muted-foreground/40'}`} />
+                          </button>
+                        ))}
+                      </div>
 
-                    {/* ── Panel contenu ── */}
-                    <div className="flex-1 overflow-y-auto p-5">
-                      {activeCategory.panel.type === 'visual' ? (
-                        // Grid de cards visuelles (PC Assemblés)
-                        <div>
-                          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                            {activeCategory.panel.title}
-                          </h3>
-                          <div className="grid grid-cols-3 gap-3">
-                            {activeCategory.panel.groups[0].items.map((item: any) => (
-                              <Link
-                                key={item.label}
-                                to={item.href}
+                      {/* Panel contenu - DESIGN PROFESSIONNEL */}
+                      <div className="flex-1 overflow-y-auto p-6 bg-popover">
+                        {activeCategory.panel.type === 'visual' ? (
+                          <div>
+                            <div className="flex items-center justify-between mb-5 pb-2 border-b border-border">
+                              <h3 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                                {activeCategory.panel.title}
+                              </h3>
+                              <Link 
+                                to={activeCategory.href} 
                                 onClick={() => setMegaMenuOpen(false)}
-                                className="group block rounded-xl overflow-hidden border border-border hover:border-primary/40 hover:shadow-lg transition-all"
+                                className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
                               >
-                                <div className="relative overflow-hidden bg-secondary aspect-[16/9]">
-                                  <img
-                                    src={item.img}
-                                    alt={item.label}
-                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                  />
-                                </div>
-                                <div className="px-3 py-2 bg-popover">
-                                  <p className="text-xs font-semibold text-foreground leading-snug">{item.label}</p>
-                                  {item.desc && <p className="text-[11px] text-muted-foreground mt-0.5">{item.desc}</p>}
-                                </div>
+                                Voir tout <ChevronRight className="h-3 w-3" />
                               </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        // Grille de liens groupés
-                        <div className="grid grid-cols-3 gap-x-6 gap-y-5">
-                          {activeCategory.panel.groups.map((group: any, gi: number) => (
-                            <div key={gi}>
-                              <h4 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2 pb-1.5 border-b border-border">
-                                {group.title}
-                              </h4>
-                              <ul className="space-y-1">
-                                {group.items.map((item: any) => (
-                                  <li key={item.label}>
-                                    <Link
-                                      to={item.href}
-                                      onClick={() => setMegaMenuOpen(false)}
-                                      className="flex items-center gap-1.5 py-1 text-sm text-foreground/80 hover:text-primary transition-colors group/link"
-                                    >
-                                      <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover/link:text-primary transition-colors shrink-0" />
-                                      <span>{item.label}</span>
-                                      {item.badge && (
-                                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary leading-none">
-                                          {item.badge}
-                                        </span>
-                                      )}
-                                    </Link>
-                                  </li>
-                                ))}
-                              </ul>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                            <div className="grid grid-cols-2 gap-4">
+                              {activeCategory.panel.groups[0].items.map((item: any) => (
+                                <Link
+                                  key={item.label}
+                                  to={item.href}
+                                  onClick={() => setMegaMenuOpen(false)}
+                                  className="group block rounded-xl overflow-hidden border border-border hover:border-primary/40 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                >
+                                  <div className="relative overflow-hidden bg-gradient-to-br from-secondary to-secondary/50 aspect-[16/9]">
+                                    <img
+                                      src={item.img}
+                                      alt={item.label}
+                                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                  </div>
+                                  <div className="px-4 py-3 bg-popover">
+                                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                                    {item.desc && <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center justify-between mb-5 pb-2 border-b border-border">
+                              <h3 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                                {activeCategory.label}
+                              </h3>
+                              <Link 
+                                to={activeCategory.href} 
+                                onClick={() => setMegaMenuOpen(false)}
+                                className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+                              >
+                                Explorer <ChevronRight className="h-3 w-3" />
+                              </Link>
+                            </div>
+                            <div className="grid grid-cols-3 gap-x-6 gap-y-5">
+                              {activeCategory.panel.groups.map((group: any, gi: number) => (
+                                <div 
+                                  key={gi} 
+                                  className={`transition-all duration-200 ${activeColumnId === gi ? 'transform translate-x-1' : ''}`}
+                                  onMouseEnter={() => setActiveColumnId(gi)}
+                                  onMouseLeave={() => setActiveColumnId(null)}
+                                >
+                                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary/80 mb-3 pb-2 border-b border-border/60">
+                                    {group.title}
+                                  </h4>
+                                  <ul className="space-y-1.5">
+                                    {group.items.map((item: any, ii: number) => (
+                                      <li key={item.label}>
+                                        <Link
+                                          to={item.href}
+                                          onClick={() => setMegaMenuOpen(false)}
+                                          className="group/link flex items-center gap-2 py-1.5 text-sm text-foreground/75 hover:text-primary transition-all duration-200"
+                                        >
+                                          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover/link:text-primary group-hover/link:translate-x-0.5 transition-all duration-200 shrink-0" />
+                                          <span className="group-hover/link:translate-x-0.5 transition-transform duration-200">{item.label}</span>
+                                          {item.badge && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
+                                              item.badge === 'HOT' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
+                                              item.badge === 'NEW' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
+                                              'bg-primary/10 text-primary'
+                                            }`}>
+                                              {item.badge}
+                                            </span>
+                                          )}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Footer avec avantages - AJOUT ÉLÉGANT */}
+                    <div className="border-t border-border/50 bg-gradient-to-r from-secondary/30 to-secondary/10 px-6 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Livraison offerte dès 50€</span>
+                        <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Paiement sécurisé</span>
+                        <span className="flex items-center gap-1.5"><Headphones className="h-3.5 w-3.5" /> Support 7j/7</span>
+                      </div>
+                      <Link to="/promotions" className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors">
+                        <Gift className="h-3.5 w-3.5" /> Voir les promotions
+                      </Link>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* ── Quick nav links ── */}
+            {/* Quick nav links */}
             {quickNavLinks.map((item) => (
               <Link
                 key={item.label}
@@ -877,12 +915,10 @@ export const Header = () => {
                     {item.badge}
                   </span>
                 )}
-                {/* underline active indicator */}
                 <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${isActive(item.href) ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`} />
               </Link>
             ))}
 
-            {/* Configurateur CTA pill */}
             <Link
               to="/configurateur"
               className="ml-auto flex items-center gap-2 px-5 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all rounded-full shadow-md hover:shadow-xl transform hover:-translate-y-0.5 mr-1 whitespace-nowrap"
@@ -894,7 +930,7 @@ export const Header = () => {
         </div>
       </nav>
 
-      {/* ── Mobile Drawer ─────────────────────────────────── */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 animate-in fade-in duration-200" onClick={() => setMobileMenuOpen(false)} />
@@ -909,7 +945,6 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* User section */}
             <div className="p-4 border-b border-border">
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
@@ -921,7 +956,6 @@ export const Header = () => {
               )}
             </div>
 
-            {/* Theme */}
             <div className="p-4 border-b border-border">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Thème</p>
               <div className="grid grid-cols-2 gap-2">
@@ -933,12 +967,10 @@ export const Header = () => {
               </div>
             </div>
 
-            {/* Navigation mobile */}
             <div className="py-4">
               <div className="px-4 space-y-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Nos Produits</p>
                 {megaMenuCategories.map((cat) => {
-                  const hasPanel = cat.panel.groups.length > 0;
                   const isOpen = openMobileSubmenu === cat.id;
 
                   return (
@@ -979,7 +1011,6 @@ export const Header = () => {
                 })}
               </div>
 
-              {/* Quick links mobile */}
               <div className="mt-4 px-4 space-y-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Accès rapide</p>
                 {quickNavLinks.map((item) => (
@@ -996,7 +1027,6 @@ export const Header = () => {
                 ))}
               </div>
 
-              {/* Mon compte mobile */}
               <div className="mt-4 px-4 space-y-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Mon compte</p>
                 {isAuthenticated ? (
@@ -1025,7 +1055,6 @@ export const Header = () => {
   );
 };
 
-// ─── ActionButton helper ───────────────────────────────────────────────────────
 const ActionButton = ({ to, icon, label, count }: { to: string; icon: React.ReactNode; label: string; count?: number }) => (
   <Link to={to} className="relative flex flex-col items-center gap-0.5 group px-2 py-1 rounded-lg hover:bg-secondary transition-all">
     <div className="relative">
