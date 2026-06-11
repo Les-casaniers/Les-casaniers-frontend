@@ -688,8 +688,7 @@ export const Header = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
                       </div>
                       <Link to={getDashboardUrl()} onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"><LayoutDashboard className="h-4 w-4" />{getDashboardLabel()}</Link>
-                      <Link to="/commandes" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"><Package className="h-4 w-4" />Mes commandes</Link>
-                      <Link to="/parametres" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"><Settings className="h-4 w-4" />Paramètres</Link>
+                      <Link to="/DashboardClient/commandes" onClick={() => setShowUserMenu(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"><Package className="h-4 w-4" />Mes commandes</Link>
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors border-t border-border mt-2 pt-2"><LogOut className="h-4 w-4" />Déconnexion</button>
                     </div>
                   )}
