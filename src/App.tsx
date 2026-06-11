@@ -59,6 +59,7 @@ import Favorites from "./pages/Favorites.tsx";
 import AdminAvis from "@/components/ActionAdmin/AdminAvis";
 import AdminDevisExpress from "@/components/ActionAdmin/AdminDevisExpress";
 import AdminUtilisateurs from "@/components/ActionAdmin/AdminUtilisateurs";
+import QuiSommesNous from "./components/site/QuiSommesNous.tsx";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/qui-sommes-nous" element={<QuiSommesNous />} />
             <Route path="/catalogue" element={<Catalog />} />
             <Route path="/produit/:id" element={<Product />} />
             <Route path="/config" element={<Config />} />
