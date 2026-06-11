@@ -140,7 +140,7 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
               
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🐱</span>
+                  <span className="text-2xl"></span>
                   <h3 className="text-white font-semibold text-lg">
                     Le Fosa veille sur vos données
                   </h3>
@@ -159,20 +159,20 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
                     className="text-gray-300 hover:text-white transition-colors flex items-center gap-1 underline"
                     onClick={() => setVisible(false)}
                   >
-                    📜 Politique de Confidentialité
+                    Politique de Confidentialité
                   </Link>
                   <Link 
                     to="/cgv" 
                     className="text-gray-300 hover:text-white transition-colors flex items-center gap-1 underline"
                     onClick={() => setVisible(false)}
                   >
-                    📋 Conditions Générales de Vente
+                    Conditions Générales de Vente
                   </Link>
                   <button
                     onClick={() => setShowDetails(!showDetails)}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
-                    {showDetails ? 'Masquer les détails' : '🍪 En savoir plus sur les cookies'}
+                    {showDetails ? 'Masquer les détails' : 'En savoir plus sur les cookies'}
                   </button>
                 </div>
                 
@@ -194,13 +194,13 @@ export const CookieConsentBanner = ({ onAccept, onRefuse }: CookieConsentBannerP
                 onClick={() => handleChoice('refuser')}
                 className="px-6 py-2.5 text-sm font-medium text-black bg-white hover:bg-gray-200 rounded-lg transition-all duration-200 transform hover:scale-105"
               >
-                ❌ Refuser
+                Refuser
               </button>
               <button
                 onClick={() => handleChoice('accepter')}
                 className="px-6 py-2.5 text-sm font-medium text-white bg-black hover:bg-gray-800 rounded-lg transition-all duration-200 transform hover:scale-105 border border-white"
               >
-                ✅ Accepter
+                Accepter
               </button>
             </div>
           </div>
