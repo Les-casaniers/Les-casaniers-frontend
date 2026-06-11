@@ -801,3 +801,56 @@
 .animate-slide-down {
   animation: slideDown 0.3s ease-out;
 }
+
+/* ==================== AMÉLIORATION DE LA LISIBILITÉ SUR MOBILE ==================== */
+/* Ces règles agrandissent les textes petits pour une meilleure lisibilité sur les écrans mobiles */
+
+/* Pour tous les écrans (base) */
+.text-\[10px\] {
+  font-size: 11px !important;
+}
+
+.text-\[9px\] {
+  font-size: 10px !important;
+}
+
+.text-\[8px\] {
+  font-size: 9px !important;
+}
+
+.text-\[7px\] {
+  font-size: 8px !important;
+}
+
+/* Sur mobile (moins de 640px) - agrandissement supplémentaire */
+@media (max-width: 640px) {
+  .text-\[10px\] {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-\[9px\] {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-\[8px\] {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-\[7px\] {
+    font-size: 9px !important;
+    line-height: 1.3 !important;
+  }
+  
+  /* Pour les badges et éléments très petits */
+  .badge, .pill, [class*="badge"], [class*="pill"] {
+    font-size: 11px !important;
+  }
+  
+  /* Pour les timestamps et dates */
+  .text-muted-foreground, [class*="timestamp"], [class*="date"] {
+    font-size: 11px !important;
+  }
+}

@@ -14,6 +14,7 @@ import Account from "./pages/Account.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import NousTrouver from "@/pages/NousTrouver";
 import CGV from "@/pages/CGV";
+import Confidentialite from "@/pages/Confidentialite"; // test
 import ProAndFreel from "@/pages/ProAndFreel";
 import Gaming from "@/pages/Gaming";
 import Composants from "@/pages/Composants";
@@ -31,7 +32,6 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Compte from "@/pages/Compte";
 import MotDePasseOublie from "@/pages/MotDePasseOublie";
-
 
 //Import Routes pour Admin
 import DashboardAdmin from "@/pages/DashboardAdmin"; // votre layout
@@ -59,6 +59,7 @@ import Favorites from "./pages/Favorites.tsx";
 import AdminAvis from "@/components/ActionAdmin/AdminAvis";
 import AdminDevisExpress from "@/components/ActionAdmin/AdminDevisExpress";
 import AdminUtilisateurs from "@/components/ActionAdmin/AdminUtilisateurs";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner"; //Cookie Banner
 import QuiSommesNous from "./components/site/QuiSommesNous.tsx";
 
 const queryClient = new QueryClient();
@@ -67,71 +68,81 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-      <ShopProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/qui-sommes-nous" element={<QuiSommesNous />} />
-            <Route path="/catalogue" element={<Catalog />} />
-            <Route path="/produit/:id" element={<Product />} />
-            <Route path="/config" element={<Config />} />
-            <Route path="/configurateur" element={<Configurateur />} />
-            <Route path="/panier" element={<Cart />} />
-            <Route path="/compte" element={<Account />} />
-            <Route path="/nous-trouver" element={<NousTrouver />} />
-            <Route path="/cgv" element={<CGV />} />
-            <Route path="/pro-freelance" element={<ProAndFreel />} />
-            <Route path="/composants" element={<Composants />} />
-            <Route path="/gaming" element={<Gaming />} />
-            <Route path="/pro" element={<Pro />} />
-            <Route path="/peripheriques" element={<Peripheriques />} />
-            <Route path="/guides" element={<Guides />} />
-            <Route path="/guides/:id" element={<GuideDetail />} />
-            <Route path="/importation" element={<Importation />} />
-            <Route path="/favoris" element={<Favorites />} />
-            <Route path="/devis-express" element={<DevisExpress />} />
-            {/* Route connexion */}
-            <Route path="/login" element={<Login />} /> 
-            <Route path="/inscription" element={<Register />} />
-            <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
-            <Route path="/compte" element={<Compte />} />
-            <Route path="/DashboardClient" element={<DashboardClient />} />
-            
-            {/* âœ… Routes admin imbriquÃ©es sous le layout DashboardAdmin */}
-            <Route path="/DashboardAdmin" element={<DashboardAdmin />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="produits" element={<AdminProduits />} />
-              <Route path="guides" element={<AdminGuides />} />
-              <Route path="produits/:id" element={<ConfigPc />} />
-              <Route path="commandes" element={<AdminCommandes />} />
-              <Route path="clients" element={<AdminClients />} />
-              <Route path="devis" element={<AdminDevis />} />
-              <Route path="factures" element={<AdminFactures />} />
-              <Route path="avis" element={<AdminAvis />} />                 // ← AJOUTER
-              <Route path="devis-express" element={<AdminDevisExpress />} /> // ← AJOUTER
-              <Route path="admins" element={<AdminUtilisateurs />} />        // ← AJOUTER
-              <Route path="notifications" element={<AdminNotifications />} />
-              <Route path="parametres" element={<AdminParametres />} />
-             
-            </Route>
+        <ShopProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/catalogue" element={<Catalog />} />
+              <Route path="/produit/:id" element={<Product />} />
+              <Route path="/config" element={<Config />} />
+              <Route path="/configurateur" element={<Configurateur />} />
+              <Route path="/panier" element={<Cart />} />
+              <Route path="/compte" element={<Account />} />
+              <Route path="/nous-trouver" element={<NousTrouver />} />
+              <Route path="/cgv" element={<CGV />} />
+              <Route path="/confidentialite" element={<Confidentialite />} />
+              <Route path="/pro-freelance" element={<ProAndFreel />} />
+              <Route path="/composants" element={<Composants />} />
+              <Route path="/gaming" element={<Gaming />} />
+              <Route path="/pro" element={<Pro />} />
+              <Route path="/peripheriques" element={<Peripheriques />} />
+              <Route path="/guides" element={<Guides />} />
+              <Route path="/guides/:id" element={<GuideDetail />} />
+              <Route path="/importation" element={<Importation />} />
+              <Route path="/favoris" element={<Favorites />} />
+              <Route path="/devis-express" element={<DevisExpress />} />
+              {/* Route connexion */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/inscription" element={<Register />} />
+              <Route
+                path="/mot-de-passe-oublie"
+                element={<MotDePasseOublie />}
+              />
+              <Route path="/compte" element={<Compte />} />
+              <Route path="/DashboardClient" element={<DashboardClient />} />
 
-            {/* âœ… Routes Client imbriquÃ©es sous le layout DashboardClient */}
-            <Route path="/DashboardClient" element={<DashboardClient />}>
-              <Route index element={<DashboardApercu />} />
-              <Route path="commandes" element={<DashboardCommandes />} />
-              <Route path="adresses" element={<DashboardAdresses />} />
-              <Route path="favoris" element={<DashboardFavoris />} />
-              <Route path="paiement" element={<DashboardPaiement />} />
-              <Route path="parametres" element={<DashboardParametres />} />
-            </Route>
+              {/* âœ… Routes admin imbriquÃ©es sous le layout DashboardAdmin */}
+              <Route path="/DashboardAdmin" element={<DashboardAdmin />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="produits" element={<AdminProduits />} />
+                <Route path="guides" element={<AdminGuides />} />
+                <Route path="produits/:id" element={<ConfigPc />} />
+                <Route path="commandes" element={<AdminCommandes />} />
+                <Route path="clients" element={<AdminClients />} />
+                <Route path="devis" element={<AdminDevis />} />
+                <Route path="factures" element={<AdminFactures />} />
+                <Route path="avis" element={<AdminAvis />} /> // ← AJOUTER
+                <Route
+                  path="devis-express"
+                  element={<AdminDevisExpress />}
+                />{" "}
+                // ← AJOUTER
+                <Route path="admins" element={<AdminUtilisateurs />} /> // ←
+                AJOUTER
+                <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="parametres" element={<AdminParametres />} />
+              </Route>
+
+              {/* âœ… Routes Client imbriquÃ©es sous le layout DashboardClient */}
+              <Route path="/DashboardClient" element={<DashboardClient />}>
+                <Route index element={<DashboardApercu />} />
+                <Route path="commandes" element={<DashboardCommandes />} />
+                <Route path="adresses" element={<DashboardAdresses />} />
+                <Route path="favoris" element={<DashboardFavoris />} />
+                <Route path="paiement" element={<DashboardPaiement />} />
+                <Route path="parametres" element={<DashboardParametres />} />
+              </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>
 
             {/* Casio flotte sur toutes les pages */}
             <FosaBot />
+
+            {/* Cookie Banner - s'affiche sur toutes les pages */}
+            <CookieConsentBanner />
           </BrowserRouter>
         </ShopProvider>
       </AuthProvider>
@@ -139,6 +150,4 @@ const App = () => (
   </QueryClientProvider>
 );
 
-
 export default App;
-
