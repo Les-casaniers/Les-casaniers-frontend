@@ -1,4 +1,4 @@
-﻿import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useShop } from "@/store/shop";
 import { Link, useSearchParams } from "react-router-dom";
@@ -12,22 +12,16 @@ import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
 
-// Configuration des types de filtres par référence
-const FILTER_CONFIG = [
-  { id: "all", name: "Tout", referencePrefixes: null, description: "Tous les produits du catalogue" },
-  { id: "composants", name: "Composants", referencePrefixes: ["CPU-", "GPU-", "RAM-", "MB-"], description: "Processeurs, cartes graphiques, mémoire RAM, cartes mères" },
-  { id: "peripheriques", name: "Périphériques", referencePrefixes: ["CHS-", "CLV-", "SR-", "ECR-"], description: "Chaises, claviers, souris, écrans" },
-  { id: "exception", name: "Exception", referencePrefixes: ["EXP-"], description: "Produits d'exception, éditions limitées" },
-  { id: "autres", name: "Autres", referencePrefixes: ["REF-"], description: "Autres produits et accessoires" }
-];
-
-// Couleurs pour les filtres actifs
-const FILTER_COLORS: Record<string, string> = {
-  all: "text-gray-500 border-gray-500/30 hover:bg-gray-500/10",
-  composants: "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
-  peripheriques: "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
-  exception: "text-amber-500 border-amber-500/30 hover:bg-amber-500/10",
-  autres: "text-teal-500 border-teal-500/30 hover:bg-teal-500/10",
+// Colors for dynamic category filters (cycling through some presets or using a primary color)
+const getFilterColorClass = (index: number) => {
+  const colors = [
+    "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
+    "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
+    "text-amber-500 border-amber-500/30 hover:bg-amber-500/10",
+    "text-teal-500 border-teal-500/30 hover:bg-teal-500/10",
+    "text-rose-500 border-rose-500/30 hover:bg-rose-500/10"
+  ];
+  return colors[index % colors.length];
 };
 
 const Catalog = () => {
@@ -40,7 +34,6 @@ const Catalog = () => {
   const searchCategory = searchParams.get("categorie") || "";
 
   const [favorites, setFavorites] = useState<number[]>([]);
-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"pop" | "asc" | "desc">("pop");
   const [budget, setBudget] = useState(15000000);
@@ -122,17 +115,6 @@ const Catalog = () => {
     return mainImage.url;
   };
 
-  const filterProductsByReference = (products: Product[], filterId: string): Product[] => {
-    if (filterId === "all") return products;
-    const filter = FILTER_CONFIG.find(f => f.id === filterId);
-    if (!filter || !filter.referencePrefixes) return [];
-    return products.filter(product => {
-      if (!product.actif || !product.est_dispo || product.quantite_stock <= 0) return false;
-      const reference = product.reference || "";
-      return filter.referencePrefixes!.some(prefix => reference.startsWith(prefix));
-    });
-  };
-
   const filterBySearch = (products: Product[], searchTerm: string): Product[] => {
     if (!searchTerm) return products;
     const term = searchTerm.toLowerCase();
@@ -144,9 +126,10 @@ const Catalog = () => {
     );
   };
 
+  const searchSousCategory = searchParams.get("sous_categorie") || "";
+
   const filtered = useMemo(() => {
     let list = [...allProducts];
-    list = filterProductsByReference(list, selectedFilter);
     if (q) list = filterBySearch(list, q);
     if (searchNom) list = list.filter(product => product.nom?.toLowerCase().includes(searchNom.toLowerCase()));
     if (searchRef) list = list.filter(product => product.reference?.toLowerCase().includes(searchRef.toLowerCase()));
@@ -154,11 +137,15 @@ const Catalog = () => {
       const catId = parseInt(searchCategory, 10);
       list = list.filter(product => product.categorie_id === catId || product.categorie?.id === catId);
     }
+    if (searchSousCategory) {
+      const sousCatId = parseInt(searchSousCategory, 10);
+      list = list.filter(product => product.id_sous_categorie === sousCatId || (product as any).sous_categorie?.id === sousCatId);
+    }
     list = list.filter((p) => p.prix <= budget);
     if (sort === "asc") list = [...list].sort((a, b) => a.prix - b.prix);
     if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
     return list;
-  }, [allProducts, selectedFilter, q, sort, budget, searchNom, searchRef, searchCategory]);
+  }, [allProducts, q, sort, budget, searchNom, searchRef, searchCategory, searchSousCategory]);
 
   // Charger les voix disponibles
   useEffect(() => {
@@ -235,21 +222,38 @@ const Catalog = () => {
         <div className="container-x py-3">
           {/* Mobile : grille responsive */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:hidden">
-            {FILTER_CONFIG.map((filter) => {
-              const isActive = selectedFilter === filter.id;
-              const colorClass = FILTER_COLORS[filter.id] || FILTER_COLORS.all;
-              const activeColorClass = isActive ? colorClass.replace('hover:', '').split(' ')[0] : '';
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.delete("categorie");
+                params.delete("sous_categorie");
+                setSearchParams(params);
+              }}
+              className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${!searchCategory
+                  ? "text-gray-500 border-gray-500/30 bg-gray-500/10"
+                  : "text-gray-500 border-gray-500/30 opacity-60 hover:opacity-100 hover:bg-gray-500/10"
+                }`}
+            >
+              Tout
+            </button>
+            {categories?.map((category, idx) => {
+              const isActive = searchCategory === String(category.id);
+              const colorClass = getFilterColorClass(idx);
               return (
                 <button
-                  key={filter.id}
-                  onClick={() => setSelectedFilter(filter.id)}
-                  className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
-                    isActive
+                  key={category.id}
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("categorie", String(category.id));
+                    params.delete("sous_categorie");
+                    setSearchParams(params);
+                  }}
+                  className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${isActive
                       ? `${colorClass} bg-opacity-10 border-opacity-60`
                       : `${colorClass} opacity-60 hover:opacity-100`
-                  }`}
+                    }`}
                 >
-                  {filter.name}
+                  {category.nom}
                 </button>
               );
             })}
@@ -258,20 +262,38 @@ const Catalog = () => {
           {/* Desktop : ligne horizontale */}
           <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
             <Filter className="h-4 w-4 text-[#c8a96e] shrink-0 mr-1" />
-            {FILTER_CONFIG.map((filter) => {
-              const isActive = selectedFilter === filter.id;
-              const colorClass = FILTER_COLORS[filter.id] || FILTER_COLORS.all;
+            <button
+              onClick={() => {
+                const params = new URLSearchParams(searchParams);
+                params.delete("categorie");
+                params.delete("sous_categorie");
+                setSearchParams(params);
+              }}
+              className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${!searchCategory
+                  ? "text-gray-500 border-gray-500/30 bg-gray-500/10"
+                  : "text-gray-500 border-gray-500/30 opacity-60 hover:opacity-100 hover:bg-gray-500/10"
+                }`}
+            >
+              Tout
+            </button>
+            {categories?.map((category, idx) => {
+              const isActive = searchCategory === String(category.id);
+              const colorClass = getFilterColorClass(idx);
               return (
                 <button
-                  key={filter.id}
-                  onClick={() => setSelectedFilter(filter.id)}
-                  className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${
-                    isActive
+                  key={category.id}
+                  onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.set("categorie", String(category.id));
+                    params.delete("sous_categorie");
+                    setSearchParams(params);
+                  }}
+                  className={`shrink-0 text-xs font-semibold px-4 py-1.5 rounded-full border transition-all ${isActive
                       ? `${colorClass} bg-opacity-10 border-opacity-60`
                       : `${colorClass} opacity-60 hover:opacity-100`
-                  }`}
+                    }`}
                 >
-                  {filter.name}
+                  {category.nom}
                 </button>
               );
             })}
@@ -318,7 +340,7 @@ const Catalog = () => {
       </section>
 
       {/* Active Search Filters Indicator */}
-      {(searchNom || searchRef || searchCategory) && (
+      {(searchNom || searchRef || searchCategory || searchSousCategory) && (
         <div className="container-x pt-4">
           <div className="flex flex-wrap items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">Filtres actifs :</span>
@@ -333,6 +355,18 @@ const Catalog = () => {
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary text-foreground text-[10px] rounded-full">
                   Réf: {searchRef}
                   <button onClick={() => { const np = new URLSearchParams(searchParams); np.delete("ref"); setSearchParams(np); }} className="hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                </span>
+              )}
+              {searchCategory && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary text-foreground text-[10px] rounded-full">
+                  Catégorie: {categories?.find(c => String(c.id) === searchCategory)?.nom || searchCategory}
+                  <button onClick={() => { const np = new URLSearchParams(searchParams); np.delete("categorie"); np.delete("sous_categorie"); setSearchParams(np); }} className="hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
+                </span>
+              )}
+              {searchSousCategory && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary text-foreground text-[10px] rounded-full">
+                  Sous-catégorie active
+                  <button onClick={() => { const np = new URLSearchParams(searchParams); np.delete("sous_categorie"); setSearchParams(np); }} className="hover:text-red-500"><X className="h-2.5 w-2.5" /></button>
                 </span>
               )}
             </div>

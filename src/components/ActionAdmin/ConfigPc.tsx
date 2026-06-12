@@ -5,7 +5,7 @@ import {
   ImageIcon, Pencil, X, PlusCircle, Trash2, Check, Loader2
 } from "lucide-react";
 import {
-  useProduct, useUpdateProduct, useCategories,
+  useProduct, useUpdateProduct, useCategories, useSousCategories,
   useProductImageActions, useProductAttributesActions,
   useCreateConfiguration, useDeleteConfiguration,
   Product, CreateConfigurationPayload,
@@ -24,18 +24,18 @@ const NOM_CONFIGURATIONS = [
 type Tab = "general" | "category" | "config" | "specs" | "stock" | "images";
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: "general",  label: "Général",          icon: <Package   className="h-4 w-4" /> },
-  { key: "category", label: "Catégorie",         icon: <Tag       className="h-4 w-4" /> },
-  { key: "config",   label: "Configuration PC",  icon: <Cpu       className="h-4 w-4" /> },
-  { key: "specs",    label: "Caractéristiques",  icon: <ListChecks className="h-4 w-4" /> },
-  { key: "stock",    label: "Stock & Prix",       icon: <BarChart3 className="h-4 w-4" /> },
-  { key: "images",   label: "Images",             icon: <ImageIcon className="h-4 w-4" /> },
+  { key: "general", label: "Général", icon: <Package className="h-4 w-4" /> },
+  { key: "category", label: "Catégorie", icon: <Tag className="h-4 w-4" /> },
+  { key: "config", label: "Configuration PC", icon: <Cpu className="h-4 w-4" /> },
+  { key: "specs", label: "Caractéristiques", icon: <ListChecks className="h-4 w-4" /> },
+  { key: "stock", label: "Stock & Prix", icon: <BarChart3 className="h-4 w-4" /> },
+  { key: "images", label: "Images", icon: <ImageIcon className="h-4 w-4" /> },
 ];
 
 const inputClass =
   "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-all";
-const labelClass  = "block text-sm font-medium text-foreground mb-1.5";
-const cardClass   = "bg-card border border-border rounded-2xl p-6 space-y-5";
+const labelClass = "block text-sm font-medium text-foreground mb-1.5";
+const cardClass = "bg-card border border-border rounded-2xl p-6 space-y-5";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ConfigModal — extrait en dehors du composant principal pour éviter
@@ -235,44 +235,46 @@ const ConfigModal: React.FC<ConfigModalProps> = ({
 const ConfigPc = () => {
   const { id } = useParams<{ id: string }>();
   const productId = id ? Number(id) : null;
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { isAdmin, user, loading: authLoading, logout } = useAuth();
 
   const { data: product, isLoading, refetch } = useProduct(productId);
-  const { data: categories }                  = useCategories();
-  const updateMutation                         = useUpdateProduct();
+  const { data: categories } = useCategories();
+  const { data: sousCategories } = useSousCategories();
+  const updateMutation = useUpdateProduct();
   const { uploadImage, deleteImage, setMainImage } = useProductImageActions();
-  const { syncAttributes, getStandardKeys }    = useProductAttributesActions();
-  const createConfigMutation                   = useCreateConfiguration();
-  const deleteConfigMutation                   = useDeleteConfiguration();
+  const { syncAttributes, getStandardKeys } = useProductAttributesActions();
+  const createConfigMutation = useCreateConfiguration();
+  const deleteConfigMutation = useDeleteConfiguration();
 
   const [activeTab, setActiveTab] = useState<Tab>("general");
-  const [editing,   setEditing]   = useState(false);
-  const [saving,    setSaving]    = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // État du modal configuration
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [cfgNom,          setCfgNom]          = useState<string>("");
-  const [cfgNomAutre,     setCfgNomAutre]     = useState("");
-  const [cfgDevise,       setCfgDevise]       = useState("MGA");
-  const [cfgComposants,   setCfgComposants]   = useState<ComposantRow[]>([
+  const [cfgNom, setCfgNom] = useState<string>("");
+  const [cfgNomAutre, setCfgNomAutre] = useState("");
+  const [cfgDevise, setCfgDevise] = useState("MGA");
+  const [cfgComposants, setCfgComposants] = useState<ComposantRow[]>([
     { nom: "", prix: "", quantite: "1" },
   ]);
   const [cfgSaving, setCfgSaving] = useState(false);
 
   // Champs éditables du produit
-  const [nom,         setNom]         = useState("");
-  const [reference,   setReference]   = useState("");
-  const [descCourte,  setDescCourte]  = useState("");
+  const [nom, setNom] = useState("");
+  const [reference, setReference] = useState("");
+  const [descCourte, setDescCourte] = useState("");
   const [description, setDescription] = useState("");
   const [typeProduit, setTypeProduit] = useState("");
   const [categorieId, setCategorieId] = useState("");
-  const [prix,        setPrix]        = useState("");
-  const [devise,      setDevise]      = useState("MGA");
-  const [stock,       setStock]       = useState("");
-  const [actif,       setActif]       = useState(true);
-  const [attrs,       setAttrs]       = useState<
+  const [idSousCategorie, setIdSousCategorie] = useState("");
+  const [prix, setPrix] = useState("");
+  const [devise, setDevise] = useState("MGA");
+  const [stock, setStock] = useState("");
+  const [actif, setActif] = useState(true);
+  const [attrs, setAttrs] = useState<
     { cle_attr: string; valeur_attr: string; libelle_attr?: string }[]
   >([]);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
@@ -287,15 +289,15 @@ const ConfigPc = () => {
     setReference(product.reference ?? "");
     setDescCourte(product.description_courte ?? "");
     setDescription(product.description ?? "");
-    setTypeProduit(product.type_produit ?? "");
     setCategorieId(String(product.categorie_id ?? ""));
+    setIdSousCategorie(String(product.id_sous_categorie ?? ""));
     setPrix(String(product.prix ?? ""));
     setDevise(product.devise ?? "MGA");
     setStock(String(product.quantite_stock ?? ""));
     setActif(product.actif ?? true);
     setAttrs(
       product.attributs?.map(a => ({
-        cle_attr:    a.cle_attr,
+        cle_attr: a.cle_attr,
         valeur_attr: a.valeur_attr,
         libelle_attr: a.libelle_attr,
       })) ?? []
@@ -308,16 +310,17 @@ const ConfigPc = () => {
     setSaving(true);
     try {
       const fd = new FormData();
-      fd.append("nom",              nom);
-      fd.append("reference",        reference);
+      fd.append("nom", nom);
+      fd.append("reference", reference);
       fd.append("description_courte", descCourte);
-      fd.append("description",      description);
-      fd.append("type_produit",     typeProduit);
-      fd.append("categorie_id",     categorieId);
-      fd.append("prix",             prix);
-      fd.append("devise",           devise);
-      fd.append("quantite_stock",   stock);
-      fd.append("actif",            actif ? "1" : "0");
+      fd.append("description", description);
+      fd.append("type_produit", typeProduit);
+      fd.append("categorie_id", categorieId);
+      if (idSousCategorie) fd.append("id_sous_categorie", idSousCategorie);
+      fd.append("prix", prix);
+      fd.append("devise", devise);
+      fd.append("quantite_stock", stock);
+      fd.append("actif", actif ? "1" : "0");
       await updateMutation.mutateAsync({ id: product.id, updatedProduct: fd });
 
       if (attrs.length > 0) {
@@ -331,7 +334,7 @@ const ConfigPc = () => {
             uploadImage.mutateAsync({
               produitId: product.id,
               imageFile: file,
-              alt:   `${nom} - ${i + 1}`,
+              alt: `${nom} - ${i + 1}`,
               ordre: startOrdre + i,
             })
           )
@@ -359,47 +362,47 @@ const ConfigPc = () => {
     setShowConfigModal(false);
   }, []);
 
-//   const handleCreateConfig = useCallback(async () => {
-//   if (!product || !cfgNom) return;
-//   setCfgSaving(true);
-//   try {
-//     const composants = cfgComposants
-//       .filter(c => c.nom.trim() !== "")
-//       .map(c => ({
-//         nom: c.nom.trim(),
-//         prix: parseFloat(c.prix.replace(",", ".")) || 0,
-//         quantite: parseInt(c.quantite, 10) || 1,
-//       }));
+  //   const handleCreateConfig = useCallback(async () => {
+  //   if (!product || !cfgNom) return;
+  //   setCfgSaving(true);
+  //   try {
+  //     const composants = cfgComposants
+  //       .filter(c => c.nom.trim() !== "")
+  //       .map(c => ({
+  //         nom: c.nom.trim(),
+  //         prix: parseFloat(c.prix.replace(",", ".")) || 0,
+  //         quantite: parseInt(c.quantite, 10) || 1,
+  //       }));
 
-//     // Construction explicite du payload
-//     const payload: any = {
-//       produit_id: product.id,
-//       nom_configuration: cfgNom,
-//       devise: cfgDevise || "MGA",
-//       composants_json: composants,
-//     };
+  //     // Construction explicite du payload
+  //     const payload: any = {
+  //       produit_id: product.id,
+  //       nom_configuration: cfgNom,
+  //       devise: cfgDevise || "MGA",
+  //       composants_json: composants,
+  //     };
 
-//     // TOUJOURS envoyer nom_configuration_autre si "autre"
-//     if (cfgNom === "autre") {
-//       payload.nom_configuration_autre = cfgNomAutre.trim() || ""; // Envoyer "" si vide
-//     }
+  //     // TOUJOURS envoyer nom_configuration_autre si "autre"
+  //     if (cfgNom === "autre") {
+  //       payload.nom_configuration_autre = cfgNomAutre.trim() || ""; // Envoyer "" si vide
+  //     }
 
-//     console.log("Payload complet:", payload);
+  //     console.log("Payload complet:", payload);
 
-//     await createConfigMutation.mutateAsync(payload);
-//     await refetch();
-//     resetConfigModal();
-//     toast({ title: "Configuration créée avec succès" });
-//   } catch (e: any) {
-//     console.error("Erreur:", e.response?.data || e);
-//     const msg = e?.response?.data?.errors
-//       ? Object.values(e.response.data.errors).flat().join(", ")
-//       : e?.response?.data?.message || "Erreur lors de la création";
-//     toast({ title: "Erreur", description: msg, variant: "destructive" });
-//   } finally {
-//     setCfgSaving(false);
-//   }
-// }, [product, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, createConfigMutation, refetch, resetConfigModal, toast]);
+  //     await createConfigMutation.mutateAsync(payload);
+  //     await refetch();
+  //     resetConfigModal();
+  //     toast({ title: "Configuration créée avec succès" });
+  //   } catch (e: any) {
+  //     console.error("Erreur:", e.response?.data || e);
+  //     const msg = e?.response?.data?.errors
+  //       ? Object.values(e.response.data.errors).flat().join(", ")
+  //       : e?.response?.data?.message || "Erreur lors de la création";
+  //     toast({ title: "Erreur", description: msg, variant: "destructive" });
+  //   } finally {
+  //     setCfgSaving(false);
+  //   }
+  // }, [product, cfgNom, cfgNomAutre, cfgDevise, cfgComposants, createConfigMutation, refetch, resetConfigModal, toast]);
 
   const handleCreateConfig = useCallback(async () => {
     if (!product || !cfgNom) return;
@@ -480,10 +483,10 @@ const ConfigPc = () => {
     );
   }
 
-  const images              = (product.images ?? []).slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999));
-  const configs             = product.configurations ?? [];
+  const images = (product.images ?? []).slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999));
+  const configs = product.configurations ?? [];
   const normalizedCategories = categories ?? [];
-  const standardKeys        = getStandardKeys.data ?? [];
+  const standardKeys = getStandardKeys.data ?? [];
 
   const renderReadonly = (label: string, value: string | number | null | undefined) => (
     <div>
@@ -540,12 +543,11 @@ const ConfigPc = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {renderReadonly("Nom",         product.nom)}
-          {renderReadonly("Référence",   product.reference)}
-          {renderReadonly("Type",        product.type_produit)}
-          {renderReadonly("Statut",      product.actif ? "Actif" : "Inactif")}
-          {renderReadonly("Créé le",     product.date_creation)}
-          {renderReadonly("Modifié le",  product.date_modification)}
+          {renderReadonly("Nom", product.nom)}
+          {renderReadonly("Référence", product.reference)}
+          {renderReadonly("Statut", product.actif ? "Actif" : "Inactif")}
+          {renderReadonly("Créé le", product.date_creation)}
+          {renderReadonly("Modifié le", product.date_modification)}
           <div className="md:col-span-2 lg:col-span-3">
             {renderReadonly("Description courte", product.description_courte)}
           </div>
@@ -562,19 +564,44 @@ const ConfigPc = () => {
     <div className={cardClass}>
       <h3 className="text-lg font-semibold">Catégorie associée</h3>
       {editing ? (
-        <div>
-          <label className={labelClass}>Catégorie</label>
-          <select className={inputClass} value={categorieId} onChange={e => setCategorieId(e.target.value)}>
-            <option value="">—</option>
-            {normalizedCategories.map((c: any) => (
-              <option key={c.id} value={c.id}>{c.nom}</option>
-            ))}
-          </select>
+        <div className="space-y-4">
+          <div>
+            <label className={labelClass}>Catégorie</label>
+            <select
+              className={inputClass}
+              value={categorieId}
+              onChange={(e) => {
+                setCategorieId(e.target.value);
+                setIdSousCategorie(""); // Réinitialiser la sous-catégorie
+              }}
+            >
+              <option value="">—</option>
+              {normalizedCategories.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.nom}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Sous-catégorie</label>
+            <select
+              className={inputClass}
+              value={idSousCategorie}
+              onChange={(e) => setIdSousCategorie(e.target.value)}
+              disabled={!categorieId}
+            >
+              <option value="">—</option>
+              {sousCategories
+                ?.filter((sc) => sc.id_categorie === Number(categorieId))
+                .map((sc) => (
+                  <option key={sc.id} value={sc.id}>{sc.nom}</option>
+                ))}
+            </select>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderReadonly("Catégorie",    product.categorie?.nom)}
-          {renderReadonly("ID Catégorie", product.categorie_id)}
+          {renderReadonly("Catégorie", product.categorie?.nom)}
+          {renderReadonly("Sous-catégorie", product.sous_categorie?.nom ?? "—")}
         </div>
       )}
     </div>
@@ -643,7 +670,7 @@ const ConfigPc = () => {
 
   // ─── TAB: Specs ──────────────────────────────────────────
   const SpecsTab = () => {
-    const addAttr    = () => setAttrs(prev => [...prev, { cle_attr: "", valeur_attr: "", libelle_attr: "" }]);
+    const addAttr = () => setAttrs(prev => [...prev, { cle_attr: "", valeur_attr: "", libelle_attr: "" }]);
     const removeAttr = (i: number) => setAttrs(prev => prev.filter((_, idx) => idx !== i));
     const updateAttr = (i: number, field: string, val: string) =>
       setAttrs(prev => prev.map((a, idx) => idx === i ? { ...a, [field]: val } : a));
@@ -732,9 +759,8 @@ const ConfigPc = () => {
           {renderReadonly("Devise", product.devise)}
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Stock</span>
-            <p className={`text-sm font-medium mt-0.5 ${
-              product.quantite_stock <= 0 ? "text-red-500" : product.quantite_stock < 5 ? "text-yellow-500" : ""
-            }`}>
+            <p className={`text-sm font-medium mt-0.5 ${product.quantite_stock <= 0 ? "text-red-500" : product.quantite_stock < 5 ? "text-yellow-500" : ""
+              }`}>
               {product.quantite_stock} unité(s)
             </p>
           </div>
@@ -816,12 +842,12 @@ const ConfigPc = () => {
   );
 
   const tabContent: Record<Tab, React.ReactNode> = {
-    general:  <GeneralTab />,
+    general: <GeneralTab />,
     category: <CategoryTab />,
-    config:   <ConfigTab />,
-    specs:    <SpecsTab />,
-    stock:    <StockTab />,
-    images:   <ImagesTab />,
+    config: <ConfigTab />,
+    specs: <SpecsTab />,
+    stock: <StockTab />,
+    images: <ImagesTab />,
   };
 
   return (
@@ -838,7 +864,7 @@ const ConfigPc = () => {
           <div>
             <h1 className="text-2xl font-bold">{product.nom}</h1>
             <p className="text-sm text-muted-foreground">
-              {product.reference ?? "—"} · {product.type_produit}
+              {product.reference ?? "—"}
             </p>
           </div>
         </div>
@@ -877,11 +903,10 @@ const ConfigPc = () => {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-t-xl transition-colors ${
-              activeTab === tab.key
+            className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-t-xl transition-colors ${activeTab === tab.key
                 ? "bg-card border border-b-0 border-border font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
+              }`}
           >
             {tab.icon} {tab.label}
           </button>

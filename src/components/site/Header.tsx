@@ -18,7 +18,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
-import { useCategories } from "@/hooks/useProducts";
+import { useCategories, useSousCategories } from "@/hooks/useProducts";
+import type { Category, SousCategory } from "@/hooks/useProducts";
 
 const useTheme = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
@@ -55,398 +56,10 @@ const useTheme = () => {
   return { theme, setTheme };
 };
 
-// ─── Mega Menu Data ────────────────────────────────────────────────────────────
-const megaMenuCategories = [
-  {
-    id: "assemblés",
-    label: "PC de Bureau Assemblés",
-    icon: <Monitor className="h-4 w-4" />,
-    href: "/pc-assembles",
-    panel: {
-      type: "visual",
-      title: "PC de Bureau Assemblés",
-      groups: [
-        {
-          items: [
-            { label: "PC Gamer", href: "/catalogue?categorie=pc-gamer", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=PC+Gamer", desc: "Performances extrêmes" },
-            { label: "PC Bureautique & Station de travail", href: "/catalogue?categorie=station-travail", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=Station+Travail", desc: "Productivité maximale" },
-            { label: "PC Watercooling Custom", href: "/catalogue?categorie=watercooling-custom", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=Watercooling", desc: "Refroidissement liquide" },
-            { label: "Barebone et mini PC", href: "/catalogue?categorie=mini-pc", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=Mini+PC", desc: "Compact et puissant" },
-            { label: "All in One PC", href: "/catalogue?categorie=aio", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=All+in+One", desc: "Tout-en-un élégant" },
-            { label: "Tous les PC Fixes", href: "/catalogue?categorie=pc-fixes", img: "https://placehold.co/280x160/1a1a2e/c8a96e?text=Tous+PC", desc: "Voir toute la gamme" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "portables",
-    label: "Ordinateurs Portables",
-    icon: <Laptop className="h-4 w-4" />,
-    href: "/portables",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Par usage",
-          items: [
-            { label: "PC Portables Gaming", href: "/catalogue?categorie=portable-gaming", badge: "HOT" },
-            { label: "PC Portables Pro", href: "/catalogue?categorie=portable-pro" },
-            { label: "PC Portables Bureautique", href: "/catalogue?categorie=portable-bureautique" },
-            { label: "PC Portables Créatifs", href: "/catalogue?categorie=portable-creatif" },
-          ]
-        },
-        {
-          title: "Par marque",
-          items: [
-            { label: "ASUS ROG / TUF", href: "/catalogue?categorie=asus-portable" },
-            { label: "MSI Gaming", href: "/catalogue?categorie=msi-portable" },
-            { label: "Lenovo ThinkPad / Legion", href: "/catalogue?categorie=lenovo-portable" },
-            { label: "HP / Dell", href: "/catalogue?categorie=hp-dell-portable" },
-          ]
-        },
-        {
-          title: "Format",
-          items: [
-            { label: "15 pouces", href: "/catalogue?categorie=portable-15" },
-            { label: "17 pouces", href: "/catalogue?categorie=portable-17" },
-            { label: "13-14 pouces Ultrabook", href: "/catalogue?categorie=ultrabook" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "composants",
-    label: "Composants PC",
-    icon: <Cpu className="h-4 w-4" />,
-    href: "/composants",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Processeurs",
-          items: [
-            { label: "Intel Core", href: "/catalogue?categorie=intel-core" },
-            { label: "Intel Core Ultra 5", href: "/catalogue?categorie=intel-ultra5" },
-            { label: "Intel Core Ultra 7", href: "/catalogue?categorie=intel-ultra7" },
-            { label: "Intel Core Ultra 9", href: "/catalogue?categorie=intel-ultra9" },
-            { label: "AMD Ryzen 5 / 7 / 9", href: "/catalogue?categorie=amd-ryzen" },
-            { label: "Tous les processeurs", href: "/catalogue?categorie=processeurs" },
-          ]
-        },
-        {
-          title: "Cartes graphiques",
-          items: [
-            { label: "RTX 5090 / 5080", href: "/catalogue?categorie=rtx-5090", badge: "NEW" },
-            { label: "RTX 5070 / 5060", href: "/catalogue?categorie=rtx-5070" },
-            { label: "RX 9070", href: "/catalogue?categorie=rx-9070" },
-            { label: "Toutes NVIDIA / AMD", href: "/catalogue?categorie=cartes-graphiques" },
-          ]
-        },
-        {
-          title: "Mémoires PC",
-          items: [
-            { label: "DDR5 / DDR5 RGB", href: "/catalogue?categorie=ddr5" },
-            { label: "DDR4 / DDR4 RGB", href: "/catalogue?categorie=ddr4" },
-            { label: "Accessoires mémoire", href: "/catalogue?categorie=accessoires-memoire" },
-          ]
-        },
-        {
-          title: "Cartes mères",
-          items: [
-            { label: "Socket AM5", href: "/catalogue?categorie=socket-am5" },
-            { label: "Socket AM4", href: "/catalogue?categorie=socket-am4" },
-            { label: "Socket 1700 / 1851", href: "/catalogue?categorie=socket-1700" },
-            { label: "Toutes les cartes mères", href: "/catalogue?categorie=cartes-meres" },
-          ]
-        },
-        {
-          title: "Boîtiers",
-          items: [
-            { label: "Mini ITX / Tour", href: "/catalogue?categorie=mini-itx" },
-            { label: "Moyen Tour", href: "/catalogue?categorie=moyen-tour" },
-            { label: "Grand Tour", href: "/catalogue?categorie=grand-tour" },
-          ]
-        },
-        {
-          title: "Disques durs",
-          items: [
-            { label: "SSD M.2 NVMe", href: "/catalogue?categorie=ssd-nvme", badge: "RAPIDE" },
-            { label: "SSD SATA", href: "/catalogue?categorie=ssd-sata" },
-            { label: "HDD 3.5\"", href: "/catalogue?categorie=hdd" },
-          ]
-        },
-        {
-          title: "Alimentations",
-          items: [
-            { label: "500W / 600W", href: "/catalogue?categorie=psu-500" },
-            { label: "750W / 850W", href: "/catalogue?categorie=psu-750" },
-            { label: "1000W+", href: "/catalogue?categorie=psu-1000" },
-          ]
-        },
-        {
-          title: "Refroidissement",
-          items: [
-            { label: "Ventirad Processeur", href: "/catalogue?categorie=ventirad" },
-            { label: "Watercooling AIO", href: "/catalogue?categorie=watercooling-aio" },
-            { label: "Pâtes thermiques", href: "/catalogue?categorie=pate-thermique" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "imprimantes",
-    label: "Imprimantes & Scanners",
-    icon: <Printer className="h-4 w-4" />,
-    href: "/imprimantes",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Imprimantes",
-          items: [
-            { label: "Jet d'encre", href: "/catalogue?categorie=jet-encre" },
-            { label: "Laser couleur", href: "/catalogue?categorie=laser-couleur" },
-            { label: "Laser monochrome", href: "/catalogue?categorie=laser-mono" },
-            { label: "Multifonctions", href: "/catalogue?categorie=multifonctions" },
-          ]
-        },
-        {
-          title: "Scanners",
-          items: [
-            { label: "Scanners à plat", href: "/catalogue?categorie=scanner-plat" },
-            { label: "Scanners portables", href: "/catalogue?categorie=scanner-portable" },
-          ]
-        },
-        {
-          title: "Consommables",
-          items: [
-            { label: "Cartouches encre", href: "/catalogue?categorie=cartouches" },
-            { label: "Toners laser", href: "/catalogue?categorie=toners" },
-            { label: "Papier & Supports", href: "/catalogue?categorie=papier" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "peripheriques",
-    label: "Périphériques",
-    icon: <Keyboard className="h-4 w-4" />,
-    href: "/peripheriques",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Affichage",
-          items: [
-            { label: "Moniteurs Gaming", href: "/catalogue?categorie=moniteur-gaming", badge: "HOT" },
-            { label: "Moniteurs Pro", href: "/catalogue?categorie=moniteur-pro" },
-            { label: "Écrans 4K / OLED", href: "/catalogue?categorie=ecran-4k" },
-          ]
-        },
-        {
-          title: "Saisie",
-          items: [
-            { label: "Claviers mécaniques", href: "/catalogue?categorie=clavier-meca" },
-            { label: "Claviers bureautique", href: "/catalogue?categorie=clavier-bureau" },
-            { label: "Souris gaming", href: "/catalogue?categorie=souris-gaming" },
-            { label: "Souris ergonomiques", href: "/catalogue?categorie=souris-ergo" },
-            { label: "Pads & Tapis", href: "/catalogue?categorie=tapis-souris" },
-          ]
-        },
-        {
-          title: "Audio & Vidéo",
-          items: [
-            { label: "Casques gaming", href: "/catalogue?categorie=casque-gaming" },
-            { label: "Casques audio", href: "/catalogue?categorie=casque-audio" },
-            { label: "Haut-parleurs", href: "/catalogue?categorie=speakers" },
-            { label: "Webcams", href: "/catalogue?categorie=webcams" },
-            { label: "Microphones", href: "/catalogue?categorie=micros" },
-          ]
-        },
-        {
-          title: "Connectivité",
-          items: [
-            { label: "Hubs USB & Docking", href: "/catalogue?categorie=hub-usb" },
-            { label: "Câbles & Adaptateurs", href: "/catalogue?categorie=cables" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "tablettes",
-    label: "Tablettes & Smartphones",
-    icon: <Tablet className="h-4 w-4" />,
-    href: "/tablettes",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Tablettes",
-          items: [
-            { label: "Tablettes Android", href: "/catalogue?categorie=tablette-android" },
-            { label: "iPad", href: "/catalogue?categorie=ipad" },
-            { label: "Tablettes Windows", href: "/catalogue?categorie=tablette-windows" },
-          ]
-        },
-        {
-          title: "Smartphones",
-          items: [
-            { label: "Android", href: "/catalogue?categorie=android" },
-            { label: "Accessoires mobile", href: "/catalogue?categorie=accessoires-mobile" },
-          ]
-        },
-        {
-          title: "Objets connectés",
-          items: [
-            { label: "Montres connectées", href: "/catalogue?categorie=smartwatch" },
-            { label: "Enceintes connectées", href: "/catalogue?categorie=enceinte-connectee" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "logiciels",
-    label: "Logiciels",
-    icon: <Layers className="h-4 w-4" />,
-    href: "/logiciels",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Systèmes",
-          items: [
-            { label: "Windows 11 Home / Pro", href: "/catalogue?categorie=windows" },
-            { label: "Microsoft Office", href: "/catalogue?categorie=office" },
-          ]
-        },
-        {
-          title: "Sécurité",
-          items: [
-            { label: "Antivirus", href: "/catalogue?categorie=antivirus" },
-            { label: "VPN", href: "/catalogue?categorie=vpn" },
-          ]
-        },
-        {
-          title: "Création",
-          items: [
-            { label: "Adobe Creative", href: "/catalogue?categorie=adobe" },
-            { label: "Montage vidéo", href: "/catalogue?categorie=montage-video" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "stockage",
-    label: "Stockage, Réseau",
-    icon: <HardDrive className="h-4 w-4" />,
-    href: "/stockage",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Stockage externe",
-          items: [
-            { label: "Disques durs USB", href: "/catalogue?categorie=hdd-externe" },
-            { label: "SSD externes", href: "/catalogue?categorie=ssd-externe" },
-            { label: "Clés USB", href: "/catalogue?categorie=cles-usb" },
-            { label: "NAS", href: "/catalogue?categorie=nas" },
-          ]
-        },
-        {
-          title: "Réseau",
-          items: [
-            { label: "Routeurs WiFi", href: "/catalogue?categorie=routeurs" },
-            { label: "Switches", href: "/catalogue?categorie=switches" },
-            { label: "Câbles réseau", href: "/catalogue?categorie=cables-reseau" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "tv",
-    label: "TV, Vidéo, Audio",
-    icon: <Tv className="h-4 w-4" />,
-    href: "/tv",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Télévisions",
-          items: [
-            { label: "TV 4K / OLED", href: "/catalogue?categorie=tv-4k" },
-            { label: "TV Gaming", href: "/catalogue?categorie=tv-gaming" },
-          ]
-        },
-        {
-          title: "Home Cinéma",
-          items: [
-            { label: "Barres de son", href: "/catalogue?categorie=barre-son" },
-            { label: "Systèmes 5.1", href: "/catalogue?categorie=home-cinema" },
-            { label: "Vidéoprojecteurs", href: "/catalogue?categorie=videoprojecteurs" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "reconditionnés",
-    label: "Reconditionnés",
-    icon: <RefreshCw className="h-4 w-4" />,
-    href: "/reconditionnés",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "PC Reconditionnés",
-          items: [
-            { label: "PC Fixes reconditionnés", href: "/catalogue?categorie=pc-reconditionne" },
-            { label: "PC Portables reconditionnés", href: "/catalogue?categorie=portable-reconditionne" },
-          ]
-        },
-        {
-          title: "Périphériques",
-          items: [
-            { label: "Moniteurs reconditionnés", href: "/catalogue?categorie=moniteur-reconditionne" },
-            { label: "Smartphones reconditionnés", href: "/catalogue?categorie=smartphone-reconditionne" },
-          ]
-        }
-      ]
-    }
-  },
-  {
-    id: "consommables",
-    label: "Consommables",
-    icon: <Archive className="h-4 w-4" />,
-    href: "/consommables",
-    panel: {
-      type: "links",
-      groups: [
-        {
-          title: "Papeterie & Bureau",
-          items: [
-            { label: "Ramettes de papier", href: "/catalogue?categorie=papier-bureau" },
-            { label: "Cartouches & Toners", href: "/catalogue?categorie=cartouches-toners" },
-          ]
-        },
-        {
-          title: "Nettoyage & Maintenance",
-          items: [
-            { label: "Nettoyage PC", href: "/catalogue?categorie=nettoyage" },
-            { label: "Outils & Tournevis", href: "/catalogue?categorie=outils" },
-          ]
-        }
-      ]
-    }
-  }
-];
+// ─── Dynamic Mega Menu helpers ─────────────────────────────────────────────────
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  default: <Grid3x3 className="h-4 w-4" />,
+};
 
 const quickNavLinks = [
   { label: "Pro & Freelance", href: "/pro-freelance", icon: <Briefcase className="h-3.5 w-3.5" /> },
@@ -465,7 +78,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
-  const [activeCategoryId, setActiveCategoryId] = useState<string>(megaMenuCategories[0].id);
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [activeColumnId, setActiveColumnId] = useState<number | null>(null);
   const [openMobileSubmenu, setOpenMobileSubmenu] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -474,6 +87,17 @@ export const Header = () => {
   const { favorites } = useShop();
   const { cartCount } = useCartApi();
   const { data: categories } = useCategories();
+  const { data: sousCategories } = useSousCategories();
+
+  // Set default active category when categories load
+  useEffect(() => {
+    if (categories?.length && activeCategoryId === null) {
+      setActiveCategoryId(categories[0].id);
+    }
+  }, [categories, activeCategoryId]);
+
+  const getSousCategoriesForCategory = (catId: number) =>
+    sousCategories?.filter((sc) => sc.id_categorie === catId) ?? [];
   const megaMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -592,7 +216,8 @@ export const Header = () => {
     { value: 'dark' as const, icon: <Moon className="h-4 w-4" />, label: 'Sombre' },
   ];
 
-  const activeCategory = megaMenuCategories.find(c => c.id === activeCategoryId) || megaMenuCategories[0];
+  const activeCategory = categories?.find(c => c.id === activeCategoryId) ?? categories?.[0] ?? null;
+  const activeSousCategories = activeCategory ? getSousCategoriesForCategory(activeCategory.id) : [];
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border theme-transition">
@@ -752,13 +377,13 @@ export const Header = () => {
                   <div className="mt-1 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
                     <div className="flex" style={{ maxHeight: '560px' }}>
 
-                      {/* Sidebar catégories - STYLE ÉLÉGANT */}
+                      {/* Sidebar catégories - DYNAMIQUE depuis la BDD */}
                       <div className="w-64 shrink-0 bg-gradient-to-b from-secondary/40 to-secondary/20 border-r border-border/50 overflow-y-auto">
-                        {megaMenuCategories.map((cat) => (
+                        {categories?.map((cat) => (
                           <button
                             key={cat.id}
                             onMouseEnter={() => setActiveCategoryId(cat.id)}
-                            onClick={() => { navigate(cat.href); setMegaMenuOpen(false); }}
+                            onClick={() => { navigate(`/catalogue?categorie=${cat.id}`); setMegaMenuOpen(false); }}
                             className={`
                               w-full flex items-center justify-between gap-2 px-5 py-3 text-sm transition-all duration-200 text-left
                               ${activeCategoryId === cat.id
@@ -768,106 +393,58 @@ export const Header = () => {
                           >
                             <span className="flex items-center gap-3">
                               <span className={`transition-colors duration-200 ${activeCategoryId === cat.id ? 'text-primary' : 'text-muted-foreground'}`}>
-                                {cat.icon}
+                                {CATEGORY_ICONS.default}
                               </span>
-                              <span className="font-medium">{cat.label}</span>
+                              <span className="font-medium">{cat.nom}</span>
                             </span>
                             <ChevronRight className={`h-3.5 w-3.5 transition-all duration-200 ${activeCategoryId === cat.id ? 'text-primary translate-x-0.5' : 'text-muted-foreground/40'}`} />
                           </button>
                         ))}
                       </div>
 
-                      {/* Panel contenu - DESIGN PROFESSIONNEL */}
+                      {/* Panel contenu - SOUS-CATÉGORIES DYNAMIQUES */}
                       <div className="flex-1 overflow-y-auto p-6 bg-popover">
-                        {activeCategory.panel.type === 'visual' ? (
+                        {activeCategory && (
                           <div>
                             <div className="flex items-center justify-between mb-5 pb-2 border-b border-border">
                               <h3 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                                {activeCategory.panel.title}
+                                {activeCategory.nom}
                               </h3>
-                              <Link 
-                                to={activeCategory.href} 
+                              <Link
+                                to={`/catalogue?categorie=${activeCategory.id}`}
                                 onClick={() => setMegaMenuOpen(false)}
                                 className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
                               >
                                 Voir tout <ChevronRight className="h-3 w-3" />
                               </Link>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              {activeCategory.panel.groups[0].items.map((item: any) => (
+                            {activeSousCategories.length > 0 ? (
+                              <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                                {activeSousCategories.map((sc) => (
+                                  <Link
+                                    key={sc.id}
+                                    to={`/catalogue?categorie=${activeCategory.id}&sous_categorie=${sc.id}`}
+                                    onClick={() => setMegaMenuOpen(false)}
+                                    className="group/link flex items-center gap-2 py-2 text-sm text-foreground/75 hover:text-primary transition-all duration-200"
+                                  >
+                                    <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover/link:text-primary group-hover/link:translate-x-0.5 transition-all duration-200 shrink-0" />
+                                    <span className="group-hover/link:translate-x-0.5 transition-transform duration-200">{sc.nom}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <Grid3x3 className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                                <p className="text-sm text-muted-foreground">Aucune sous-catégorie disponible</p>
                                 <Link
-                                  key={item.label}
-                                  to={item.href}
+                                  to={`/catalogue?categorie=${activeCategory.id}`}
                                   onClick={() => setMegaMenuOpen(false)}
-                                  className="group block rounded-xl overflow-hidden border border-border hover:border-primary/40 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+                                  className="mt-3 text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
                                 >
-                                  <div className="relative overflow-hidden bg-gradient-to-br from-secondary to-secondary/50 aspect-[16/9]">
-                                    <img
-                                      src={item.img}
-                                      alt={item.label}
-                                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                  </div>
-                                  <div className="px-4 py-3 bg-popover">
-                                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{item.label}</p>
-                                    {item.desc && <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>}
-                                  </div>
+                                  Explorer tous les produits <ChevronRight className="h-3 w-3" />
                                 </Link>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <div className="flex items-center justify-between mb-5 pb-2 border-b border-border">
-                              <h3 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                                {activeCategory.label}
-                              </h3>
-                              <Link 
-                                to={activeCategory.href} 
-                                onClick={() => setMegaMenuOpen(false)}
-                                className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-                              >
-                                Explorer <ChevronRight className="h-3 w-3" />
-                              </Link>
-                            </div>
-                            <div className="grid grid-cols-3 gap-x-6 gap-y-5">
-                              {activeCategory.panel.groups.map((group: any, gi: number) => (
-                                <div 
-                                  key={gi} 
-                                  className={`transition-all duration-200 ${activeColumnId === gi ? 'transform translate-x-1' : ''}`}
-                                  onMouseEnter={() => setActiveColumnId(gi)}
-                                  onMouseLeave={() => setActiveColumnId(null)}
-                                >
-                                  <h4 className="text-xs font-bold uppercase tracking-wider text-primary/80 mb-3 pb-2 border-b border-border/60">
-                                    {group.title}
-                                  </h4>
-                                  <ul className="space-y-1.5">
-                                    {group.items.map((item: any, ii: number) => (
-                                      <li key={item.label}>
-                                        <Link
-                                          to={item.href}
-                                          onClick={() => setMegaMenuOpen(false)}
-                                          className="group/link flex items-center gap-2 py-1.5 text-sm text-foreground/75 hover:text-primary transition-all duration-200"
-                                        >
-                                          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover/link:text-primary group-hover/link:translate-x-0.5 transition-all duration-200 shrink-0" />
-                                          <span className="group-hover/link:translate-x-0.5 transition-transform duration-200">{item.label}</span>
-                                          {item.badge && (
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none ${
-                                              item.badge === 'HOT' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
-                                              item.badge === 'NEW' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
-                                              'bg-primary/10 text-primary'
-                                            }`}>
-                                              {item.badge}
-                                            </span>
-                                          )}
-                                        </Link>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              ))}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -969,40 +546,45 @@ export const Header = () => {
             <div className="py-4">
               <div className="px-4 space-y-1">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">Nos Produits</p>
-                {megaMenuCategories.map((cat) => {
-                  const isOpen = openMobileSubmenu === cat.id;
+                {categories?.map((cat) => {
+                  const isOpen = openMobileSubmenu === String(cat.id);
+                  const catSousCategories = getSousCategoriesForCategory(cat.id);
 
                   return (
                     <div key={cat.id} className="space-y-1 border border-border rounded-lg mb-2 bg-background">
                       <button
-                        onClick={() => setOpenMobileSubmenu(isOpen ? null : cat.id)}
+                        onClick={() => setOpenMobileSubmenu(isOpen ? null : String(cat.id))}
                         className="w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl hover:bg-secondary transition-all"
                       >
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-primary">{cat.icon}</span>
-                          <span>{cat.label}</span>
+                          <span className="text-primary">{CATEGORY_ICONS.default}</span>
+                          <span>{cat.nom}</span>
                         </div>
                         {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       </button>
                       {isOpen && (
                         <div className="ml-8 space-y-0.5 border-l-2 border-border pl-3 animate-in slide-in-from-left-2 duration-200">
-                          {cat.panel.groups.map((group: any, gi: number) => (
-                            <div key={gi} className="mb-3">
-                              {group.title && <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-3 py-1">{group.title}</p>}
-                              {group.items.map((item: any) => (
-                                <Link
-                                  key={item.label}
-                                  to={item.href}
-                                  onClick={() => { setMobileMenuOpen(false); setOpenMobileSubmenu(null); }}
-                                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-all text-sm"
-                                >
-                                  <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
-                                  <span>{item.label}</span>
-                                  {item.badge && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">{item.badge}</span>}
-                                </Link>
-                              ))}
-                            </div>
-                          ))}
+                          <div className="mb-3">
+                            <Link
+                              to={`/catalogue?categorie=${cat.id}`}
+                              onClick={() => { setMobileMenuOpen(false); setOpenMobileSubmenu(null); }}
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-all text-sm font-semibold"
+                            >
+                              <ChevronRight className="h-3 w-3 text-primary shrink-0" />
+                              <span>Tous les produits</span>
+                            </Link>
+                            {catSousCategories.map((sc) => (
+                              <Link
+                                key={sc.id}
+                                to={`/catalogue?categorie=${cat.id}&sous_categorie=${sc.id}`}
+                                onClick={() => { setMobileMenuOpen(false); setOpenMobileSubmenu(null); }}
+                                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary transition-all text-sm"
+                              >
+                                <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <span>{sc.nom}</span>
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

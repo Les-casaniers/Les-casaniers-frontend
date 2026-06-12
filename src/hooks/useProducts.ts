@@ -8,6 +8,13 @@ export interface Category {
   image?: string;
 }
 
+export interface SousCategory {
+  id: number;
+  id_categorie: number;
+  nom: string;
+  categorie?: Category;
+}
+
 export interface ProductConfiguration {
   id: number;
   produit_id: number;
@@ -33,7 +40,7 @@ export interface Product {
   quantite_stock: number;
   est_dispo: boolean;
   categorie_id: number;
-  type_produit: string;
+  id_sous_categorie?: number | null;
   actif: boolean;
   image_principale?: string | null;
   badge?: string | null;
@@ -52,12 +59,13 @@ export interface Product {
   images?: { id: number; url: string; alt: string; ordre?: number }[];
   attributs?: { cle_attr: string; valeur_attr: string; libelle_attr?: string }[];
   categorie?: Category;
+  sous_categorie?: SousCategory;
   configurations?: ProductConfiguration[];
 }
 
 export type ProductFilters = {
   categorie_id?: number;
-  type_produit?: string;
+  id_sous_categorie?: number;
   actif?: boolean;
   est_dispo?: boolean | 0 | 1 | "0" | "1";
   search?: string;
@@ -90,6 +98,47 @@ export const useCategories = () => {
     queryFn: async () => {
       const response = await api.get('/categories');
       return response.data.data as Category[];
+    },
+  });
+};
+
+export const useSousCategories = () => {
+  return useQuery({
+    queryKey: ['sous-categories'],
+    queryFn: async () => {
+      const response = await api.get('/sous-categories');
+      return response.data.data as SousCategory[];
+    },
+  });
+};
+
+export const useCreateSousCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (newSousCategory: { id_categorie: number | string; nom: string }) => api.post("/sous-categories", newSousCategory),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sous-categories"] });
+    },
+  });
+};
+
+export const useUpdateSousCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updatedData }: { id: number; updatedData: { id_categorie?: number | string; nom?: string } }) =>
+      api.put(`/sous-categories/${id}`, updatedData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sous-categories"] });
+    },
+  });
+};
+
+export const useDeleteSousCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.delete(`/sous-categories/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sous-categories"] });
     },
   });
 };

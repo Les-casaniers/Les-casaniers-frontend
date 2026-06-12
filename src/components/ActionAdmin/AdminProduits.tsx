@@ -16,6 +16,11 @@ import {
   useUpdateProduct,
   useDeleteProduct,
   useCategories,
+  useSousCategories,
+  useCreateSousCategory,
+  useUpdateSousCategory,
+  useDeleteSousCategory,
+  SousCategory,
   useProductImageActions,
   Product as APIProduct,
   ProductFilters,
@@ -24,13 +29,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useToast } from "@/hooks/use-toast";
 
-const TYPES_PRODUIT = [
-  "pc",
-  "portable",
-  "composant",
-  "peripherique",
-  "service",
-] as const;
 const CATEGORY_TYPES = [
   "pro",
   "gaming",
@@ -42,12 +40,12 @@ const CATEGORY_TYPES = [
 
 type ProduitForm = {
   categorie_id: string;
+  id_sous_categorie: string;
   reference: string;
   nom: string;
   description_courte: string;
   description: string;
   atout: string;
-  type_produit: (typeof TYPES_PRODUIT)[number] | "";
   prix: string;
   devise: string;
   quantite_stock: string;
@@ -63,12 +61,12 @@ type CategoryForm = {
 
 const initialForm: ProduitForm = {
   categorie_id: "",
+  id_sous_categorie: "",
   reference: "",
   nom: "",
   description_courte: "",
   description: "",
   atout: "",
-  type_produit: "",
   prix: "",
   devise: "MGA",
   quantite_stock: "",
@@ -167,6 +165,7 @@ const ProductForm = ({
   value,
   setValue,
   categories,
+  sousCategories,
   selectedPrefix,
   setSelectedPrefix,
   generatedReference,
@@ -176,6 +175,7 @@ const ProductForm = ({
   value: ProduitForm;
   setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
   categories: any[];
+  sousCategories: any[];
   selectedPrefix: string;
   setSelectedPrefix: React.Dispatch<React.SetStateAction<string>>;
   generatedReference: string;
@@ -240,27 +240,9 @@ const ProductForm = ({
 
       <select
         className={inputClass}
-        value={value.type_produit}
-        onChange={(e) =>
-          setValue((p) => ({
-            ...p,
-            type_produit: e.target.value as ProduitForm["type_produit"],
-          }))
-        }
-      >
-        <option value="">Type produit</option>
-        {TYPES_PRODUIT.map((t) => (
-          <option key={t} value={t}>
-            {t}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className={inputClass}
         value={value.categorie_id}
         onChange={(e) =>
-          setValue((p) => ({ ...p, categorie_id: e.target.value }))
+          setValue((p) => ({ ...p, categorie_id: e.target.value, id_sous_categorie: "" }))
         }
       >
         <option value="">Catégorie</option>
@@ -269,6 +251,24 @@ const ProductForm = ({
             {c.nom}
           </option>
         ))}
+      </select>
+
+      <select
+        className={inputClass}
+        value={value.id_sous_categorie}
+        onChange={(e) =>
+          setValue((p) => ({ ...p, id_sous_categorie: e.target.value }))
+        }
+        disabled={!value.categorie_id}
+      >
+        <option value="">Sous-catégorie</option>
+        {sousCategories
+          .filter((sc: any) => String(sc.id_categorie) === String(value.categorie_id))
+          .map((sc: any) => (
+            <option key={sc.id} value={sc.id}>
+              {sc.nom}
+            </option>
+          ))}
       </select>
 
       <input
@@ -495,7 +495,10 @@ const ProductMobileCard = ({
           <div className="text-xs text-muted-foreground font-mono">
             {product.reference || "-"}
           </div>
-          <div className="text-xs mt-1">{product.categorie?.nom ?? "-"}</div>
+          <div className="text-xs mt-1">
+            {product.categorie?.nom ?? "-"}
+            {product.sous_categorie?.nom ? ` > ${product.sous_categorie.nom}` : ""}
+          </div>
         </div>
         <div className="text-right">
           <div className="font-bold text-sm text-primary">
@@ -539,19 +542,21 @@ const ProductMobileCard = ({
 // ==================== COMPOSANT PRINCIPAL ====================
 
 const AdminProduits = () => {
-  const [activeTab, setActiveTab] = useState<"produits" | "categories">(
+  const [activeTab, setActiveTab] = useState<"produits" | "categories" | "sous-categories">(
     "produits",
   );
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSousCategoryModal, setShowSousCategoryModal] = useState(false);
   const [selectedProduit, setSelectedProduit] = useState<Produit | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [selectedSousCategory, setSelectedSousCategory] = useState<SousCategory | null>(null);
   const [form, setForm] = useState(initialForm);
   const [editForm, setEditForm] = useState(initialForm);
-  const [categoryForm, setCategoryForm] =
-    useState<CategoryForm>(initialCategoryForm);
+  const [categoryForm, setCategoryForm] = useState<CategoryForm>(initialCategoryForm);
+  const [sousCategoryForm, setSousCategoryForm] = useState({ id_categorie: "", nom: "" });
   const [searchTerm, setSearchTerm] = useState("");
   const [dispoFilter, setDispoFilter] = useState<
     "all" | "available" | "unavailable"
@@ -588,9 +593,13 @@ const AdminProduits = () => {
 
   const { data: produits, refetch } = useProducts(apiFilters);
   const { data: categories, refetch: refetchCategories } = useCategories();
+  const { data: sousCategoriesData, refetch: refetchSousCategories } = useSousCategories();
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
+  const createSousCategoryMutation = useCreateSousCategory();
+  const updateSousCategoryMutation = useUpdateSousCategory();
+  const deleteSousCategoryMutation = useDeleteSousCategory();
   const { uploadImage, deleteImage, setMainImage } = useProductImageActions();
 
   useEffect(() => {
@@ -601,6 +610,7 @@ const AdminProduits = () => {
 
   const normalizedProduits = produits ?? [];
   const normalizedCategories = categories ?? [];
+  const normalizedSousCategories = sousCategoriesData ?? [];
 
   const filteredProduits = normalizedProduits;
 
@@ -685,12 +695,12 @@ const AdminProduits = () => {
   const buildFormData = (data: ProduitForm) => {
     const fd = new FormData();
     fd.append("categorie_id", data.categorie_id);
+    if (data.id_sous_categorie) fd.append("id_sous_categorie", data.id_sous_categorie);
     fd.append("reference", data.reference);
     fd.append("nom", data.nom);
     fd.append("description_courte", data.description_courte);
     fd.append("description", data.description);
     fd.append("atout", data.atout);
-    fd.append("type_produit", data.type_produit);
     fd.append("prix", data.prix);
     fd.append("devise", data.devise);
     fd.append("quantite_stock", data.quantite_stock);
@@ -754,12 +764,12 @@ const AdminProduits = () => {
 
     setEditForm({
       categorie_id: String(p.categorie_id ?? ""),
+      id_sous_categorie: String(p.id_sous_categorie ?? ""),
       reference: p.reference ?? "",
       nom: p.nom ?? "",
       description_courte: p.description_courte ?? "",
       description: p.description ?? "",
       atout: p.atout ?? "",
-      type_produit: (p.type_produit as ProduitForm["type_produit"]) ?? "",
       prix: String(p.prix ?? ""),
       devise: p.devise ?? "MGA",
       quantite_stock: String(p.quantite_stock ?? ""),
@@ -876,6 +886,12 @@ const AdminProduits = () => {
         >
           Catégories
         </button>
+        <button
+          onClick={() => setActiveTab("sous-categories")}
+          className={`px-3 py-1.5 sm:px-4 sm:py-2 border rounded-xl text-sm sm:text-base transition-all ${activeTab === "sous-categories" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
+        >
+          Sous-catégories
+        </button>
       </div>
 
       {activeTab === "produits" && (
@@ -952,7 +968,10 @@ const AdminProduits = () => {
                       <td className="p-3 max-w-[200px] truncate font-medium">
                         {p.nom}
                       </td>
-                      <td className="p-3 text-xs">{p.categorie?.nom ?? "-"}</td>
+                      <td className="p-3 text-xs">
+                        {p.categorie?.nom ?? "-"}
+                        {p.sous_categorie?.nom ? ` > ${p.sous_categorie.nom}` : ""}
+                      </td>
                       <td className="p-3 whitespace-nowrap font-semibold text-primary">
                         {p.prix} {p.devise}
                       </td>
@@ -1149,6 +1168,124 @@ const AdminProduits = () => {
         </div>
       )}
 
+      {activeTab === "sous-categories" && (
+        <div className="space-y-4">
+          <button
+            onClick={() => {
+              setSelectedSousCategory(null);
+              setSousCategoryForm({ id_categorie: "", nom: "" });
+              setShowSousCategoryModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-primary text-primary-foreground text-sm sm:text-base"
+          >
+            <PlusCircle className="h-4 w-4" /> Nouvelle sous-catégorie
+          </button>
+
+          <div className="hidden md:block border rounded-2xl overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-3">Nom</th>
+                  <th className="text-left p-3">Catégorie Parente</th>
+                  <th className="text-right p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {normalizedSousCategories.map((sc: any) => (
+                  <tr
+                    key={sc.id}
+                    className="border-b hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="p-3 font-medium">{sc.nom}</td>
+                    <td className="p-3">
+                      <span className="px-2 py-1 rounded-full text-xs bg-secondary">
+                        {sc.categorie?.nom || sc.id_categorie}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedSousCategory(sc);
+                            setSousCategoryForm({
+                              id_categorie: String(sc.id_categorie),
+                              nom: sc.nom,
+                            });
+                            setShowSousCategoryModal(true);
+                          }}
+                          className="p-1.5 border rounded-lg hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                                await deleteSousCategoryMutation.mutateAsync(sc.id);
+                                await refetchSousCategories();
+                                toast({ title: "Sous-catégorie supprimée" });
+                            } catch (e: any) {
+                                handleApiError(e, "Impossible de supprimer la sous-catégorie.");
+                            }
+                          }}
+                          className="p-1.5 border rounded-lg hover:bg-muted text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="md:hidden space-y-3">
+            {normalizedSousCategories.map((sc: any) => (
+              <div
+                key={sc.id}
+                className="bg-card border rounded-xl p-4 flex items-center justify-between"
+              >
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{sc.nom}</div>
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs bg-secondary mt-1">
+                    {sc.categorie?.nom || sc.id_categorie}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedSousCategory(sc);
+                      setSousCategoryForm({
+                        id_categorie: String(sc.id_categorie),
+                        nom: sc.nom,
+                      });
+                      setShowSousCategoryModal(true);
+                    }}
+                    className="p-2 border rounded-lg hover:bg-muted"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                          await deleteSousCategoryMutation.mutateAsync(sc.id);
+                          await refetchSousCategories();
+                          toast({ title: "Sous-catégorie supprimée" });
+                      } catch (e: any) {
+                          handleApiError(e, "Impossible de supprimer la sous-catégorie.");
+                      }
+                    }}
+                    className="p-2 border rounded-lg hover:bg-muted text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Modals - Version responsive */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -1163,6 +1300,7 @@ const AdminProduits = () => {
               value={form}
               setValue={setForm}
               categories={normalizedCategories}
+              sousCategories={normalizedSousCategories}
               selectedPrefix={selectedPrefix}
               setSelectedPrefix={setSelectedPrefix}
               generatedReference={generatedReference}
@@ -1210,6 +1348,7 @@ const AdminProduits = () => {
               value={editForm}
               setValue={setEditForm}
               categories={normalizedCategories}
+              sousCategories={normalizedSousCategories}
               selectedPrefix={selectedPrefix}
               setSelectedPrefix={setSelectedPrefix}
               generatedReference={generatedReference}
@@ -1313,6 +1452,80 @@ const AdminProduits = () => {
               </button>
               <button
                 onClick={handleCategorySubmit}
+                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center"
+              >
+                <Save className="h-4 w-4" /> Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSousCategoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border rounded-2xl w-full max-w-xl p-4 sm:p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg sm:text-xl font-bold">Sous-catégorie</h2>
+              <button onClick={() => setShowSousCategoryModal(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <input
+              className={inputClass}
+              placeholder="Nom"
+              value={sousCategoryForm.nom}
+              onChange={(e) =>
+                setSousCategoryForm((p) => ({ ...p, nom: e.target.value }))
+              }
+            />
+            <select
+              className={inputClass}
+              value={sousCategoryForm.id_categorie}
+              onChange={(e) =>
+                setSousCategoryForm((p) => ({
+                  ...p,
+                  id_categorie: e.target.value,
+                }))
+              }
+            >
+              <option value="">Sélectionner une catégorie parente</option>
+              {normalizedCategories.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom}
+                </option>
+              ))}
+            </select>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <button
+                onClick={() => setShowSousCategoryModal(false)}
+                className="px-4 py-2 border rounded-xl order-2 sm:order-1"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={async () => {
+                    if (!sousCategoryForm.nom || !sousCategoryForm.id_categorie) {
+                        toast({ title: "Erreur", description: "Veuillez remplir tous les champs", variant: "destructive" });
+                        return;
+                    }
+                    try {
+                        if (selectedSousCategory) {
+                            await updateSousCategoryMutation.mutateAsync({
+                                id: selectedSousCategory.id,
+                                updatedData: sousCategoryForm
+                            });
+                        } else {
+                            await createSousCategoryMutation.mutateAsync(sousCategoryForm);
+                        }
+                        setShowSousCategoryModal(false);
+                        setSelectedSousCategory(null);
+                        setSousCategoryForm({ id_categorie: "", nom: "" });
+                        await refetchSousCategories();
+                        toast({ title: "Sous-catégorie enregistrée" });
+                    } catch (e: any) {
+                        handleApiError(e, "Impossible d'enregistrer la sous-catégorie.");
+                    }
+                }}
                 className="px-4 py-2 rounded-xl bg-primary text-primary-foreground inline-flex items-center gap-2 order-1 sm:order-2 justify-center"
               >
                 <Save className="h-4 w-4" /> Enregistrer
