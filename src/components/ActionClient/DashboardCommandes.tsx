@@ -16,14 +16,15 @@ import {
   Check,
   Lock,
   Smartphone,
-  X
+  X,
+  LayoutGrid,
+  List
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "@/service/api";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 
-// ✅ CORRECTION 1 : Ajouter 'en_preparation' et 'payee' au type
 type StatutCommande = "en_attente" | "payee" | "en_traitement" | "expediee" | "terminee" | "annulee";
 
 type ProduitCommande = {
@@ -58,7 +59,6 @@ type Commande = {
   produits?: ProduitCommande[];
 };
 
-// ✅ CORRECTION 2 : Mapping correct des statuts
 const getStatutLabel = (statut: StatutCommande): string => {
   const map: Record<StatutCommande, string> = {
     "en_attente": "En attente",
@@ -71,7 +71,6 @@ const getStatutLabel = (statut: StatutCommande): string => {
   return map[statut] || statut;
 };
 
-// ✅ CORRECTION 3 : Styles corrects pour tous les statuts
 const getStatutStyle = (statut: StatutCommande) => {
   const styles: Record<StatutCommande, string> = {
     "en_attente": "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
@@ -93,9 +92,10 @@ const getStatutIcone = (statut: StatutCommande) => {
   }
 };
 
-// ✅ CORRECTION 4 : canCancel avec les bons statuts
+// ✅ MODIFICATION : Le client ne peut plus annuler si déjà payée
 const canCancel = (statut: StatutCommande): boolean => {
-  return ["en_attente", "en_traitement", "payee"].includes(statut);
+  // Ne peut annuler que si la commande est en attente ou en préparation (non payée)
+  return ["en_attente", "en_traitement"].includes(statut);
 };
 
 const DashboardCommandes = () => {
@@ -106,69 +106,11 @@ const DashboardCommandes = () => {
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
-
-  const [payingId, setPayingId] = useState<number | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [selectedCommandeForPayment, setSelectedCommandeForPayment] = useState<Commande | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>("");
-  const [paymentInProgress, setPaymentInProgress] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "card">("list");
 
   useEffect(() => {
     fetchCommandes();
   }, []);
-
-  const paymentMethods = [
-    { id: "carte", name: "Carte Bancaire", icon: <CreditCard className="h-5 w-5" />, bgColor: "bg-blue-500/10", textColor: "text-blue-600" },
-    { id: "mvola", name: "MVola", icon: <Smartphone className="h-5 w-5" />, bgColor: "bg-purple-500/10", textColor: "text-purple-600" },
-    { id: "airtel", name: "Airtel Money", icon: <Smartphone className="h-5 w-5" />, bgColor: "bg-red-500/10", textColor: "text-red-600" },
-    { id: "orange_money", name: "Orange Money", icon: <Smartphone className="h-5 w-5" />, bgColor: "bg-orange-500/10", textColor: "text-orange-600" },
-  ];
-
-  const handlePayer = async (commande: Commande) => {
-    setSelectedCommandeForPayment(commande);
-    setSelectedPaymentMethod("");
-    setShowPaymentModal(true);
-  };
-
-  const confirmPayment = async () => {
-    if (!selectedPaymentMethod) {
-      toast({ title: "Erreur", description: "Veuillez choisir un moyen de paiement", variant: "destructive" });
-      return;
-    }
-
-    try {
-      setPaymentInProgress(true);
-      
-      const factureResponse = await api.post('/factures/generate', {
-        commande_uuid: selectedCommandeForPayment?.commande_uuid,
-        methode_paiement: selectedPaymentMethod
-      });
-      
-      if (factureResponse.data.success) {
-        const factureId = factureResponse.data.data.id;
-        await api.post(`/factures/${factureId}/pay`);
-        
-        toast({ 
-          title: "✅ Paiement réussi !", 
-          description: `Votre commande ${selectedCommandeForPayment?.commande_uuid} a été payée avec succès.`,
-          duration: 5000
-        });
-        
-        setShowPaymentModal(false);
-        await fetchCommandes();
-      }
-      
-    } catch (error: any) {
-      console.error("Erreur paiement:", error);
-      toast({ 
-        title: "Erreur de paiement", 
-        description: error.response?.data?.message || "Une erreur est survenue",
-        variant: "destructive"
-      });
-    } finally {
-      setPaymentInProgress(false);
-    }
-  };
 
   const fetchCommandes = async () => {
     try {
@@ -286,7 +228,7 @@ const DashboardCommandes = () => {
     if (!canCancel(commande.statut)) {
       toast({ 
         title: "Impossible", 
-        description: "Cette commande ne peut plus être annulée",
+        description: "Cette commande ne peut plus être annulée car elle a déjà été payée ou est trop avancée.",
         variant: "destructive"
       });
       return;
@@ -329,7 +271,6 @@ const DashboardCommandes = () => {
     return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
   };
 
-  // ✅ CORRECTION 5 : Statistiques avec les bons statuts
   const stats = {
     total: commandes.length,
     livrees: commandes.filter(c => c.statut === "terminee").length,
@@ -337,12 +278,166 @@ const DashboardCommandes = () => {
     annulees: commandes.filter(c => c.statut === "annulee").length,
   };
 
-  // ✅ CORRECTION 6 : Liste des filtres avec les bons statuts
   const commandesFiltrees = commandes.filter(cmd => {
     if (filtre !== "toutes" && cmd.statut !== filtre) return false;
     if (searchTerm && !cmd.commande_uuid.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
+
+  // Composant pour l'affichage en mode liste
+  const ListView = () => (
+    <div className="space-y-4">
+      {commandesFiltrees.map((commande) => (
+        <div
+          key={commande.id}
+          className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
+                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
+                  {getStatutIcone(commande.statut)}
+                  {getStatutLabel(commande.statut)}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {formatDate(commande.date_creation)}
+                </span>
+                <span className="text-muted-foreground">
+                  {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
+                </span>
+              </div>
+              
+              <div className="mt-2">
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {commande.produits && commande.produits.length > 0 ? (
+                    commande.produits.map((p, idx) => (
+                      <span key={idx}>
+                        {p.nom} <span className="font-medium text-foreground">({p.quantite})</span>
+                        {idx < commande.produits.length - 1 && ", "}
+                      </span>
+                    ))
+                  ) : (
+                    commande.titre || "Produit"
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
+              <button
+                onClick={() => {
+                  setSelectedCommande(commande);
+                  setShowDetails(true);
+                }}
+                className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition shadow-sm"
+              >
+                <Eye className="h-4 w-4" />
+                Détails
+              </button>
+            </div>
+          </div>
+
+          {/* Bouton Annuler - visible seulement si annulable */}
+          {canCancel(commande.statut) && (
+            <div className="mt-4 pt-3 border-t border-border/50">
+              <button
+                onClick={() => handleCancelCommande(commande)}
+                disabled={cancellingId === commande.id}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
+              >
+                {cancellingId === commande.id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3" />
+                )}
+                Annuler la commande
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // Composant pour l'affichage en mode carte
+  const CardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {commandesFiltrees.map((commande) => (
+        <div
+          key={commande.id}
+          className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition flex flex-col"
+        >
+          <div className="flex items-start justify-between mb-3">
+            <p className="font-mono font-semibold text-foreground text-sm truncate">{commande.commande_uuid}</p>
+            <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
+              {getStatutIcone(commande.statut)}
+              {getStatutLabel(commande.statut)}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm mb-2">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-muted-foreground text-xs">
+              {formatDate(commande.date_creation)}
+            </span>
+          </div>
+          
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+              {commande.produits && commande.produits.length > 0 ? (
+                commande.produits.map((p, idx) => (
+                  <span key={idx}>
+                    {p.nom} <span className="font-medium text-foreground">({p.quantite})</span>
+                    {idx < commande.produits.length - 1 && ", "}
+                  </span>
+                ))
+              ) : (
+                commande.titre || "Produit"
+              )}
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+            <p className="text-lg font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
+            <button
+              onClick={() => {
+                setSelectedCommande(commande);
+                setShowDetails(true);
+              }}
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
+            >
+              <Eye className="h-3 w-3" />
+              Détails
+            </button>
+          </div>
+
+          {/* Bouton Annuler - visible seulement si annulable */}
+          {canCancel(commande.statut) && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <button
+                onClick={() => handleCancelCommande(commande)}
+                disabled={cancellingId === commande.id}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
+              >
+                {cancellingId === commande.id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3 w-3" />
+                )}
+                Annuler
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -415,7 +510,7 @@ const DashboardCommandes = () => {
         </div>
       </div>
 
-      {/* Filtres et recherche - ✅ CORRECTION 7 : Utiliser les bons statuts */}
+      {/* Filtres et recherche */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
@@ -445,7 +540,35 @@ const DashboardCommandes = () => {
         </div>
       </div>
 
-      {/* Liste des commandes */}
+      {/* Barre d'outils avec mode vue */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
+        <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1 w-fit">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${
+              viewMode === "list"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <List className="h-4 w-4" />
+            Liste
+          </button>
+          <button
+            onClick={() => setViewMode("card")}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${
+              viewMode === "card"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-secondary"
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Cartes
+          </button>
+        </div>
+      </div>
+
+      {/* Liste des commandes selon le mode */}
       {commandesFiltrees.length === 0 ? (
         <div className="bg-card border border-border rounded-xl p-12 text-center">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -455,181 +578,7 @@ const DashboardCommandes = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {commandesFiltrees.map((commande) => (
-            <div
-              key={commande.id}
-              className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
-                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
-                      {getStatutIcone(commande.statut)}
-                      {getStatutLabel(commande.statut)}
-                    </span>
-
-                    {commande.statut === 'en_attente' && (
-                      <button
-                        onClick={() => handlePayer(commande)}
-                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border border-green-500/30 text-green-500 hover:bg-green-500 hover:text-white transition"
-                      >
-                        <CreditCard className="h-3 w-3" />
-                        Payer
-                      </button>
-                    )}
-
-                    {commande.statut === 'payee' && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400">
-                        <CheckCircle className="h-3 w-3" />
-                        Payée
-                      </span>
-                    )}
-                    
-                    {canCancel(commande.statut) && (
-                      <button
-                        onClick={() => handleCancelCommande(commande)}
-                        disabled={cancellingId === commande.id}
-                        className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border border-red-500/30 text-red-500 hover:bg-red-500 hover:text-white transition"
-                      >
-                        {cancellingId === commande.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3 w-3" />
-                        )}
-                        Annuler
-                      </button>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mt-2 text-sm">
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(commande.date_creation)}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  
-                  <div className="mt-2">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {commande.produits && commande.produits.length > 0 ? (
-                        commande.produits.map((p, idx) => (
-                          <span key={idx}>
-                            {p.nom} <span className="font-medium text-foreground">({p.quantite})</span>
-                            {idx < commande.produits.length - 1 && ", "}
-                          </span>
-                        ))
-                      ) : (
-                        commande.titre || "Produit"
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
-                  <button
-                    onClick={() => {
-                      setSelectedCommande(commande);
-                      setShowDetails(true);
-                    }}
-                    className="inline-flex items-center gap-1 mt-2 text-sm text-muted-foreground hover:text-primary transition"
-                  >
-                    <Eye className="h-4 w-4" />
-                    Détails
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* //Modal concernant la validation de commande */}
-      {/* MODAL PAIEMENT */}
-      {showPaymentModal && selectedCommandeForPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Paiement</h2>
-                  <p className="text-xs text-muted-foreground font-mono">{selectedCommandeForPayment.commande_uuid}</p>
-                </div>
-              </div>
-              <button onClick={() => setShowPaymentModal(false)} className="p-1.5 rounded-lg hover:bg-secondary transition">
-                <XCircle className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5">
-              {/* Montant */}
-              <div className="bg-secondary/30 rounded-xl p-4 text-center">
-                <p className="text-sm text-muted-foreground mb-1">Montant à payer</p>
-                <p className="text-3xl font-bold text-foreground">{formatPrice(selectedCommandeForPayment.total, selectedCommandeForPayment.devise)}</p>
-              </div>
-
-              {/* Moyens de paiement */}
-              <div>
-                <p className="text-sm font-medium text-foreground mb-3">Choisissez votre moyen de paiement</p>
-                <div className="space-y-2">
-                  {paymentMethods.map((method) => (
-                    <button
-                      key={method.id}
-                      onClick={() => setSelectedPaymentMethod(method.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                        selectedPaymentMethod === method.id
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg ${method.bgColor} ${method.textColor}`}>
-                        {method.icon}
-                      </div>
-                      <span className="flex-1 text-left font-medium text-foreground">{method.name}</span>
-                      {selectedPaymentMethod === method.id && (
-                        <CheckCircle className="h-5 w-5 text-primary" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sécurité */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center pt-2">
-                <Lock className="h-3 w-3" />
-                <span>Paiement 100% sécurisé</span>
-              </div>
-            </div>
-
-            <div className="flex gap-3 px-6 py-4 border-t border-border">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="flex-1 py-2.5 text-sm font-medium border border-border rounded-xl hover:bg-secondary transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={confirmPayment}
-                disabled={!selectedPaymentMethod || paymentInProgress}
-                className="flex-1 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {paymentInProgress ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                Payer {formatPrice(selectedCommandeForPayment.total, selectedCommandeForPayment.devise)}
-              </button>
-            </div>
-          </div>
-        </div>
+        viewMode === "list" ? <ListView /> : <CardView />
       )}
 
       {/* MODAL DÉTAILS COMMANDE */}
@@ -646,7 +595,6 @@ const DashboardCommandes = () => {
               </button>
             </div>
             <div className="overflow-y-auto px-6 py-5 flex-1 space-y-5">
-              {/* En-tête */}
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
                   <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium border ${getStatutStyle(selectedCommande.statut)}`}>
@@ -665,7 +613,6 @@ const DashboardCommandes = () => {
                 <p className="text-2xl font-bold text-foreground">{formatPrice(selectedCommande.total, selectedCommande.devise)}</p>
               </div>
 
-              {/* Articles */}
               <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3">Articles commandés</h3>
                 <div className="border border-border rounded-lg overflow-hidden">
@@ -702,7 +649,6 @@ const DashboardCommandes = () => {
                 </div>
               </div>
 
-              {/* Résumé */}
               <div className="border-t border-border pt-3">
                 <div className="flex justify-end">
                   <div className="w-64 space-y-1 text-sm">
@@ -723,22 +669,6 @@ const DashboardCommandes = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Note si présente */}
-              {selectedCommande.meta_json && (() => {
-                try {
-                  const meta = typeof selectedCommande.meta_json === 'string' ? JSON.parse(selectedCommande.meta_json) : selectedCommande.meta_json;
-                  if (meta.note) {
-                    return (
-                      <div className="bg-secondary/30 rounded-lg p-3">
-                        <p className="text-xs text-muted-foreground mb-1">📝 Note associée :</p>
-                        <p className="text-sm text-foreground">{meta.note}</p>
-                      </div>
-                    );
-                  }
-                } catch (e) { return null; }
-                return null;
-              })()}
             </div>
             <div className="flex gap-3 px-6 py-4 border-t border-border">
               {canCancel(selectedCommande.statut) && (
@@ -783,7 +713,6 @@ const DashboardCommandes = () => {
           animation: float 3s ease-in-out infinite;
         }
       `}</style>
-
     </div>
   );
 };
