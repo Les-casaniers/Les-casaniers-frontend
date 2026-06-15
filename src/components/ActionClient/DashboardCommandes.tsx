@@ -11,19 +11,29 @@ import {
   Calendar, 
   Loader2, 
   Trash2, 
-  AlertCircle,
   CreditCard,
-  Check,
-  Lock,
-  Smartphone,
   X,
   LayoutGrid,
-  List
+  List,
+  Hourglass,
+  Truck,
+  RefreshCw,
+  ShoppingBag,
+  PartyPopper,
+  Frown
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "@/service/api";
 import { toast } from "@/hooks/use-toast";
+
+// Import des images selon le statut
 import fosa from "@/assets/casaniers-mascot.png";
+import enAttente from "@/assets/en-attente.png";
+import paye from "@/assets/paye.png";
+import enPreparation from "@/assets/en-preparation.png";
+import expediee from "@/assets/expediee.png";
+import livree from "@/assets/livree.png";
+import annulee from "@/assets/annulee.png";
 
 type StatutCommande = "en_attente" | "payee" | "en_traitement" | "expediee" | "terminee" | "annulee";
 
@@ -59,42 +69,117 @@ type Commande = {
   produits?: ProduitCommande[];
 };
 
-const getStatutLabel = (statut: StatutCommande): string => {
-  const map: Record<StatutCommande, string> = {
-    "en_attente": "En attente",
-    "payee": "Payée",
-    "en_traitement": "En préparation",
-    "expediee": "Expédiée",
-    "terminee": "Livrée",
-    "annulee": "Annulée"
+// Configuration des statuts avec images spécifiques
+const getStatutConfig = (statut: StatutCommande) => {
+  const config: Record<StatutCommande, { 
+    label: string; 
+    icon: React.ReactNode; 
+    image: string;
+    message: string;
+    gesture: string;
+    shortGesture: string;
+    emoji: string;
+    color: string;
+    bgColor: string;
+    progress: number;
+    animation: string;
+  }> = {
+    "en_attente": {
+      label: "En attente",
+      icon: <Hourglass className="h-5 w-5" />,
+      image: enAttente,
+      message: "Votre commande est en attente de confirmation. Nous vérifions les informations.",
+      gesture: "🤔 Le Fosa réfléchit... Votre commande est en cours de vérification",
+      shortGesture: "🤔 En attente",
+      emoji: "⏳",
+      color: "text-amber-600",
+      bgColor: "bg-amber-500/10",
+      progress: 10,
+      animation: "animate-pulse-slow"
+    },
+    "payee": {
+      label: "Payée",
+      icon: <CreditCard className="h-5 w-5" />,
+      image: paye,
+      message: "Paiement confirmé ! Nous préparons votre commande avec soin.",
+      gesture: "💰 Le Fosa valide votre paiement ! Votre commande va être préparée",
+      shortGesture: "💰 Payée",
+      emoji: "💳",
+      color: "text-blue-600",
+      bgColor: "bg-blue-500/10",
+      progress: 25,
+      animation: "animate-bounce-gentle"
+    },
+    "en_traitement": {
+      label: "En préparation",
+      icon: <RefreshCw className="h-5 w-5" />,
+      image: enPreparation,
+      message: "Votre commande est en cours de préparation.",
+      gesture: "🔧 Le Fosa prépare votre colis avec soin ! Bientôt prêt",
+      shortGesture: "🔧 En préparation",
+      emoji: "📦",
+      color: "text-purple-600",
+      bgColor: "bg-purple-500/10",
+      progress: 50,
+      animation: "animate-spin-slow"
+    },
+    "expediee": {
+      label: "Expédiée",
+      icon: <Truck className="h-5 w-5" />,
+      image: expediee,
+      message: "Bonne nouvelle ! Votre commande est en route.",
+      gesture: "🚚 Le Fosa conduit votre colis vers vous ! Arrivée imminente",
+      shortGesture: "🚚 En route",
+      emoji: "🚛",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-500/10",
+      progress: 75,
+      animation: "animate-wiggle"
+    },
+    "terminee": {
+      label: "Livrée",
+      icon: <PartyPopper className="h-5 w-5" />,
+      image: livree,
+      message: "Commande livrée avec succès ! Merci de votre confiance.",
+      gesture: "🎉 Le Fosa danse de joie ! Merci pour votre confiance",
+      shortGesture: "🎉 Livrée !",
+      emoji: "🎊",
+      color: "text-green-600",
+      bgColor: "bg-green-500/10",
+      progress: 100,
+      animation: "animate-celebrate"
+    },
+    "annulee": {
+      label: "Annulée",
+      icon: <Frown className="h-5 w-5" />,
+      image: annulee,
+      message: "Cette commande a été annulée.",
+      gesture: "😢 Le Fosa est triste... Une prochaine fois peut-être",
+      shortGesture: "😢 Annulée",
+      emoji: "💔",
+      color: "text-red-600",
+      bgColor: "bg-red-500/10",
+      progress: 0,
+      animation: "animate-sad"
+    }
   };
-  return map[statut] || statut;
+  return config[statut] || config["en_attente"];
+};
+
+const getStatutLabel = (statut: StatutCommande): string => {
+  return getStatutConfig(statut).label;
 };
 
 const getStatutStyle = (statut: StatutCommande) => {
-  const styles: Record<StatutCommande, string> = {
-    "en_attente": "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30",
-    "payee": "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30",
-    "en_traitement": "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30",
-    "expediee": "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
-    "terminee": "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30",
-    "annulee": "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30",
-  };
-  return styles[statut] || styles["en_attente"];
+  const config = getStatutConfig(statut);
+  return `${config.bgColor} ${config.color} border-current/30`;
 };
 
 const getStatutIcone = (statut: StatutCommande) => {
-  switch (statut) {
-    case "terminee": return <CheckCircle className="h-3 w-3" />;
-    case "annulee": return <XCircle className="h-3 w-3" />;
-    case "payee": return <CheckCircle className="h-3 w-3" />;
-    default: return <Clock className="h-3 w-3" />;
-  }
+  return getStatutConfig(statut).icon;
 };
 
-// ✅ MODIFICATION : Le client ne peut plus annuler si déjà payée
 const canCancel = (statut: StatutCommande): boolean => {
-  // Ne peut annuler que si la commande est en attente ou en préparation (non payée)
   return ["en_attente", "en_traitement"].includes(statut);
 };
 
@@ -106,7 +191,7 @@ const DashboardCommandes = () => {
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [cancellingId, setCancellingId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "card">("list");
+  const [viewMode, setViewMode] = useState<"list" | "card">("card");
 
   useEffect(() => {
     fetchCommandes();
@@ -116,7 +201,6 @@ const DashboardCommandes = () => {
     try {
       setIsLoading(true);
       const response = await api.get('/commandes');
-      console.log("Commandes récupérées (brutes):", response.data);
       
       let commandesData: Commande[] = [];
       if (response.data.data && Array.isArray(response.data.data)) {
@@ -125,8 +209,6 @@ const DashboardCommandes = () => {
         commandesData = response.data;
       } else if (response.data.items && Array.isArray(response.data.items)) {
         commandesData = response.data.items;
-      } else {
-        commandesData = [];
       }
       
       const commandesMap = new Map<string, Commande>();
@@ -138,8 +220,6 @@ const DashboardCommandes = () => {
             const meta = typeof cmd.meta_json === 'string' ? JSON.parse(cmd.meta_json) : cmd.meta_json;
             if (meta.produits && Array.isArray(meta.produits)) {
               produitsFromMeta = meta.produits;
-            } else if (meta.items && Array.isArray(meta.items)) {
-              produitsFromMeta = meta.items;
             }
           } catch (e) {
             console.error("Erreur parsing meta_json:", e);
@@ -159,18 +239,11 @@ const DashboardCommandes = () => {
         if (commandesMap.has(cmd.commande_uuid)) {
           const existingCommande = commandesMap.get(cmd.commande_uuid)!;
           const existingProduits = existingCommande.produits || [];
-          
           const produitsMap = new Map<string, ProduitCommande>();
-          existingProduits.forEach(p => {
-            produitsMap.set(p.nom, p);
+          existingProduits.forEach(p => produitsMap.set(p.nom, p));
+          produitsFromMeta.forEach(p => {
+            if (!produitsMap.has(p.nom)) produitsMap.set(p.nom, p);
           });
-          
-          produitsFromMeta.forEach(produit => {
-            if (!produitsMap.has(produit.nom)) {
-              produitsMap.set(produit.nom, produit);
-            }
-          });
-          
           const produitsUniques = Array.from(produitsMap.values());
           const quantiteTotale = produitsUniques.reduce((sum, p) => sum + p.quantite, 0);
           
@@ -178,18 +251,12 @@ const DashboardCommandes = () => {
             ...existingCommande,
             produits: produitsUniques,
             quantite: quantiteTotale,
-            sous_total: existingCommande.sous_total,
-            livraison: existingCommande.livraison,
-            total: existingCommande.total,
           });
         } else {
           const produitsMap = new Map<string, ProduitCommande>();
-          produitsFromMeta.forEach(produit => {
-            if (!produitsMap.has(produit.nom)) {
-              produitsMap.set(produit.nom, produit);
-            }
+          produitsFromMeta.forEach(p => {
+            if (!produitsMap.has(p.nom)) produitsMap.set(p.nom, p);
           });
-          
           const produitsUniques = Array.from(produitsMap.values());
           const quantiteTotale = produitsUniques.reduce((sum, p) => sum + p.quantite, 0);
           
@@ -197,9 +264,6 @@ const DashboardCommandes = () => {
             ...cmd,
             produits: produitsUniques,
             quantite: quantiteTotale,
-            sous_total: cmd.sous_total,
-            livraison: cmd.livraison,
-            total: cmd.total,
           });
         }
       });
@@ -209,10 +273,9 @@ const DashboardCommandes = () => {
         new Date(b.date_creation).getTime() - new Date(a.date_creation).getTime()
       );
       
-      console.log("Commandes groupées:", commandesGrouped);
       setCommandes(commandesGrouped);
       
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erreur chargement commandes:", error);
       toast({ 
         title: "Erreur", 
@@ -228,7 +291,7 @@ const DashboardCommandes = () => {
     if (!canCancel(commande.statut)) {
       toast({ 
         title: "Impossible", 
-        description: "Cette commande ne peut plus être annulée car elle a déjà été payée ou est trop avancée.",
+        description: "Cette commande ne peut plus être annulée.",
         variant: "destructive"
       });
       return;
@@ -241,17 +304,14 @@ const DashboardCommandes = () => {
       if (response.data.success) {
         toast({ 
           title: "Commande annulée", 
-          description: `La commande ${commande.commande_uuid} a été annulée avec succès`,
+          description: `La commande a été annulée avec succès`,
         });
         await fetchCommandes();
         if (showDetails && selectedCommande?.id === commande.id) {
           setShowDetails(false);
         }
-      } else {
-        throw new Error(response.data.message || "Erreur lors de l'annulation");
       }
     } catch (error: any) {
-      console.error("Erreur annulation:", error);
       toast({ 
         title: "Erreur", 
         description: error.response?.data?.message || "Impossible d'annuler la commande",
@@ -284,158 +344,287 @@ const DashboardCommandes = () => {
     return true;
   });
 
-  // Composant pour l'affichage en mode liste
+  // Vue Liste - AVEC mascotte selon statut (image plus grande)
   const ListView = () => (
     <div className="space-y-4">
-      {commandesFiltrees.map((commande) => (
-        <div
-          key={commande.id}
-          className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
-                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
-                  {getStatutIcone(commande.statut)}
-                  {getStatutLabel(commande.statut)}
-                </span>
+      {commandesFiltrees.map((commande) => {
+        const config = getStatutConfig(commande.statut);
+        const statusOrder: StatutCommande[] = ["en_attente", "payee", "en_traitement", "expediee", "terminee"];
+        const currentIndex = statusOrder.indexOf(commande.statut);
+        const isCancelled = commande.statut === "annulee";
+        
+        return (
+          <div key={commande.id} className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
+                    {getStatutIcone(commande.statut)}
+                    {getStatutLabel(commande.statut)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm">
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatDate(commande.date_creation)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {commande.produits && commande.produits.length > 0 ? (
+                      commande.produits.map((p, idx) => (
+                        <span key={idx}>
+                          {p.nom} ({p.quantite}){idx < commande.produits.length - 1 && ", "}
+                        </span>
+                      ))
+                    ) : (commande.titre || "Produit")}
+                  </p>
+                </div>
               </div>
-              
-              <div className="flex items-center gap-4 mt-2 text-sm">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {formatDate(commande.date_creation)}
-                </span>
-                <span className="text-muted-foreground">
-                  {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
-                </span>
-              </div>
-              
-              <div className="mt-2">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {commande.produits && commande.produits.length > 0 ? (
-                    commande.produits.map((p, idx) => (
-                      <span key={idx}>
-                        {p.nom} <span className="font-medium text-foreground">({p.quantite})</span>
-                        {idx < commande.produits.length - 1 && ", "}
-                      </span>
-                    ))
-                  ) : (
-                    commande.titre || "Produit"
-                  )}
-                </p>
+              <div className="text-right">
+                <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
+                <button
+                  onClick={() => {
+                    setSelectedCommande(commande);
+                    setShowDetails(true);
+                  }}
+                  className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                >
+                  <Eye className="h-4 w-4" />
+                  Détails
+                </button>
               </div>
             </div>
+            
+            {/* Mascotte avec image spécifique au statut - AGRANDIE */}
+            <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`relative ${config.animation}`}>
+                  <img 
+                    src={config.image} 
+                    alt="Fosa" 
+                    className="w-16 h-16 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = fosa;
+                    }}
+                  />
+                  <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-border">
+                    <span className="text-xs">{config.emoji}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{config.shortGesture}</p>
+                  <p className="text-xs text-muted-foreground">{config.message.substring(0, 60)}...</p>
+                </div>
+              </div>
+              
+              {canCancel(commande.statut) && (
+                <button
+                  onClick={() => handleCancelCommande(commande)}
+                  disabled={cancellingId === commande.id}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
+                >
+                  {cancellingId === commande.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  Annuler
+                </button>
+              )}
+            </div>
 
-            <div className="text-right">
-              <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
+            {/* Petite timeline */}
+            {!isCancelled && (
+              <div className="mt-3 pt-2">
+                <div className="relative">
+                  <div className="absolute top-2 left-0 right-0 h-1 bg-muted rounded-full" />
+                  <div 
+                    className="absolute top-2 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${(currentIndex / 4) * 100}%` }}
+                  />
+                  <div className="relative flex justify-between">
+                    {[
+                      { key: "1", label: "Cde" },
+                      { key: "2", label: "Payée" },
+                      { key: "3", label: "Prép" },
+                      { key: "4", label: "Exp" },
+                      { key: "5", label: "Liv" }
+                    ].map((step, idx) => {
+                      const isCompleted = idx <= currentIndex;
+                      return (
+                        <div key={step.key} className="flex flex-col items-center">
+                          <div 
+                            className={`w-3 h-3 rounded-full flex items-center justify-center transition-all z-10
+                              ${isCompleted 
+                                ? 'bg-primary ring-1 ring-primary/30' 
+                                : 'bg-muted border border-border'
+                              }
+                            `}
+                          >
+                            {isCompleted && <CheckCircle className="w-2 h-2 text-white" />}
+                          </div>
+                          <p className={`text-[7px] mt-0.5 ${isCompleted ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Vue Carte - AVEC mascotte selon statut (image plus grande)
+  const CardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {commandesFiltrees.map((commande) => {
+        const config = getStatutConfig(commande.statut);
+        const statusOrder: StatutCommande[] = ["en_attente", "payee", "en_traitement", "expediee", "terminee"];
+        const currentIndex = statusOrder.indexOf(commande.statut);
+        const isCancelled = commande.statut === "annulee";
+        
+        return (
+          <div
+            key={commande.id}
+            className="bg-card border border-border rounded-xl p-5 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
+          >
+            {/* En-tête */}
+            <div className="flex items-start justify-between mb-3">
+              <p className="font-mono font-semibold text-foreground text-xs truncate max-w-[120px]">
+                {commande.commande_uuid}
+              </p>
+              <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
+                {getStatutIcone(commande.statut)}
+                {getStatutLabel(commande.statut)}
+              </span>
+            </div>
+            
+            {/* Mascotte avec image spécifique au statut - AGRANDIE */}
+            <div className="flex flex-col items-center justify-center py-4 mb-3">
+              <div className={`relative ${config.animation}`}>
+                <img 
+                  src={config.image} 
+                  alt="Fosa" 
+                  className="w-32 h-32 object-contain drop-shadow-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = fosa;
+                  }}
+                />
+                <div className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full p-1.5 shadow-md border border-border">
+                  <span className="text-lg">{config.emoji}</span>
+                </div>
+              </div>
+              <p className="text-sm text-center text-muted-foreground mt-3 font-medium max-w-[160px]">
+                {config.shortGesture}
+              </p>
+            </div>
+            
+            {/* Date */}
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground text-[11px]">
+                {formatDate(commande.date_creation)}
+              </span>
+            </div>
+            
+            {/* Produits */}
+            <div className="flex-1 min-h-[45px]">
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {commande.produits && commande.produits.length > 0 ? (
+                  commande.produits.slice(0, 2).map((p, idx) => (
+                    <span key={idx}>
+                      {p.nom} ({p.quantite}){idx < Math.min(commande.produits.length, 2) - 1 && ", "}
+                    </span>
+                  ))
+                ) : (commande.titre || "Produit")}
+                {commande.produits && commande.produits.length > 2 && (
+                  <span className="text-primary"> +{commande.produits.length - 2}</span>
+                )}
+              </p>
+            </div>
+            
+            {/* Prix et bouton */}
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+              <p className="text-lg font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
               <button
                 onClick={() => {
                   setSelectedCommande(commande);
                   setShowDetails(true);
                 }}
-                className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
               >
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3.5 w-3.5" />
                 Détails
               </button>
             </div>
-          </div>
 
-          {/* Bouton Annuler - visible seulement si annulable */}
-          {canCancel(commande.statut) && (
-            <div className="mt-4 pt-3 border-t border-border/50">
-              <button
-                onClick={() => handleCancelCommande(commande)}
-                disabled={cancellingId === commande.id}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
-              >
-                {cancellingId === commande.id ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3 w-3" />
-                )}
-                Annuler la commande
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+            {/* Timeline compacte */}
+            {!isCancelled && (
+              <div className="mt-3 pt-2 border-t border-border/50">
+                <div className="relative">
+                  <div className="absolute top-2 left-0 right-0 h-1 bg-muted rounded-full" />
+                  <div 
+                    className="absolute top-2 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${(currentIndex / 4) * 100}%` }}
+                  />
+                  <div className="relative flex justify-between">
+                    {[
+                      { key: "1", label: "Cde" },
+                      { key: "2", label: "Payée" },
+                      { key: "3", label: "Prép" },
+                      { key: "4", label: "Exp" },
+                      { key: "5", label: "Liv" }
+                    ].map((step, idx) => {
+                      const isCompleted = idx <= currentIndex;
+                      return (
+                        <div key={step.key} className="flex flex-col items-center">
+                          <div 
+                            className={`w-4 h-4 rounded-full flex items-center justify-center transition-all z-10
+                              ${isCompleted 
+                                ? 'bg-primary ring-2 ring-primary/30' 
+                                : 'bg-muted border border-border'
+                              }
+                            `}
+                          >
+                            {isCompleted && <CheckCircle className="w-2.5 h-2.5 text-white" />}
+                          </div>
+                          <p className={`text-[8px] mt-1 ${isCompleted ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+                            {step.label}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
 
-  // Composant pour l'affichage en mode carte
-  const CardView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {commandesFiltrees.map((commande) => (
-        <div
-          key={commande.id}
-          className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition flex flex-col"
-        >
-          <div className="flex items-start justify-between mb-3">
-            <p className="font-mono font-semibold text-foreground text-sm truncate">{commande.commande_uuid}</p>
-            <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
-              {getStatutIcone(commande.statut)}
-              {getStatutLabel(commande.statut)}
-            </span>
+            {/* Bouton annuler */}
+            {canCancel(commande.statut) && (
+              <div className="mt-3 pt-2">
+                <button
+                  onClick={() => handleCancelCommande(commande)}
+                  disabled={cancellingId === commande.id}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 text-[10px] font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
+                >
+                  {cancellingId === commande.id ? (
+                    <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-2.5 w-2.5" />
+                  )}
+                  Annuler
+                </button>
+              </div>
+            )}
           </div>
-          
-          <div className="flex items-center gap-2 text-sm mb-2">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground text-xs">
-              {formatDate(commande.date_creation)}
-            </span>
-          </div>
-          
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-              {commande.produits && commande.produits.length > 0 ? (
-                commande.produits.map((p, idx) => (
-                  <span key={idx}>
-                    {p.nom} <span className="font-medium text-foreground">({p.quantite})</span>
-                    {idx < commande.produits.length - 1 && ", "}
-                  </span>
-                ))
-              ) : (
-                commande.titre || "Produit"
-              )}
-            </p>
-          </div>
-          
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-            <p className="text-lg font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
-            <button
-              onClick={() => {
-                setSelectedCommande(commande);
-                setShowDetails(true);
-              }}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
-            >
-              <Eye className="h-3 w-3" />
-              Détails
-            </button>
-          </div>
-
-          {/* Bouton Annuler - visible seulement si annulable */}
-          {canCancel(commande.statut) && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <button
-                onClick={() => handleCancelCommande(commande)}
-                disabled={cancellingId === commande.id}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
-              >
-                {cancellingId === commande.id ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3 w-3" />
-                )}
-                Annuler
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -452,18 +641,11 @@ const DashboardCommandes = () => {
     return (
       <div className="flex flex-col items-center justify-center py-12">
         <div className="relative bg-card border border-border rounded-3xl p-12 text-center max-w-md mx-auto">
-          <img src={fosa} alt="Le Fosa" className="h-28 w-28 mx-auto mb-4 animate-float" />
+          <img src={fosa} alt="Le Fosa" className="h-32 w-32 mx-auto mb-4 animate-float" />
           <h2 className="text-2xl font-bold text-foreground mb-3">Aucune commande pour le moment</h2>
-          <p className="text-muted-foreground mb-6">
-            Vous n'avez pas encore passé de commande.<br />
-            Explorez notre catalogue et trouvez votre bonheur !
-          </p>
-          <Link
-            to="/catalogue"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition font-medium"
-          >
-            Explorer le catalogue
-            <ChevronRight className="h-4 w-4" />
+          <p className="text-muted-foreground mb-6">Vous n'avez pas encore passé de commande.</p>
+          <Link to="/catalogue" className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition font-medium">
+            Explorer le catalogue <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -472,7 +654,6 @@ const DashboardCommandes = () => {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Mes commandes</h1>
         <p className="text-muted-foreground">Consultez l'historique et le suivi de vos commandes</p>
@@ -510,7 +691,7 @@ const DashboardCommandes = () => {
         </div>
       </div>
 
-      {/* Filtres et recherche */}
+      {/* Filtres */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
@@ -519,9 +700,7 @@ const DashboardCommandes = () => {
               key={f}
               onClick={() => setFiltre(f as typeof filtre)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-                filtre === f
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                filtre === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
               }`}
             >
               {getStatutLabel(f as StatutCommande)}
@@ -540,77 +719,83 @@ const DashboardCommandes = () => {
         </div>
       </div>
 
-      {/* Barre d'outils avec mode vue */}
+      {/* Mode vue */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
         <div className="flex items-center gap-2 bg-card border border-border rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${
-              viewMode === "list"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <List className="h-4 w-4" />
-            Liste
+          <button onClick={() => setViewMode("list")} className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}>
+            <List className="h-4 w-4" /> Liste
           </button>
-          <button
-            onClick={() => setViewMode("card")}
-            className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${
-              viewMode === "card"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-secondary"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-            Cartes
+          <button onClick={() => setViewMode("card")} className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition ${viewMode === "card" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}>
+            <LayoutGrid className="h-4 w-4" /> Cartes
           </button>
         </div>
       </div>
 
-      {/* Liste des commandes selon le mode */}
+      {/* Affichage des commandes */}
       {commandesFiltrees.length === 0 ? (
         <div className="bg-card border border-border rounded-xl p-12 text-center">
           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">Aucune commande trouvée</h3>
-          <p className="text-muted-foreground">
-            {searchTerm ? "Aucune commande ne correspond à votre recherche" : "Aucune commande dans cette catégorie"}
-          </p>
         </div>
       ) : (
         viewMode === "list" ? <ListView /> : <CardView />
       )}
 
-      {/* MODAL DÉTAILS COMMANDE */}
+      {/* MODAL DÉTAILS - AVEC GRANDE IMAGE CORRESPONDANT AU STATUT */}
       {showDetails && selectedCommande && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">Détails de la commande</h2>
                 <p className="text-xs text-muted-foreground font-mono">{selectedCommande.commande_uuid}</p>
               </div>
               <button onClick={() => setShowDetails(false)} className="p-1.5 rounded-lg hover:bg-secondary transition">
-                <XCircle className="h-5 w-5 text-muted-foreground" />
+                <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
+            
             <div className="overflow-y-auto px-6 py-5 flex-1 space-y-5">
+              {/* GRANDE IMAGE DU MASCOTTE SELON LE STATUT */}
+              <div className="flex flex-col items-center justify-center py-6 bg-gradient-to-br from-muted/20 to-transparent rounded-2xl">
+                <div className={`relative ${getStatutConfig(selectedCommande.statut).animation}`}>
+                  <img 
+                    src={getStatutConfig(selectedCommande.statut).image} 
+                    alt="Fosa" 
+                    className="w-40 h-40 object-contain drop-shadow-xl"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = fosa;
+                    }}
+                  />
+                  <div className="absolute -top-2 -right-2 bg-white dark:bg-gray-800 rounded-full p-1.5 shadow-md border border-border">
+                    <span className="text-xl">{getStatutConfig(selectedCommande.statut).emoji}</span>
+                  </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border bg-card/50">
+                    {getStatutIcone(selectedCommande.statut)}
+                    <span className={`text-sm font-semibold ${getStatutConfig(selectedCommande.statut).color}`}>
+                      {getStatutLabel(selectedCommande.statut)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-3 italic">
+                    "{getStatutConfig(selectedCommande.statut).gesture}"
+                  </p>
+                </div>
+              </div>
+
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div>
-                  <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium border ${getStatutStyle(selectedCommande.statut)}`}>
-                    {getStatutIcone(selectedCommande.statut)}
-                    {getStatutLabel(selectedCommande.statut)}
-                  </span>
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-sm text-muted-foreground">
                     Commandé le {formatDate(selectedCommande.date_creation)}
                   </p>
                   {selectedCommande.devis_id && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Devis N°{selectedCommande.devis_id}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Devis N°{selectedCommande.devis_id}</p>
                   )}
                 </div>
-                <p className="text-2xl font-bold text-foreground">{formatPrice(selectedCommande.total, selectedCommande.devise)}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {formatPrice(selectedCommande.total, selectedCommande.devise)}
+                </p>
               </div>
 
               <div>
@@ -626,26 +811,34 @@ const DashboardCommandes = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {(selectedCommande.produits || []).map((produit, idx) => {
-                        const totalLigne = produit.quantite * produit.prix_unitaire;
-                        return (
-                          <tr key={idx} className="border-t border-border">
-                            <td className="py-2 px-3 text-foreground">{produit.nom}</td>
-                            <td className="text-center py-2 px-3 text-muted-foreground">{produit.quantite}</td>
-                            <td className="text-right py-2 px-3 text-muted-foreground">{formatPrice(produit.prix_unitaire, selectedCommande.devise)}</td>
-                            <td className="text-right py-2 px-3 font-medium text-foreground">{formatPrice(totalLigne, selectedCommande.devise)}</td>
-                          </tr>
-                        );
-                      })}
-                      {(!selectedCommande.produits || selectedCommande.produits.length === 0) && (
-                        <tr className="border-t border-border">
-                          <td colSpan={4} className="py-4 px-3 text-center text-muted-foreground">
-                            {selectedCommande.titre || "Produit"}
+                      {(selectedCommande.produits || []).map((produit, idx) => (
+                        <tr key={idx} className="border-t border-border">
+                          <td className="py-2 px-3 text-foreground">{produit.nom}</td>
+                          <td className="text-center py-2 px-3 text-muted-foreground">{produit.quantite}</td>
+                          <td className="text-right py-2 px-3 text-muted-foreground">
+                            {formatPrice(produit.prix_unitaire, selectedCommande.devise)}
+                          </td>
+                          <td className="text-right py-2 px-3 font-medium text-foreground">
+                            {formatPrice(produit.quantite * produit.prix_unitaire, selectedCommande.devise)}
                           </td>
                         </tr>
-                      )}
+                      ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Barre de progression */}
+              <div className="mt-2">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                  <span>Progression de la commande</span>
+                  <span className="font-semibold">{getStatutConfig(selectedCommande.statut).progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-700 ${getStatutConfig(selectedCommande.statut).color.replace('text', 'bg')}`}
+                    style={{ width: `${getStatutConfig(selectedCommande.statut).progress}%` }}
+                  />
                 </div>
               </div>
 
@@ -654,22 +847,23 @@ const DashboardCommandes = () => {
                   <div className="w-64 space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Sous-total :</span>
-                      <span className="text-foreground">{formatPrice(selectedCommande.sous_total, selectedCommande.devise)}</span>
+                      <span>{formatPrice(selectedCommande.sous_total, selectedCommande.devise)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Livraison :</span>
-                      <span className={selectedCommande.livraison > 0 ? "text-foreground" : "text-green-600 dark:text-green-400"}>
+                      <span className={selectedCommande.livraison > 0 ? "text-foreground" : "text-green-600"}>
                         {selectedCommande.livraison > 0 ? formatPrice(selectedCommande.livraison, selectedCommande.devise) : "Gratuite"}
                       </span>
                     </div>
                     <div className="flex justify-between pt-1 border-t border-border font-semibold">
-                      <span className="text-foreground">Total :</span>
-                      <span className="text-foreground">{formatPrice(selectedCommande.total, selectedCommande.devise)}</span>
+                      <span>Total :</span>
+                      <span>{formatPrice(selectedCommande.total, selectedCommande.devise)}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+            
             <div className="flex gap-3 px-6 py-4 border-t border-border">
               {canCancel(selectedCommande.statut) && (
                 <button
@@ -705,13 +899,20 @@ const DashboardCommandes = () => {
       )}
 
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes bounce-gentle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes wiggle { 0%,100% { transform: rotate(0deg); } 25% { transform: rotate(-5deg); } 75% { transform: rotate(5deg); } }
+        @keyframes celebrate { 0%,100% { transform: scale(1); } 25% { transform: scale(1.05) rotate(-3deg); } 75% { transform: scale(1.05) rotate(3deg); } }
+        @keyframes sad { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); opacity: 0.7; } }
+        @keyframes pulse-slow { 0%,100% { opacity: 1; } 50% { opacity: 0.8; transform: scale(1.02); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
+        .animate-spin-slow { animation: spin-slow 4s linear infinite; }
+        .animate-wiggle { animation: wiggle 0.5s ease-in-out infinite; }
+        .animate-celebrate { animation: celebrate 0.8s ease-in-out infinite; }
+        .animate-sad { animation: sad 2s ease-in-out infinite; }
+        .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
       `}</style>
     </div>
   );

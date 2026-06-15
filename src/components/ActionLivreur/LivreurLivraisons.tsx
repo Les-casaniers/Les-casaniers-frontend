@@ -402,7 +402,7 @@ const LivreurLivraisons: React.FC = () => {
             {/* Modal - réduit avec petite police */}
             {showDetailsModal && selectedDelivery && (
                 <div
-                    className="fixed inset-0 flex items-start justify-center z-50 p-18 "
+                    className="fixed inset-0 flex items-start justify-center z-50 p "
                     onClick={() => setShowDetailsModal(false)}
                 >
                     <div
