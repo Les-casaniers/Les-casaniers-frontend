@@ -1,3 +1,4 @@
+// App.tsx - Version complète avec les routes livreur
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,7 +16,7 @@ import Account from "./pages/Account.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import NousTrouver from "@/pages/NousTrouver";
 import CGV from "@/pages/CGV";
-import Confidentialite from "@/pages/Confidentialite"; // test
+import Confidentialite from "@/pages/Confidentialite";
 import ProAndFreel from "@/pages/ProAndFreel";
 import Gaming from "@/pages/Gaming";
 import Composants from "@/pages/Composants";
@@ -27,29 +28,29 @@ import GuideDetail from "@/pages/GuideDetail";
 import Importation from "@/pages/Import";
 import DevisExpress from "@/pages/DevisExpress";
 
-//Importations utiles pour la connexion
+// Importations utiles pour la connexion
 import { AuthProvider } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Compte from "@/pages/Compte";
 import MotDePasseOublie from "@/pages/MotDePasseOublie";
 
-//Import Routes pour Admin
-import DashboardAdmin from "@/pages/DashboardAdmin"; // votre layout
+// Import Routes pour Admin
+import DashboardAdmin from "@/pages/DashboardAdmin";
 import AdminDashboard from "@/components/ActionAdmin/AdminDashboard";
 import AdminProduits from "@/components/ActionAdmin/AdminProduits";
 import ConfigPc from "@/components/ActionAdmin/ConfigPc";
 import AdminCommandes from "@/components/ActionAdmin/AdminCommandes";
 import AdminClients from "@/components/ActionAdmin/AdminClients";
-import AdminFavoris from "@/components/ActionAdmin/AdminFavoris";//favoris
-import AdminPaniers from "@/components/ActionAdmin/AdminPaniers";//Paniers
+import AdminFavoris from "@/components/ActionAdmin/AdminFavoris";
+import AdminPaniers from "@/components/ActionAdmin/AdminPaniers";
 import AdminFactures from "@/components/ActionAdmin/AdminFactures";
 import AdminDevis from "@/components/ActionAdmin/AdminDevis";
 import AdminNotifications from "@/components/ActionAdmin/AdminNotifications";
 import AdminParametres from "@/components/ActionAdmin/AdminParametres";
 import AdminGuides from "@/components/ActionAdmin/AdminGuides";
 
-//Import Routes pour Client
+// Import Routes pour Client
 import DashboardClient from "@/pages/DashboardClient";
 import DashboardApercu from "@/components/ActionClient/DashboardApercu";
 import DashboardCommandes from "@/components/ActionClient/DashboardCommandes";
@@ -62,8 +63,18 @@ import Favorites from "./pages/Favorites.tsx";
 import AdminAvis from "@/components/ActionAdmin/AdminAvis";
 import AdminDevisExpress from "@/components/ActionAdmin/AdminDevisExpress";
 import AdminUtilisateurs from "@/components/ActionAdmin/AdminUtilisateurs";
-import { CookieConsentBanner } from "@/components/CookieConsentBanner"; //Cookie Banner
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import QuiSommesNous from "./components/site/QuiSommesNous.tsx";
+import LivreurLayout from "./components/LayoutLivreur/LivreurLayout.tsx";
+import DashboardLivreur from "./pages/DashboardLivreur.tsx";
+import LivreurLivraisons from "./components/ActionLivreur/LivreurLivraisons.tsx";
+import LivreurPlanning from "./components/ActionLivreur/LivreurPlanning.tsx";
+import LivreurStats from "./components/ActionLivreur/LivreurStats.tsx";
+import LivreurNotifications from "./components/ActionLivreur/LivreurNotifications.tsx";
+import LivreurParametres from "./components/ActionLivreur/LivreurParametres.tsx";
+
+// ============ IMPORTS LIVREUR ============
+
 
 const queryClient = new QueryClient();
 
@@ -76,9 +87,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Routes publiques */}
               <Route path="/" element={<Index />} />
               <Route path="/qui-sommes-nous" element={<QuiSommesNous />} />
-              <Route path="/catalogue" element={<Catalog />} /> 
+              <Route path="/catalogue" element={<Catalog />} />
               <Route path="/boutique-de-misa" element={<BoutiqueDeMisa />} />
               <Route path="/produit/:id" element={<Product />} />
               <Route path="/config" element={<Config />} />
@@ -98,17 +110,16 @@ const App = () => (
               <Route path="/importation" element={<Importation />} />
               <Route path="/favoris" element={<Favorites />} />
               <Route path="/devis-express" element={<DevisExpress />} />
-              {/* Route connexion */}
+              
+              {/* Routes d'authentification */}
               <Route path="/login" element={<Login />} />
               <Route path="/inscription" element={<Register />} />
-              <Route
-                path="/mot-de-passe-oublie"
-                element={<MotDePasseOublie />}
-              />
+              <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
+              
+              {/* Routes utilisateur */}
               <Route path="/compte" element={<Compte />} />
-              <Route path="/DashboardClient" element={<DashboardClient />} />
 
-              {/* âœ… Routes admin imbriquÃ©es sous le layout DashboardAdmin */}
+              {/* Routes Admin imbriquées sous le layout DashboardAdmin */}
               <Route path="/DashboardAdmin" element={<DashboardAdmin />}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="produits" element={<AdminProduits />} />
@@ -116,23 +127,18 @@ const App = () => (
                 <Route path="produits/:id" element={<ConfigPc />} />
                 <Route path="commandes" element={<AdminCommandes />} />
                 <Route path="clients" element={<AdminClients />} />
-                <Route path="favoris" element={<AdminFavoris />} /> // ← AJOUTER
-                <Route path="paniers" element={<AdminPaniers />} /> // ← AJOUTER
+                <Route path="favoris" element={<AdminFavoris />} />
+                <Route path="paniers" element={<AdminPaniers />} />
                 <Route path="devis" element={<AdminDevis />} />
                 <Route path="factures" element={<AdminFactures />} />
-                <Route path="avis" element={<AdminAvis />} /> // ← AJOUTER
-                <Route
-                  path="devis-express"
-                  element={<AdminDevisExpress />}
-                />{" "}
-                // ← AJOUTER
-                <Route path="admins" element={<AdminUtilisateurs />} /> // ←
-                AJOUTER
+                <Route path="avis" element={<AdminAvis />} />
+                <Route path="devis-express" element={<AdminDevisExpress />} />
+                <Route path="admins" element={<AdminUtilisateurs />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="parametres" element={<AdminParametres />} />
               </Route>
 
-              {/* âœ… Routes Client imbriquÃ©es sous le layout DashboardClient */}
+              {/* Routes Client imbriquées sous le layout DashboardClient */}
               <Route path="/DashboardClient" element={<DashboardClient />}>
                 <Route index element={<DashboardApercu />} />
                 <Route path="commandes" element={<DashboardCommandes />} />
@@ -142,13 +148,22 @@ const App = () => (
                 <Route path="parametres" element={<DashboardParametres />} />
               </Route>
 
+              {/* ============ ROUTES LIVREUR ============ */}
+              <Route path="/DashboardLivreur" element={<LivreurLayout />}>
+                <Route index element={<DashboardLivreur />} />
+                <Route path="livraisons" element={<LivreurLivraisons />} />
+                <Route path="planning" element={<LivreurPlanning />} />
+                <Route path="statistiques" element={<LivreurStats />} />
+                <Route path="notifications" element={<LivreurNotifications />} />
+                <Route path="parametres" element={<LivreurParametres />} />
+              </Route>
+
+              {/* Route 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
 
-            {/* Casio flotte sur toutes les pages */}
+            {/* Composants flottants sur toutes les pages */}
             <FosaBot />
-
-            {/* Cookie Banner - s'affiche sur toutes les pages */}
             <CookieConsentBanner />
           </BrowserRouter>
         </ShopProvider>

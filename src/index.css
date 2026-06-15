@@ -853,4 +853,53 @@
   .text-muted-foreground, [class*="timestamp"], [class*="date"] {
     font-size: 11px !important;
   }
+
+
+
+/* ==================== BOUTONS SUPPLEMENTAIRES ==================== */
+
+/* Bouton dark/light qui s'inverse selon le thème */
+.btn-inverse {
+  @apply btn;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border: 1px solid transparent;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-300) var(--ease-out-expo);
+}
+
+.btn-inverse::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, hsl(var(--background) / 0.2), transparent);
+  transition: left var(--duration-500) var(--ease-out-expo);
+}
+
+.btn-inverse:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  opacity: 0.9;
+}
+
+.btn-inverse:hover::before {
+  left: 100%;
+}
+
+.btn-inverse:active {
+  transform: translateY(0);
+}
+
+/* Mode sombre pour btn-inverse - s'inverse automatiquement grâce aux variables CSS */
+/* Pas besoin de styles supplémentaires car les variables changent déjà */  
+
+
 }
