@@ -8,6 +8,15 @@ export interface Category {
   image?: string;
 }
 
+// Ajoutez ces types vers le haut du fichier, après les autres interfaces
+export type SousCategoryWithProducts = SousCategory & {
+  produits: Product[];
+};
+
+export type CategoryWithSubcategoriesAndProducts = Category & {
+  sous_categories: SousCategoryWithProducts[];
+};
+
 export interface SousCategory {
   id: number;
   id_categorie: number;
@@ -171,6 +180,82 @@ export const useDeleteProduct = () => {
     mutationFn: (id: number) => api.delete(`/produits/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+};
+
+// Hook pour récupérer les produits groupés par sous-catégorie (limité à 3 par sous-catégorie)
+export const useProductsBySubcategory = (limit: number = 3) => {
+  return useQuery({
+    queryKey: ["products-by-subcategory", limit],
+    queryFn: async () => {
+      try {
+        console.log("🔍 Chargement des données du menu...");
+        
+        // Récupérer toutes les catégories
+        const categoriesResponse = await api.get('/categories');
+        const categories = categoriesResponse.data.data as Category[];
+        
+        // Récupérer toutes les sous-catégories
+        const sousCategoriesResponse = await api.get('/sous-categories');
+        const sousCategories = sousCategoriesResponse.data.data as SousCategory[];
+        
+        // Pour chaque catégorie, récupérer ses sous-catégories et produits
+        const categoriesWithProducts = await Promise.all(
+          categories.map(async (category) => {
+            const categorySousCategories = sousCategories.filter(
+              sc => sc.id_categorie === category.id
+            );
+            
+            // Pour chaque sous-catégorie, récupérer les produits
+            const sousCategoriesWithProducts = await Promise.all(
+              categorySousCategories.map(async (sousCat) => {
+                try {
+                  // Récupérer les produits de cette sous-catégorie
+                  // SANS les filtres actif/est_dispo pour tester
+                  const productsResponse = await api.get('/produits', {
+                    params: {
+                      id_sous_categorie: sousCat.id,
+                      // actif: true,  // Commentez temporairement pour tester
+                      // est_dispo: 1, // Commentez temporairement pour tester
+                      limit: limit
+                    }
+                  });
+                  
+                  console.log(`Produits trouvés pour sous-catégorie ${sousCat.id} (${sousCat.nom}):`, 
+                    productsResponse.data.data?.length || 0);
+                  
+                  // Afficher le premier produit pour vérifier
+                  if (productsResponse.data.data?.length > 0) {
+                    console.log(`  Exemple produit:`, productsResponse.data.data[0].nom);
+                  }
+                  
+                  return {
+                    ...sousCat,
+                    produits: productsResponse.data.data as Product[] || []
+                  };
+                } catch (error) {
+                  console.error(`Erreur pour sous-catégorie ${sousCat.id}:`, error);
+                  return {
+                    ...sousCat,
+                    produits: []
+                  };
+                }
+              })
+            );
+            
+            return {
+              ...category,
+              sous_categories: sousCategoriesWithProducts
+            };
+          })
+        );
+        
+        return categoriesWithProducts;
+      } catch (error) {
+        console.error("Erreur globale:", error);
+        throw error;
+      }
     },
   });
 };
