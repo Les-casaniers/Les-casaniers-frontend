@@ -1,153 +1,68 @@
-import React, { useState } from 'react';
+// DashboardClient.tsx
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Phone, 
   Mail, 
   Calendar, 
   Star, 
-  MoreVertical,
   Edit,
-  Trash2,
-  Eye,
   X,
-  Plus,
-  Search,
-  ChevronLeft,
-  ChevronRight,
   Sun,
   Moon,
   CheckCircle,
   Clock,
   AlertCircle,
-  Users,
   TrendingUp,
   DollarSign,
   ShoppingBag,
-  Filter,
-  ArrowUpDown,
-  UserCircle,
-  Building2,
   Award,
-  Activity,
   Save,
   User,
   AtSign,
   Home,
   Globe,
-  Camera,
-  Upload,
-  Navigation,
-  Crosshair,
-  Map,
-  LocateFixed,
-  AlertTriangle
+  Loader2,
+  UserCircle,
+  LogOut,
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Activity,
+  Users,
+  RefreshCw,
+  Menu,
+  Building2,
+  MailCheck
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types
 interface Client {
-  id: string;
+  id: string | number;
   name: string;
+  prenom?: string;
+  nom?: string;
   email: string;
   phone: string;
+  telephone?: string;
   location: {
     address: string;
     city: string;
     country: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
   };
-  image: string;
   status: 'active' | 'inactive' | 'pending';
   joinedDate: string;
+  date_creation?: string;
   lastActive: string;
+  date_modification?: string;
   rating: number;
   totalOrders: number;
   totalSpent: number;
+  statut?: boolean;
 }
-
-// Données mockées
-const mockClients: Client[] = [
-  {
-    id: '1',
-    name: 'Sophie Martinez',
-    email: 'sophie.martinez@email.com',
-    phone: '+33 6 12 34 56 78',
-    location: {
-      address: '15 Rue de la Paix',
-      city: 'Paris',
-      country: 'France',
-      coordinates: { lat: 48.8566, lng: 2.3522 }
-    },
-    image: 'https://i.pravatar.cc/150?img=1',
-    status: 'active',
-    joinedDate: '2024-01-15',
-    lastActive: '2024-12-10',
-    rating: 4.8,
-    totalOrders: 47,
-    totalSpent: 12580
-  },
-  {
-    id: '2',
-    name: 'Thomas Dubois',
-    email: 'thomas.dubois@email.com',
-    phone: '+33 6 98 76 54 32',
-    location: {
-      address: '8 Avenue des Champs-Élysées',
-      city: 'Paris',
-      country: 'France',
-      coordinates: { lat: 48.8698, lng: 2.3079 }
-    },
-    image: 'https://i.pravatar.cc/150?img=3',
-    status: 'active',
-    joinedDate: '2024-03-22',
-    lastActive: '2024-12-11',
-    rating: 4.9,
-    totalOrders: 32,
-    totalSpent: 8940
-  },
-  {
-    id: '3',
-    name: 'Emma Laurent',
-    email: 'emma.laurent@email.com',
-    phone: '+33 7 45 67 89 01',
-    location: {
-      address: '22 Quai de la Seine',
-      city: 'Lyon',
-      country: 'France',
-      coordinates: { lat: 45.7640, lng: 4.8357 }
-    },
-    image: 'https://i.pravatar.cc/150?img=5',
-    status: 'inactive',
-    joinedDate: '2024-06-10',
-    lastActive: '2024-11-28',
-    rating: 4.2,
-    totalOrders: 18,
-    totalSpent: 4560
-  },
-  {
-    id: '4',
-    name: 'Lucas Petit',
-    email: 'lucas.petit@email.com',
-    phone: '+33 6 54 32 10 98',
-    location: {
-      address: '3 Rue de la République',
-      city: 'Marseille',
-      country: 'France',
-      coordinates: { lat: 43.2965, lng: 5.3698 }
-    },
-    image: 'https://i.pravatar.cc/150?img=8',
-    status: 'pending',
-    joinedDate: '2024-09-05',
-    lastActive: '2024-12-09',
-    rating: 3.9,
-    totalOrders: 12,
-    totalSpent: 3200
-  },
-
-
-];
 
 // Composant de bascule de thème
 const ThemeToggle: React.FC = () => {
@@ -167,72 +82,15 @@ const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="relative inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted transition-colors"
+      className="relative inline-flex items-center justify-center w-10 h-10 rounded-full hover:bg-muted transition-all duration-300 hover:scale-110"
       aria-label="Basculer le thème"
     >
       {isDark ? (
-        <Sun className="w-5 h-5 transition-all" />
+        <Sun className="w-5 h-5 transition-all duration-500 hover:rotate-90" />
       ) : (
-        <Moon className="w-5 h-5 transition-all" />
+        <Moon className="w-5 h-5 transition-all duration-500 hover:-rotate-90" />
       )}
     </button>
-  );
-};
-
-// Composant de carte intégrée
-const MapView: React.FC<{ 
-  lat: number; 
-  lng: number; 
-  name: string;
-  address: string;
-}> = ({ lat, lng, name, address }) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const openInMaps = () => {
-    setIsLoading(true);
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-    window.open(url, '_blank');
-    setTimeout(() => setIsLoading(false), 1000);
-  };
-
-  return (
-    <div className="relative w-full h-48 rounded-xl overflow-hidden bg-gradient-to-br from-muted to-muted/50 border border-border group">
-      <div className="absolute inset-0 bg-grid-pattern opacity-10" />
-      
-      <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-          <MapPin className="w-8 h-8 text-primary/60" />
-        </div>
-        <p className="text-sm font-medium text-center">{name}</p>
-        <p className="text-xs text-muted-foreground text-center mb-3">{address}</p>
-        
-        <div className="flex items-center gap-4 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border">
-          <span className="flex items-center gap-1">
-            <Crosshair className="w-3 h-3" />
-            {lat.toFixed(6)}
-          </span>
-          <span className="w-px h-4 bg-border" />
-          <span className="flex items-center gap-1">
-            <Crosshair className="w-3 h-3" />
-            {lng.toFixed(6)}
-          </span>
-        </div>
-      </div>
-
-      <button
-        onClick={openInMaps}
-        disabled={isLoading}
-        className="absolute bottom-4 right-4 btn-theme-primary btn-sm shadow-lg hover:shadow-xl transition-all duration-300"
-      >
-        <LocateFixed className="w-4 h-4" />
-        {isLoading ? 'Chargement...' : 'Localiser'}
-      </button>
-
-      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-full border border-border text-[10px] text-muted-foreground">
-        <Map className="w-3 h-3" />
-        Coordonnées GPS
-      </div>
-    </div>
   );
 };
 
@@ -248,288 +106,39 @@ const DeleteConfirmationModal: React.FC<{
       onClick={onCancel}
     >
       <div 
-        className="bg-background rounded-2xl shadow-2xl max-w-md w-full animate-scale-in border border-border"
+        className="bg-card rounded-2xl shadow-2xl max-w-md w-full animate-scale-in border border-border"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6 text-center">
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-destructive" />
+            <AlertCircle className="w-8 h-8 text-destructive" />
           </div>
           <h3 className="text-xl font-display font-semibold mb-2">Confirmer la suppression</h3>
           <p className="text-muted-foreground text-sm mb-1">
             Êtes-vous sûr de vouloir supprimer le client
           </p>
           <p className="font-medium text-foreground">{client.name}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Cette action est irréversible et supprimera toutes les données associées.
+          <p className="text-xs text-muted-foreground mt-3 bg-muted/30 p-3 rounded-lg">
+            ⚠️ Cette action est irréversible et supprimera toutes les données associées.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3 p-6 pt-0 border-t border-border">
           <button 
             onClick={onConfirm}
-            className="btn-destructive flex-1 min-w-[120px]"
+            className="flex-1 min-w-[120px] bg-destructive text-destructive-foreground hover:bg-destructive/90 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
           >
             <Trash2 className="w-4 h-4" />
             Supprimer
           </button>
           <button 
             onClick={onCancel}
-            className="btn-secondary flex-1 min-w-[120px]"
+            className="flex-1 min-w-[120px] bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-border hover:scale-105 active:scale-95"
           >
             <X className="w-4 h-4" />
             Annuler
           </button>
         </div>
-      </div>
-    </div>
-  );
-};
-
-// Composant de formulaire d'ajout de client
-const AddClientForm: React.FC<{
-  onSave: (client: Client) => void;
-  onCancel: () => void;
-}> = ({ onSave, onCancel }) => {
-  const [formData, setFormData] = useState<Partial<Client>>({
-    name: '',
-    email: '',
-    phone: '',
-    location: {
-      address: '',
-      city: '',
-      country: 'France',
-      coordinates: { lat: 0, lng: 0 }
-    },
-    image: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70),
-    status: 'active',
-    joinedDate: new Date().toISOString().split('T')[0],
-    lastActive: new Date().toISOString().split('T')[0],
-    rating: 0,
-    totalOrders: 0,
-    totalSpent: 0
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof Client] as any,
-          [child]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newClient: Client = {
-      id: Date.now().toString(),
-      name: formData.name || '',
-      email: formData.email || '',
-      phone: formData.phone || '',
-      location: formData.location as Client['location'],
-      image: formData.image || 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70),
-      status: formData.status as Client['status'] || 'active',
-      joinedDate: formData.joinedDate || new Date().toISOString().split('T')[0],
-      lastActive: formData.lastActive || new Date().toISOString().split('T')[0],
-      rating: 0,
-      totalOrders: 0,
-      totalSpent: 0
-    };
-    onSave(newClient);
-  };
-
-  return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-      onClick={onCancel}
-    >
-      <div 
-        className="bg-background rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-border"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-6 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Plus className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-display font-semibold">Ajouter un client</h2>
-              <p className="text-sm text-muted-foreground">Créez un nouveau client</p>
-            </div>
-          </div>
-          <button 
-            onClick={onCancel}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Informations personnelles
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Nom complet *</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Email *</label>
-                  <div className="relative">
-                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Téléphone *</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Statut</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="input"
-                  >
-                    <option value="active">✅ Actif</option>
-                    <option value="pending">⏳ En attente</option>
-                    <option value="inactive">❌ Inactif</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Localisation
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Adresse</label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="location.address"
-                      value={formData.location?.address || ''}
-                      onChange={handleChange}
-                      className="input pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Ville</label>
-                  <input
-                    type="text"
-                    name="location.city"
-                    value={formData.location?.city || ''}
-                    onChange={handleChange}
-                    className="input"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Pays</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="location.country"
-                      value={formData.location?.country || 'France'}
-                      onChange={handleChange}
-                      className="input pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-            {/* ✅ Bouton Primary - s'adapte automatiquement au thème */}
-            <button 
-              type="submit" 
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-foreground text-background 
-                hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5
-                active:scale-95
-                shadow-sm
-              "
-            >
-              <Save className="w-4 h-4" />
-              Ajouter le client
-            </button>
-            
-            {/* ✅ Bouton Secondaire */}
-            <button 
-              type="button" 
-              onClick={onCancel}
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-secondary text-secondary-foreground 
-                hover:bg-secondary/80 hover:shadow-sm hover:-translate-y-0.5
-                active:scale-95
-                border border-border
-              "
-            >
-              <X className="w-4 h-4" />
-              Annuler
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
@@ -542,9 +151,9 @@ const EditClientForm: React.FC<{
   onCancel: () => void;
 }> = ({ client, onSave, onCancel }) => {
   const [formData, setFormData] = useState<Client>({ ...client });
-  const [imagePreview, setImagePreview] = useState<string>(client.image);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
@@ -560,37 +169,22 @@ const EditClientForm: React.FC<{
     }
   };
 
-  const handleCoordinateChange = (type: 'lat' | 'lng', value: string) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      setFormData(prev => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          coordinates: {
-            ...prev.location.coordinates,
-            [type]: numValue
-          }
-        }
-      }));
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    setLoading(true);
+    try {
+      const nameParts = formData.name?.split(' ') || ['', ''];
+      const updatedClient = {
+        ...formData,
+        prenom: nameParts[0] || '',
+        nom: nameParts.slice(1).join(' ') || '',
+        telephone: formData.phone || '',
+        statut: formData.status === 'active'
+      };
+      await onSave(updatedClient);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -599,13 +193,13 @@ const EditClientForm: React.FC<{
       onClick={onCancel}
     >
       <div 
-        className="bg-background rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-border"
+        className="bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-border"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-6 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-6 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Edit className="w-5 h-5 text-primary" />
+            <div className="p-2 rounded-lg bg-foreground/10">
+              <Edit className="w-5 h-5 text-foreground" />
             </div>
             <div>
               <h2 className="text-xl font-display font-semibold">Modifier le client</h2>
@@ -614,293 +208,112 @@ const EditClientForm: React.FC<{
           </div>
           <button 
             onClick={onCancel}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-2 rounded-full hover:bg-muted transition-colors hover:rotate-90 duration-300"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="flex flex-col items-center gap-4 pb-6 border-b border-border">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full overflow-hidden ring-4 ring-border">
-                <img src={imagePreview} alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              <label className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-primary-foreground cursor-pointer hover:bg-primary/90 transition-colors shadow-lg">
-                <Camera className="w-4 h-4" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
-            <p className="text-xs text-muted-foreground">Cliquez sur la caméra pour changer la photo</p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Informations personnelles
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Nom complet</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Email</label>
-                  <div className="relative">
-                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Téléphone</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Statut</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="input"
-                  >
-                    <option value="active">✅ Actif</option>
-                    <option value="pending">⏳ En attente</option>
-                    <option value="inactive">❌ Inactif</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                Localisation & Coordonnées
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Adresse</label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="location.address"
-                      value={formData.location.address}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Ville</label>
-                  <input
-                    type="text"
-                    name="location.city"
-                    value={formData.location.city}
-                    onChange={handleChange}
-                    className="input"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Pays</label>
-                  <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      type="text"
-                      name="location.country"
-                      value={formData.location.country}
-                      onChange={handleChange}
-                      className="input pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5 flex items-center gap-1">
-                      <Crosshair className="w-3 h-3" />
-                      Latitude
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.location.coordinates?.lat || ''}
-                      onChange={(e) => handleCoordinateChange('lat', e.target.value)}
-                      className="input"
-                      placeholder="48.8566"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5 flex items-center gap-1">
-                      <Crosshair className="w-3 h-3" />
-                      Longitude
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.location.coordinates?.lng || ''}
-                      onChange={(e) => handleCoordinateChange('lng', e.target.value)}
-                      className="input"
-                      placeholder="2.3522"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="
-                    w-full 
-                    inline-flex items-center justify-center gap-2 
-                    font-medium transition-all duration-300 
-                    rounded-lg px-6 py-2.5
-                    bg-foreground text-background 
-                    hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5
-                    active:scale-95
-                    shadow-sm
-                  "
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            location: {
-                              ...prev.location,
-                              coordinates: {
-                                lat: position.coords.latitude,
-                                lng: position.coords.longitude
-                              }
-                            }
-                          }));
-                        },
-                        (error) => {
-                          alert('Impossible de récupérer la position: ' + error.message);
-                        }
-                      );
-                    } else {
-                      alert('La géolocalisation n\'est pas supportée par votre navigateur');
-                    }
-                  }}
-                >
-                  <LocateFixed className="w-4 h-4" />
-                  Utiliser ma position actuelle
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {formData.location.coordinates?.lat && formData.location.coordinates?.lng && (
-            <div className="space-y-3">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Map className="w-4 h-4" />
-                Aperçu de la localisation
-              </h3>
-              <MapView
-                lat={formData.location.coordinates.lat}
-                lng={formData.location.coordinates.lng}
-                name={formData.name}
-                address={`${formData.location.address}, ${formData.location.city}`}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Prénom</label>
+              <input
+                type="text"
+                name="prenom"
+                value={formData.prenom || ''}
+                onChange={handleChange}
+                className="input"
+                required
               />
             </div>
-          )}
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl bg-muted/30 border border-border">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Note</p>
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="font-medium">{formData.rating}</span>
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Nom</label>
+              <input
+                type="text"
+                name="nom"
+                value={formData.nom || ''}
+                onChange={handleChange}
+                className="input"
+                required
+              />
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Commandes</p>
-              <p className="font-medium mt-1">{formData.totalOrders}</p>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="input"
+                required
+              />
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Dépensé</p>
-              <p className="font-medium mt-1">{formData.totalSpent.toLocaleString()}€</p>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Téléphone</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="input"
+                required
+              />
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Inscrit le</p>
-              <p className="font-medium mt-1 text-sm">{new Date(formData.joinedDate).toLocaleDateString('fr-FR')}</p>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium mb-1.5">Adresse</label>
+              <input
+                type="text"
+                name="location.address"
+                value={formData.location.address}
+                onChange={handleChange}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Ville</label>
+              <input
+                type="text"
+                name="location.city"
+                value={formData.location.city}
+                onChange={handleChange}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Statut</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="active">✅ Actif</option>
+                <option value="pending">⏳ En attente</option>
+                <option value="inactive">❌ Inactif</option>
+              </select>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-            {/* ✅ Bouton Primary - s'adapte automatiquement au thème */}
             <button 
               type="submit" 
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-foreground text-background 
-                hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5
-                active:scale-95
-                shadow-sm
-              "
+              disabled={loading}
+              className="flex-1 min-w-[120px] bg-foreground text-background hover:bg-foreground/90 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
             >
-              <Save className="w-4 h-4" />
-              Enregistrer
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {loading ? 'Enregistrement...' : 'Enregistrer'}
             </button>
-            
-            {/* ✅ Bouton Secondaire */}
             <button 
               type="button" 
               onClick={onCancel}
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-secondary text-secondary-foreground 
-                hover:bg-secondary/80 hover:shadow-sm hover:-translate-y-0.5
-                active:scale-95
-                border border-border
-              "
+              className="flex-1 min-w-[120px] bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 border border-border hover:scale-105 active:scale-95"
             >
               <X className="w-4 h-4" />
               Annuler
@@ -912,7 +325,7 @@ const EditClientForm: React.FC<{
   );
 };
 
-// Composant de vue détaillée
+// Composant de vue détaillée du client
 const ClientDetailView: React.FC<{ 
   client: Client; 
   onClose: () => void;
@@ -925,27 +338,40 @@ const ClientDetailView: React.FC<{
       onClick={onClose}
     >
       <div 
-        className="bg-background rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-border"
+        className="bg-card rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-scale-in border border-border"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b border-border p-6 flex items-start justify-between z-10">
+        <div className="sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border p-6 flex items-start justify-between z-10">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-border">
-              <img src={client.image} alt={client.name} className="w-full h-full object-cover" />
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center flex-shrink-0">
+              <UserCircle className="w-10 h-10 text-foreground/60" />
             </div>
             <div>
               <h2 className="text-2xl font-display font-semibold">{client.name}</h2>
-              <p className="text-sm text-muted-foreground">{client.email}</p>
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Mail className="w-3 h-3" />
+                {client.email}
+              </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`badge ${client.status === 'active' ? 'badge-primary' : client.status === 'pending' ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'}`}>
-                  {client.status === 'active' ? 'Actif' : client.status === 'pending' ? 'En attente' : 'Inactif'}
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  client.status === 'active' 
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                    : client.status === 'pending' 
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' 
+                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                }`}>
+                  {client.status === 'active' ? '🟢 Actif' : client.status === 'pending' ? '🟡 En attente' : '🔴 Inactif'}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                  {client.rating}
                 </span>
               </div>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-2 rounded-full hover:bg-muted transition-colors hover:rotate-90 duration-300"
           >
             <X className="w-5 h-5" />
           </button>
@@ -954,19 +380,20 @@ const ClientDetailView: React.FC<{
         <div className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground">
+              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <UserCircle className="w-4 h-4" />
                 Informations personnelles
               </h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
                   <Phone className="w-4 h-4 text-muted-foreground" />
                   <span>{client.phone}</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
                   <Calendar className="w-4 h-4 text-muted-foreground" />
                   <span>Inscrit le {new Date(client.joinedDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3 text-sm p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
                   <Clock className="w-4 h-4 text-muted-foreground" />
                   <span>Dernière activité : {new Date(client.lastActive).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 </div>
@@ -974,115 +401,38 @@ const ClientDetailView: React.FC<{
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground">
+              <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
                 Localisation
               </h3>
               <div className="space-y-3">
-                <div className="flex items-start gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                <div className="flex items-start gap-3 text-sm p-3 rounded-lg bg-muted/20 hover:bg-muted/30 transition-colors">
                   <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
                   <div>
                     <p className="font-medium">{client.location.address}</p>
                     <p className="text-muted-foreground">{client.location.city}, {client.location.country}</p>
-                    {client.location.coordinates && (
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <Crosshair className="w-3 h-3" />
-                        <span>{client.location.coordinates.lat.toFixed(6)}, {client.location.coordinates.lng.toFixed(6)}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
-                
-                {client.location.coordinates && (
-                  <MapView
-                    lat={client.location.coordinates.lat}
-                    lng={client.location.coordinates.lng}
-                    name={client.name}
-                    address={`${client.location.address}, ${client.location.city}`}
-                  />
-                )}
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-display font-medium text-sm uppercase tracking-wider text-muted-foreground">
-              Statistiques
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-4 text-center border border-border/50">
-                <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 mx-auto mb-1" />
-                <div className="text-2xl font-display font-semibold">{client.rating}</div>
-                <p className="text-xs text-muted-foreground mt-1">Note moyenne</p>
-              </div>
-              <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-4 text-center border border-border/50">
-                <ShoppingBag className="w-5 h-5 text-primary/60 mx-auto mb-1" />
-                <div className="text-2xl font-display font-semibold">{client.totalOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Commandes</p>
-              </div>
-              <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-4 text-center border border-border/50">
-                <DollarSign className="w-5 h-5 text-green-500/60 mx-auto mb-1" />
-                <div className="text-2xl font-display font-semibold">{client.totalSpent.toLocaleString()}€</div>
-                <p className="text-xs text-muted-foreground mt-1">Total dépensé</p>
-              </div>
-              <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-4 text-center border border-border/50">
-                <TrendingUp className="w-5 h-5 text-blue-500/60 mx-auto mb-1" />
-                <div className="text-2xl font-display font-semibold">
-                  {Math.round(client.totalSpent / client.totalOrders || 0)}€
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Panier moyen</p>
-              </div>
-            </div>
+         
+        
           </div>
 
           <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-            {/* ✅ Bouton Primary - s'adapte automatiquement au thème */}
             <button 
               onClick={onEdit}
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-foreground text-background 
-                hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5
-                active:scale-95
-                shadow-sm
-              "
+              className="flex-1 min-w-[120px] bg-foreground text-background hover:bg-foreground/90 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
             >
               <Edit className="w-4 h-4" />
               Modifier
             </button>
-            
-            {/* ✅ Bouton Secondaire */}
-            <button 
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-secondary text-secondary-foreground 
-                hover:bg-secondary/80 hover:shadow-sm hover:-translate-y-0.5
-                active:scale-95
-                border border-border
-              "
-            >
-              <Mail className="w-4 h-4" />
-              Contacter
-            </button>
-            
-            {/* ✅ Bouton Destructive */}
             <button 
               onClick={onDelete}
-              className="
-                flex-1 min-w-[120px] 
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-6 py-2.5
-                bg-destructive text-destructive-foreground 
-                hover:bg-destructive/90 hover:shadow-md hover:-translate-y-0.5
-                active:scale-95
-                shadow-sm
-              "
+              className="flex-1 min-w-[120px] bg-destructive text-destructive-foreground hover:bg-destructive/90 font-medium py-2.5 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
             >
               <Trash2 className="w-4 h-4" />
               Supprimer
@@ -1095,18 +445,60 @@ const ClientDetailView: React.FC<{
 };
 
 // Composant principal du dashboard
-const ClientDashboard: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>(mockClients);
+const DashboardClient: React.FC = () => {
+  const { user, isAuthenticated, logout, loading: authLoading } = useAuth();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
-  const [addingClient, setAddingClient] = useState(false);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | Client['status']>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortField, setSortField] = useState<keyof Client>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const clientsPerPage = 10;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const clientsPerPage = 5;
+
+  // Charger les utilisateurs
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated || !user) {
+      window.location.href = '/login';
+      return;
+    }
+
+    // Simuler une liste de clients
+    const mockClients: Client[] = [
+      {
+        id: user.id || 1,
+        name: `${user.prenom || ''} ${user.nom || ''}`.trim() || 'Utilisateur',
+        prenom: user.prenom || 'Jean',
+        nom: user.nom || 'Dupont',
+        email: user.email || 'jean.dupont@email.com',
+        phone: user.telephone || '+33 6 12 34 56 78',
+        telephone: user.telephone || '+33 6 12 34 56 78',
+        location: {
+          address: user.adresses?.[0]?.adresse || '15 Rue de la Paix',
+          city: user.adresses?.[0]?.ville || 'Paris',
+          country: user.adresses?.[0]?.pays || 'France',
+        },
+        status: user.statut ? 'active' : 'inactive',
+        statut: user.statut || false,
+        joinedDate: user.date_creation || '2024-01-15',
+        date_creation: user.date_creation || '2024-01-15',
+        lastActive: user.date_modification || user.date_creation || '2024-12-10',
+        date_modification: user.date_modification || user.date_creation || '2024-12-10',
+        rating: 4.8,
+        totalOrders: 47,
+        totalSpent: 12580
+      },
+  
+    ];
+
+    setClients(mockClients);
+    setLoading(false);
+  }, [user, isAuthenticated, authLoading]);
 
   // Filtrage des clients
   const filteredClients = clients.filter(client => {
@@ -1121,24 +513,11 @@ const ClientDashboard: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  // Tri des clients
-  const sortedClients = [...filteredClients].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-    }
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-    }
-    return 0;
-  });
-
   // Pagination
   const indexOfLastClient = currentPage * clientsPerPage;
   const indexOfFirstClient = indexOfLastClient - clientsPerPage;
-  const currentClients = sortedClients.slice(indexOfFirstClient, indexOfLastClient);
-  const totalPages = Math.ceil(sortedClients.length / clientsPerPage);
+  const currentClients = filteredClients.slice(indexOfFirstClient, indexOfLastClient);
+  const totalPages = Math.ceil(filteredClients.length / clientsPerPage);
 
   // Statistiques
   const stats = {
@@ -1146,16 +525,18 @@ const ClientDashboard: React.FC = () => {
     active: clients.filter(c => c.status === 'active').length,
     inactive: clients.filter(c => c.status === 'inactive').length,
     pending: clients.filter(c => c.status === 'pending').length,
-    totalSpent: clients.reduce((acc, c) => acc + c.totalSpent, 0),
-    averageRating: clients.reduce((acc, c) => acc + c.rating, 0) / clients.length
   };
 
-  const handleSort = (field: keyof Client) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
+  const getStatusBadge = (status: Client['status']) => {
+    switch (status) {
+      case 'active':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"><CheckCircle className="w-3 h-3" /> Actif</span>;
+      case 'pending':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"><Clock className="w-3 h-3" /> En attente</span>;
+      case 'inactive':
+        return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"><AlertCircle className="w-3 h-3" /> Inactif</span>;
+      default:
+        return null;
     }
   };
 
@@ -1164,17 +545,16 @@ const ClientDashboard: React.FC = () => {
     setSelectedClient(null);
   };
 
-  const handleSaveClient = (updatedClient: Client) => {
-    setClients(prev => prev.map(c => 
-      c.id === updatedClient.id ? updatedClient : c
-    ));
-    setEditingClient(null);
-    setSelectedClient(updatedClient);
-  };
-
-  const handleAddClient = (newClient: Client) => {
-    setClients(prev => [...prev, newClient]);
-    setAddingClient(false);
+  const handleSaveClient = async (updatedClient: Client) => {
+    try {
+      setClients(prev => prev.map(c => 
+        c.id === updatedClient.id ? updatedClient : c
+      ));
+      setEditingClient(null);
+      setSelectedClient(updatedClient);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la mise à jour');
+    }
   };
 
   const handleDeleteClient = (client: Client) => {
@@ -1189,120 +569,125 @@ const ClientDashboard: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: Client['status']) => {
-    switch (status) {
-      case 'active':
-        return <span className="badge badge-primary gap-1"><CheckCircle className="w-3 h-3" /> Actif</span>;
-      case 'pending':
-        return <span className="badge bg-warning/10 text-warning gap-1"><Clock className="w-3 h-3" /> En attente</span>;
-      case 'inactive':
-        return <span className="badge bg-muted text-muted-foreground gap-1"><AlertCircle className="w-3 h-3" /> Inactif</span>;
-      default:
-        return null;
-    }
+  const handleLogout = () => {
+    logout();
   };
+
+  const refreshData = () => {
+    setLoading(true);
+    setTimeout(() => setLoading(false), 500);
+  };
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Erreur</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-foreground text-background hover:bg-foreground/90 font-medium py-2.5 px-6 rounded-lg transition-all duration-300"
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Barre de navigation */}
       <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0">
-        <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Users className="w-5 h-5 text-primary" />
+   
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm p-4 space-y-3 animate-slide-down">
+            <div className="flex items-center justify-between">
+              <ThemeToggle />
+              <button 
+                onClick={refreshData}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+              >
+                <RefreshCw className="w-5 h-5" />
+              </button>
             </div>
-            <div>
-              <h1 className="text-xl font-display font-bold tracking-tight">Dashboard Clients</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">Gestion et suivi de votre portefeuille clients</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {/* ✅ Bouton Primary - s'adapte automatiquement au thème */}
             <button 
-              className="
-                inline-flex items-center justify-center gap-2 
-                font-medium transition-all duration-300 
-                rounded-lg px-4 py-2 text-sm
-                bg-foreground text-background 
-                hover:bg-foreground/90 hover:shadow-md hover:-translate-y-0.5
-                active:scale-95
-                shadow-sm
-              "
-              onClick={() => setAddingClient(true)}
+              onClick={handleLogout}
+              className="w-full bg-foreground text-background hover:bg-foreground/90 font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 text-sm"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Ajouter un client</span>
+              <LogOut className="w-4 h-4" />
+              Déconnexion
             </button>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Contenu principal */}
-      <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 overflow-x-auto">
-        {/* Statistiques */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <div className="card p-4 hover:shadow-md transition-all hover:scale-[1.02]">
+     <div className="flex-1 w-full px-4 md:px-8 lg:px-12 py-6 bg-gradient-to-br from-background via-background to-muted/20">  
+        {/* Statistiques - Responsive Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="card p-3 sm:p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Total</p>
-                <p className="text-2xl font-display font-bold">{stats.total}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Total</p>
+                <p className="text-xl sm:text-3xl font-display font-bold">{stats.total}</p>
               </div>
-              <Users className="w-8 h-8 text-muted-foreground/30" />
+              <div className="p-2 sm:p-3 rounded-xl bg-foreground/5 group-hover:bg-foreground/10 transition-colors">
+                <Users className="w-4 h-4 sm:w-6 sm:h-6 text-foreground/40 group-hover:text-foreground/60 transition-colors" />
+              </div>
             </div>
           </div>
-          <div className="card p-4 border-success/20 hover:shadow-md transition-all hover:scale-[1.02]">
+          <div className="card p-3 sm:p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-green-200/50 dark:border-green-900/30 group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Actifs</p>
-                <p className="text-2xl font-display font-bold text-success">{stats.active}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Actifs</p>
+                <p className="text-xl sm:text-3xl font-display font-bold text-green-600 dark:text-green-400">{stats.active}</p>
               </div>
-              <Activity className="w-8 h-8 text-success/30" />
+              <div className="p-2 sm:p-3 rounded-xl bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                <Activity className="w-4 h-4 sm:w-6 sm:h-6 text-green-500 group-hover:scale-110 transition-transform" />
+              </div>
             </div>
           </div>
-          <div className="card p-4 border-warning/20 hover:shadow-md transition-all hover:scale-[1.02]">
+          <div className="card p-3 sm:p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-yellow-200/50 dark:border-yellow-900/30 group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">En attente</p>
-                <p className="text-2xl font-display font-bold text-warning">{stats.pending}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">En attente</p>
+                <p className="text-xl sm:text-3xl font-display font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
               </div>
-              <Clock className="w-8 h-8 text-warning/30" />
+              <div className="p-2 sm:p-3 rounded-xl bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-colors">
+                <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-yellow-500 group-hover:rotate-12 transition-transform" />
+              </div>
             </div>
           </div>
-          <div className="card p-4 border-muted/20 hover:shadow-md transition-all hover:scale-[1.02]">
+          <div className="card p-3 sm:p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-gray-200/50 dark:border-gray-800 group">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Inactifs</p>
-                <p className="text-2xl font-display font-bold text-muted-foreground">{stats.inactive}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Inactifs</p>
+                <p className="text-xl sm:text-3xl font-display font-bold text-muted-foreground">{stats.inactive}</p>
               </div>
-              <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
-            </div>
-          </div>
-          <div className="card p-4 hover:shadow-md transition-all hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Dépenses</p>
-                <p className="text-xl font-display font-bold">{stats.totalSpent.toLocaleString()}€</p>
+              <div className="p-2 sm:p-3 rounded-xl bg-muted/30 group-hover:bg-muted/50 transition-colors">
+                <AlertCircle className="w-4 h-4 sm:w-6 sm:h-6 text-muted-foreground/40 group-hover:text-muted-foreground/60 transition-colors" />
               </div>
-              <DollarSign className="w-8 h-8 text-green-500/30" />
-            </div>
-          </div>
-          <div className="card p-4 hover:shadow-md transition-all hover:scale-[1.02]">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Note avg</p>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  <p className="text-xl font-display font-bold">{stats.averageRating.toFixed(1)}</p>
-                </div>
-              </div>
-              <Award className="w-8 h-8 text-yellow-500/30" />
             </div>
           </div>
         </div>
 
-        {/* Filtres et recherche */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        {/* Filtres et recherche - Responsive */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -1310,187 +695,115 @@ const ClientDashboard: React.FC = () => {
               placeholder="Rechercher par nom, email, ville ou téléphone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="input pl-10"
+              className="input pl-10 text-sm focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-              className="input w-auto min-w-[140px]"
-            >
-              <option value="all">📊 Tous les statuts</option>
-              <option value="active">✅ Actifs</option>
-              <option value="pending">⏳ En attente</option>
-              <option value="inactive">❌ Inactifs</option>
-            </select>
-          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="input w-full sm:w-auto min-w-[140px] text-sm focus:ring-2 focus:ring-foreground/20 transition-all duration-300"
+          >
+            <option value="all">📊 Tous les statuts</option>
+            <option value="active">✅ Actifs</option>
+            <option value="pending">⏳ En attente</option>
+            <option value="inactive">❌ Inactifs</option>
+          </select>
         </div>
 
-        {/* Tableau */}
-        {sortedClients.length === 0 ? (
-          <div className="text-center py-16">
-            <Search className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+        {/* Tableau - Responsive */}
+        {filteredClients.length === 0 ? (
+          <div className="text-center py-12 sm:py-16">
+            <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-muted-foreground/30" />
+            </div>
             <h3 className="text-lg font-display font-medium">Aucun client trouvé</h3>
             <p className="text-muted-foreground text-sm mt-1">Essayez de modifier vos critères de recherche</p>
           </div>
         ) : (
           <>
-            <div className="card overflow-hidden border border-border">
+            <div className="card overflow-hidden border border-border shadow-sm hover:shadow-md transition-shadow duration-300">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border bg-muted/30">
-                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        <button 
-                          onClick={() => handleSort('name')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Client
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                        <button 
-                          onClick={() => handleSort('email')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Contact
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden lg:table-cell">
-                        <button 
-                          onClick={() => handleSort('location')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Localisation
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
-                        <button 
-                          onClick={() => handleSort('status')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Statut
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        <button 
-                          onClick={() => handleSort('rating')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Note
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden sm:table-cell">
-                        <button 
-                          onClick={() => handleSort('totalOrders')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Commandes
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-center py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground hidden md:table-cell">
-                        <button 
-                          onClick={() => handleSort('totalSpent')}
-                          className="flex items-center gap-1 hover:text-foreground transition-colors"
-                        >
-                          Dépensé
-                          <ArrowUpDown className="w-3 h-3" />
-                        </button>
-                      </th>
-                      <th className="text-right py-3 px-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Actions
-                      </th>
+                      <th className="text-left py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Client</th>
+                      <th className="text-left py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Contact</th>
+                      <th className="text-left py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">Localisation</th>
+                      <th className="text-center py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Statut</th>
+                      
+                      <th className="text-right py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentClients.map((client) => (
+                    {currentClients.map((client, index) => (
                       <tr 
                         key={client.id}
-                        className="border-b border-border hover:bg-muted/20 transition-colors cursor-pointer"
+                        className="border-b border-border hover:bg-muted/10 transition-all duration-300 cursor-pointer group"
                         onClick={() => setSelectedClient(client)}
                       >
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-border flex-shrink-0">
-                              <img src={client.image} alt={client.name} className="w-full h-full object-cover" />
+                        <td className="py-3 px-3 sm:px-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-foreground/10 to-foreground/5 flex items-center justify-center flex-shrink-0">
+                              <UserCircle className="w-4 h-4 sm:w-5 sm:h-5 text-foreground/60" />
                             </div>
                             <div>
                               <p className="font-medium text-sm">{client.name}</p>
-                              <p className="text-xs text-muted-foreground md:hidden">{client.email}</p>
+                              <p className="text-xs text-muted-foreground md:hidden truncate max-w-[100px]">{client.email}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 hidden md:table-cell">
-                          <div className="space-y-1">
+                        <td className="py-3 px-3 sm:px-4 hidden md:table-cell">
+                          <div className="space-y-0.5">
                             <p className="text-sm">{client.email}</p>
                             <p className="text-xs text-muted-foreground">{client.phone}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4 hidden lg:table-cell">
+                        <td className="py-3 px-3 sm:px-4 hidden lg:table-cell">
                           <div className="flex items-start gap-2">
                             <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-sm truncate max-w-[150px]">{client.location.address}</p>
+                              <p className="text-sm truncate max-w-[120px]">{client.location.address}</p>
                               <p className="text-xs text-muted-foreground">{client.location.city}</p>
-                              {client.location.coordinates && (
-                                <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                                  <Crosshair className="w-2.5 h-2.5" />
-                                  {client.location.coordinates.lat.toFixed(4)}, {client.location.coordinates.lng.toFixed(4)}
-                                </p>
-                              )}
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-center hidden sm:table-cell">
+                        <td className="py-3 px-3 sm:px-4 text-center hidden sm:table-cell">
                           {getStatusBadge(client.status)}
                         </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                            <span className="font-medium">{client.rating}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-center hidden sm:table-cell">
-                          <span className="font-medium">{client.totalOrders}</span>
-                        </td>
-                        <td className="py-3 px-4 text-center hidden md:table-cell">
-                          <span className="font-medium">{client.totalSpent.toLocaleString()}€</span>
-                        </td>
-                        <td className="py-3 px-4 text-right">
+                       
+
+                    
+                        <td className="py-3 px-3 sm:px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button 
-                              className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedClient(client);
-                              }}
-                            >
-                              <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                            <button 
-                              className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                              className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-all duration-300 hover:scale-110"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEditClient(client);
                               }}
+                              title="Modifier"
                             >
                               <Edit className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                             </button>
                             <button 
-                              className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                              className="p-1.5 sm:p-2 rounded-lg hover:bg-destructive/10 transition-all duration-300 hover:scale-110"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteClient(client);
                               }}
+                              title="Supprimer"
                             >
                               <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                            </button>
+                            <button 
+                              className="p-1.5 sm:p-2 rounded-lg hover:bg-muted transition-all duration-300 hover:scale-110"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedClient(client);
+                              }}
+                              title="Voir"
+                            >
+                              <Eye className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                             </button>
                           </div>
                         </td>
@@ -1501,19 +814,19 @@ const ClientDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination - Responsive */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
-                <p className="text-sm text-muted-foreground">
-                  {indexOfFirstClient + 1} - {Math.min(indexOfLastClient, sortedClients.length)} sur {sortedClients.length} clients
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-4 sm:mt-6 gap-3 sm:gap-4">
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {indexOfFirstClient + 1} - {Math.min(indexOfLastClient, filteredClients.length)} sur {filteredClients.length} clients
                 </p>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="p-2 rounded-lg hover:bg-muted transition-all duration-300 disabled:opacity-50 disabled:hover:bg-transparent hover:scale-110"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                     let pageNum;
@@ -1530,10 +843,10 @@ const ClientDashboard: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 rounded-md transition-colors text-sm ${
+                        className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg transition-all duration-300 text-xs sm:text-sm font-medium ${
                           currentPage === pageNum 
-                            ? 'bg-foreground text-background font-medium' 
-                            : 'hover:bg-muted text-muted-foreground'
+                            ? 'bg-foreground text-background shadow-sm' 
+                            : 'hover:bg-muted text-muted-foreground hover:scale-110'
                         }`}
                       >
                         {pageNum}
@@ -1545,7 +858,7 @@ const ClientDashboard: React.FC = () => {
                       <span className="text-muted-foreground">…</span>
                       <button
                         onClick={() => setCurrentPage(totalPages)}
-                        className="w-8 h-8 rounded-md hover:bg-muted transition-colors text-sm text-muted-foreground"
+                        className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg hover:bg-muted transition-all duration-300 text-xs sm:text-sm font-medium text-muted-foreground hover:scale-110"
                       >
                         {totalPages}
                       </button>
@@ -1554,9 +867,9 @@ const ClientDashboard: React.FC = () => {
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="p-2 rounded-lg hover:bg-muted transition-all duration-300 disabled:opacity-50 disabled:hover:bg-transparent hover:scale-110"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                 </div>
               </div>
@@ -1567,8 +880,8 @@ const ClientDashboard: React.FC = () => {
 
       {/* Modals */}
       {selectedClient && !editingClient && !deletingClient && (
-        <ClientDetailView 
-          client={selectedClient} 
+        <ClientDetailView
+          client={selectedClient}
           onClose={() => setSelectedClient(null)}
           onEdit={() => handleEditClient(selectedClient)}
           onDelete={() => handleDeleteClient(selectedClient)}
@@ -1583,13 +896,6 @@ const ClientDashboard: React.FC = () => {
         />
       )}
 
-      {addingClient && (
-        <AddClientForm
-          onSave={handleAddClient}
-          onCancel={() => setAddingClient(false)}
-        />
-      )}
-
       {deletingClient && (
         <DeleteConfirmationModal
           client={deletingClient}
@@ -1601,4 +907,4 @@ const ClientDashboard: React.FC = () => {
   );
 };
 
-export default ClientDashboard;
+export default DashboardClient;
