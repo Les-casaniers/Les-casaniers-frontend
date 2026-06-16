@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Package, MapPin, Heart, 
+  LayoutDashboard, Package, MapPin, Heart,
   CreditCard, Settings, LogOut, ChevronRight, User, Bell,
   Menu, X, ExternalLink
 } from "lucide-react";
@@ -28,6 +28,7 @@ const DashboardClientLayout = () => {
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
     { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
+  { icon: User, label: "Détails-Client", path: "/DashboardClient/details-client" },
   ];
 
   const isActive = (path: string) => {
@@ -50,7 +51,7 @@ const DashboardClientLayout = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current && 
+        dropdownRef.current &&
         buttonRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
@@ -97,11 +98,10 @@ const DashboardClientLayout = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-                isActive(item.path)
+              className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition ${isActive(item.path)
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <item.icon className="h-5 w-5" />
@@ -170,7 +170,7 @@ const DashboardClientLayout = () => {
                     <p className="text-sm font-medium text-foreground">{userData.name}</p>
                     <p className="text-xs text-muted-foreground">{userData.email}</p>
                   </div>
-                  
+
                   {/* Bouton Voir le site */}
                   <button
                     onClick={handleViewSite}
@@ -179,7 +179,7 @@ const DashboardClientLayout = () => {
                     <ExternalLink className="h-4 w-4" />
                     Voir le site
                   </button>
-                  
+
                   {/* Bouton Déconnexion en rouge */}
                   <button
                     onClick={handleLogout}
@@ -203,7 +203,7 @@ const DashboardClientLayout = () => {
       {/* Mobile Sidebar */}
       {mobileMenuOpen && (
         <>
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
           />
@@ -219,7 +219,7 @@ const DashboardClientLayout = () => {
                     <p className="text-xs text-muted-foreground">Les Casaniers</p>
                   </div>
                 </Link>
-                <button 
+                <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-2 rounded-lg hover:bg-secondary transition"
                 >
@@ -233,11 +233,10 @@ const DashboardClientLayout = () => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition ${
-                      isActive(item.path)
+                    className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition ${isActive(item.path)
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <item.icon className="h-5 w-5" />
