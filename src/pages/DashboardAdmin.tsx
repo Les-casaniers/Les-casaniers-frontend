@@ -299,7 +299,7 @@ import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, FileText, Star, ClipboardList,
-  Bell, Settings, LogOut, ChevronRight, Shield, Menu, X, ExternalLink
+  Bell, Settings, LogOut, ChevronRight, Shield, Menu, X, ExternalLink, Store
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
@@ -329,6 +329,7 @@ const DashboardAdmin = () => {
     { icon: Users, label: "Clients", path: "/DashboardAdmin/clients" },
     { icon: Users, label: "Favoris", path: "/DashboardAdmin/favoris" },
     { icon: ShoppingCart, label: "Paniers", path: "/DashboardAdmin/paniers" },
+    { icon: Store, label: "Boutique Misa", path: "/DashboardAdmin/boutique-misa" },
     { icon: FileText, label: "Factures", path: "/DashboardAdmin/factures" },
     { icon: Star, label: "Avis clients", path: "/DashboardAdmin/avis" },
     { icon: FileText, label: "Devis express", path: "/DashboardAdmin/devis-express" },
