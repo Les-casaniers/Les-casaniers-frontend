@@ -1,3 +1,5 @@
+// src/pages/BoutiqueDeMisa.tsx
+
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { Link } from "react-router-dom";
@@ -20,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { MiniHero } from "@/components/layout/MiniHero";
+import { useBoutiqueMisa } from "@/hooks/useBoutiqueMisa";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,122 +46,8 @@ export interface MerchProduct {
   couleurs?: string[];
   tailles?: string[];
   stock: number;
-  imageUrl: string; // URL de l'image produit (placeholder tant que non disponible)
+  image_url: string | null;
 }
-
-// ---------------------------------------------------------------------------
-// Mock data — Collection Misa
-// ---------------------------------------------------------------------------
-
-const MERCH_PRODUCTS: MerchProduct[] = [
-  {
-    id: 1,
-    reference: "FOSA-TSH-001",
-    nom: "T-shirt Misa Classic",
-    categorie: "Vêtement",
-    type: "vetement",
-    description_courte: "Portrait sérigraphié de Misa sur coton bio.",
-    description:
-      "T-shirt unisexe 180 g/m² en coton biologique certifié GOTS. Sérigraphie 4 couleurs du portrait de Misa, notre fosa mascotte. Coupe droite, col rond renforcé. Disponible du S au XXL.",
-    prix: 45000,
-    note: 4.9,
-    badge: "new",
-    badgeLabel: "Nouveau",
-    tags: ["Coton bio", "Sérigraphié", "Unisexe"],
-    couleurs: ["Indigo", "Noir", "Sable"],
-    tailles: ["S", "M", "L", "XL", "XXL"],
-    stock: 48,
-    imageUrl: "/misa-boutique/T-shirt-Misa-Classic.png",
-  },
-  {
-    id: 2,
-    reference: "FOSA-STY-001",
-    nom: "Stylo Fosa Misa",
-    categorie: "Papeterie",
-    type: "papeterie",
-    description_courte: "Stylo métal brossé, gravure laser du logo Fosa.",
-    description:
-      "Stylo bille en aluminium brossé anodisé, rechargeable. Gravure laser du logo Fosa sur le corps. Recharge encre noire premium longue durée incluse.",
-    prix: 28000,
-    note: 4.8,
-    badge: null,
-    tags: ["Métal brossé", "Gravure laser", "Recharge incluse"],
-    couleurs: ["Argent brossé", "Or mat"],
-    stock: 120,
-    imageUrl: "/misa-boutique/Stylo-misa.png",
-  },
-  {
-    id: 3,
-    reference: "FOSA-HDY-001",
-    nom: "Hoodie Misa Jungle",
-    categorie: "Vêtement",
-    type: "vetement",
-    description_courte: "Sweat capuche épais, broderie Misa grand format.",
-    description:
-      "Sweat à capuche 320 g/m² en coton molletonné. Grande broderie de Misa au dos (25 × 25 cm), logo Fosa brodé sur la poitrine gauche. Poche kangourou double. Édition Forêt de Madagascar.",
-    prix: 120000,
-    note: 5.0,
-    badge: "limited",
-    badgeLabel: "Limité",
-    tags: ["320 g/m²", "Broderie", "Édition forêt"],
-    couleurs: ["Vert forêt", "Noir"],
-    tailles: ["S", "M", "L", "XL"],
-    stock: 30,
-    imageUrl: "/misa-boutique/sweet-misa.png",
-  },
-  {
-    id: 4,
-    reference: "FOSA-CAR-001",
-    nom: "Carnet Fosa Craft",
-    categorie: "Papeterie",
-    type: "papeterie",
-    description_courte: "Carnet A5 couverture cuir embossée, 200 pages ivoire.",
-    description:
-      "Carnet A5 à couverture rigide en cuir synthétique avec embossage Misa. 200 pages ivoire lignées 90 g/m². Marque-page ruban ambre, élastique de fermeture. Papier sans acide.",
-    prix: 35000,
-    note: 4.7,
-    badge: "new",
-    badgeLabel: "Nouveau",
-    tags: ["A5", "200 pages", "Cuir synthétique"],
-    couleurs: ["Brun Fosa", "Noir"],
-    stock: 75,
-    imageUrl: "/misa-boutique/Carnet-misa.png",
-  },
-  {
-    id: 5,
-    reference: "FOSA-CAP-001",
-    nom: "Casquette Fosa Trail",
-    categorie: "Accessoire",
-    type: "accessoire",
-    description_courte: "5 panneaux polyester recyclé, broderie Misa frontale.",
-    description:
-      "Casquette 5 panneaux en polyester recyclé (rPET). Broderie Misa en relief sur le panneau frontal. Fermeture dos réglable en velcro. Disponible en taille unique.",
-    prix: 55000,
-    note: 4.6,
-    badge: null,
-    tags: ["rPET recyclé", "Broderie", "Taille unique"],
-    couleurs: ["Indigo/Ambre", "Noir/Ambre"],
-    stock: 60,
-    imageUrl: "/misa-boutique/casquette-misa.png",
-  },
-  {
-    id: 6,
-    reference: "FOSA-MUG-001",
-    nom: "Mug Misa Morning",
-    categorie: "Accessoire",
-    type: "accessoire",
-    description_courte: "Mug céramique 350 ml, impression Misa wrap-around.",
-    description:
-      "Mug en céramique grès 350 ml. Impression transfer wrap-around de Misa dans la forêt malgache. Passe au lave-vaisselle et micro-ondes. Fond intérieur ambre.",
-    prix: 32000,
-    note: 4.8,
-    badge: null,
-    tags: ["Céramique", "350 ml", "Lave-vaisselle ok"],
-    couleurs: ["Blanc/Ambre"],
-    stock: 90,
-    imageUrl: "/misa-boutique/mug-misa.png",
-  }
-];
 
 // ---------------------------------------------------------------------------
 // Filtres
@@ -180,6 +69,20 @@ const FILTER_COLORS: Record<string, string> = {
   limited: "text-orange-500 border-orange-500/30 hover:bg-orange-500/10",
 };
 
+// Helper pour l'URL des images
+const getFullImageUrl = (imageUrl: string | null): string => {
+  if (!imageUrl) {
+    return '/images/placeholder.jpg'; // Image par défaut
+  }
+  
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
+  }
+  
+  const baseUrl = import.meta.env.VITE_APP_URL || 'http://localhost:8000';
+  return `${baseUrl}${imageUrl}`;
+};
+
 // ---------------------------------------------------------------------------
 // Composant principal
 // ---------------------------------------------------------------------------
@@ -198,6 +101,60 @@ const BoutiqueDeMisa = () => {
   const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+
+  // 🔥 Récupération des données réelles depuis la base de données
+  const { data: apiData, isLoading, error } = useBoutiqueMisa({ per_page: 100 });
+
+  // Transformation des données API vers le format MerchProduct
+  const products = useMemo(() => {
+    if (!apiData?.data) return [];
+
+    return apiData.data.map((item: any) => {
+      // Déterminer le type et la catégorie en fonction du nom ou d'autres critères
+      let type: "vetement" | "papeterie" | "accessoire" | "limited" = "accessoire";
+      let categorie = "Accessoire";
+      
+      const nomLower = item.nom.toLowerCase();
+      if (nomLower.includes('t-shirt') || nomLower.includes('hoodie') || nomLower.includes('sweat') || nomLower.includes('chemise')) {
+        type = "vetement";
+        categorie = "Vêtement";
+      } else if (nomLower.includes('stylo') || nomLower.includes('carnet') || nomLower.includes('papier')) {
+        type = "papeterie";
+        categorie = "Papeterie";
+      }
+
+      // Créer des tags basés sur la description
+      const tags: string[] = [];
+      if (item.description) {
+        const descLower = item.description.toLowerCase();
+        if (descLower.includes('coton')) tags.push('Coton');
+        if (descLower.includes('bio')) tags.push('Bio');
+        if (descLower.includes('recyclé')) tags.push('Recyclé');
+        if (descLower.includes('artisan')) tags.push('Artisanal');
+        if (descLower.includes('local')) tags.push('Local');
+      }
+      if (tags.length === 0) tags.push('Qualité');
+
+      return {
+        id: item.id,
+        reference: `FOSA-${String(item.id).padStart(3, '0')}`,
+        nom: item.nom,
+        categorie: categorie,
+        type: type,
+        description_courte: item.description ? item.description.substring(0, 100) : 'Description non disponible',
+        description: item.description || 'Description non disponible',
+        prix: parseFloat(item.prix),
+        note: 4.5 + Math.random() * 0.5, // Note aléatoire pour l'instant
+        badge: item.stock < 10 ? "limited" : null,
+        badgeLabel: item.stock < 10 ? "Stock limité" : null,
+        tags: tags,
+        couleurs: undefined,
+        tailles: undefined,
+        stock: item.stock,
+        image_url: item.image_url,
+      };
+    });
+  }, [apiData]);
 
   useEffect(() => {
     document.title = "Boutique de Misa — Collection Fosa · Les Casaniers Madagascar";
@@ -275,7 +232,7 @@ const BoutiqueDeMisa = () => {
 
   // Filtrage & tri
   const filtered = useMemo(() => {
-    let list = [...MERCH_PRODUCTS];
+    let list = [...products];
 
     if (selectedFilter !== "all") {
       list = list.filter((p) => p.type === selectedFilter);
@@ -298,7 +255,7 @@ const BoutiqueDeMisa = () => {
     if (sort === "desc") list = [...list].sort((a, b) => b.prix - a.prix);
 
     return list;
-  }, [selectedFilter, q, budget, sort]);
+  }, [products, selectedFilter, q, budget, sort]);
 
   const speakAboutProduct = (p: MerchProduct) => {
     const msg = `${p.nom}. ${p.description_courte} Référence ${p.reference}. Prix : ${formatAr(p.prix)}. ${p.stock} en stock.`;
@@ -310,7 +267,7 @@ const BoutiqueDeMisa = () => {
     setIsChatOpen(true);
     setShowHelp(false);
     const msg =
-      "Bienvenue dans la Boutique de Misa ! Je suis Misa, votre guide. Découvrez nos t-shirts, stylos, hoodies, carnets et bien plus, tous à l'image du fosa, le plus grand carnivore endémique de Madagascar. Passez la souris sur un produit pour que je vous le présente !";
+      "Bienvenue dans la Boutique de Misa ! Je suis Misa, votre guide. Découvrez nos produits de qualité, tous à l'image du fosa, le plus grand carnivore endémique de Madagascar. Passez la souris sur un produit pour que je vous le présente !";
     setCurrentMessage(msg);
     speakText(msg);
   };
@@ -324,6 +281,53 @@ const BoutiqueDeMisa = () => {
       speakText(msg);
     }
   };
+
+  if (isLoading) {
+    return (
+      <SiteLayout>
+        <MiniHero
+          title="Chargement de la boutique..."
+          description="Veuillez patienter pendant que Misa prépare ses produits pour vous."
+          bg="fosa.png"
+          pill={{
+            icon: <Leaf className="h-3.5 w-3.5" />,
+            label: "Boutique de Misa · Endemika Madagascar",
+          }}
+        />
+        <div className="container-x py-20 text-center">
+          <div className="animate-pulse">
+            <div className="h-12 w-12 mx-auto rounded-full bg-amber-200/20"></div>
+            <p className="mt-4 text-muted-foreground">Chargement des produits...</p>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SiteLayout>
+        <MiniHero
+          title="Erreur de chargement"
+          description="Impossible de charger les produits. Veuillez réessayer plus tard."
+          bg="fosa.png"
+          pill={{
+            icon: <Leaf className="h-3.5 w-3.5" />,
+            label: "Boutique de Misa · Endemika Madagascar",
+          }}
+        />
+        <div className="container-x py-20 text-center">
+          <p className="text-red-500">Une erreur est survenue lors du chargement des produits.</p>
+          <Button 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Réessayer
+          </Button>
+        </div>
+      </SiteLayout>
+    );
+  }
 
   return (
     <SiteLayout>
@@ -486,6 +490,8 @@ const BoutiqueDeMisa = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filtered.map((p, i) => {
               const fav = favorites.includes(p.id);
+              const imageUrl = getFullImageUrl(p.image_url);
+              
               return (
                 <article
                   key={p.id}
@@ -496,12 +502,12 @@ const BoutiqueDeMisa = () => {
                   {/* Image produit */}
                   <div className="relative aspect-square overflow-hidden bg-secondary/30">
                     <img
-                      src={p.imageUrl}
+                      src={imageUrl}
                       alt={p.nom}
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder-merch.jpg";
+                        (e.target as HTMLImageElement).src = '/images/placeholder.jpg';
                       }}
                     />
 

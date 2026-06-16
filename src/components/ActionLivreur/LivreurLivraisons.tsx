@@ -19,11 +19,20 @@ import {
     ChevronRight,
     Truck,
     Calendar,
-    ChevronDown
+    ChevronDown,
+    Loader2,
+    AlertCircle,
+    RefreshCw,
+    Check,
+    Send,
+    Gift
 } from 'lucide-react';
+import api from '@/service/api';
+import { toast } from '@/hooks/use-toast';
 
 interface Livraison {
-    id: string;
+    id: number;
+    commande_uuid: string;
     trackingNumber: string;
     clientName: string;
     clientPhone: string;
@@ -39,6 +48,10 @@ interface Livraison {
         lat: number;
         lng: number;
     };
+    utilisateur_id: number;
+    statut_commande: string;
+    adresse_livraison?: string;
+    produits?: any[];
 }
 
 const LivreurLivraisons: React.FC = () => {
@@ -49,58 +62,177 @@ const LivreurLivraisons: React.FC = () => {
     const [hoveredRow, setHoveredRow] = useState<string | null>(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
     const [showFullPhoto, setShowFullPhoto] = useState(false);
+    const [livraisons, setLivraisons] = useState<Livraison[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [actionInProgress, setActionInProgress] = useState<number | null>(null);
 
-    const [livraisons] = useState<Livraison[]>([
-        {
-            id: '1',
-            trackingNumber: 'TRK-2024-001',
-            clientName: 'Marie Martin',
-            clientPhone: '+33 6 12 34 56 78',
-            clientAddress: '15 Rue de la Paix, 75002 Paris',
-            destinationAddress: '45 Avenue des Champs-Élysées, 75008 Paris',
-            status: 'in_transit',
-            amount: 25.90,
-            createdAt: new Date('2024-01-15'),
-            estimatedDelivery: new Date(Date.now() + 3600000),
-            deliveryLocation: { lat: 48.8698, lng: 2.3074 },
-            clientPhotos: [
-                'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400',
-                'https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=400',
-                'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400',
-            ]
-        },
-        {
-            id: '2',
-            trackingNumber: 'TRK-2024-002',
-            clientName: 'Thomas Bernard',
-            clientPhone: '+33 6 23 45 67 89',
-            clientAddress: '8 Boulevard Saint-Germain, 75005 Paris',
-            destinationAddress: '12 Rue de Rivoli, 75004 Paris',
-            status: 'delivered',
-            amount: 32.50,
-            createdAt: new Date('2024-01-14'),
-            deliveredAt: new Date('2024-01-14T16:30:00'),
-            estimatedDelivery: new Date('2024-01-14T17:00:00'),
-            deliveryLocation: { lat: 48.8566, lng: 2.3522 },
-            clientPhotos: [
-                'https://images.unsplash.com/photo-1580674285054-bed31e145f59?w=400',
-            ]
-        },
-        {
-            id: '3',
-            trackingNumber: 'TRK-2024-003',
-            clientName: 'Sophie Dubois',
-            clientPhone: '+33 6 34 56 78 90',
-            clientAddress: '23 Rue Monge, 75005 Paris',
-            destinationAddress: '78 Rue de Sèvres, 75007 Paris',
-            status: 'pending',
-            amount: 18.75,
-            createdAt: new Date('2024-01-15'),
-            estimatedDelivery: new Date(Date.now() + 7200000),
-            deliveryLocation: { lat: 48.8519, lng: 2.3050 },
-            clientPhotos: []
+    // Récupération des commandes depuis la base de données
+    useEffect(() => {
+        fetchCommandes();
+    }, []);
+
+    const fetchCommandes = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            
+            const response = await api.get('/livreur-test/commandes', {
+                params: { per_page: 100 }
+            });
+            
+            console.log('Commandes récupérées:', response.data);
+
+            let commandesData = [];
+            if (response.data.data && Array.isArray(response.data.data)) {
+                commandesData = response.data.data;
+            } else if (Array.isArray(response.data)) {
+                commandesData = response.data;
+            } else {
+                commandesData = [];
+            }
+
+            const livraisonsData = commandesData.map((commande: any) => {
+                let deliveryStatus: 'pending' | 'pickup' | 'in_transit' | 'delivered' | 'cancelled' = 'pending';
+                
+                switch (commande.statut) {
+                    case 'en_attente':
+                        deliveryStatus = 'pending';
+                        break;
+                    case 'payee':
+                        deliveryStatus = 'pickup';
+                        break;
+                    case 'expediee':
+                    case 'en_traitement':
+                        deliveryStatus = 'in_transit';
+                        break;
+                    case 'terminee':
+                        deliveryStatus = 'delivered';
+                        break;
+                    case 'annulee':
+                        deliveryStatus = 'cancelled';
+                        break;
+                    default:
+                        deliveryStatus = 'pending';
+                }
+
+                const clientName = commande.utilisateur 
+                    ? `${commande.utilisateur.prenom || ''} ${commande.utilisateur.nom || ''}`.trim() || 'Client inconnu'
+                    : 'Client inconnu';
+                
+                const clientPhone = commande.utilisateur?.telephone || 'Téléphone non disponible';
+                const clientEmail = commande.utilisateur?.email || 'Email non disponible';
+
+                const adresseLivraison = commande.adresse_livraison || 'Adresse non disponible';
+
+                const createdAt = new Date(commande.date_creation);
+                const estimatedDelivery = new Date(createdAt);
+                estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+
+                const photos = commande.photos || [];
+
+                return {
+                    id: commande.id,
+                    commande_uuid: commande.commande_uuid,
+                    trackingNumber: commande.commande_uuid,
+                    clientName: clientName,
+                    clientPhone: clientPhone,
+                    clientAddress: clientEmail,
+                    destinationAddress: adresseLivraison,
+                    status: deliveryStatus,
+                    amount: parseFloat(commande.total) || 0,
+                    createdAt: createdAt,
+                    deliveredAt: commande.statut === 'terminee' ? new Date() : undefined,
+                    estimatedDelivery: estimatedDelivery,
+                    clientPhotos: photos.length > 0 ? photos : undefined,
+                    utilisateur_id: commande.utilisateur_id || 0,
+                    statut_commande: commande.statut,
+                    produits: commande.produits || [],
+                    deliveryLocation: undefined,
+                };
+            });
+
+            setLivraisons(livraisonsData);
+        } catch (error: any) {
+            console.error('Erreur chargement commandes:', error);
+            setError('Impossible de charger les livraisons');
+            toast({
+                title: 'Erreur',
+                description: error?.response?.data?.message || 'Impossible de charger les livraisons',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
         }
-    ]);
+    };
+
+    // ✅ FONCTION POUR MARQUER COMME LIVRÉE
+    const marquerLivree = async (commande_uuid: string) => {
+        try {
+            setActionInProgress(commande_uuid as any);
+            
+            const response = await api.patch(`/livreur-test/commandes/${commande_uuid}/statut`, {
+                statut: 'terminee'
+            });
+
+            if (response.data.success) {
+                toast({
+                    title: '✅ Livraison confirmée',
+                    description: `La commande ${commande_uuid} a été marquée comme livrée`,
+                });
+                // Rafraîchir la liste
+                await fetchCommandes();
+                // Fermer le modal si ouvert
+                if (showDetailsModal) {
+                    setShowDetailsModal(false);
+                }
+            } else {
+                throw new Error(response.data.message || 'Erreur lors de la mise à jour');
+            }
+        } catch (error: any) {
+            console.error('Erreur marquage livrée:', error);
+            toast({
+                title: 'Erreur',
+                description: error?.response?.data?.message || 'Impossible de marquer comme livrée',
+                variant: 'destructive',
+            });
+        } finally {
+            setActionInProgress(null);
+        }
+    };
+
+    // ✅ FONCTION POUR MARQUER COMME EN TRANSIT
+    const marquerEnTransit = async (commande_uuid: string) => {
+        try {
+            setActionInProgress(commande_uuid as any);
+            
+            const response = await api.patch(`/livreur-test/commandes/${commande_uuid}/statut`, {
+                statut: 'en_traitement'
+            });
+
+            if (response.data.success) {
+                toast({
+                    title: '🚚 En transit',
+                    description: `La commande ${commande_uuid} est maintenant en transit`,
+                });
+                await fetchCommandes();
+                if (showDetailsModal) {
+                    setShowDetailsModal(false);
+                }
+            } else {
+                throw new Error(response.data.message || 'Erreur lors de la mise à jour');
+            }
+        } catch (error: any) {
+            console.error('Erreur mise en transit:', error);
+            toast({
+                title: 'Erreur',
+                description: error?.response?.data?.message || 'Impossible de mettre en transit',
+                variant: 'destructive',
+            });
+        } finally {
+            setActionInProgress(null);
+        }
+    };
 
     useEffect(() => {
         if (showDetailsModal || showFullPhoto) {
@@ -147,93 +279,39 @@ const LivreurLivraisons: React.FC = () => {
         { label: 'Gains', value: `${livraisons.reduce((sum, l) => sum + (l.status === 'delivered' ? l.amount : 0), 0)} €`, icon: DollarSign, color: 'from-primary to-primary/80' }
     ];
 
-    const MapView = ({ address }: { address: string }) => {
-        const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
-
+    if (isLoading) {
         return (
-            <div className="rounded-xl overflow-hidden border border-border/50">
-                <iframe
-                    title="map"
-                    src={mapUrl}
-                    width="100%"
-                    height="180"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                />
-                <div className="p-2.5 bg-muted/20 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5 text-primary" />
-                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{address}</p>
-                    </div>
-                    <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                        <Navigation className="w-3 h-3" />
-                        Itinéraire
-                    </a>
-                </div>
+            <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-muted-foreground">Chargement des livraisons...</p>
             </div>
         );
-    };
+    }
 
-    const ClientPhotos = ({ photos, clientName }: { photos?: string[]; clientName: string }) => {
-        if (!photos || photos.length === 0) {
-            return (
-                <div className="p-4 rounded-lg bg-muted/20 border border-dashed border-border text-center">
-                    <Camera className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Aucune photo du client</p>
-                </div>
-            );
-        }
-
+    if (error) {
         return (
-            <div>
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                        <Camera className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium text-muted-foreground">Photos client</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{photos.length} photo{photos.length > 1 ? 's' : ''}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                    {photos.slice(0, 3).map((photo, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => {
-                                setSelectedPhotoIndex(idx);
-                                setShowFullPhoto(true);
-                            }}
-                            className="relative group overflow-hidden rounded-lg aspect-square bg-muted/30 hover:shadow-md transition-all"
-                        >
-                            <img
-                                src={photo}
-                                alt={`Photo ${idx + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                                <Eye className="w-4 h-4 text-white" />
-                            </div>
-                        </button>
-                    ))}
-                    {photos.length > 3 && (
-                        <button
-                            onClick={() => {
-                                setSelectedPhotoIndex(0);
-                                setShowFullPhoto(true);
-                            }}
-                            className="rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-sm font-bold text-primary hover:scale-105 transition-transform"
-                        >
-                            +{photos.length - 3}
-                        </button>
-                    )}
-                </div>
+            <div className="flex flex-col items-center justify-center py-20">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <p className="text-destructive font-medium">{error}</p>
+                <button 
+                    onClick={fetchCommandes}
+                    className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition"
+                >
+                    Réessayer
+                </button>
             </div>
         );
-    };
+    }
+
+    if (livraisons.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-foreground">Aucune livraison</p>
+                <p className="text-sm text-muted-foreground mt-1">Aucune commande n'a été trouvée pour le moment.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-5 animate-fade-up">
@@ -270,7 +348,7 @@ const LivreurLivraisons: React.FC = () => {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                             type="text"
-                            placeholder="Rechercher par n° de suivi ou client..."
+                            placeholder="Rechercher par n° de commande ou client..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-9 pr-3 py-2 text-sm rounded-lg bg-muted/30 border border-border/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -292,6 +370,13 @@ const LivreurLivraisons: React.FC = () => {
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                     </div>
+                    <button
+                        onClick={fetchCommandes}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition text-sm flex items-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        Actualiser
+                    </button>
                 </div>
             </div>
 
@@ -301,7 +386,7 @@ const LivreurLivraisons: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-muted/30">
                             <tr>
-                                <th className="text-left py-3 px-4 text-xs font-semibold uppercase text-muted-foreground">N° suivi</th>
+                                <th className="text-left py-3 px-4 text-xs font-semibold uppercase text-muted-foreground">N° commande</th>
                                 <th className="text-left py-3 px-4 text-xs font-semibold uppercase text-muted-foreground">Client</th>
                                 <th className="text-left py-3 px-4 text-xs font-semibold uppercase text-muted-foreground hidden md:table-cell">Destination</th>
                                 <th className="text-left py-3 px-4 text-xs font-semibold uppercase text-muted-foreground">Montant</th>
@@ -364,7 +449,10 @@ const LivreurLivraisons: React.FC = () => {
                                                 {!isDelivered && !isCancelled && (
                                                     <>
                                                         <button
-                                                            onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(livraison.destinationAddress)}`)}
+                                                            onClick={() => {
+                                                                const address = encodeURIComponent(livraison.destinationAddress);
+                                                                window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`);
+                                                            }}
                                                             className="p-1.5 rounded-lg hover:bg-muted/50 transition"
                                                             title="Naviguer"
                                                         >
@@ -376,6 +464,19 @@ const LivreurLivraisons: React.FC = () => {
                                                             title="Appeler"
                                                         >
                                                             <Phone className="w-4 h-4 text-muted-foreground hover:text-emerald-500" />
+                                                        </button>
+                                                        {/* ✅ BOUTON MARQUER LIVRÉE */}
+                                                        <button
+                                                            onClick={() => marquerLivree(livraison.commande_uuid)}
+                                                            disabled={actionInProgress === livraison.id}
+                                                            className="p-1.5 rounded-lg hover:bg-emerald-500/10 transition disabled:opacity-50"
+                                                            title="Marquer comme livrée"
+                                                        >
+                                                            {actionInProgress === livraison.id ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
+                                                            ) : (
+                                                                <Gift className="w-4 h-4 text-emerald-500 hover:text-emerald-600" />
+                                                            )}
                                                         </button>
                                                     </>
                                                 )}
@@ -396,39 +497,34 @@ const LivreurLivraisons: React.FC = () => {
                     </div>
                 )}
             </div>
-<div>
-    
-</div>
-            {/* Modal - réduit avec petite police */}
+
+            {/* Modal Détails - AVEC BOUTONS D'ACTION */}
             {showDetailsModal && selectedDelivery && (
                 <div
-                    className="fixed inset-0 flex items-start justify-center z-50 p "
+                    className="fixed inset-0 flex items-start justify-center z-50 p-4 bg-black/60 backdrop-blur-sm"
                     onClick={() => setShowDetailsModal(false)}
                 >
                     <div
-                        className="relative w-full max-w-2xl mx-4 bg-card border border-border shadow-lg animate-modal-in"
-                        style={{ borderRadius: '0px' }}
+                        className="relative w-full max-w-2xl mx-4 bg-card border border-border shadow-lg rounded-xl animate-modal-in"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header - réduit */}
-                        <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-primary rounded-t-xl" />
 
-                        <div className="flex items-center justify-between p-3 border-b border-border">
+                        <div className="flex items-center justify-between p-4 border-b border-border">
                             <div>
                                 <h3 className="text-base font-semibold">Détails de la livraison</h3>
                                 <p className="text-xs text-muted-foreground font-mono mt-0.5">{selectedDelivery.trackingNumber}</p>
                             </div>
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="p-1 rounded-lg hover:bg-muted/50 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
                         </div>
 
-                        {/* Content - police réduite */}
-                        <div className="p-3 space-y-3 max-h-[65vh] overflow-y-auto">
-                            {/* Status bar - compacte */}
+                        <div className="p-4 space-y-4 max-h-[65vh] overflow-y-auto">
+                            {/* Status bar */}
                             <div className="flex items-center justify-between">
                                 {['pending', 'pickup', 'in_transit', 'delivered'].map((status, idx) => {
                                     const statusIndex = ['pending', 'pickup', 'in_transit', 'delivered'].indexOf(selectedDelivery.status);
@@ -439,7 +535,7 @@ const LivreurLivraisons: React.FC = () => {
 
                                     return (
                                         <div key={status} className="flex-1 text-center">
-                                            <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center transition-all ${isCompleted ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/50 text-muted-foreground'
+                                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center transition-all ${isCompleted ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-muted/50 text-muted-foreground'
                                                 }`}>
                                                 <Icon className="w-3.5 h-3.5" />
                                             </div>
@@ -451,78 +547,64 @@ const LivreurLivraisons: React.FC = () => {
                                 })}
                             </div>
 
-                            {/* Map - hauteur réduite */}
+                            {/* Map ou adresse */}
                             <div className="rounded-lg overflow-hidden border border-border/50">
-                                <iframe
-                                    title="map"
-                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedDelivery.destinationAddress)}&output=embed`}
-                                    width="100%"
-                                    height="140"
-                                    style={{ border: 0 }}
-                                    allowFullScreen
-                                    loading="lazy"
-                                />
-                                <div className="p-2 bg-muted/20 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                        <MapPin className="w-3 h-3 text-primary" />
-                                        <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{selectedDelivery.destinationAddress}</p>
+                                <div className="p-3 bg-muted/20 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-primary" />
+                                        <p className="text-sm text-foreground truncate max-w-[250px]">{selectedDelivery.destinationAddress}</p>
                                     </div>
                                     <a
                                         href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedDelivery.destinationAddress)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-[10px] text-primary hover:underline flex items-center gap-1"
+                                        className="text-xs text-primary hover:underline flex items-center gap-1"
                                     >
-                                        <Navigation className="w-2.5 h-2.5" />
+                                        <Navigation className="w-3 h-3" />
                                         Itinéraire
                                     </a>
                                 </div>
                             </div>
 
-                            {/* Informations - compactes */}
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="p-2 rounded-lg bg-muted/20">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                        <User className="w-3.5 h-3.5 text-primary" />
-                                        <span className="text-[11px] font-medium">Client</span>
+                            {/* Informations client */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-lg bg-muted/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <User className="w-4 h-4 text-primary" />
+                                        <span className="text-sm font-medium">Client</span>
                                     </div>
-                                    <p className="text-xs font-medium">{selectedDelivery.clientName}</p>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">{selectedDelivery.clientPhone}</p>
-                                    <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2">{selectedDelivery.clientAddress}</p>
+                                    <p className="text-sm font-medium">{selectedDelivery.clientName}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{selectedDelivery.clientPhone}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{selectedDelivery.clientAddress}</p>
                                 </div>
-                                <div className="p-2 rounded-lg bg-muted/20">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                        <Truck className="w-3.5 h-3.5 text-primary" />
-                                        <span className="text-[11px] font-medium">Livraison</span>
+                                <div className="p-3 rounded-lg bg-muted/20">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Truck className="w-4 h-4 text-primary" />
+                                        <span className="text-sm font-medium">Livraison</span>
                                     </div>
-                                    <p className="text-xs font-semibold text-primary">{selectedDelivery.amount.toFixed(2)} €</p>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                                        Créée le {selectedDelivery.createdAt.toLocaleDateString()}
+                                    <p className="text-sm font-semibold text-primary">{selectedDelivery.amount.toFixed(2)} €</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        Créée le {selectedDelivery.createdAt.toLocaleDateString('fr-FR')}
                                     </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Estimée le {selectedDelivery.estimatedDelivery.toLocaleDateString()}
+                                    <p className="text-xs text-muted-foreground">
+                                        Estimée le {selectedDelivery.estimatedDelivery.toLocaleDateString('fr-FR')}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Photos client - compact */}
-                            <div className="p-2 rounded-lg bg-muted/20">
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <Camera className="w-3.5 h-3.5 text-primary" />
-                                        <span className="text-[11px] font-medium">Photos client</span>
+                            {/* Photos */}
+                            {selectedDelivery.clientPhotos && selectedDelivery.clientPhotos.length > 0 && (
+                                <div className="p-3 rounded-lg bg-muted/20">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <Camera className="w-4 h-4 text-primary" />
+                                            <span className="text-sm font-medium">Photos</span>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">
+                                            {selectedDelivery.clientPhotos.length} photo{selectedDelivery.clientPhotos.length > 1 ? 's' : ''}
+                                        </span>
                                     </div>
-                                    <span className="text-[9px] text-muted-foreground">
-                                        {selectedDelivery.clientPhotos?.length || 0} photo{selectedDelivery.clientPhotos?.length !== 1 ? 's' : ''}
-                                    </span>
-                                </div>
-                                {!selectedDelivery.clientPhotos || selectedDelivery.clientPhotos.length === 0 ? (
-                                    <div className="p-3 rounded-lg bg-muted/30 border border-dashed border-border text-center">
-                                        <Camera className="w-5 h-5 text-muted-foreground mx-auto mb-1 opacity-50" />
-                                        <p className="text-[10px] text-muted-foreground">Aucune photo</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="grid grid-cols-3 gap-2">
                                         {selectedDelivery.clientPhotos.slice(0, 3).map((photo, idx) => (
                                             <button
                                                 key={idx}
@@ -554,37 +636,64 @@ const LivreurLivraisons: React.FC = () => {
                                             </button>
                                         )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
-                            {/* Temps restant - compact */}
+                            {/* Temps restant */}
                             {selectedDelivery.status === 'in_transit' && (
-                                <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-                                    <div className="flex items-center gap-1.5">
-                                        <Clock className="w-3.5 h-3.5 text-primary" />
-                                        <span className="text-[10px] font-medium text-primary">Temps restant</span>
+                                <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-primary" />
+                                        <span className="text-sm font-medium text-primary">Temps restant</span>
                                     </div>
-                                    <p className="text-base font-bold mt-0.5">{getTimeRemaining(selectedDelivery.estimatedDelivery)}</p>
+                                    <p className="text-xl font-bold mt-1">{getTimeRemaining(selectedDelivery.estimatedDelivery)}</p>
                                 </div>
                             )}
                         </div>
 
-                        {/* Footer - compact */}
-                        <div className="flex gap-2 p-3 border-t border-border bg-card">
+                        {/* Footer - AVEC BOUTONS D'ACTION */}
+                        <div className="flex gap-3 p-4 border-t border-border bg-card flex-wrap">
                             <button
                                 onClick={() => setShowDetailsModal(false)}
-                                className="flex-1 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted/30 transition-colors"
+                                className="flex-1 px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted/30 transition-colors"
                             >
                                 Fermer
                             </button>
+                            
                             {selectedDelivery.status !== 'delivered' && selectedDelivery.status !== 'cancelled' && (
-                                <button
-                                    onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selectedDelivery.destinationAddress)}`)}
-                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:shadow-md hover:-translate-y-0.5 transition-all group"
-                                >
-                                    <Navigation className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
-                                    Naviguer
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            const address = encodeURIComponent(selectedDelivery.destinationAddress);
+                                            window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`);
+                                        }}
+                                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-all"
+                                    >
+                                        <Navigation className="w-4 h-4" />
+                                        Naviguer
+                                    </button>
+                                    
+                                    {/* ✅ BOUTON MARQUER LIVRÉE DANS LE MODAL */}
+                                    <button
+                                        onClick={() => marquerLivree(selectedDelivery.commande_uuid)}
+                                        disabled={actionInProgress === selectedDelivery.id}
+                                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-all disabled:opacity-50"
+                                    >
+                                        {actionInProgress === selectedDelivery.id ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <Gift className="w-4 h-4" />
+                                        )}
+                                        Marquer livrée
+                                    </button>
+                                </>
+                            )}
+
+                            {selectedDelivery.status === 'delivered' && (
+                                <div className="flex-1 text-center py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg">
+                                    <CheckCircle className="w-4 h-4 inline-block mr-2" />
+                                    Livraison confirmée
+                                </div>
                             )}
                         </div>
                     </div>
@@ -650,18 +759,18 @@ const LivreurLivraisons: React.FC = () => {
             )}
 
             <style>{`
-        @keyframes fade-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-up { animation: fade-up 0.3s ease-out both; }
+                @keyframes fade-up {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-up { animation: fade-up 0.3s ease-out both; }
 
-        @keyframes modal-in {
-          from { opacity: 0; transform: scale(0.98); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        .animate-modal-in { animation: modal-in 0.25s ease-out both; }
-      `}</style>
+                @keyframes modal-in {
+                    from { opacity: 0; transform: scale(0.98); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-modal-in { animation: modal-in 0.25s ease-out both; }
+            `}</style>
         </div>
     );
 };
