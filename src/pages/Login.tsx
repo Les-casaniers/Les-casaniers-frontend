@@ -1,5 +1,4 @@
-
-
+// Login.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react";
@@ -57,6 +56,7 @@ const Login = () => {
       setIsLoading(false);
 
       if (result.success) {
+        // Redirection vers le bon dashboard
         navigate(result.isAdmin ? "/DashboardAdmin" : "/DashboardClient");
       } else {
         if (result.errors) {
@@ -84,7 +84,6 @@ const Login = () => {
       setGeneralError("Une erreur inattendue est survenue. Veuillez réessayer.");
     }
   };
-
 
   return (
     <SiteLayout>
@@ -187,7 +186,7 @@ const Login = () => {
                   </div>
                 )}
 
-                {/* Bouton de connexion MODIFIÉ */}
+                {/* Bouton de connexion */}
                 <button
                   type="submit"
                   disabled={isLoading}

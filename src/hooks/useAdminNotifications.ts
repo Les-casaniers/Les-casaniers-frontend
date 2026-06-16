@@ -1,5 +1,7 @@
+// hooks/useAdminNotifications.ts
+import { API_BASE_URL, getAuthToken } from "@/components/ActionClient/services/api";
+import api from "@/service/api";
 import { useCallback, useEffect, useRef, useState } from "react";
-import api, { API_BASE_URL, getAuthToken } from "@/service/api";
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -164,7 +166,10 @@ export const useAdminNotifications = () => {
   const connectWebSocket = useCallback(() => {
     // Ne pas connecter si pas authentifié
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) {
+      console.log("[WS] Pas de token, connexion WebSocket ignorée");
+      return;
+    }
 
     // Fermer l'ancienne connexion si elle existe
     if (wsRef.current) {
@@ -174,6 +179,8 @@ export const useAdminNotifications = () => {
 
     try {
       const wsUrl = getWebSocketUrl();
+      console.log("[WS] Tentative de connexion à:", wsUrl);
+      
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {
@@ -181,6 +188,16 @@ export const useAdminNotifications = () => {
         setWsConnected(true);
         reconnectAttemptsRef.current = 0;
         console.log("[WS] Connexion WebSocket établie");
+        
+        // Envoyer le token d'authentification après la connexion
+        try {
+          ws.send(JSON.stringify({
+            event: "authenticate",
+            data: { token: getAuthToken() }
+          }));
+        } catch (e) {
+          console.error("[WS] Erreur lors de l'envoi du token:", e);
+        }
       };
 
       ws.onmessage = (event) => {
@@ -208,8 +225,9 @@ export const useAdminNotifications = () => {
               setNonLues((prev) => prev + 1);
             }
           }
-        } catch {
+        } catch (e) {
           // Message non-JSON, ignorer
+          console.log("[WS] Message non-JSON reçu:", event.data);
         }
       };
 
@@ -231,12 +249,15 @@ export const useAdminNotifications = () => {
           reconnectTimerRef.current = setTimeout(() => {
             if (mountedRef.current) connectWebSocket();
           }, delay);
+        } else {
+          console.log("[WS] Nombre maximal de tentatives de reconnexion atteint");
         }
       };
 
-      ws.onerror = () => {
+      ws.onerror = (error) => {
         if (!mountedRef.current) return;
         setWsConnected(false);
+        console.error("[WS] Erreur WebSocket:", error);
       };
 
       wsRef.current = ws;
@@ -251,9 +272,13 @@ export const useAdminNotifications = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({ event: "ping", data: { timestamp: Date.now() } })
-        );
+        try {
+          wsRef.current.send(
+            JSON.stringify({ event: "ping", data: { timestamp: Date.now() } })
+          );
+        } catch (e) {
+          console.log("[WS] Erreur lors de l'envoi du ping:", e);
+        }
       }
     }, 25000);
 
@@ -264,14 +289,22 @@ export const useAdminNotifications = () => {
 
   useEffect(() => {
     mountedRef.current = true;
+    
+    // Charger les notifications initiales
     fetchNotifications();
-    connectWebSocket();
+    
+    // Connecter WebSocket
+    const token = getAuthToken();
+    if (token) {
+      connectWebSocket();
+    }
 
     return () => {
       mountedRef.current = false;
 
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
 
       if (wsRef.current) {
@@ -280,6 +313,15 @@ export const useAdminNotifications = () => {
       }
     };
   }, [fetchNotifications, connectWebSocket]);
+
+  // ─── Reconnecter WebSocket lors du changement de token ────
+
+  useEffect(() => {
+    const token = getAuthToken();
+    if (token) {
+      connectWebSocket();
+    }
+  }, [connectWebSocket]);
 
   return {
     notifications,

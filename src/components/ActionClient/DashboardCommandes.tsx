@@ -89,8 +89,6 @@ const getStatutConfig = (statut: StatutCommande) => {
     animation: string;
     bgGradient: string;
   }> = {
-
-    
     "en_attente": {
       label: "En attente",
       icon: <Hourglass className="h-5 w-5" />,
@@ -122,6 +120,7 @@ const getStatutConfig = (statut: StatutCommande) => {
       animation: "animate-bounce-gentle",
       bgGradient: "from-blue-500/10 to-transparent"
     },
+    
     "expediee": {
       label: "Expédiée",
       icon: <Truck className="h-5 w-5" />,
@@ -134,9 +133,10 @@ const getStatutConfig = (statut: StatutCommande) => {
       bgColor: "bg-indigo-500/10",
       borderColor: "border-indigo-500/30",
       progress: 50,
-      animation: "animate-wiggle",
+      animation: "animate-move-right",
       bgGradient: "from-indigo-500/10 to-transparent"
     },
+    
     "en_traitement": {
       label: "En préparation",
       icon: <RefreshCw className="h-5 w-5" />,
@@ -149,9 +149,10 @@ const getStatutConfig = (statut: StatutCommande) => {
       bgColor: "bg-purple-500/10",
       borderColor: "border-purple-500/30",
       progress: 75,
-      animation: "animate-spin-slow",
+      animation: "animate-work",
       bgGradient: "from-purple-500/10 to-transparent"
     },
+    
     "terminee": {
       label: "Livrée",
       icon: <PartyPopper className="h-5 w-5" />,
@@ -167,6 +168,7 @@ const getStatutConfig = (statut: StatutCommande) => {
       animation: "animate-celebrate",
       bgGradient: "from-green-500/10 to-transparent"
     },
+    
     "annulee": {
       label: "Annulée",
       icon: <Frown className="h-5 w-5" />,
@@ -373,168 +375,170 @@ const DashboardCommandes = () => {
     if (searchTerm && !cmd.commande_uuid.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
-// Vue Liste - avec mascotte positionnée selon l'ordre des statuts (SEULE LA MASCOTTE ACTIVE EST AGRANDIE)
-const ListView = () => (
-  <div className="space-y-4">
-    {commandesFiltrees.map((commande) => {
-      const config = getStatutConfig(commande.statut);
-      const progressValue = getStatutProgress(commande.statut);
-      const isCancelled = commande.statut === "annulee";
-      
-      // Trouver la position du statut dans l'ordre
-      const positionInOrder = statusOrder.indexOf(commande.statut);
-      const isCompleted = positionInOrder !== -1;
-      const stepNumber = isCompleted ? positionInOrder + 1 : 0;
-      const totalSteps = statusOrder.length;
-      
-      return (
-        <div key={commande.id} className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition">
-          
-          {/* En-tête avec UUID, statut et date */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
-                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
-                  {getStatutIcone(commande.statut)}
-                  {getStatutLabel(commande.statut)}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-sm">
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {formatDate(commande.date_creation)}
-                </span>
-                <span className="text-muted-foreground">
-                  {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="mt-2">
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {commande.produits && commande.produits.length > 0 ? (
-                    commande.produits.map((p, idx) => (
-                      <span key={idx}>
-                        {p.nom} ({p.quantite}){idx < commande.produits.length - 1 && ", "}
-                      </span>
-                    ))
-                  ) : (commande.titre || "Produit")}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
-              <button
-                onClick={() => {
-                  setSelectedCommande(commande);
-                  setShowDetails(true);
-                }}
-                className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
-              >
-                <Eye className="h-4 w-4" />
-                Détails
-              </button>
-            </div>
-          </div>
 
-          {/* TIMELINE AVEC MASCOTTES POSITIONNÉES SELON L'ORDRE DES STATUTS */}
-          <div className="mt-4 pt-3 border-t border-border/50">
-            <div className="relative">
-              {/* Ligne de fond */}
-              <div className="absolute top-8 left-0 right-0 h-1 bg-muted rounded-full" />
-              
-              {/* Ligne de progression */}
-              {!isCancelled && isCompleted && (
-                <div 
-                  className="absolute top-8 left-0 h-1 bg-primary rounded-full transition-all duration-500"
-                  style={{ width: `${(positionInOrder / (totalSteps - 1)) * 100}%` }}
-                />
-              )}
-              
-              {/* Container des mascottes */}
-              <div className="relative flex justify-between items-start">
-                {statusOrder.map((statut, idx) => {
-                  const stepConfig = getStatutConfig(statut);
-                  const isActive = statut === commande.statut;
-                  const isPast = positionInOrder > idx;
-                  const isFuture = positionInOrder < idx;
-                  
-                  return (
-                    <div key={statut} className="flex flex-col items-center" style={{ flex: 1 }}>
-                      {/* Point / Mascotte */}
-                      <div className="relative z-10">
-                        {isActive ? (
-                          // Mascotte active (celle de la commande) - SEULEMENT AGRANDIE ICI
-                          <div className={`relative ${stepConfig.animation}`}>
-                            <img 
-                              src={stepConfig.image} 
-                              alt={stepConfig.label} 
-                              className="w-24 h-24 object-contain cursor-pointer hover:scale-110 transition-transform duration-200"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = fosa;
-                              }}
-                            />
-                            <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-border">
-                              <span className="text-xs">{stepConfig.emoji}</span>
+  // Vue Liste - avec mascotte positionnée selon l'ordre des statuts
+  const ListView = () => (
+    <div className="space-y-4">
+      {commandesFiltrees.map((commande) => {
+        const config = getStatutConfig(commande.statut);
+        const progressValue = getStatutProgress(commande.statut);
+        const isCancelled = commande.statut === "annulee";
+        
+        // Trouver la position du statut dans l'ordre
+        const positionInOrder = statusOrder.indexOf(commande.statut);
+        const isCompleted = positionInOrder !== -1;
+        const stepNumber = isCompleted ? positionInOrder + 1 : 0;
+        const totalSteps = statusOrder.length;
+        
+        return (
+          <div key={commande.id} className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition">
+            
+            {/* En-tête avec UUID, statut et date */}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <p className="font-mono font-semibold text-foreground">{commande.commande_uuid}</p>
+                  <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(commande.statut)}`}>
+                    {getStatutIcone(commande.statut)}
+                    {getStatutLabel(commande.statut)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm">
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatDate(commande.date_creation)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {commande.quantite} article{commande.quantite > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {commande.produits && commande.produits.length > 0 ? (
+                      commande.produits.map((p, idx) => (
+                        <span key={idx}>
+                          {p.nom} ({p.quantite}){idx < commande.produits.length - 1 && ", "}
+                        </span>
+                      ))
+                    ) : (commande.titre || "Produit")}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-foreground">{formatPrice(commande.total, commande.devise)}</p>
+                <button
+                  onClick={() => {
+                    setSelectedCommande(commande);
+                    setShowDetails(true);
+                  }}
+                  className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                >
+                  <Eye className="h-4 w-4" />
+                  Détails
+                </button>
+              </div>
+            </div>
+
+            {/* TIMELINE AVEC MASCOTTES POSITIONNÉES SELON L'ORDRE DES STATUTS */}
+            <div className="mt-4 pt-3 border-t border-border/50">
+              <div className="relative">
+                {/* Ligne de fond */}
+                <div className="absolute top-8 left-0 right-0 h-1 bg-muted rounded-full" />
+                
+                {/* Ligne de progression */}
+                {!isCancelled && isCompleted && (
+                  <div 
+                    className="absolute top-8 left-0 h-1 bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${(positionInOrder / (totalSteps - 1)) * 100}%` }}
+                  />
+                )}
+                
+                {/* Container des mascottes */}
+                <div className="relative flex justify-between items-start">
+                  {statusOrder.map((statut, idx) => {
+                    const stepConfig = getStatutConfig(statut);
+                    const isActive = statut === commande.statut;
+                    const isPast = positionInOrder > idx;
+                    const isFuture = positionInOrder < idx;
+                    
+                    return (
+                      <div key={statut} className="flex flex-col items-center" style={{ flex: 1 }}>
+                        {/* Point / Mascotte */}
+                        <div className="relative z-10">
+                          {isActive ? (
+                            // Mascotte active (celle de la commande) - AGRANDIE AVEC ANIMATION SPÉCIFIQUE
+                            <div className={`relative ${stepConfig.animation}`}>
+                              <img 
+                                src={stepConfig.image} 
+                                alt={stepConfig.label} 
+                                className="w-24 h-24 object-contain cursor-pointer hover:scale-110 transition-transform duration-200"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = fosa;
+                                }}
+                              />
+                              <div className="absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-0.5 shadow-sm border border-border">
+                                <span className="text-xs">{stepConfig.emoji}</span>
+                              </div>
+                              {/* Indicateur de sélection */}
+                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
                             </div>
-                            {/* Indicateur de sélection */}
-                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
-                          </div>
-                        ) : isPast ? (
-                          // Étapes déjà passées (check) - TAILLE NORMALE
-                          <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                            <CheckCircle className="w-5 h-5" />
-                          </div>
-                        ) : (
-                          // Étapes futures - TAILLE NORMALE
-                          <div className="w-10 h-10 rounded-full bg-muted border-2 border-border flex items-center justify-center">
-                            <span className="text-xs text-muted-foreground font-semibold">{idx + 1}</span>
+                          ) : isPast ? (
+                            // Étapes déjà passées (check) - TAILLE NORMALE
+                            <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md">
+                              <CheckCircle className="w-5 h-5" />
+                            </div>
+                          ) : (
+                            // Étapes futures - TAILLE NORMALE
+                            <div className="w-10 h-10 rounded-full bg-muted border-2 border-border flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground font-semibold">{idx + 1}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Libellé */}
+                        <p className={`text-[8px] mt-2 text-center font-medium ${
+                          isActive 
+                            ? 'text-primary font-bold' 
+                            : isPast 
+                            ? 'text-muted-foreground' 
+                            : 'text-muted-foreground/50'
+                        }`}>
+                          {stepConfig.label}
+                        </p>
+                        
+                        {/* Indicateur de statut actif */}
+                        {isActive && (
+                          <div className="mt-0.5 flex items-center gap-1">
+                            <div className="w-1 h-1 bg-primary rounded-full" />
+                            <span className="text-[6px] text-primary font-semibold uppercase">Actuel</span>
                           </div>
                         )}
                       </div>
-                      
-                      {/* Libellé */}
-                      <p className={`text-[8px] mt-2 text-center font-medium ${
-                        isActive 
-                          ? 'text-primary font-bold' 
-                          : isPast 
-                          ? 'text-muted-foreground' 
-                          : 'text-muted-foreground/50'
-                      }`}>
-                        {stepConfig.label}
-                      </p>
-                      
-                      {/* Indicateur de statut actif */}
-                      {isActive && (
-                        <div className="mt-0.5 flex items-center gap-1">
-                          <div className="w-1 h-1 bg-primary rounded-full" />
-                          <span className="text-[6px] text-primary font-semibold uppercase">Actuel</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Bouton annuler */}
-          {canCancel(commande.statut) && (
-            <div className="mt-3 pt-2 border-t border-border/50">
-              <button
-                onClick={() => handleCancelCommande(commande)}
-                disabled={cancellingId === commande.id}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
-              >
-                {cancellingId === commande.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                Annuler la commande
-              </button>
-            </div>
-          )}
-        </div>
-      );
-    })}
-  </div>
-);
+            {/* Bouton annuler */}
+            {canCancel(commande.statut) && (
+              <div className="mt-3 pt-2 border-t border-border/50">
+                <button
+                  onClick={() => handleCancelCommande(commande)}
+                  disabled={cancellingId === commande.id}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-600 rounded-lg hover:bg-red-500 hover:text-white transition"
+                >
+                  {cancellingId === commande.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  Annuler la commande
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
   // Vue Carte
   const CardView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -563,7 +567,7 @@ const ListView = () => (
                 </span>
               </div>
 
-              {/* Mascotte avec fond gradient selon statut */}
+              {/* Mascotte avec fond gradient selon statut et ANIMATION SPÉCIFIQUE */}
               <div className={`flex flex-col items-center justify-center py-4 mb-3 rounded-xl bg-gradient-to-br ${config.bgGradient}`}>
                 <div className={`relative ${config.animation}`}>
                   <img
@@ -750,34 +754,33 @@ const ListView = () => (
         </div>
       </div>
 
- 
-{/* Filtres */}
-<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-  <div className="flex flex-wrap items-center gap-2">
-    <Filter className="h-4 w-4 text-muted-foreground" />
-    {["toutes", "en_attente", "payee", "expediee", "en_traitement", "terminee", "annulee"].map((f) => (
-      <button
-        key={f}
-        onClick={() => setFiltre(f as typeof filtre)}
-        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
-          filtre === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-        }`}
-      >
-        {f === "toutes" ? "Tous" : getStatutLabel(f as StatutCommande)}
-      </button>
-    ))}
-  </div>
-  <div className="relative w-full sm:w-64">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-    <input
-      type="text"
-      placeholder="Rechercher une commande..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-    />
-  </div>
-</div>
+      {/* Filtres */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          {["toutes", "en_attente", "payee", "expediee", "en_traitement", "terminee", "annulee"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltre(f as typeof filtre)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition ${
+                filtre === f ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+              }`}
+            >
+              {f === "toutes" ? "Tous" : getStatutLabel(f as StatutCommande)}
+            </button>
+          ))}
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Rechercher une commande..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
+      </div>
 
       {/* Mode vue */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
@@ -818,7 +821,7 @@ const ListView = () => (
             </div>
 
             <div className="overflow-y-auto px-6 py-5 flex-1 space-y-5">
-              {/* Mascotte avec fond gradient selon statut */}
+              {/* Mascotte avec fond gradient selon statut et ANIMATION SPÉCIFIQUE */}
               <div className={`flex flex-col items-center justify-center py-6 rounded-2xl bg-gradient-to-br ${getStatutConfig(selectedCommande.statut).bgGradient}`}>
                 <div className={`relative ${getStatutConfig(selectedCommande.statut).animation}`}>
                   <img
@@ -1002,6 +1005,7 @@ const ListView = () => (
       )}
 
       <style>{`
+        /* Animations existantes */
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         @keyframes bounce-gentle { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
         @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -1009,6 +1013,22 @@ const ListView = () => (
         @keyframes celebrate { 0%,100% { transform: scale(1); } 25% { transform: scale(1.05) rotate(-3deg); } 75% { transform: scale(1.05) rotate(3deg); } }
         @keyframes sad { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); opacity: 0.7; } }
         @keyframes pulse-slow { 0%,100% { opacity: 1; } 50% { opacity: 0.8; transform: scale(1.02); } }
+        
+        /* NOUVELLES ANIMATIONS */
+        @keyframes move-right { 
+          0% { transform: translateX(0); } 
+          50% { transform: translateX(20px); } 
+          100% { transform: translateX(0); } 
+        }
+        
+        @keyframes work { 
+          0% { transform: translateY(0) rotate(0deg) scale(1); } 
+          25% { transform: translateY(-5px) rotate(-3deg) scale(1.02); }
+          75% { transform: translateY(0) rotate(3deg) scale(1.02); }
+          100% { transform: translateY(0) rotate(0deg) scale(1); } 
+        }
+        
+        /* Classes d'animation */
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
         .animate-spin-slow { animation: spin-slow 4s linear infinite; }
@@ -1016,6 +1036,10 @@ const ListView = () => (
         .animate-celebrate { animation: celebrate 0.8s ease-in-out infinite; }
         .animate-sad { animation: sad 2s ease-in-out infinite; }
         .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
+        
+        /* NOUVELLES CLASSES */
+        .animate-move-right { animation: move-right 2s ease-in-out infinite; }
+        .animate-work { animation: work 1.5s ease-in-out infinite; }
       `}</style>
     </div>
   );
