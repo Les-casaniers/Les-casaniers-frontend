@@ -730,9 +730,7 @@ const DashboardClient: React.FC = () => {
                       <th className="text-left py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Contact</th>
                       <th className="text-left py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden lg:table-cell">Localisation</th>
                       <th className="text-center py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Statut</th>
-                      <th className="text-center py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Note</th>
-                      <th className="text-center py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden sm:table-cell">Commandes</th>
-                      <th className="text-center py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground hidden md:table-cell">Dépensé</th>
+                      
                       <th className="text-right py-3 px-3 sm:px-4 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
                     </tr>
                   </thead>
@@ -772,18 +770,9 @@ const DashboardClient: React.FC = () => {
                         <td className="py-3 px-3 sm:px-4 text-center hidden sm:table-cell">
                           {getStatusBadge(client.status)}
                         </td>
-                        <td className="py-3 px-3 sm:px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-yellow-500 fill-yellow-500" />
-                            <span className="font-medium text-sm">{client.rating}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 sm:px-4 text-center hidden sm:table-cell">
-                          <span className="font-medium text-sm">{client.totalOrders}</span>
-                        </td>
-                        <td className="py-3 px-3 sm:px-4 text-center hidden md:table-cell">
-                          <span className="font-medium text-sm">{client.totalSpent.toLocaleString()}€</span>
-                        </td>
+                       
+
+                    
                         <td className="py-3 px-3 sm:px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button 
