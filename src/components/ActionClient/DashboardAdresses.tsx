@@ -1,9 +1,11 @@
+// src/pages/DashboardAdresses.tsx
 import { useState, useEffect } from "react";
-import { MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package, Star, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package, Star, AlertCircle, Loader2, Upload, Image as ImageIcon, Map, Eye } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/service/api";
+import MapPicker from "@/components/MapPicker";
 
-// Interface pour les adresses (correspondant à votre table)
+// Interface pour les adresses
 type Adresse = {
   id: number;
   utilisateur_id: number;
@@ -20,9 +22,11 @@ type Adresse = {
   par_defaut_facturation: boolean;
   date_creation: string;
   date_modification: string;
+  image_adress: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
 };
 
-// Interface pour l'utilisateur connecté
 type User = {
   id: number;
   nom: string;
@@ -39,6 +43,9 @@ const DashboardAdresses = () => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [selectedAdresse, setSelectedAdresse] = useState<Adresse | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  
   const [form, setForm] = useState<Partial<Adresse>>({
     etiquette: "",
     nom_complet: "",
@@ -51,19 +58,28 @@ const DashboardAdresses = () => {
     pays: "Madagascar",
     par_defaut_expedition: false,
     par_defaut_facturation: false,
+    image_adress: null,
+    latitude: null,
+    longitude: null,
   });
 
-  // Récupérer l'utilisateur connecté et ses adresses
   useEffect(() => {
     fetchUserAndAdresses();
   }, []);
+
+  // ✅ Fonction utilitaire pour formater les coordonnées
+  const formatCoordinate = (value: any): string => {
+    if (value === null || value === undefined || value === '') return '0.0000';
+    const num = Number(value);
+    if (isNaN(num)) return '0.0000';
+    return num.toFixed(4);
+  };
 
   const fetchUserAndAdresses = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Récupérer le profil de l'utilisateur connecté
       const userResponse = await api.get('/utilisateurs/profile');
       console.log("Utilisateur connecté:", userResponse.data);
       
@@ -78,7 +94,6 @@ const DashboardAdresses = () => {
       
       setUser(currentUser);
       
-      // Récupérer les adresses de l'utilisateur connecté
       const adressesResponse = await api.get(`/adresses?utilisateur_id=${currentUser.id}`);
       console.log("Adresses récupérées:", adressesResponse.data);
       
@@ -113,8 +128,40 @@ const DashboardAdresses = () => {
     }));
   };
 
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setForm(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
+    
+    toast.success(`Position sélectionnée: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image valide');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 2MB');
+      return;
+    }
+
+    setImageFile(file);
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleOpenAdd = () => {
-    // Extraire le prénom et nom depuis nom_complet ou depuis user
     const nomComplet = user ? `${user.prenom} ${user.nom}` : "";
     
     setForm({
@@ -129,20 +176,40 @@ const DashboardAdresses = () => {
       pays: "Madagascar",
       par_defaut_expedition: adresses.length === 0,
       par_defaut_facturation: adresses.length === 0,
+      image_adress: null,
+      latitude: null,
+      longitude: null,
     });
     setSelectedAdresse(null);
+    setImagePreview(null);
+    setImageFile(null);
     setShowModal(true);
   };
 
   const handleOpenEdit = (adresse: Adresse) => {
     setSelectedAdresse(adresse);
     setForm(adresse);
+    setImagePreview(adresse.image_adress);
+    setImageFile(null);
     setShowModal(true);
   };
 
   const handleOpenDelete = (adresse: Adresse) => {
     setSelectedAdresse(adresse);
     setShowDeleteAlert(true);
+  };
+
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await api.post('/adresses/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data.image_url;
   };
 
   const handleSave = async () => {
@@ -152,52 +219,48 @@ const DashboardAdresses = () => {
     }
 
     try {
+      let imageFilename = form.image_adress || null;
+      
+      if (imageFile) {
+        imageFilename = await uploadImage(imageFile);
+      }
+
+      const adresseData = {
+        etiquette: form.etiquette || "Livraison",
+        nom_complet: form.nom_complet,
+        telephone: form.telephone,
+        adresse_ligne1: form.adresse_ligne1,
+        adresse_ligne2: form.adresse_ligne2 || null,
+        ville: form.ville,
+        region: form.region,
+        code_postal: form.code_postal,
+        pays: form.pays,
+        par_defaut_expedition: form.par_defaut_expedition || false,
+        par_defaut_facturation: form.par_defaut_facturation || false,
+        image_adress: imageFilename,
+        latitude: form.latitude || null,
+        longitude: form.longitude || null,
+      };
+
       if (selectedAdresse) {
-        // Modification
-        const response = await api.put(`/adresses/${selectedAdresse.id}`, {
-          etiquette: form.etiquette,
-          nom_complet: form.nom_complet,
-          telephone: form.telephone,
-          adresse_ligne1: form.adresse_ligne1,
-          adresse_ligne2: form.adresse_ligne2 || null,
-          ville: form.ville,
-          region: form.region,
-          code_postal: form.code_postal,
-          pays: form.pays,
-          par_defaut_expedition: form.par_defaut_expedition,
-          par_defaut_facturation: form.par_defaut_facturation,
-        });
+        await api.put(`/adresses/${selectedAdresse.id}`, adresseData);
         
-        if (response.data.success) {
-          // Gérer l'adresse par défaut
-          if (form.par_defaut_expedition) {
-            await api.put('/adresses/set-default-expedition', { adresse_id: selectedAdresse.id });
-          }
-          
-          await fetchUserAndAdresses(); // Recharger les adresses
-          toast.success("Adresse modifiée avec succès");
+        if (form.par_defaut_expedition) {
+          await api.put(`/adresses/${selectedAdresse.id}/defaut-expedition`);
         }
+        
+        await fetchUserAndAdresses();
+        toast.success("Adresse modifiée avec succès");
       } else {
-        // Ajout
-        const response = await api.post('/adresses', {
+        await api.post('/adresses', {
           utilisateur_id: user?.id,
-          etiquette: form.etiquette || "Livraison",
-          nom_complet: form.nom_complet,
-          telephone: form.telephone,
-          adresse_ligne1: form.adresse_ligne1,
-          adresse_ligne2: form.adresse_ligne2 || null,
-          ville: form.ville,
-          region: form.region,
-          code_postal: form.code_postal,
-          pays: form.pays,
+          ...adresseData,
           par_defaut_expedition: form.par_defaut_expedition || adresses.length === 0,
           par_defaut_facturation: form.par_defaut_facturation || adresses.length === 0,
         });
         
-        if (response.data.success) {
-          await fetchUserAndAdresses(); // Recharger les adresses
-          toast.success("Adresse ajoutée avec succès");
-        }
+        await fetchUserAndAdresses();
+        toast.success("Adresse ajoutée avec succès");
       }
       
       setShowModal(false);
@@ -211,14 +274,11 @@ const DashboardAdresses = () => {
     if (!selectedAdresse) return;
     
     try {
-      const response = await api.delete(`/adresses/${selectedAdresse.id}`);
-      
-      if (response.data.success) {
-        await fetchUserAndAdresses(); // Recharger les adresses
-        setShowDeleteAlert(false);
-        setSelectedAdresse(null);
-        toast.success("Adresse supprimée avec succès");
-      }
+      await api.delete(`/adresses/${selectedAdresse.id}`);
+      await fetchUserAndAdresses();
+      setShowDeleteAlert(false);
+      setSelectedAdresse(null);
+      toast.success("Adresse supprimée avec succès");
     } catch (error: any) {
       console.error("Erreur lors de la suppression:", error);
       toast.error(error.response?.data?.message || "Erreur lors de la suppression");
@@ -227,8 +287,8 @@ const DashboardAdresses = () => {
 
   const handleSetDefault = async (id: number) => {
     try {
-      await api.put('/adresses/set-default-expedition', { adresse_id: id });
-      await fetchUserAndAdresses(); // Recharger les adresses
+      await api.put(`/adresses/${id}/defaut-expedition`);
+      await fetchUserAndAdresses();
       toast.success("Adresse par défaut mise à jour");
     } catch (error: any) {
       console.error("Erreur lors du changement d'adresse par défaut:", error);
@@ -328,62 +388,119 @@ const DashboardAdresses = () => {
                 </div>
               )}
 
-              {/* Type d'adresse */}
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                  {getTypeIcon(adresse.etiquette)}
+              {/* Layout avec image à droite */}
+              <div className="flex gap-4">
+                {/* Informations - gauche */}
+                <div className="flex-1 min-w-0">
+                  {/* Type d'adresse */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      {getTypeIcon(adresse.etiquette)}
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      {getTypeLabel(adresse.etiquette)}
+                    </span>
+                    {adresse.latitude && adresse.longitude && (
+                      <span className="text-[10px] text-muted-foreground ml-auto flex items-center gap-1">
+                        <Map className="h-3 w-3" />
+                        📍 {formatCoordinate(adresse.latitude)}, {formatCoordinate(adresse.longitude)}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Informations */}
+                  <div className="space-y-2">
+                    <p className="font-semibold text-foreground">
+                      {adresse.nom_complet}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {adresse.adresse_ligne1}
+                      {adresse.adresse_ligne2 && <><br />{adresse.adresse_ligne2}</>}
+                      <br />
+                      {adresse.code_postal} {adresse.ville}
+                      <br />
+                      {adresse.region}, {adresse.pays}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {getTypeLabel(adresse.etiquette)}
-                </span>
+
+                {/* ✅ Image - droite (agrandie à 32x32) */}
+                <div className="flex-shrink-0">
+                  {adresse.image_adress ? (
+                    <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 group">
+                      <img 
+                        src={adresse.image_adress} 
+                        alt="Photo du lieu"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+                        }}
+                      />
+                      {/* ✅ Bouton pour agrandir l'image */}
+                      <button
+                        onClick={() => window.open(adresse.image_adress || '', '_blank')}
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                        title="Agrandir l'image"
+                      >
+                        <Eye className="h-6 w-6 text-white" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 rounded-xl border border-dashed border-border/50 bg-secondary/10 flex items-center justify-center">
+                      <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Informations */}
-              <div className="space-y-2">
-                <p className="font-semibold text-foreground">
-                  {adresse.nom_complet}
-                </p>
-                <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
-                <p className="text-sm text-foreground leading-relaxed">
-                  {adresse.adresse_ligne1}
-                  {adresse.adresse_ligne2 && <><br />{adresse.adresse_ligne2}</>}
-                  <br />
-                  {adresse.code_postal} {adresse.ville}
-                  <br />
-                  {adresse.region}, {adresse.pays}
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-border/50">
-                {!adresse.par_defaut_expedition && (
+              {/* ✅ Bouton Google Maps et Actions */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                {/* ✅ Bouton Google Maps à gauche */}
+                {adresse.latitude && adresse.longitude && (
                   <button
-                    onClick={() => handleSetDefault(adresse.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition"
+                    onClick={() => {
+                      const url = `https://www.google.com/maps?q=${adresse.latitude},${adresse.longitude}`;
+                      window.open(url, '_blank');
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
                   >
-                    <Star className="h-3.5 w-3.5" />
-                    Définir par défaut
+                    <Map className="h-3.5 w-3.5" />
+                    Voir sur Google Maps
                   </button>
                 )}
-                <button
-                  onClick={() => handleOpenEdit(adresse)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleOpenDelete(adresse)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                
+                {/* Actions à droite */}
+                <div className="flex items-center gap-2">
+                  {!adresse.par_defaut_expedition && (
+                    <button
+                      onClick={() => handleSetDefault(adresse.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition"
+                    >
+                      <Star className="h-3.5 w-3.5" />
+                      Définir par défaut
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleOpenEdit(adresse)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleOpenDelete(adresse)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* MODAL AJOUTER/MODIFIER - Adaptée à votre table */}
+      {/* MODAL AJOUTER/MODIFIER - Reste inchangé */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in">
@@ -408,11 +525,18 @@ const DashboardAdresses = () => {
 
             <div className="overflow-y-auto p-6 flex-1">
               <div className="space-y-5">
+                {/* Nom complet - READONLY (masqué) */}
+                <div className="hidden">
+                  <label className="block text-sm font-medium text-foreground mb-2">Nom complet</label>
+                  <input 
+                    name="nom_complet" 
+                    value={form.nom_complet || ""} 
+                    readOnly
+                    className={`${inputClass} bg-muted/50 cursor-not-allowed`} 
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Nom complet <span className="text-destructive">*</span></label>
-                    <input name="nom_complet" value={form.nom_complet || ""} onChange={handleInputChange} className={inputClass} placeholder="Jean Dupont" />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Téléphone <span className="text-destructive">*</span></label>
                     <input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="034 12 345 67" className={inputClass} />
@@ -474,6 +598,80 @@ const DashboardAdresses = () => {
                         {type.label}
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Upload d'image */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Photo du lieu</label>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Upload className="h-4 w-4" />
+                          <span>{imageFile ? imageFile.name : "Choisir une image"}</span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    {imagePreview && (
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                        <img src={imagePreview} alt="Prévisualisation" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => {
+                            setImagePreview(null);
+                            setImageFile(null);
+                            setForm(prev => ({ ...prev, image_adress: null }));
+                          }}
+                          className="absolute -top-1 -right-1 p-0.5 bg-destructive text-white rounded-full hover:bg-destructive/80"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Formats acceptés: JPG, PNG, GIF, WEBP (max 2MB)</p>
+                </div>
+
+                {/* Carte pour sélectionner la position */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Localisation sur la carte <span className="text-xs text-muted-foreground">(cliquez pour sélectionner)</span>
+                  </label>
+                  <MapPicker
+                    latitude={typeof form.latitude === 'string' ? parseFloat(form.latitude) : form.latitude || null}
+                    longitude={typeof form.longitude === 'string' ? parseFloat(form.longitude) : form.longitude || null}
+                    onLocationSelect={handleLocationSelect}
+                    address={`${form.adresse_ligne1 || ''} ${form.ville || ''}`}
+                  />
+                </div>
+
+                {/* Latitude et Longitude - READONLY */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Latitude</label>
+                    <input
+                      name="latitude"
+                      value={form.latitude || ""}
+                      readOnly
+                      className={`${inputClass} bg-muted/50 cursor-not-allowed`}
+                      placeholder="Sélectionnez sur la carte"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Longitude</label>
+                    <input
+                      name="longitude"
+                      value={form.longitude || ""}
+                      readOnly
+                      className={`${inputClass} bg-muted/50 cursor-not-allowed`}
+                      placeholder="Sélectionnez sur la carte"
+                    />
                   </div>
                 </div>
 
