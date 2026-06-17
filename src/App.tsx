@@ -74,6 +74,8 @@ import LivreurStats from "./components/ActionLivreur/LivreurStats.tsx";
 import LivreurNotifications from "./components/ActionLivreur/LivreurNotifications.tsx";
 import LivreurParametres from "./components/ActionLivreur/LivreurParametres.tsx";
 import ClientDashboard from "./components/ActionClient/DashboardClient.tsx";
+import Profreelance from "@/pages/Pro";
+
 
 // ============ IMPORTS LIVREUR ============
 
@@ -112,6 +114,7 @@ const App = () => (
               <Route path="/importation" element={<Importation />} />
               <Route path="/favoris" element={<Favorites />} />
               <Route path="/devis-express" element={<DevisExpress />} />
+                 <Route path="/pro" element={<Profreelance />} />
               
               {/* Routes d'authentification */}
               <Route path="/login" element={<Login />} />
