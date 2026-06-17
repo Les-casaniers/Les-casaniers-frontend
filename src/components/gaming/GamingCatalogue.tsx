@@ -26,10 +26,12 @@ import { toast } from "@/hooks/use-toast";
 interface Product {
   id: number;
   categorie_id: number;
+  id_sous_categorie?: number;
   reference: string;
   nom: string;
   description_courte: string;
   description: string;
+  atout?: string;
   type_produit: string;
   prix: number;
   devise: string;
@@ -39,6 +41,24 @@ interface Product {
   date_creation: string;
   date_modification: string;
   images?: { id: number; url: string; alt: string; ordre: number }[];
+}
+
+interface Category {
+  id: number;
+  parent_id: number | null;
+  nom: string;
+  type: string;
+  ordre_tri: number;
+  date_creation: string;
+  date_modification: string;
+}
+
+interface SousCategorie {
+  id: number;
+  categorie_id: number;
+  nom: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Configuration {
@@ -58,9 +78,17 @@ type ProductGroup = "unites-centrales" | "laptops" | "watercooling";
 
 interface ClassifiedProduct extends Product {
   group: ProductGroup;
+  sous_categorie_nom?: string;
 }
 
 type SortOption = "pertinence" | "prix-asc" | "prix-desc" | "nom-asc" | "nom-desc";
+
+// Mapping des types de catégories vers les groupes
+const CATEGORY_TYPE_TO_GROUP: Record<string, ProductGroup> = {
+  "unite_centrale": "unites-centrales",
+  "laptop": "laptops",
+  "watercooling": "watercooling",
+};
 
 const GROUP_META: Record<
   ProductGroup,
@@ -94,13 +122,6 @@ const SORT_LABELS: Record<SortOption, string> = {
   "nom-desc": "Nom, Z à A",
 };
 
-const classifyProduct = (product: Product): ProductGroup | null => {
-  if (product.reference?.startsWith("CASE-")) return "unites-centrales";
-  if (product.reference?.startsWith("PC-")) return "laptops";
-  if (product.reference?.startsWith("CL-")) return "watercooling";
-  return null;
-};
-
 const extractFromDescription = (description: string, ...keywords: string[]) => {
   if (!description) return "—";
   for (const keyword of keywords) {
@@ -131,6 +152,9 @@ const getImageUrl = (product: Product) => {
 
 export const GamingCatalogue = () => {
   const [allProducts, setAllProducts] = useState<ClassifiedProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [sousCategories, setSousCategories] = useState<SousCategorie[]>([]);
+  const [selectedSousCategories, setSelectedSousCategories] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -155,7 +179,7 @@ export const GamingCatalogue = () => {
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchAllProducts();
+    fetchAllData();
   }, []);
 
   useEffect(() => {
@@ -165,32 +189,84 @@ export const GamingCatalogue = () => {
     };
   }, [isModalOpen, mobileFiltersOpen]);
 
-  const fetchAllProducts = async () => {
+  const fetchAllData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await api.get("/produits", { params: { per_page: 1000 } });
+      // Charger les catégories
+      const categoriesResponse = await api.get("/categories");
+      let categoriesData: Category[] = [];
+      if (categoriesResponse.data && categoriesResponse.data.data) {
+        categoriesData = Array.isArray(categoriesResponse.data.data) ? categoriesResponse.data.data : [];
+      } else if (Array.isArray(categoriesResponse.data)) {
+        categoriesData = categoriesResponse.data;
+      }
+      setCategories(categoriesData);
 
-      let raw: Product[] = [];
-      if (response.data.data) {
-        raw = Array.isArray(response.data.data) ? response.data.data : [];
-      } else if (Array.isArray(response.data)) {
-        raw = response.data;
+      // Charger les sous-catégories
+      const sousCategoriesResponse = await api.get("/sous-categories");
+      let sousCategoriesData: SousCategorie[] = [];
+      if (sousCategoriesResponse.data && sousCategoriesResponse.data.data) {
+        sousCategoriesData = Array.isArray(sousCategoriesResponse.data.data) ? sousCategoriesResponse.data.data : [];
+      } else if (Array.isArray(sousCategoriesResponse.data)) {
+        sousCategoriesData = sousCategoriesResponse.data;
+      }
+      setSousCategories(sousCategoriesData);
+
+      // Charger les produits
+      const productsResponse = await api.get("/produits", { params: { per_page: 1000 } });
+      let rawProducts: Product[] = [];
+      if (productsResponse.data && productsResponse.data.data) {
+        rawProducts = Array.isArray(productsResponse.data.data) ? productsResponse.data.data : [];
+      } else if (Array.isArray(productsResponse.data)) {
+        rawProducts = productsResponse.data;
       }
 
-      const classified: ClassifiedProduct[] = raw
-        .filter((p) => p.actif === true)
-        .map((p) => {
-          const group = classifyProduct(p);
-          return group ? { ...p, group } : null;
-        })
-        .filter((p): p is ClassifiedProduct => p !== null);
+      // Créer un map des catégories par ID
+      const categoryMap = new Map<number, Category>();
+      categoriesData.forEach(cat => categoryMap.set(cat.id, cat));
 
+      // Créer un map des sous-catégories par ID
+      const sousCategorieMap = new Map<number, SousCategorie>();
+      sousCategoriesData.forEach(sc => sousCategorieMap.set(sc.id, sc));
+
+      // Classifier les produits
+      const classified: ClassifiedProduct[] = [];
+      rawProducts
+        .filter((p) => p.actif === true)
+        .forEach((p) => {
+          const category = categoryMap.get(p.categorie_id);
+          let group: ProductGroup | null = null;
+          
+          if (category && category.type) {
+            group = CATEGORY_TYPE_TO_GROUP[category.type] || null;
+          }
+          
+          if (!group) {
+            if (p.reference?.startsWith("CASE-")) group = "unites-centrales";
+            else if (p.reference?.startsWith("PC-")) group = "laptops";
+            else if (p.reference?.startsWith("CL-")) group = "watercooling";
+          }
+
+          if (group) {
+            const sousCategorie = p.id_sous_categorie ? sousCategorieMap.get(p.id_sous_categorie) : null;
+            classified.push({ 
+              ...p, 
+              group, 
+              sous_categorie_nom: sousCategorie?.nom 
+            });
+          }
+        });
+
+      console.log("✅ Produits classifiés:", classified);
+      console.log("📊 Sous-catégories:", sousCategoriesData);
+      console.log("📊 Produits avec sous-catégorie:", classified.filter(p => p.id_sous_categorie).length);
+      
       setAllProducts(classified);
     } catch (err: any) {
-      console.error("Erreur détaillée:", err);
-      setError(`Impossible de charger les produits: ${err.response?.data?.message || err.message}`);
+      console.error("❌ Erreur détaillée:", err);
+      setError(`Impossible de charger les données: ${err.response?.data?.message || err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -202,9 +278,9 @@ export const GamingCatalogue = () => {
       const response = await api.get("/configurations");
 
       let allConfigs: Configuration[] = [];
-      if (response.data.data) {
+      if (response.data && response.data.data) {
         allConfigs = Array.isArray(response.data.data) ? response.data.data : [];
-      } else if (Array.isArray(response.data)) {
+      } else if (response.data && Array.isArray(response.data)) {
         allConfigs = response.data;
       }
 
@@ -277,8 +353,18 @@ export const GamingCatalogue = () => {
     });
   };
 
+  const toggleSousCategorie = (id: number) => {
+    setSelectedSousCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const resetFilters = () => {
     setActiveGroups(new Set(["unites-centrales", "laptops", "watercooling"]));
+    setSelectedSousCategories(new Set());
     setSearch("");
     setPriceMin("");
     setPriceMax("");
@@ -298,17 +384,33 @@ export const GamingCatalogue = () => {
     const max = priceMax ? Number(priceMax) : null;
 
     let result = allProducts.filter((p) => {
-      if (!activeGroups.has(p.group)) return false;
+      // Si des sous-catégories sont sélectionnées, on ignore le filtre de groupe
+      // pour permettre l'affichage des produits des sous-catégories sélectionnées
+      if (selectedSousCategories.size === 0) {
+        // Si aucune sous-catégorie sélectionnée, on applique le filtre de groupe
+        if (!activeGroups.has(p.group)) return false;
+      } else {
+        // Si des sous-catégories sont sélectionnées, on filtre d'abord par sous-catégorie
+        if (!p.id_sous_categorie || !selectedSousCategories.has(p.id_sous_categorie)) {
+          return false;
+        }
+        // Si une sous-catégorie est sélectionnée, on ignore le filtre de groupe
+        // pour afficher tous les produits de cette sous-catégorie
+      }
+
       if (inStockOnly && (!p.est_dispo || p.quantite_stock <= 0)) return false;
       if (min !== null && p.prix < min) return false;
       if (max !== null && p.prix > max) return false;
+      
       if (searchLower) {
         const haystack = `${p.nom} ${p.reference}`.toLowerCase();
         if (!haystack.includes(searchLower)) return false;
       }
+      
       return true;
     });
 
+    // Appliquer le tri
     switch (sortOption) {
       case "prix-asc":
         result = [...result].sort((a, b) => a.prix - b.prix);
@@ -326,8 +428,14 @@ export const GamingCatalogue = () => {
         break;
     }
 
+    console.log(`📊 Produits filtrés: ${result.length} sur ${allProducts.length}`);
+    if (selectedSousCategories.size > 0) {
+      console.log(`🔍 Sous-catégories sélectionnées:`, Array.from(selectedSousCategories));
+      console.log(`📝 Produits correspondants:`, result.map(p => ({nom: p.nom, sous_categorie: p.id_sous_categorie})));
+    }
+
     return result;
-  }, [allProducts, activeGroups, search, priceMin, priceMax, inStockOnly, sortOption]);
+  }, [allProducts, activeGroups, selectedSousCategories, search, priceMin, priceMax, inStockOnly, sortOption]);
 
   const groupCounts = useMemo(() => {
     const counts: Record<ProductGroup, number> = {
@@ -341,8 +449,29 @@ export const GamingCatalogue = () => {
     return counts;
   }, [allProducts]);
 
+  const sousCategorieFilters = useMemo(() => {
+    const counts = new Map<number, number>();
+    allProducts.forEach((p) => {
+      if (p.id_sous_categorie) {
+        const current = counts.get(p.id_sous_categorie) || 0;
+        counts.set(p.id_sous_categorie, current + 1);
+      }
+    });
+
+    const result = sousCategories
+      .map((sc) => ({
+        ...sc,
+        count: counts.get(sc.id) || 0,
+        checked: selectedSousCategories.has(sc.id),
+      }))
+      .sort((a, b) => a.nom.localeCompare(b.nom));
+
+    return result;
+  }, [allProducts, sousCategories, selectedSousCategories]);
+
   const activeFilterCount =
-    (activeGroups.size < 3 ? 1 : 0) +
+    (selectedSousCategories.size > 0 ? 1 : 0) +
+    (activeGroups.size < 3 && selectedSousCategories.size === 0 ? 1 : 0) +
     (search ? 1 : 0) +
     (priceMin || priceMax ? 1 : 0) +
     (inStockOnly ? 1 : 0);
@@ -387,7 +516,7 @@ export const GamingCatalogue = () => {
           <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 text-center">
             <p className="text-red-500 text-sm mb-3">{error}</p>
             <button
-              onClick={fetchAllProducts}
+              onClick={fetchAllData}
               className="px-4 py-1.5 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition"
             >
               Réessayer
@@ -440,6 +569,9 @@ export const GamingCatalogue = () => {
                   activeGroups={activeGroups}
                   toggleGroup={toggleGroup}
                   groupCounts={groupCounts}
+                  sousCategories={sousCategorieFilters}
+                  toggleSousCategorie={toggleSousCategorie}
+                  selectedSousCategories={selectedSousCategories}
                   search={search}
                   setSearch={setSearch}
                   priceMin={priceMin}
@@ -462,6 +594,20 @@ export const GamingCatalogue = () => {
                 <p className="text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">{filteredProducts.length}</span>{" "}
                   produit{filteredProducts.length !== 1 ? "s" : ""}
+                  {selectedSousCategories.size > 0 && (
+                    <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/10 text-purple-600 rounded-full text-[10px] font-medium">
+                      <CheckCircle2 className="h-3 w-3" />
+                      {sousCategories
+                        .filter(sc => selectedSousCategories.has(sc.id))
+                        .map(sc => sc.nom)
+                        .join(", ")}
+                    </span>
+                  )}
+                  {selectedSousCategories.size === 0 && activeGroups.size < 3 && (
+                    <span className="ml-2 text-[10px] text-muted-foreground">
+                      • Filtre de type actif
+                    </span>
+                  )}
                 </p>
                 <div className="relative">
                   <select
@@ -483,7 +629,9 @@ export const GamingCatalogue = () => {
                 <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-8 text-center flex flex-col items-center gap-3">
                   <PackageX className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
                   <p className="text-yellow-700 dark:text-yellow-400 text-sm font-medium">
-                    Aucun produit ne correspond à ces filtres.
+                    {selectedSousCategories.size > 0 
+                      ? `Aucun produit dans ${sousCategories.filter(sc => selectedSousCategories.has(sc.id)).map(sc => sc.nom).join(", ")}.` 
+                      : "Aucun produit ne correspond à ces filtres."}
                   </p>
                   <button
                     onClick={resetFilters}
@@ -546,6 +694,9 @@ export const GamingCatalogue = () => {
                   activeGroups={activeGroups}
                   toggleGroup={toggleGroup}
                   groupCounts={groupCounts}
+                  sousCategories={sousCategorieFilters}
+                  toggleSousCategorie={toggleSousCategorie}
+                  selectedSousCategories={selectedSousCategories}
                   search={search}
                   setSearch={setSearch}
                   priceMin={priceMin}
@@ -595,6 +746,9 @@ interface FilterPanelProps {
   activeGroups: Set<ProductGroup>;
   toggleGroup: (group: ProductGroup) => void;
   groupCounts: Record<ProductGroup, number>;
+  sousCategories: (SousCategorie & { count: number; checked: boolean })[];
+  toggleSousCategorie: (id: number) => void;
+  selectedSousCategories: Set<number>;
   search: string;
   setSearch: (v: string) => void;
   priceMin: string;
@@ -612,6 +766,9 @@ const FilterPanel = ({
   activeGroups,
   toggleGroup,
   groupCounts,
+  sousCategories,
+  toggleSousCategorie,
+  selectedSousCategories,
   search,
   setSearch,
   priceMin,
@@ -624,6 +781,9 @@ const FilterPanel = ({
   onReset,
   activeFilterCount,
 }: FilterPanelProps) => {
+  const sousCategoriesWithProducts = sousCategories.filter(sc => sc.count > 0);
+  const sousCategoriesWithoutProducts = sousCategories.filter(sc => sc.count === 0);
+
   return (
     <div className="space-y-5">
       {activeFilterCount > 0 && (
@@ -650,35 +810,53 @@ const FilterPanel = ({
             className="w-full h-9 pl-8 pr-3 rounded-lg bg-secondary/50 border border-transparent focus:border-purple-500/50 focus:bg-background focus:outline-none text-xs transition-all"
           />
         </div>
+        {selectedSousCategories.size > 0 && (
+          <p className="text-[10px] text-purple-600">
+            ⚡ Les sous-catégories sélectionnées ignorent le filtre de type
+          </p>
+        )}
       </div>
 
-      {/* Type de produit */}
+      {/* Type de produit - Désactivé quand une sous-catégorie est sélectionnée */}
       <div className="space-y-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">
-          Type de produit
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className={`text-xs font-bold uppercase tracking-wider ${selectedSousCategories.size > 0 ? 'text-muted-foreground' : 'text-foreground/80'}`}>
+            Type de produit
+          </h4>
+          {selectedSousCategories.size > 0 && (
+            <span className="text-[9px] text-purple-600 font-medium">(ignoré)</span>
+          )}
+        </div>
         <div className="space-y-1">
           {(Object.keys(GROUP_META) as ProductGroup[]).map((group) => {
             const meta = GROUP_META[group];
             const checked = activeGroups.has(group);
+            const isDisabled = selectedSousCategories.size > 0;
             return (
               <label
                 key={group}
-                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer group"
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors ${
+                  isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-secondary/50 cursor-pointer'
+                }`}
               >
                 <button
                   type="button"
-                  onClick={() => toggleGroup(group)}
+                  onClick={() => !isDisabled && toggleGroup(group)}
+                  disabled={isDisabled}
                   className={`h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
-                    checked
+                    checked && !isDisabled
                       ? "bg-purple-600 border-purple-600"
                       : "border-border bg-background"
-                  }`}
+                  } ${isDisabled ? 'opacity-50' : ''}`}
                 >
-                  {checked && <CheckCircle2 className="h-3 w-3 text-white" />}
+                  {checked && !isDisabled && <CheckCircle2 className="h-3 w-3 text-white" />}
                 </button>
-                <span className="text-muted-foreground shrink-0">{meta.icon}</span>
-                <span className="text-xs flex-1">{meta.label}</span>
+                <span className={`text-muted-foreground shrink-0 ${isDisabled ? 'opacity-50' : ''}`}>
+                  {meta.icon}
+                </span>
+                <span className={`text-xs flex-1 ${isDisabled ? 'text-muted-foreground' : ''}`}>
+                  {meta.label}
+                </span>
                 <span className="text-[10px] text-muted-foreground">
                   {groupCounts[group]}
                 </span>
@@ -686,6 +864,72 @@ const FilterPanel = ({
             );
           })}
         </div>
+      </div>
+
+      {/* Sous-catégories */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">
+            Sous-catégories
+          </h4>
+          <span className="text-[10px] text-muted-foreground">
+            {sousCategoriesWithProducts.length} avec produits
+          </span>
+        </div>
+        
+        {sousCategories.length === 0 ? (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 text-center">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+              ⚠️ Aucune sous-catégorie trouvée
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1 max-h-[200px] overflow-y-auto pr-1">
+            {sousCategoriesWithProducts.map((sc) => (
+              <label
+                key={sc.id}
+                className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg transition-colors cursor-pointer hover:bg-secondary/30 ${
+                  sc.checked ? 'bg-purple-500/10' : ''
+                }`}
+                title={`${sc.count} produit(s)`}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleSousCategorie(sc.id)}
+                  className={`h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+                    sc.checked
+                      ? "bg-purple-600 border-purple-600"
+                      : "border-border bg-background hover:border-purple-400"
+                  }`}
+                >
+                  {sc.checked && <CheckCircle2 className="h-3 w-3 text-white" />}
+                </button>
+                <span className={`text-xs flex-1 font-medium ${sc.checked ? 'text-purple-600' : ''}`}>
+                  {sc.nom}
+                </span>
+                <span className={`text-[10px] font-medium ${sc.checked ? 'text-purple-600' : 'text-muted-foreground'}`}>
+                  {sc.count}
+                </span>
+              </label>
+            ))}
+
+            {sousCategoriesWithoutProducts.length > 0 && sousCategoriesWithProducts.length > 0 && (
+              <div className="border-t border-border/50 my-1.5" />
+            )}
+
+            {sousCategoriesWithoutProducts.map((sc) => (
+              <div
+                key={sc.id}
+                className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg opacity-50 cursor-not-allowed"
+                title="Aucun produit dans cette sous-catégorie"
+              >
+                <div className="h-4 w-4 rounded border border-border bg-background shrink-0" />
+                <span className="text-xs flex-1 text-muted-foreground">{sc.nom}</span>
+                <span className="text-[10px] text-muted-foreground">0</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Prix */}
@@ -754,7 +998,6 @@ const ProductCard = ({ product, index, addingToCart, onOpenModal, onAddToCart }:
       className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-fade-up"
       style={{ animationDelay: `${Math.min(index, 12) * 40}ms`, animationFillMode: "forwards" }}
     >
-      {/* Image */}
       <div
         className={`relative aspect-square overflow-hidden bg-gradient-to-br from-${meta.color}-500/5 to-secondary/30`}
       >
@@ -793,7 +1036,6 @@ const ProductCard = ({ product, index, addingToCart, onOpenModal, onAddToCart }:
         </button>
       </div>
 
-      {/* Contenu */}
       <div className="p-2.5 space-y-1.5">
         <h3 className="font-semibold text-xs leading-tight line-clamp-1 group-hover:text-purple-600 transition-colors">
           {product.nom}
@@ -881,7 +1123,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
           className="bg-background rounded-xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-2xl animate-scale-up"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
           <div className="sticky top-0 bg-background border-b border-border/50 p-3 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${meta.gradient} flex items-center justify-center`}>
@@ -897,7 +1138,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-4 overflow-y-auto max-h-[calc(85vh-120px)]">
             <div className="space-y-3">
               <div className="aspect-video bg-secondary/30 rounded-lg overflow-hidden">
@@ -910,7 +1150,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
                 )}
               </div>
 
-              {/* Specs unité centrale */}
               {product.group === "unites-centrales" && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-secondary/30 rounded-lg p-2">
@@ -954,7 +1193,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
                 </div>
               )}
 
-              {/* Specs laptop */}
               {laptopSpecs && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-secondary/30 rounded-lg p-2">
@@ -1014,7 +1252,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
                 </div>
               )}
 
-              {/* Specs watercooling */}
               {watercoolingSpecs && (
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-secondary/30 rounded-lg p-2">
@@ -1066,7 +1303,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
                 </div>
               )}
 
-              {/* Configurations (unités centrales + laptops) */}
               {product.group !== "watercooling" &&
                 (isLoadingConfigs ? (
                   <div className="bg-secondary/30 rounded-lg p-3 flex justify-center">
@@ -1098,7 +1334,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
                   )
                 ))}
 
-              {/* Description */}
               <div className="bg-purple-500/5 rounded-lg p-3 border border-purple-500/10">
                 <h4 className="font-semibold text-[10px] text-purple-600 mb-1.5 uppercase tracking-wider">
                   Description
@@ -1110,7 +1345,6 @@ const ProductModal = ({ product, configurations, isLoadingConfigs, onClose, onAd
             </div>
           </div>
 
-          {/* Footer */}
           <div className="sticky bottom-0 bg-background border-t border-border/50 p-3 flex gap-2">
             <div className="flex-1">
               <div className="text-[9px] text-muted-foreground">Prix total</div>

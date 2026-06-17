@@ -706,17 +706,7 @@ const Profreelance = () => {
                           <span className="text-[9px] text-muted-foreground">à partir de</span>
                           <div className="font-bold text-xs">{formatAr(p.prix || 0)}</div>
                         </div>
-                        <Button
-                          variant="hero"
-                          size="sm"
-                          className="h-6 px-2 text-[10px]"
-                          onClick={async () => { 
-                            await addToCart(p.id, 1, p.prix || 0, p.nom || 'Produit'); 
-                            toast({ title: "Ajouté", description: p.nom || 'Produit' }); 
-                          }}
-                        >
-                          <ShoppingBag className="h-3 w-3 mr-1" /> Ajouter
-                        </Button>
+                    
                       </div>
 
                       {/* Boutons WhatsApp et Super Configurateur */}
