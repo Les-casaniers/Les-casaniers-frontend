@@ -75,7 +75,7 @@ const DashboardLivreur: React.FC = () => {
       setIsLoading(true);
       
       // Récupérer les commandes du livreur
-      const response = await api.get('/livreur-test/commandes', {
+      const response = await api.get('/livreur/commandes', {
         params: { per_page: 100 }
       });
 
@@ -193,7 +193,7 @@ const DashboardLivreur: React.FC = () => {
       setActionInProgress(commande_uuid as any);
 
       const response = await api.patch(
-        `/livreur-test/commandes/${commande_uuid}/statut`,
+        `/livreur/commandes/${commande_uuid}/statut`,
         {
           statut: 'terminee',
         }
