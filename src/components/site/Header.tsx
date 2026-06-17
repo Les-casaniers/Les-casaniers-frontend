@@ -116,7 +116,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 const quickNavLinks = [
   {
     label: "Pro & Freelance",
-    href: "/Catalogue",
+    href: "/pro",
     icon: <Briefcase className="h-3.5 w-3.5" />,
   },
   {
