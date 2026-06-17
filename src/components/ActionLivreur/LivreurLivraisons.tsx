@@ -92,27 +92,20 @@ const LivreurLivraisons: React.FC = () => {
   
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Gérer l'ouverture du modal
   useEffect(() => {
     if (showDetailsModal) {
-      // Bloquer le scroll de la page
       document.body.style.overflow = 'hidden';
-      
-      // Scroller en haut du modal
       setTimeout(() => {
         if (modalRef.current) {
           modalRef.current.scrollTop = 0;
         }
-        // Scroller la page en haut
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     } else {
-      // Réactiver le scroll
-      document.body.style.overflow = '';
+      document.body.style.overflow = 'unset';
     }
-    
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = 'unset';
     };
   }, [showDetailsModal]);
 
@@ -125,9 +118,14 @@ const LivreurLivraisons: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const response = await api.get("/livreur-test/commandes", {
+      // Utiliser la route sécurisée /livreur/commandes
+      const response = await api.get("/livreur/commandes", {
         params: { per_page: 100 },
       });
+
+      //Vérifier que le token est présent
+      const token = localStorage.getItem('token');
+      console.log('Token envoyé:', token ? 'Oui' : 'Non');
 
       console.log("Commandes récupérées:", response.data);
 
@@ -284,8 +282,9 @@ const LivreurLivraisons: React.FC = () => {
     try {
       setActionInProgress(commande_uuid as any);
 
+      // ✅ Utiliser la route sécurisée /livreur/commandes
       const response = await api.patch(
-        `/livreur-test/commandes/${commande_uuid}/statut`,
+        `/livreur/commandes/${commande_uuid}/statut`,
         {
           statut: "terminee",
         }
@@ -318,6 +317,17 @@ const LivreurLivraisons: React.FC = () => {
       setActionInProgress(null);
     }
   };
+
+  useEffect(() => {
+    if (showDetailsModal || showFullPhoto) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showDetailsModal, showFullPhoto]);
 
   const getStatusConfig = (status: string) => {
     const config: Record<
@@ -619,7 +629,7 @@ const LivreurLivraisons: React.FC = () => {
                             ) : (
                               <Gift className="h-4 w-4" />
                             )}
-                            Marquer Livrée
+                            Livrée
                           </button>
                         )}
                       </div>

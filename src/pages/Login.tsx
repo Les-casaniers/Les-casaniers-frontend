@@ -6,7 +6,7 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  const { login, isAdmin } = useAuth();
+  const { login, isAdmin, isLivreur } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -56,8 +56,14 @@ const Login = () => {
       setIsLoading(false);
 
       if (result.success) {
-        // Redirection vers le bon dashboard
-        navigate(result.isAdmin ? "/DashboardAdmin" : "/DashboardClient");
+        // ✅ Redirection selon le rôle
+        if (result.isAdmin) {
+          navigate("/DashboardAdmin");
+        } else if (result.isLivreur) {
+          navigate("/DashboardLivreur");
+        } else {
+          navigate("/DashboardClient");
+        }
       } else {
         if (result.errors) {
           const emailError = result.errors.email
@@ -177,8 +183,8 @@ const Login = () => {
                   )}
                 </div>
 
-                {/* Mot de passe oublié */}
-                {!isAdmin && (
+                {/* Mot de passe oublié - Caché pour admin et livreur */}
+                {!isAdmin && !isLivreur && (
                   <div className="flex justify-end">
                     <Link to="/mot-de-passe-oublie" className="text-xs text-muted-foreground hover:text-foreground transition">
                       Mot de passe oublié ?
@@ -206,15 +212,17 @@ const Login = () => {
                 </button>
               </form>
 
-              {/* Lien inscription */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Pas encore de compte ?{" "}
-                  <Link to="/inscription" className="text-foreground font-medium hover:underline">
-                    Créer un compte
-                  </Link>
-                </p>
-              </div>
+              {/* Lien inscription - Caché pour admin et livreur */}
+              {!isAdmin && !isLivreur && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Pas encore de compte ?{" "}
+                    <Link to="/inscription" className="text-foreground font-medium hover:underline">
+                      Créer un compte
+                    </Link>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
