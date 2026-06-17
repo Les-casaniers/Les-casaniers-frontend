@@ -201,57 +201,65 @@ export const useProductsBySubcategory = (limit: number = 3) => {
     queryFn: async () => {
       console.log("🔍 Chargement des données du menu...");
       
-      // Étape 1: Récupérer toutes les catégories et sous-catégories (2 requêtes)
-      const [categoriesResponse, sousCategoriesResponse] = await Promise.all([
-        api.get('/categories'),
-        api.get('/sous-categories')
-      ]);
-      
-      const categories = categoriesResponse.data.data as Category[];
-      const sousCategories = sousCategoriesResponse.data.data as SousCategory[];
-      
-      console.log(`📁 ${categories.length} catégories, 📂 ${sousCategories.length} sous-catégories`);
-      
-      // Étape 2: Récupérer TOUS les produits en UNE SEULE requête
-      const productsResponse = await api.get('/produits', {
-        params: {
-          limit: 500
-        }
-      });
-      
-      const allProducts = (productsResponse.data.data ?? []) as Product[];
-      console.log(`📦 ${allProducts.length} produits récupérés en une seule requête`);
-      
-      // Étape 3: Grouper les produits par sous-catégorie avec limite
-      const productsBySousCat = allProducts.reduce<Record<number, Product[]>>(
-        (acc, product) => {
-          const scId = product.id_sous_categorie;
-          if (!scId) return acc;
-          if (!acc[scId]) acc[scId] = [];
-          if (acc[scId].length < limit) acc[scId].push(product);
-          return acc;
-        },
-        {}
-      );
-      
-      console.log(`📊 ${Object.keys(productsBySousCat).length} sous-catégories ont des produits`);
-      
-      // Étape 4: Construire l'arborescence
-      return categories.map((cat) => ({
-        ...cat,
-        sous_categories: sousCategories
-          .filter((sc) => sc.id_categorie === cat.id)
-          .map((sc) => ({
-            ...sc,
-            produits: productsBySousCat[sc.id] ?? [],
-          })),
-      })) as CategoryWithSubcategoriesAndProducts[];
+      try {
+        // Étape 1: Récupérer toutes les catégories et sous-catégories (2 requêtes)
+        const [categoriesResponse, sousCategoriesResponse] = await Promise.all([
+          api.get('/categories'),
+          api.get('/sous-categories')
+        ]);
+        
+        const categories = categoriesResponse.data.data as Category[];
+        const sousCategories = sousCategoriesResponse.data.data as SousCategory[];
+        
+        console.log(`📁 ${categories.length} catégories, 📂 ${sousCategories.length} sous-catégories`);
+        
+        // Étape 2: Récupérer TOUS les produits en UNE SEULE requête
+        const productsResponse = await api.get('/produits', {
+          params: {
+            limit: 500
+          }
+        });
+        
+        const allProducts = (productsResponse.data.data ?? []) as Product[];
+        console.log(`📦 ${allProducts.length} produits récupérés en une seule requête`);
+        
+        // Étape 3: Grouper les produits par sous-catégorie avec limite
+        const productsBySousCat = allProducts.reduce<Record<number, Product[]>>(
+          (acc, product) => {
+            const scId = product.id_sous_categorie;
+            if (!scId) return acc;
+            if (!acc[scId]) acc[scId] = [];
+            if (acc[scId].length < limit) acc[scId].push(product);
+            return acc;
+          },
+          {}
+        );
+        
+        console.log(`📊 ${Object.keys(productsBySousCat).length} sous-catégories ont des produits`);
+        
+        // Étape 4: Construire l'arborescence
+        return categories.map((cat) => ({
+          ...cat,
+          sous_categories: sousCategories
+            .filter((sc) => sc.id_categorie === cat.id)
+            .map((sc) => ({
+              ...sc,
+              produits: productsBySousCat[sc.id] ?? [],
+            })),
+        })) as CategoryWithSubcategoriesAndProducts[];
+        
+      } catch (error) {
+        console.error("❌ Erreur lors du chargement du menu:", error);
+        // Retourner un tableau vide en cas d'erreur
+        return [];
+      }
     },
     staleTime: 30 * 60 * 1000,
     gcTime: 2 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    retry: 1,
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 

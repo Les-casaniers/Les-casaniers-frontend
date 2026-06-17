@@ -31,7 +31,6 @@ export const ProductMiniCard = ({ product, onClose }: ProductMiniCardProps) => {
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              // Si l'image ne charge pas, afficher l'icône par défaut
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
               const parent = target.parentElement;
@@ -44,7 +43,6 @@ export const ProductMiniCard = ({ product, onClose }: ProductMiniCardProps) => {
             }}
           />
         ) : null}
-        {/* Fallback si pas d'image */}
         <div 
           className="fallback-icon w-full h-full flex items-center justify-center text-muted-foreground"
           style={{ display: imageUrl ? 'none' : 'flex' }}
