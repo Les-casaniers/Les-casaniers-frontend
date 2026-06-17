@@ -85,20 +85,38 @@ const Cart = () => {
 
   // Fonction pour obtenir l'URL de l'image principale d'un produit
   const getProductImageUrl = (product: any) => {
-    if (!product) return "/placeholder-pc.jpg";
+    console.log("🔍 [getProductImageUrl] Produit reçu:", product);
 
-    const images = product.images || [];
-    if (images.length === 0) return "/placeholder-pc.jpg";
-
-    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
-    if (!mainImage?.url) return "/placeholder-pc.jpg";
-
-    // Si l'URL commence par /storage, ajouter le domaine
-    if (mainImage.url.startsWith('/storage')) {
-      return `http://127.0.0.1:8000${mainImage.url}`;
+    if (!product) {
+      console.log("❌ [getProductImageUrl] Produit est null/undefined");
+      return fosa; // Utilise fosa au lieu de /placeholder-pc.jpg
     }
 
-    return mainImage.url;
+    const images = product.images || [];
+    console.log("🔍 [getProductImageUrl] Nombre d'images:", images.length);
+
+    if (images.length === 0) {
+      console.log("❌ [getProductImageUrl] Aucune image trouvée");
+      return fosa; // Utilise fosa au lieu de /placeholder-pc.jpg
+    }
+
+    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
+    console.log("🔍 [getProductImageUrl] mainImage sélectionnée:", mainImage);
+
+    if (!mainImage?.url) {
+      console.log("❌ [getProductImageUrl] mainImage n'a pas d'URL");
+      return fosa; // Utilise fosa au lieu de /placeholder-pc.jpg
+    }
+
+    let finalUrl = mainImage.url;
+    // Si l'URL commence par /storage, ajouter le domaine
+    if (mainImage.url.startsWith('/storage')) {
+      finalUrl = `http://127.0.0.1:8000${mainImage.url}`;
+      console.log("🔍 [getProductImageUrl] URL modifiée (storage):", finalUrl);
+    }
+
+    console.log("✅ [getProductImageUrl] URL finale:", finalUrl);
+    return finalUrl;
   };
 
   useEffect(() => {
@@ -546,7 +564,7 @@ const Cart = () => {
       <SiteLayout>
         <section className="container-x py-12">
           <div className="relative card-soft p-12 text-center max-w-xl mx-auto overflow-hidden">
-            
+
             <div className="relative">
               <div className="relative inline-block mb-4">
                 <img src={fosa} alt="Le Fosa" className="h-40 w-40 mx-auto animate-float rounded-full" />
@@ -601,7 +619,8 @@ const Cart = () => {
                       alt={item.product.name}
                       className="h-28 w-28 rounded-xl object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                        console.error("❌ [Image Error] Échec du chargement de l'image:", imageUrl);
+                        (e.target as HTMLImageElement).src = fosa; // Utilise fosa importé
                       }}
                     />
                   </Link>
@@ -710,7 +729,8 @@ const Cart = () => {
                           alt={item.product.name}
                           className="h-12 w-12 rounded-lg object-cover"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
+                            console.error("❌ [Image Error] Échec du chargement de l'image:", imageUrl);
+                            (e.target as HTMLImageElement).src = fosa; // Utilise fosa importé
                           }}
                         />
                         <div className="flex-1">
