@@ -1,92 +1,113 @@
-// src/components/mega-menu/MenuProductComponents.tsx
 import { Link } from "react-router-dom";
-import { ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
-import { productImage } from "@/hooks/useProducts";
-import type { Product, SousCategoryWithProducts } from "@/hooks/useProducts";
+import { Package, ChevronRight } from "lucide-react";
+import type { SousCategoryWithProducts } from "@/hooks/useProducts";
 
-// Composant pour afficher les miniatures des produits
-export const ProductMiniCard = ({ product }: { product: Product }) => (
-  <Link
-    to={`/produit/${product.id}`}
-    className="group flex items-center gap-2 p-1.5 rounded-lg hover:bg-secondary/50 transition-all duration-200"
-  >
-    <div className="w-10 h-10 rounded-md bg-secondary overflow-hidden flex-shrink-0">
-      <img
-        src={productImage(product)}
-        alt={product.nom}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-      />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-xs font-medium truncate group-hover:text-primary transition-colors">
-        {product.nom}
-      </p>
-      <p className="text-xs font-bold text-primary">
-        {product.prix.toLocaleString('fr-MG')} {product.devise || 'Ar'}
-      </p>
-    </div>
-  </Link>
-);
+interface ProductMiniCardProps {
+  product: {
+    id: number;
+    nom: string;
+    prix: number;
+    image_principale?: string | null;
+    images?: { url: string }[];
+  };
+  onClose: () => void;
+}
 
-// Composant pour afficher une sous-catégorie avec ses produits
-// RENOMMÉ de SousCategoryWithProducts à SousCategoryMenuSection
+export const ProductMiniCard = ({ product, onClose }: ProductMiniCardProps) => {
+  // Récupérer l'image (principale ou première du tableau)
+  const imageUrl = product.image_principale || product.images?.[0]?.url || null;
+
+  return (
+    <Link
+      to={`/produit/${product.id}`}
+      onClick={onClose}
+      className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary transition-all group/product"
+    >
+      <div className="w-12 h-12 rounded-md overflow-hidden bg-secondary flex-shrink-0 relative">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={product.nom}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            onError={(e) => {
+              // Si l'image ne charge pas, afficher l'icône par défaut
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                const fallback = parent.querySelector('.fallback-icon');
+                if (fallback) {
+                  (fallback as HTMLElement).style.display = 'flex';
+                }
+              }
+            }}
+          />
+        ) : null}
+        {/* Fallback si pas d'image */}
+        <div 
+          className="fallback-icon w-full h-full flex items-center justify-center text-muted-foreground"
+          style={{ display: imageUrl ? 'none' : 'flex' }}
+        >
+          <Package className="h-5 w-5" />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate group-hover/product:text-primary transition-colors">
+          {product.nom}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {product.prix} €
+        </p>
+      </div>
+    </Link>
+  );
+};
+
+interface SousCategoryMenuSectionProps {
+  sousCategory: SousCategoryWithProducts;
+  categoryId: number;
+  onClose?: () => void;
+}
+
 export const SousCategoryMenuSection = ({ 
   sousCategory, 
-  categoryId 
-}: { 
-  sousCategory: SousCategoryWithProducts; 
-  categoryId: number;
-}) => {
-  const [showAll, setShowAll] = useState(false);
-  const displayedProducts = showAll ? sousCategory.produits : sousCategory.produits.slice(0, 3);
-  
-  if (sousCategory.produits.length === 0) {
-    return (
-      <div className="py-2">
-        <Link
-          to={`/catalogue?categorie=${categoryId}&sous_categorie=${sousCategory.id}`}
-          className="flex items-center gap-2 py-2 text-sm text-foreground/75 hover:text-primary transition-all duration-200"
-        >
-          <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover/link:text-primary group-hover/link:translate-x-0.5 transition-all duration-200 shrink-0" />
-          <span>{sousCategory.nom}</span>
-        </Link>
-        <p className="text-xs text-muted-foreground pl-5 mt-1">Aucun produit</p>
-      </div>
-    );
-  }
-  
+  categoryId,
+  onClose = () => {}
+}: SousCategoryMenuSectionProps) => {
+  const hasProducts = sousCategory.produits?.length > 0;
+
   return (
-    <div className="mb-4">
+    <div className="space-y-2">
       <Link
         to={`/catalogue?categorie=${categoryId}&sous_categorie=${sousCategory.id}`}
-        className="flex items-center gap-2 py-2 text-sm font-semibold text-foreground hover:text-primary transition-all duration-200 border-b border-border/50 mb-2"
+        onClick={onClose}
+        className="text-sm font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-1 group"
       >
-        <ChevronRight className="h-3 w-3 text-primary" />
-        <span>{sousCategory.nom}</span>
-        <span className="text-xs text-muted-foreground ml-auto">
-          ({sousCategory.produits.length})
-        </span>
-      </Link>
-      
-      <div className="space-y-1 pl-4">
-        {displayedProducts.map((product) => (
-          <ProductMiniCard key={product.id} product={product} />
-        ))}
-        
-        {sousCategory.produits.length > 3 && (
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 mt-2 ml-1"
-          >
-            {showAll ? (
-              <>Voir moins <ChevronUp className="h-3 w-3" /></>
-            ) : (
-              <>Voir les {sousCategory.produits.length - 3} autres produits <ChevronDown className="h-3 w-3" /></>
-            )}
-          </button>
+        {sousCategory.nom}
+        {hasProducts && (
+          <span className="text-xs text-muted-foreground">
+            ({sousCategory.produits.length})
+          </span>
         )}
-      </div>
+        <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+      </Link>
+
+      {hasProducts ? (
+        <div className="space-y-2">
+          {sousCategory.produits.slice(0, 3).map((product) => (
+            <ProductMiniCard 
+              key={product.id} 
+              product={product} 
+              onClose={onClose}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">
+          Aucun produit disponible
+        </p>
+      )}
     </div>
   );
 };

@@ -8,7 +8,6 @@ export interface Category {
   image?: string;
 }
 
-// Ajoutez ces types vers le haut du fichier, après les autres interfaces
 export type SousCategoryWithProducts = SousCategory & {
   produits: Product[];
 };
@@ -86,7 +85,6 @@ export const useProducts = (filters: ProductFilters = {}) => {
     queryFn: async () => {
       const normalizedParams = {
         ...filters,
-        // Force a stable API payload to avoid boolean/string mismatches in query params.
         est_dispo:
           filters.est_dispo === undefined
             ? undefined
@@ -108,6 +106,11 @@ export const useCategories = () => {
       const response = await api.get('/categories');
       return response.data.data as Category[];
     },
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   });
 };
 
@@ -118,6 +121,11 @@ export const useSousCategories = () => {
       const response = await api.get('/sous-categories');
       return response.data.data as SousCategory[];
     },
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   });
 };
 
@@ -184,79 +192,66 @@ export const useDeleteProduct = () => {
   });
 };
 
-// Hook pour récupérer les produits groupés par sous-catégorie (limité à 3 par sous-catégorie)
+// ============================================================
+// ⭐ HOOK OPTIMISÉ - SANS "TOO MANY REQUESTS" ⭐
+// ============================================================
 export const useProductsBySubcategory = (limit: number = 3) => {
   return useQuery({
     queryKey: ["products-by-subcategory", limit],
     queryFn: async () => {
-      try {
-        console.log("🔍 Chargement des données du menu...");
-        
-        // Récupérer toutes les catégories
-        const categoriesResponse = await api.get('/categories');
-        const categories = categoriesResponse.data.data as Category[];
-        
-        // Récupérer toutes les sous-catégories
-        const sousCategoriesResponse = await api.get('/sous-categories');
-        const sousCategories = sousCategoriesResponse.data.data as SousCategory[];
-        
-        // Pour chaque catégorie, récupérer ses sous-catégories et produits
-        const categoriesWithProducts = await Promise.all(
-          categories.map(async (category) => {
-            const categorySousCategories = sousCategories.filter(
-              sc => sc.id_categorie === category.id
-            );
-            
-            // Pour chaque sous-catégorie, récupérer les produits
-            const sousCategoriesWithProducts = await Promise.all(
-              categorySousCategories.map(async (sousCat) => {
-                try {
-                  // Récupérer les produits de cette sous-catégorie
-                  // SANS les filtres actif/est_dispo pour tester
-                  const productsResponse = await api.get('/produits', {
-                    params: {
-                      id_sous_categorie: sousCat.id,
-                      // actif: true,  // Commentez temporairement pour tester
-                      // est_dispo: 1, // Commentez temporairement pour tester
-                      limit: limit
-                    }
-                  });
-                  
-                  console.log(`Produits trouvés pour sous-catégorie ${sousCat.id} (${sousCat.nom}):`, 
-                    productsResponse.data.data?.length || 0);
-                  
-                  // Afficher le premier produit pour vérifier
-                  if (productsResponse.data.data?.length > 0) {
-                    console.log(`  Exemple produit:`, productsResponse.data.data[0].nom);
-                  }
-                  
-                  return {
-                    ...sousCat,
-                    produits: productsResponse.data.data as Product[] || []
-                  };
-                } catch (error) {
-                  console.error(`Erreur pour sous-catégorie ${sousCat.id}:`, error);
-                  return {
-                    ...sousCat,
-                    produits: []
-                  };
-                }
-              })
-            );
-            
-            return {
-              ...category,
-              sous_categories: sousCategoriesWithProducts
-            };
-          })
-        );
-        
-        return categoriesWithProducts;
-      } catch (error) {
-        console.error("Erreur globale:", error);
-        throw error;
-      }
+      console.log("🔍 Chargement des données du menu...");
+      
+      // Étape 1: Récupérer toutes les catégories et sous-catégories (2 requêtes)
+      const [categoriesResponse, sousCategoriesResponse] = await Promise.all([
+        api.get('/categories'),
+        api.get('/sous-categories')
+      ]);
+      
+      const categories = categoriesResponse.data.data as Category[];
+      const sousCategories = sousCategoriesResponse.data.data as SousCategory[];
+      
+      console.log(`📁 ${categories.length} catégories, 📂 ${sousCategories.length} sous-catégories`);
+      
+      // Étape 2: Récupérer TOUS les produits en UNE SEULE requête
+      const productsResponse = await api.get('/produits', {
+        params: {
+          limit: 500
+        }
+      });
+      
+      const allProducts = (productsResponse.data.data ?? []) as Product[];
+      console.log(`📦 ${allProducts.length} produits récupérés en une seule requête`);
+      
+      // Étape 3: Grouper les produits par sous-catégorie avec limite
+      const productsBySousCat = allProducts.reduce<Record<number, Product[]>>(
+        (acc, product) => {
+          const scId = product.id_sous_categorie;
+          if (!scId) return acc;
+          if (!acc[scId]) acc[scId] = [];
+          if (acc[scId].length < limit) acc[scId].push(product);
+          return acc;
+        },
+        {}
+      );
+      
+      console.log(`📊 ${Object.keys(productsBySousCat).length} sous-catégories ont des produits`);
+      
+      // Étape 4: Construire l'arborescence
+      return categories.map((cat) => ({
+        ...cat,
+        sous_categories: sousCategories
+          .filter((sc) => sc.id_categorie === cat.id)
+          .map((sc) => ({
+            ...sc,
+            produits: productsBySousCat[sc.id] ?? [],
+          })),
+      })) as CategoryWithSubcategoriesAndProducts[];
     },
+    staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   });
 };
 
