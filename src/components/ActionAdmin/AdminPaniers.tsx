@@ -21,6 +21,8 @@ type Produit = {
   prix: number;
   image_url?: string;
   slug?: string;
+  images?: any[];
+  image?: string | null;
 };
 
 type PanierItem = {
@@ -45,6 +47,119 @@ type UtilisateurAvecPanier = {
   paniers: PanierItem[];
   total_paniers: number;
   montant_total: number;
+};
+
+// Composant ImageProduit réutilisable
+const ProductImageItem = ({ 
+  produit, 
+  className = "w-12 h-12 rounded-lg object-cover border border-border",
+  fallbackClassName = "w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
+}: { 
+  produit?: Produit | null;
+  className?: string;
+  fallbackClassName?: string;
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setImageError(false);
+    setIsLoading(true);
+
+    const extractImage = (obj: any): string | null => {
+      if (!obj) return null;
+
+      if (obj.images && Array.isArray(obj.images) && obj.images.length > 0) {
+        const firstImage = obj.images[0];
+        if (firstImage && typeof firstImage === 'object') {
+          if (firstImage.url) return firstImage.url;
+          if (firstImage.path) return firstImage.path;
+          if (firstImage.filename) return firstImage.filename;
+        }
+        if (typeof firstImage === 'string') return firstImage;
+      }
+
+      const imageFields = ['image', 'image_url', 'photo', 'url_image'];
+      for (const field of imageFields) {
+        const value = obj[field];
+        if (value && typeof value === 'string' && value.trim() !== '') {
+          return value;
+        }
+      }
+
+      return null;
+    };
+
+    const imageSource = extractImage(produit);
+    console.log(`🎯 Source d'image pour produit ${produit?.id}:`, imageSource);
+
+    if (!imageSource) {
+      setImageUrl(null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (imageSource.startsWith('data:image')) {
+      setImageUrl(imageSource);
+      setIsLoading(false);
+      return;
+    }
+
+    if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+      setImageUrl(imageSource);
+      setIsLoading(false);
+      return;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    let fileName = imageSource;
+    if (fileName.includes('/')) {
+      fileName = fileName.split('/').pop() || fileName;
+    }
+
+    const finalUrl = `${baseUrl}/image/${fileName}`;
+    console.log(`🔗 URL finale:`, finalUrl);
+    setImageUrl(finalUrl);
+    setIsLoading(false);
+  }, [produit]);
+
+  // Si pas de produit ou pas d'image
+  if (!produit) {
+    return (
+      <div className={fallbackClassName}>
+        <Package className="h-6 w-6 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {isLoading ? (
+        <div className={`${className} flex items-center justify-center bg-gray-100`}>
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        </div>
+      ) : imageUrl && !imageError ? (
+        <img
+          src={imageUrl}
+          alt={produit.nom || 'Produit'}
+          className={className}
+          onError={() => {
+            console.error(`❌ Erreur chargement image:`, imageUrl);
+            setImageError(true);
+          }}
+          onLoad={() => {
+            console.log(`✅ Image chargée avec succès: ${produit.nom}`);
+          }}
+          loading="lazy"
+        />
+      ) : (
+        <div className={fallbackClassName}>
+          <Package className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Composant principal
@@ -125,9 +240,31 @@ const AdminPaniers = () => {
         .map((item) => {
           const produit = item.produit;
           const sousTotal = item.prix_unitaire * item.quantite;
+          
+          // Récupérer l'URL de l'image pour l'email
+          let imageUrl = "/image/placeholder.jpg";
+          if (produit) {
+            const imageSource = produit.image_url || 
+                              (produit.images && produit.images.length > 0 ? produit.images[0]?.url : null) ||
+                              produit.image ||
+                              null;
+            if (imageSource) {
+              if (imageSource.startsWith('http')) {
+                imageUrl = imageSource;
+              } else {
+                const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                let fileName = imageSource;
+                if (fileName.includes('/')) {
+                  fileName = fileName.split('/').pop() || fileName;
+                }
+                imageUrl = `${baseUrl}/image/${fileName}`;
+              }
+            }
+          }
+          
           return `
           <div style="display: flex; align-items: center; gap: 15px; margin: 10px 0; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <img src="${produit?.image_url || "/image/placeholder.jpg"}" alt="${item.titre}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" />
+            <img src="${imageUrl}" alt="${item.titre}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;" onerror="this.src='/image/placeholder.jpg'" />
             <div style="flex: 1;">
               <h4 style="margin: 0 0 5px; font-size: 16px; font-weight: bold;">${item.titre}</h4>
               <p style="margin: 0; color: #666;">Quantité: ${item.quantite}</p>
@@ -366,18 +503,15 @@ const AdminPaniers = () => {
                     </div>
                   </div>
 
-                  {/* Mini aperçu des produits */}
+                  {/* Mini aperçu des produits avec images */}
                   {utilisateur.paniers && utilisateur.paniers.length > 0 && (
                     <div className="mt-3 flex items-center gap-2 flex-wrap">
                       {utilisateur.paniers.slice(0, 3).map((item) => (
                         <div key={item.id} className="relative group">
-                          <img
-                            src={
-                              item.produit?.image_url ||
-                              "/image/placeholder.jpg"
-                            }
-                            alt={item.titre}
+                          <ProductImageItem 
+                            produit={item.produit}
                             className="w-12 h-12 rounded-lg object-cover border border-border"
+                            fallbackClassName="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
                           />
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
                             <span className="text-white text-[8px] text-center px-1">
@@ -477,12 +611,10 @@ const AdminPaniers = () => {
                       key={item.id}
                       className="flex gap-4 p-4 bg-card border border-border rounded-xl hover:shadow-md transition"
                     >
-                      <img
-                        src={
-                          item.produit?.image_url || "/image/placeholder.jpg"
-                        }
-                        alt={item.titre}
+                      <ProductImageItem 
+                        produit={item.produit}
                         className="w-24 h-24 rounded-lg object-cover border border-border"
+                        fallbackClassName="w-24 h-24 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-foreground">
