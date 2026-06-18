@@ -147,67 +147,6 @@ const Catalog = () => {
     return list;
   }, [allProducts, q, sort, budget, searchNom, searchRef, searchCategory, searchSousCategory]);
 
-  // Charger les voix disponibles
-  useEffect(() => {
-    speechSynthesisRef.current = window.speechSynthesis;
-    const loadVoices = () => {
-      const voices = speechSynthesisRef.current?.getVoices() || [];
-      const frenchMaleVoice = voices.find(voice =>
-        (voice.lang === 'fr-FR' || voice.lang === 'fr') &&
-        (voice.name.toLowerCase().includes('male') || voice.name.toLowerCase().includes('homme') || voice.name.toLowerCase().includes('thomas'))
-      );
-      const frenchVoice = voices.find(voice => voice.lang === 'fr-FR' || voice.lang === 'fr');
-      setSelectedVoice(frenchMaleVoice || frenchVoice || null);
-    };
-    loadVoices();
-    if (speechSynthesisRef.current) speechSynthesisRef.current.onvoiceschanged = loadVoices;
-    return () => { if (currentUtteranceRef.current) speechSynthesisRef.current?.cancel(); };
-  }, []);
-
-  const speakText = (text: string, onEnd?: () => void) => {
-    if (!speechSynthesisRef.current) return;
-    const cleanText = text.replace(/[*_~`]/g, '').replace(/[🐧👋🎯✅🚚💰🏠💪⭐]/g, '');
-    if (currentUtteranceRef.current) speechSynthesisRef.current.cancel();
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.9;
-    utterance.pitch = 0.8;
-    utterance.volume = 1;
-    if (selectedVoice) utterance.voice = selectedVoice;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => { setIsSpeaking(false); if (onEnd) onEnd(); };
-    utterance.onerror = () => setIsSpeaking(false);
-    currentUtteranceRef.current = utterance;
-    speechSynthesisRef.current.speak(utterance);
-  };
-
-  const stopSpeaking = () => { if (speechSynthesisRef.current) { speechSynthesisRef.current.cancel(); setIsSpeaking(false); } };
-
-  const handleMascotClick = () => {
-    setIsChatOpen(true);
-    setShowHelp(false);
-    const message = "🐧 *Je saute sur place* Bienvenue dans le catalogue Les Casaniers ! *montre l'écran* Ici tu peux filtrer par catégorie : Composants (CPU, GPU, RAM, carte mère), Périphériques (chaises, claviers, souris, écrans) ou Autres. *sourit* Passe ta souris sur n'importe quel produit, je te le présente. Besoin d'aide pour choisir ?";
-    setCurrentMessage(message);
-    speakText(message);
-  };
-
-  const handleHelpClick = () => {
-    setShowHelp(!showHelp);
-    if (!showHelp) {
-      const message = "🐧 *Je m'approche* Voici un petit guide ! *pointe* Les filtres en haut : choisis ta catégorie : Composants, Périphériques ou Autres. *montre le curseur* Le curseur de budget ajuste les prix. *pointe les produits* Et chaque carte produit a un bouton cœur pour les favoris ! Des questions ?";
-      setCurrentMessage(message);
-      speakText(message);
-    }
-  };
-
-  const speakAboutProduct = (product: Product) => {
-    const cpu = productSpec(product, "processeur") || "une configuration equilibree";
-    const gpu = productSpec(product, "carte_graphique") || "des composants adaptes";
-    const message = `Bienvenue sur ${product.nom}. ${product.description_courte || product.tagline || ""} C'est du ${product.categorie?.nom || product.type_produit}, avec ${cpu} et ${gpu}. A partir de ${formatAr(product.prix)}.`;
-    setCurrentMessage(message);
-    speakText(message);
-  };
-
   return (
     <SiteLayout>
       <MiniHero
@@ -328,12 +267,6 @@ const Catalog = () => {
               <option value="asc">Prix ↑</option>
               <option value="desc">Prix ↓</option>
             </select>
-            <button
-              onClick={handleHelpClick}
-              className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center hover:bg-primary/10 transition-all"
-            >
-              <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
             {isLoadingProducts && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
           </div>
         </div>
@@ -408,7 +341,6 @@ const Catalog = () => {
                   key={p.id}
                   className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
                   style={{ animationDelay: `${i * 30}ms` }}
-                  onMouseEnter={() => speakAboutProduct(p)}
                 >
                   <Link to={`/produit/${p.id}`} className="block relative aspect-square overflow-hidden bg-secondary/30">
                     <img
@@ -467,37 +399,6 @@ const Catalog = () => {
           </div>
         )}
       </section>
-
-      {/* CHATBOT POPUP */}
-      {isChatOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-80 bg-background rounded-xl shadow-xl border border-border overflow-hidden animate-slide-up">
-          <div className="bg-gradient-to-r from-primary/90 to-accent/90 text-white p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={fosa} alt="Casio" className="h-8 w-8 rounded-full object-contain bg-white/10 p-1" />
-              <div>
-                <div className="font-bold text-xs">Casio 🐧</div>
-                <div className="text-[8px] opacity-80">{isSpeaking ? "🎙️ Parle..." : "🎧 Prêt"}</div>
-              </div>
-            </div>
-            <div className="flex gap-1">
-              {isSpeaking && <button onClick={stopSpeaking} className="p-1 rounded hover:bg-white/10"><VolumeX className="h-3 w-3" /></button>}
-              <button onClick={() => setIsChatOpen(false)} className="p-1 rounded hover:bg-white/10"><X className="h-3 w-3" /></button>
-            </div>
-          </div>
-          <div className="p-3 bg-secondary/20">
-            <div className="bg-card rounded-xl p-2 shadow-sm border border-border">
-              <div className="text-[10px] leading-relaxed whitespace-pre-wrap">
-                {currentMessage || "🐧 Salut ! Je suis Casio, ton guide. Passe ta souris sur les produits, je te les présente !"}
-              </div>
-              {currentMessage && (
-                <button onClick={() => speakText(currentMessage)} className="mt-1 text-[8px] opacity-60 hover:opacity-100 flex items-center gap-1">
-                  <Volume2 className="h-2 w-2" /> Réécouter
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes slide-up {
