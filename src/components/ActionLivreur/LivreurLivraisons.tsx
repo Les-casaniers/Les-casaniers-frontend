@@ -26,12 +26,25 @@ import {
   Check,
   Send,
   Gift,
-  Map,
   Image as ImageIcon,
   ChevronUp,
 } from "lucide-react";
 import api from "@/service/api";
 import { toast } from "@/hooks/use-toast";
+
+type AdresseDetails = {
+  nom_complet: string;
+  telephone: string;
+  adresse_ligne1: string;
+  adresse_ligne2: string | null;
+  ville: string;
+  region: string;
+  code_postal: string;
+  pays: string;
+  image_adress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+};
 
 interface Livraison {
   id: number;
@@ -56,19 +69,7 @@ interface Livraison {
   adresse_livraison?: string;
   produits?: any[];
   adresseTelephone?: string;
-  adresseDetails?: {
-    nom_complet: string;
-    telephone: string;
-    adresse_ligne1: string;
-    adresse_ligne2: string | null;
-    ville: string;
-    region: string;
-    code_postal: string;
-    pays: string;
-    image_adress: string | null;
-    latitude: number | null;
-    longitude: number | null;
-  };
+  adresseDetails?: AdresseDetails | null;
   utilisateurDetails?: {
     prenom: string;
     nom: string;
@@ -87,7 +88,7 @@ const LivreurLivraisons: React.FC = () => {
   const [livraisons, setLivraisons] = useState<Livraison[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionInProgress, setActionInProgress] = useState<number | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [showCommandeDetails, setShowCommandeDetails] = useState(false);
   
   const modalRef = useRef<HTMLDivElement>(null);
@@ -113,6 +114,139 @@ const LivreurLivraisons: React.FC = () => {
     fetchCommandes();
   }, []);
 
+  const extractArrayPayload = (payload: any) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.adresses)) return payload.adresses;
+    return [];
+  };
+
+  const hasCoordinate = (value: any) =>
+    value !== null && value !== undefined && value !== "" && !Number.isNaN(Number(value));
+
+  const parseMetaJson = (metaJson: any) => {
+    if (!metaJson) return null;
+    if (typeof metaJson === "object") return metaJson;
+    try {
+      return JSON.parse(metaJson);
+    } catch {
+      return null;
+    }
+  };
+
+  const normalizeAdresseDetails = (adresse: any): AdresseDetails | null => {
+    if (!adresse) return null;
+
+    return {
+      nom_complet: adresse.nom_complet || "",
+      telephone: adresse.telephone || "Téléphone non disponible",
+      adresse_ligne1: adresse.adresse_ligne1 || "",
+      adresse_ligne2: adresse.adresse_ligne2 || null,
+      ville: adresse.ville || "",
+      region: adresse.region || "",
+      code_postal: adresse.code_postal || "",
+      pays: adresse.pays || "",
+      image_adress: adresse.image_adress || null,
+      latitude: hasCoordinate(adresse.latitude) ? Number(adresse.latitude) : null,
+      longitude: hasCoordinate(adresse.longitude) ? Number(adresse.longitude) : null,
+    };
+  };
+
+  const getAdresseFromCommande = (commande: any): AdresseDetails | null => {
+    const meta = parseMetaJson(commande.meta_json);
+    const adresse =
+      commande.adresse_expedition ||
+      commande.adresseExpedition ||
+      commande.adresse_expedition_details ||
+      commande.adresseExpeditionDetails ||
+      commande.adresse_livraison_details ||
+      commande.adresseLivraisonDetails ||
+      commande.adresse_utilisateur ||
+      commande.adresseUtilisateur ||
+      commande.adresse ||
+      commande.adresse_snapshot ||
+      commande.adresseSnapshot ||
+      meta?.adresse_expedition ||
+      meta?.adresse_livraison ||
+      meta?.adresse ||
+      meta?.adresse_snapshot;
+
+    return normalizeAdresseDetails(adresse);
+  };
+
+  const hasAddressCoordinates = (adresse?: AdresseDetails | null) =>
+    hasCoordinate(adresse?.latitude) && hasCoordinate(adresse?.longitude);
+
+  const fetchAdresseDetails = async (
+    commande: any,
+    cache: Map<string, Promise<AdresseDetails | null>>
+  ) => {
+    const adresseFromCommande = getAdresseFromCommande(commande);
+    if (adresseFromCommande) return adresseFromCommande;
+
+    const adresseId = commande.adresse_expedition_id;
+    const utilisateurId = commande.utilisateur_id || commande.utilisateur?.id;
+    if (!adresseId || !utilisateurId) return null;
+
+    const cacheKey = `${utilisateurId}:${adresseId}`;
+    if (!cache.has(cacheKey)) {
+      cache.set(
+        cacheKey,
+        api
+          .get("/adresses", { params: { utilisateur_id: utilisateurId } })
+          .then((adresseResponse) => {
+            const adresses = extractArrayPayload(adresseResponse.data);
+            const adresse = adresses.find(
+              (item: any) => Number(item.id) === Number(adresseId)
+            );
+            return normalizeAdresseDetails(adresse);
+          })
+          .catch((error) => {
+            console.warn("Adresse de commande indisponible:", {
+              adresseId,
+              utilisateurId,
+              status: error?.response?.status,
+            });
+            return null;
+          })
+      );
+    }
+
+    return cache.get(cacheKey)!;
+  };
+
+  const getAddressLabel = (livraison: Livraison) => {
+    const details = livraison.adresseDetails;
+    if (!details) return livraison.destinationAddress;
+
+    return [
+      details.adresse_ligne1,
+      details.adresse_ligne2,
+      [details.code_postal, details.ville].filter(Boolean).join(" "),
+      [details.region, details.pays].filter(Boolean).join(", "),
+    ]
+      .filter(Boolean)
+      .join(", ");
+  };
+
+  const getImageUrl = (imagePath: string) => {
+    if (/^(https?:|data:|blob:)/i.test(imagePath) || imagePath.startsWith("/")) {
+      return imagePath;
+    }
+
+    const apiBaseUrl = (api.defaults.baseURL || "").replace(/\/api\/?$/, "");
+    const normalizedPath = imagePath.replace(/^\/+/, "");
+    return `${apiBaseUrl}/${normalizedPath}`;
+  };
+
+  const getMapsDestination = (livraison: Livraison) => {
+    if (hasAddressCoordinates(livraison.adresseDetails)) {
+      return `${livraison.adresseDetails!.latitude},${livraison.adresseDetails!.longitude}`;
+    }
+
+    return getAddressLabel(livraison);
+  };
+
   const fetchCommandes = async () => {
     try {
       setIsLoading(true);
@@ -137,6 +271,8 @@ const LivreurLivraisons: React.FC = () => {
       } else {
         commandesData = [];
       }
+
+      const adresseCache = new Map<string, Promise<AdresseDetails | null>>();
 
       const livraisonsData = await Promise.all(
         commandesData.map(async (commande: any) => {
@@ -173,36 +309,14 @@ const LivreurLivraisons: React.FC = () => {
               "Client inconnu"
             : "Client inconnu";
 
-          let adresseDetails = null;
+          let adresseDetails: AdresseDetails | null = null;
           let adresseTelephone = "Téléphone non disponible";
           let clientPhone = "Téléphone non disponible";
 
-          if (commande.adresse_expedition_id) {
-            try {
-              const adresseResponse = await api.get(
-                `/adresses/${commande.adresse_expedition_id}`
-              );
-              if (adresseResponse.data?.data) {
-                const adresse = adresseResponse.data.data;
-                adresseDetails = {
-                  nom_complet: adresse.nom_complet || "",
-                  telephone: adresse.telephone || "Téléphone non disponible",
-                  adresse_ligne1: adresse.adresse_ligne1 || "",
-                  adresse_ligne2: adresse.adresse_ligne2 || null,
-                  ville: adresse.ville || "",
-                  region: adresse.region || "",
-                  code_postal: adresse.code_postal || "",
-                  pays: adresse.pays || "",
-                  image_adress: adresse.image_adress || null,
-                  latitude: adresse.latitude || null,
-                  longitude: adresse.longitude || null,
-                };
-                adresseTelephone = adresse.telephone || "Téléphone non disponible";
-                clientPhone = adresseTelephone;
-              }
-            } catch (error) {
-              console.error("Erreur récupération adresse:", error);
-            }
+          adresseDetails = await fetchAdresseDetails(commande, adresseCache);
+          if (adresseDetails?.telephone) {
+            adresseTelephone = adresseDetails.telephone;
+            clientPhone = adresseTelephone;
           }
 
           const utilisateurDetails = commande.utilisateur
@@ -218,7 +332,22 @@ const LivreurLivraisons: React.FC = () => {
               };
 
           const clientEmail = commande.utilisateur?.email || "Email non disponible";
-          const adresseLivraison = commande.adresse_livraison || "Adresse non disponible";
+          const adresseLivraison =
+            commande.adresse_livraison ||
+            (adresseDetails
+              ? [
+                  adresseDetails.adresse_ligne1,
+                  adresseDetails.adresse_ligne2,
+                  [adresseDetails.code_postal, adresseDetails.ville]
+                    .filter(Boolean)
+                    .join(" "),
+                  [adresseDetails.region, adresseDetails.pays]
+                    .filter(Boolean)
+                    .join(", "),
+                ]
+                  .filter(Boolean)
+                  .join(", ")
+              : "Adresse non disponible");
 
           const createdAt = new Date(commande.date_creation);
           const estimatedDelivery = new Date(createdAt);
@@ -243,7 +372,12 @@ const LivreurLivraisons: React.FC = () => {
             utilisateur_id: commande.utilisateur_id || 0,
             statut_commande: commande.statut,
             produits: commande.produits || [],
-            deliveryLocation: undefined,
+            deliveryLocation: hasAddressCoordinates(adresseDetails)
+              ? {
+                  lat: adresseDetails!.latitude!,
+                  lng: adresseDetails!.longitude!,
+                }
+              : undefined,
             adresseTelephone: adresseTelephone,
             adresseDetails: adresseDetails,
             utilisateurDetails: utilisateurDetails,
@@ -280,7 +414,7 @@ const LivreurLivraisons: React.FC = () => {
 
   const marquerLivree = async (commande_uuid: string) => {
     try {
-      setActionInProgress(commande_uuid as any);
+      setActionInProgress(commande_uuid);
 
       // ✅ Utiliser la route sécurisée /livreur/commandes
       const response = await api.patch(
@@ -621,10 +755,10 @@ const LivreurLivraisons: React.FC = () => {
                         {!isDelivered && !isCancelled && (
                           <button
                             onClick={() => marquerLivree(livraison.commande_uuid)}
-                            disabled={actionInProgress === livraison.id}
+                            disabled={actionInProgress === livraison.commande_uuid}
                             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50"
                           >
-                            {actionInProgress === livraison.id ? (
+                            {actionInProgress === livraison.commande_uuid ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Gift className="h-4 w-4" />
@@ -721,10 +855,13 @@ const LivreurLivraisons: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Téléphone</p>
-                    <p className="text-sm font-medium flex items-center gap-1 truncate">
+                    <a
+                      href={`tel:${selectedDelivery.adresseDetails?.telephone || selectedDelivery.clientPhone}`}
+                      className="text-sm font-medium flex items-center gap-1 truncate hover:text-primary"
+                    >
                       <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       {selectedDelivery.adresseDetails?.telephone || selectedDelivery.clientPhone}
-                    </p>
+                    </a>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-xs text-muted-foreground">Email</p>
@@ -742,28 +879,34 @@ const LivreurLivraisons: React.FC = () => {
                   <span>Adresse de livraison</span>
                 </h4>
                 <div className="space-y-1 text-sm">
-                  {selectedDelivery.adresseDetails?.adresse_ligne1 && (
-                    <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne1}</p>
-                  )}
-                  {selectedDelivery.adresseDetails?.adresse_ligne2 && (
-                    <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne2}</p>
-                  )}
-                  {(selectedDelivery.adresseDetails?.code_postal || selectedDelivery.adresseDetails?.ville) && (
-                    <p className="break-words">
-                      {selectedDelivery.adresseDetails?.code_postal || ""}{" "}
-                      {selectedDelivery.adresseDetails?.ville || ""}
-                    </p>
-                  )}
-                  {(selectedDelivery.adresseDetails?.region || selectedDelivery.adresseDetails?.pays) && (
-                    <p className="text-muted-foreground break-words">
-                      {selectedDelivery.adresseDetails?.region || ""}
-                      {selectedDelivery.adresseDetails?.region && selectedDelivery.adresseDetails?.pays && ", "}
-                      {selectedDelivery.adresseDetails?.pays || ""}
-                    </p>
+                  {selectedDelivery.adresseDetails ? (
+                    <>
+                      {selectedDelivery.adresseDetails.adresse_ligne1 && (
+                        <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne1}</p>
+                      )}
+                      {selectedDelivery.adresseDetails.adresse_ligne2 && (
+                        <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne2}</p>
+                      )}
+                      {(selectedDelivery.adresseDetails.code_postal || selectedDelivery.adresseDetails.ville) && (
+                        <p className="break-words">
+                          {selectedDelivery.adresseDetails.code_postal || ""}{" "}
+                          {selectedDelivery.adresseDetails.ville || ""}
+                        </p>
+                      )}
+                      {(selectedDelivery.adresseDetails.region || selectedDelivery.adresseDetails.pays) && (
+                        <p className="text-muted-foreground break-words">
+                          {selectedDelivery.adresseDetails.region || ""}
+                          {selectedDelivery.adresseDetails.region && selectedDelivery.adresseDetails.pays && ", "}
+                          {selectedDelivery.adresseDetails.pays || ""}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="break-words">{selectedDelivery.destinationAddress}</p>
                   )}
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                      selectedDelivery.destinationAddress
+                      getMapsDestination(selectedDelivery)
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -784,7 +927,7 @@ const LivreurLivraisons: React.FC = () => {
                 {selectedDelivery.adresseDetails?.image_adress ? (
                   <div className="relative w-full rounded-lg overflow-hidden border border-border/50 bg-muted/20">
                     <img
-                      src={selectedDelivery.adresseDetails.image_adress}
+                      src={getImageUrl(selectedDelivery.adresseDetails.image_adress)}
                       alt="Photo du lieu"
                       className="w-full h-auto max-h-48 object-cover"
                       onError={(e) => {
@@ -884,10 +1027,10 @@ const LivreurLivraisons: React.FC = () => {
                 </button>
                 <button
                   onClick={() => marquerLivree(selectedDelivery.commande_uuid)}
-                  disabled={actionInProgress === selectedDelivery.id}
+                  disabled={actionInProgress === selectedDelivery.commande_uuid}
                   className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 transition-all disabled:opacity-50 order-1 sm:order-2"
                 >
-                  {actionInProgress === selectedDelivery.id ? (
+                  {actionInProgress === selectedDelivery.commande_uuid ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Gift className="h-4 w-4" />
