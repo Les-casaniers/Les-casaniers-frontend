@@ -80,7 +80,9 @@ interface Livraison {
 const LivreurLivraisons: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedDelivery, setSelectedDelivery] = useState<Livraison | null>(null);
+  const [selectedDelivery, setSelectedDelivery] = useState<Livraison | null>(
+    null,
+  );
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
@@ -90,29 +92,10 @@ const LivreurLivraisons: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
   const [showCommandeDetails, setShowCommandeDetails] = useState(false);
-  
+
   const modalRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (showDetailsModal) {
-      document.body.style.overflow = 'hidden';
-      setTimeout(() => {
-        if (modalRef.current) {
-          modalRef.current.scrollTop = 0;
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showDetailsModal]);
-
-  useEffect(() => {
-    fetchCommandes();
-  }, []);
+  // ========== FONCTIONS UTILITAIRES ==========
 
   const extractArrayPayload = (payload: any) => {
     if (Array.isArray(payload)) return payload;
@@ -122,7 +105,10 @@ const LivreurLivraisons: React.FC = () => {
   };
 
   const hasCoordinate = (value: any) =>
-    value !== null && value !== undefined && value !== "" && !Number.isNaN(Number(value));
+    value !== null &&
+    value !== undefined &&
+    value !== "" &&
+    !Number.isNaN(Number(value));
 
   const parseMetaJson = (metaJson: any) => {
     if (!metaJson) return null;
@@ -147,8 +133,12 @@ const LivreurLivraisons: React.FC = () => {
       code_postal: adresse.code_postal || "",
       pays: adresse.pays || "",
       image_adress: adresse.image_adress || null,
-      latitude: hasCoordinate(adresse.latitude) ? Number(adresse.latitude) : null,
-      longitude: hasCoordinate(adresse.longitude) ? Number(adresse.longitude) : null,
+      latitude: hasCoordinate(adresse.latitude)
+        ? Number(adresse.latitude)
+        : null,
+      longitude: hasCoordinate(adresse.longitude)
+        ? Number(adresse.longitude)
+        : null,
     };
   };
 
@@ -179,7 +169,7 @@ const LivreurLivraisons: React.FC = () => {
 
   const fetchAdresseDetails = async (
     commande: any,
-    cache: Map<string, Promise<AdresseDetails | null>>
+    cache: Map<string, Promise<AdresseDetails | null>>,
   ) => {
     const adresseFromCommande = getAdresseFromCommande(commande);
     if (adresseFromCommande) return adresseFromCommande;
@@ -197,7 +187,7 @@ const LivreurLivraisons: React.FC = () => {
           .then((adresseResponse) => {
             const adresses = extractArrayPayload(adresseResponse.data);
             const adresse = adresses.find(
-              (item: any) => Number(item.id) === Number(adresseId)
+              (item: any) => Number(item.id) === Number(adresseId),
             );
             return normalizeAdresseDetails(adresse);
           })
@@ -208,7 +198,7 @@ const LivreurLivraisons: React.FC = () => {
               status: error?.response?.status,
             });
             return null;
-          })
+          }),
       );
     }
 
@@ -230,7 +220,10 @@ const LivreurLivraisons: React.FC = () => {
   };
 
   const getImageUrl = (imagePath: string) => {
-    if (/^(https?:|data:|blob:)/i.test(imagePath) || imagePath.startsWith("/")) {
+    if (
+      /^(https?:|data:|blob:)/i.test(imagePath) ||
+      imagePath.startsWith("/")
+    ) {
       return imagePath;
     }
 
@@ -247,19 +240,94 @@ const LivreurLivraisons: React.FC = () => {
     return getAddressLabel(livraison);
   };
 
+  const extractAddressOnly = (fullAddress: string): string => {
+    if (!fullAddress || fullAddress === "Adresse non disponible") {
+      return fullAddress;
+    }
+    const parts = fullAddress.split(", ");
+    if (parts.length > 1) {
+      return parts.slice(1).join(", ");
+    }
+    return fullAddress;
+  };
+
+  const getStatusConfig = (status: string) => {
+    const config: Record<
+      string,
+      { label: string; bg: string; text: string; icon: any }
+    > = {
+      pending: {
+        label: "En attente",
+        bg: "bg-amber-500/10",
+        text: "text-amber-600",
+        icon: Clock,
+      },
+      pickup: {
+        label: "À prendre",
+        bg: "bg-blue-500/10",
+        text: "text-blue-600",
+        icon: MapPin,
+      },
+      in_transit: {
+        label: "En transit",
+        bg: "bg-purple-500/10",
+        text: "text-purple-600",
+        icon: Navigation,
+      },
+      delivered: {
+        label: "Livrée",
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-600",
+        icon: CheckCircle,
+      },
+      cancelled: {
+        label: "Annulée",
+        bg: "bg-red-500/10",
+        text: "text-red-600",
+        icon: XCircle,
+      },
+    };
+    return config[status] || config.pending;
+  };
+
+  const getTimeRemaining = (date: Date) => {
+    const diff = date.getTime() - Date.now();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `${hours}h ${minutes}min`;
+    if (minutes > 0) return `${minutes}min`;
+    return "Très bientôt";
+  };
+
+  // ========== FONCTION PRINCIPALE fetchCommandes ==========
+
   const fetchCommandes = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
+      // Vérifier que le token est présent
+      const token = localStorage.getItem("token");
+      console.log("Token envoyé:", token ? "Oui" : "Non");
+
+      if (!token) {
+        console.error("❌ Aucun token trouvé!");
+        toast({
+          title: "Session expirée",
+          description: "Veuillez vous reconnecter",
+          variant: "destructive",
+        });
+        window.location.href = "/login";
+        return;
+      }
+
       // Utiliser la route sécurisée /livreur/commandes
       const response = await api.get("/livreur/commandes", {
         params: { per_page: 100 },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      //Vérifier que le token est présent
-      const token = localStorage.getItem('token');
-      console.log('Token envoyé:', token ? 'Oui' : 'Non');
 
       console.log("Commandes récupérées:", response.data);
 
@@ -313,10 +381,21 @@ const LivreurLivraisons: React.FC = () => {
           let adresseTelephone = "Téléphone non disponible";
           let clientPhone = "Téléphone non disponible";
 
-          adresseDetails = await fetchAdresseDetails(commande, adresseCache);
-          if (adresseDetails?.telephone) {
-            adresseTelephone = adresseDetails.telephone;
-            clientPhone = adresseTelephone;
+          // 1️⃣ D'abord, essayer de récupérer depuis adresse_details (envoyé par le backend)
+          if (commande.adresse_details) {
+            adresseDetails = normalizeAdresseDetails(commande.adresse_details);
+            if (adresseDetails?.telephone) {
+              adresseTelephone = adresseDetails.telephone;
+              clientPhone = adresseTelephone;
+            }
+          }
+          // 2️⃣ Sinon, essayer la méthode existante avec l'API
+          else {
+            adresseDetails = await fetchAdresseDetails(commande, adresseCache);
+            if (adresseDetails?.telephone) {
+              adresseTelephone = adresseDetails.telephone;
+              clientPhone = adresseTelephone;
+            }
           }
 
           const utilisateurDetails = commande.utilisateur
@@ -331,7 +410,9 @@ const LivreurLivraisons: React.FC = () => {
                 email: "Email non disponible",
               };
 
-          const clientEmail = commande.utilisateur?.email || "Email non disponible";
+          const clientEmail =
+            commande.utilisateur?.email || "Email non disponible";
+
           const adresseLivraison =
             commande.adresse_livraison ||
             (adresseDetails
@@ -366,28 +447,42 @@ const LivreurLivraisons: React.FC = () => {
             status: deliveryStatus,
             amount: parseFloat(commande.total) || 0,
             createdAt: createdAt,
-            deliveredAt: commande.statut === "terminee" ? new Date() : undefined,
+            deliveredAt:
+              commande.statut === "terminee" ? new Date() : undefined,
             estimatedDelivery: estimatedDelivery,
             clientPhotos: photos.length > 0 ? photos : undefined,
             utilisateur_id: commande.utilisateur_id || 0,
             statut_commande: commande.statut,
             produits: commande.produits || [],
-            deliveryLocation: hasAddressCoordinates(adresseDetails)
-              ? {
-                  lat: adresseDetails!.latitude!,
-                  lng: adresseDetails!.longitude!,
-                }
-              : undefined,
+            deliveryLocation:
+              adresseDetails?.latitude && adresseDetails?.longitude
+                ? {
+                    lat: adresseDetails.latitude,
+                    lng: adresseDetails.longitude,
+                  }
+                : undefined,
             adresseTelephone: adresseTelephone,
             adresseDetails: adresseDetails,
             utilisateurDetails: utilisateurDetails,
           };
-        })
+        }),
       );
 
       setLivraisons(livraisonsData);
     } catch (error: any) {
       console.error("Erreur chargement commandes:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        toast({
+          title: "Session expirée",
+          description: "Veuillez vous reconnecter",
+          variant: "destructive",
+        });
+        window.location.href = "/login";
+        return;
+      }
+
       setError("Impossible de charger les livraisons");
       toast({
         title: "Erreur",
@@ -401,27 +496,24 @@ const LivreurLivraisons: React.FC = () => {
     }
   };
 
-  const extractAddressOnly = (fullAddress: string): string => {
-    if (!fullAddress || fullAddress === "Adresse non disponible") {
-      return fullAddress;
-    }
-    const parts = fullAddress.split(", ");
-    if (parts.length > 1) {
-      return parts.slice(1).join(", ");
-    }
-    return fullAddress;
-  };
+  // ========== FONCTION marquerLivree ==========
 
   const marquerLivree = async (commande_uuid: string) => {
     try {
       setActionInProgress(commande_uuid);
 
-      // ✅ Utiliser la route sécurisée /livreur/commandes
+      const token = localStorage.getItem("token");
+
       const response = await api.patch(
         `/livreur/commandes/${commande_uuid}/statut`,
         {
           statut: "terminee",
-        }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
       if (response.data.success) {
@@ -435,7 +527,7 @@ const LivreurLivraisons: React.FC = () => {
         }
       } else {
         throw new Error(
-          response.data.message || "Erreur lors de la mise à jour"
+          response.data.message || "Erreur lors de la mise à jour",
         );
       }
     } catch (error: any) {
@@ -452,6 +544,30 @@ const LivreurLivraisons: React.FC = () => {
     }
   };
 
+  // ========== useEffect ==========
+
+  useEffect(() => {
+    fetchCommandes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (showDetailsModal) {
+      document.body.style.overflow = "hidden";
+      setTimeout(() => {
+        if (modalRef.current) {
+          modalRef.current.scrollTop = 0;
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [showDetailsModal]);
+
   useEffect(() => {
     if (showDetailsModal || showFullPhoto) {
       document.body.style.overflow = "hidden";
@@ -463,76 +579,37 @@ const LivreurLivraisons: React.FC = () => {
     };
   }, [showDetailsModal, showFullPhoto]);
 
-  const getStatusConfig = (status: string) => {
-    const config: Record<
-      string,
-      { label: string; bg: string; text: string; icon: any }
-    > = {
-      pending: {
-        label: "En attente",
-        bg: "bg-amber-500/10",
-        text: "text-amber-600",
-        icon: Clock,
-      },
-      pickup: {
-        label: "À prendre",
-        bg: "bg-blue-500/10",
-        text: "text-blue-600",
-        icon: MapPin,
-      },
-      in_transit: {
-        label: "En transit",
-        bg: "bg-purple-500/10",
-        text: "text-purple-600",
-        icon: Navigation,
-      },
-      delivered: {
-        label: "Livrée",
-        bg: "bg-emerald-500/10",
-        text: "text-emerald-600",
-        icon: CheckCircle,
-      },
-      cancelled: {
-        label: "Annulée",
-        bg: "bg-red-500/10",
-        text: "text-red-600",
-        icon: XCircle,
-      },
-    };
-    return config[status] || config.pending;
-  };
-
-  const getTimeRemaining = (date: Date) => {
-    const diff = date.getTime() - Date.now();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    if (hours > 0) return `${hours}h ${minutes}min`;
-    if (minutes > 0) return `${minutes}min`;
-    return "Très bientôt";
-  };
+  // ========== FILTRAGE DES LIVRAISONS ==========
+  // ✅ Ne garde que "En transit" et "Livrées" par défaut
 
   const filteredLivraisons = livraisons.filter((livraison) => {
+    // 1️⃣ Recherche par texte
     const matchesSearch =
       livraison.trackingNumber
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       livraison.clientName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || livraison.status === statusFilter;
+
+    // 2️⃣ Filtrage par statut
+    let matchesStatus = false;
+
+    if (statusFilter === "all") {
+      // "Tous" = uniquement "En transit" et "Livrées"
+      matchesStatus =
+        livraison.status === "in_transit" || livraison.status === "delivered";
+    } else {
+      // Filtre spécifique
+      matchesStatus = livraison.status === statusFilter;
+    }
+
     return matchesSearch && matchesStatus;
   });
 
+  // ========== STATISTIQUES ==========
+
   const statsCards = [
     {
-      label: "À livrer",
-      value: livraisons.filter(
-        (l) => l.status === "pending" || l.status === "pickup"
-      ).length,
-      icon: Package,
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      label: "En cours",
+      label: "En transit",
       value: livraisons.filter((l) => l.status === "in_transit").length,
       icon: Navigation,
       color: "from-purple-500 to-indigo-500",
@@ -544,12 +621,17 @@ const LivreurLivraisons: React.FC = () => {
       color: "from-emerald-500 to-teal-500",
     },
     {
-      label: "Gains",
-      value: `${livraisons.reduce((sum, l) => sum + (l.status === "delivered" ? l.amount : 0), 0)} Ar`,
+      label: "Gains totaux",
+      value: `${livraisons
+        .filter((l) => l.status === "delivered")
+        .reduce((sum, l) => sum + l.amount, 0)
+        .toFixed(2)} Ar`,
       icon: DollarSign,
       color: "from-primary to-primary/80",
     },
   ];
+
+  // ========== RENDU ==========
 
   if (isLoading) {
     return (
@@ -581,7 +663,7 @@ const LivreurLivraisons: React.FC = () => {
         <Package className="h-12 w-12 text-muted-foreground mb-4" />
         <p className="text-lg font-medium text-foreground">Aucune livraison</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Aucune commande n'a été trouvée pour le moment.
+          Aucune commande disponible pour le moment.
         </p>
       </div>
     );
@@ -600,7 +682,7 @@ const LivreurLivraisons: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {statsCards.map((stat, index) => (
           <div
             key={stat.label}
@@ -639,14 +721,11 @@ const LivreurLivraisons: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-9 pr-8 py-2 text-sm rounded-lg bg-muted/30 border border-border/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 appearance-none cursor-pointer sm:w-36"
+              className="pl-9 pr-8 py-2 text-sm rounded-lg bg-muted/30 border border-border/50 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 appearance-none cursor-pointer sm:w-48"
             >
-              <option value="all">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="pickup">À prendre</option>
-              <option value="in_transit">En transit</option>
-              <option value="delivered">Livrées</option>
-              <option value="cancelled">Annulées</option>
+              <option value="all">🔄 Tous (En préparation & Livrées)</option>
+              <option value="in_transit"> En préparation</option>
+              <option value="delivered"> Livrées</option>
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           </div>
@@ -694,7 +773,7 @@ const LivreurLivraisons: React.FC = () => {
                 const isCancelled = livraison.status === "cancelled";
 
                 const addressOnly = extractAddressOnly(
-                  livraison.destinationAddress
+                  livraison.destinationAddress,
                 );
 
                 return (
@@ -754,8 +833,12 @@ const LivreurLivraisons: React.FC = () => {
                         </button>
                         {!isDelivered && !isCancelled && (
                           <button
-                            onClick={() => marquerLivree(livraison.commande_uuid)}
-                            disabled={actionInProgress === livraison.commande_uuid}
+                            onClick={() =>
+                              marquerLivree(livraison.commande_uuid)
+                            }
+                            disabled={
+                              actionInProgress === livraison.commande_uuid
+                            }
                             className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50"
                           >
                             {actionInProgress === livraison.commande_uuid ? (
@@ -763,7 +846,7 @@ const LivreurLivraisons: React.FC = () => {
                             ) : (
                               <Gift className="h-4 w-4" />
                             )}
-                            Livrée
+                            Marquer Livrée
                           </button>
                         )}
                       </div>
@@ -779,7 +862,9 @@ const LivreurLivraisons: React.FC = () => {
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              Aucune livraison trouvée
+              {statusFilter === "all"
+                ? "Aucune commande en transit ou livrée"
+                : `Aucune commande ${getStatusConfig(statusFilter).label.toLowerCase()}`}
             </p>
             <p className="text-xs text-muted-foreground/60 mt-1">
               Essayez de modifier vos critères de recherche
@@ -788,33 +873,19 @@ const LivreurLivraisons: React.FC = () => {
         )}
       </div>
 
-      {/* ✅ MODAL DÉTAILS - EN HAUT DE PAGE */}
+      {/* ✅ MODAL DÉTAILS */}
+      {/* ✅ MODAL DÉTAILS - CORRIGÉ : toujours visible */}
       {showDetailsModal && selectedDelivery && (
         <div
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={() => {
             setShowDetailsModal(false);
-          }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            paddingTop: '20px',
           }}
         >
           <div
             ref={modalRef}
             className="relative w-full max-w-2xl max-h-[90vh] bg-card border border-border shadow-2xl rounded-2xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              margin: '0 auto',
-            }}
           >
             <div className="absolute top-0 left-0 right-0 h-1 bg-primary rounded-t-2xl" />
 
@@ -850,7 +921,8 @@ const LivreurLivraisons: React.FC = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">Nom complet</p>
                     <p className="text-sm font-medium truncate">
-                      {selectedDelivery.adresseDetails?.nom_complet || selectedDelivery.clientName}
+                      {selectedDelivery.adresseDetails?.nom_complet ||
+                        selectedDelivery.clientName}
                     </p>
                   </div>
                   <div>
@@ -860,13 +932,15 @@ const LivreurLivraisons: React.FC = () => {
                       className="text-sm font-medium flex items-center gap-1 truncate hover:text-primary"
                     >
                       <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      {selectedDelivery.adresseDetails?.telephone || selectedDelivery.clientPhone}
+                      {selectedDelivery.adresseDetails?.telephone ||
+                        selectedDelivery.clientPhone}
                     </a>
                   </div>
                   <div className="sm:col-span-2">
                     <p className="text-xs text-muted-foreground">Email</p>
                     <p className="text-sm font-medium truncate">
-                      {selectedDelivery.utilisateurDetails?.email || selectedDelivery.clientAddress}
+                      {selectedDelivery.utilisateurDetails?.email ||
+                        selectedDelivery.clientAddress}
                     </p>
                   </div>
                 </div>
@@ -882,31 +956,41 @@ const LivreurLivraisons: React.FC = () => {
                   {selectedDelivery.adresseDetails ? (
                     <>
                       {selectedDelivery.adresseDetails.adresse_ligne1 && (
-                        <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne1}</p>
+                        <p className="break-words">
+                          {selectedDelivery.adresseDetails.adresse_ligne1}
+                        </p>
                       )}
                       {selectedDelivery.adresseDetails.adresse_ligne2 && (
-                        <p className="break-words">{selectedDelivery.adresseDetails.adresse_ligne2}</p>
+                        <p className="break-words">
+                          {selectedDelivery.adresseDetails.adresse_ligne2}
+                        </p>
                       )}
-                      {(selectedDelivery.adresseDetails.code_postal || selectedDelivery.adresseDetails.ville) && (
+                      {(selectedDelivery.adresseDetails.code_postal ||
+                        selectedDelivery.adresseDetails.ville) && (
                         <p className="break-words">
                           {selectedDelivery.adresseDetails.code_postal || ""}{" "}
                           {selectedDelivery.adresseDetails.ville || ""}
                         </p>
                       )}
-                      {(selectedDelivery.adresseDetails.region || selectedDelivery.adresseDetails.pays) && (
+                      {(selectedDelivery.adresseDetails.region ||
+                        selectedDelivery.adresseDetails.pays) && (
                         <p className="text-muted-foreground break-words">
                           {selectedDelivery.adresseDetails.region || ""}
-                          {selectedDelivery.adresseDetails.region && selectedDelivery.adresseDetails.pays && ", "}
+                          {selectedDelivery.adresseDetails.region &&
+                            selectedDelivery.adresseDetails.pays &&
+                            ", "}
                           {selectedDelivery.adresseDetails.pays || ""}
                         </p>
                       )}
                     </>
                   ) : (
-                    <p className="break-words">{selectedDelivery.destinationAddress}</p>
+                    <p className="break-words">
+                      {selectedDelivery.destinationAddress}
+                    </p>
                   )}
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-                      getMapsDestination(selectedDelivery)
+                      getMapsDestination(selectedDelivery),
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -927,17 +1011,22 @@ const LivreurLivraisons: React.FC = () => {
                 {selectedDelivery.adresseDetails?.image_adress ? (
                   <div className="relative w-full rounded-lg overflow-hidden border border-border/50 bg-muted/20">
                     <img
-                      src={getImageUrl(selectedDelivery.adresseDetails.image_adress)}
+                      src={getImageUrl(
+                        selectedDelivery.adresseDetails.image_adress,
+                      )}
                       alt="Photo du lieu"
                       className="w-full h-auto max-h-48 object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/placeholder-image.jpg";
+                        (e.target as HTMLImageElement).src =
+                          "/placeholder-image.jpg";
                       }}
                     />
                   </div>
                 ) : (
                   <div className="flex items-center justify-center p-6 bg-muted/20 rounded-lg border border-dashed border-border">
-                    <p className="text-sm text-muted-foreground">Aucune photo disponible</p>
+                    <p className="text-sm text-muted-foreground">
+                      Aucune photo disponible
+                    </p>
                   </div>
                 )}
               </div>
@@ -958,18 +1047,24 @@ const LivreurLivraisons: React.FC = () => {
                     <ChevronDown className="h-4 w-4 flex-shrink-0" />
                   )}
                 </button>
-                
+
                 {showCommandeDetails && (
                   <div className="mt-3 space-y-3 pt-3 border-t border-border/50">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <p className="text-xs text-muted-foreground">N° commande</p>
-                        <p className="text-sm font-mono truncate">{selectedDelivery.trackingNumber}</p>
+                        <p className="text-xs text-muted-foreground">
+                          N° commande
+                        </p>
+                        <p className="text-sm font-mono truncate">
+                          {selectedDelivery.trackingNumber}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Date</p>
                         <p className="text-sm">
-                          {selectedDelivery.createdAt.toLocaleDateString("fr-FR")}
+                          {selectedDelivery.createdAt.toLocaleDateString(
+                            "fr-FR",
+                          )}
                         </p>
                       </div>
                       <div>
@@ -977,7 +1072,10 @@ const LivreurLivraisons: React.FC = () => {
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusConfig(selectedDelivery.status).bg} ${getStatusConfig(selectedDelivery.status).text}`}
                         >
-                          {React.createElement(getStatusConfig(selectedDelivery.status).icon, { className: "w-3 h-3" })}
+                          {React.createElement(
+                            getStatusConfig(selectedDelivery.status).icon,
+                            { className: "w-3 h-3" },
+                          )}
                           {getStatusConfig(selectedDelivery.status).label}
                         </span>
                       </div>
@@ -989,33 +1087,46 @@ const LivreurLivraisons: React.FC = () => {
                       </div>
                     </div>
 
-                    {selectedDelivery.produits && selectedDelivery.produits.length > 0 && (
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-2">Articles commandés</p>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {selectedDelivery.produits.slice(0, 5).map((produit: any, index: number) => (
-                            <div key={index} className="flex justify-between text-sm border-b border-border/30 pb-1">
-                              <span className="truncate mr-2">{produit.nom || produit.titre || "Produit"}</span>
-                              <span className="text-muted-foreground whitespace-nowrap">
-                                {produit.quantite || 1} × {produit.prix_unitaire || 0} Ar
-                              </span>
-                            </div>
-                          ))}
-                          {selectedDelivery.produits.length > 5 && (
-                            <p className="text-xs text-muted-foreground text-center">
-                              + {selectedDelivery.produits.length - 5} autre(s) article(s)
-                            </p>
-                          )}
+                    {selectedDelivery.produits &&
+                      selectedDelivery.produits.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Articles commandés
+                          </p>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {selectedDelivery.produits
+                              .slice(0, 5)
+                              .map((produit: any, index: number) => (
+                                <div
+                                  key={index}
+                                  className="flex justify-between text-sm border-b border-border/30 pb-1"
+                                >
+                                  <span className="truncate mr-2">
+                                    {produit.nom || produit.titre || "Produit"}
+                                  </span>
+                                  <span className="text-muted-foreground whitespace-nowrap">
+                                    {produit.quantite || 1} ×{" "}
+                                    {produit.prix_unitaire || 0} Ar
+                                  </span>
+                                </div>
+                              ))}
+                            {selectedDelivery.produits.length > 5 && (
+                              <p className="text-xs text-muted-foreground text-center">
+                                + {selectedDelivery.produits.length - 5}{" "}
+                                autre(s) article(s)
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Footer - sticky */}
-            {selectedDelivery.status !== "delivered" && selectedDelivery.status !== "cancelled" ? (
+            {selectedDelivery.status !== "delivered" &&
+            selectedDelivery.status !== "cancelled" ? (
               <div className="sticky bottom-0 flex flex-col sm:flex-row gap-3 p-4 border-t border-border bg-card rounded-b-2xl">
                 <button
                   onClick={() => {
@@ -1049,7 +1160,7 @@ const LivreurLivraisons: React.FC = () => {
                   Fermer
                 </button>
                 <div className="flex-1 text-center py-2.5 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-xl">
-                  <CheckCircle className="w-4 h-4 inline-block mr-2" />
+                  <CheckCircle className="h-4 w-4 inline-block mr-2" />
                   Livraison confirmée
                 </div>
               </div>
@@ -1082,7 +1193,7 @@ const LivreurLivraisons: React.FC = () => {
                     setSelectedPhotoIndex((prev) =>
                       prev === 0
                         ? selectedDelivery.clientPhotos!.length - 1
-                        : prev - 1
+                        : prev - 1,
                     )
                   }
                   className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition"
@@ -1094,7 +1205,7 @@ const LivreurLivraisons: React.FC = () => {
                     setSelectedPhotoIndex((prev) =>
                       prev === selectedDelivery.clientPhotos!.length - 1
                         ? 0
-                        : prev + 1
+                        : prev + 1,
                     )
                   }
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition"
