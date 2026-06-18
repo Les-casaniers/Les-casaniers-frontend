@@ -449,7 +449,7 @@ const Configurateur = () => {
                   }`}
                 >
                   {selections[step.key] && <Check className="h-2.5 w-2.5 inline mr-0.5" />}
-                  {step.subtitle}
+                  {step.title}
                 </button>
               ))}
             </div>
