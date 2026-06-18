@@ -114,13 +114,13 @@ const App = () => (
               <Route path="/importation" element={<Importation />} />
               <Route path="/favoris" element={<Favorites />} />
               <Route path="/devis-express" element={<DevisExpress />} />
-                 <Route path="/pro" element={<Profreelance />} />
-              
+              <Route path="/pro" element={<Profreelance />} />
+
               {/* Routes d'authentification */}
               <Route path="/login" element={<Login />} />
               <Route path="/inscription" element={<Register />} />
               <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
-              
+
               {/* Routes utilisateur */}
               <Route path="/compte" element={<Compte />} />
 
@@ -152,7 +152,7 @@ const App = () => (
                 <Route path="favoris" element={<DashboardFavoris />} />
                 <Route path="paiement" element={<DashboardPaiement />} />
                 <Route path="parametres" element={<DashboardParametres />} />
-                  <Route path="details-client" element={<ClientDashboard />} />
+                <Route path="details-client" element={<ClientDashboard />} />
               </Route>
 
               {/* ============ ROUTES LIVREUR ============ */}

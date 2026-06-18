@@ -21,6 +21,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import logo from "@/assets/casaniers-logo.png";
 
 const LivreurLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -124,8 +125,12 @@ const LivreurLayout: React.FC = () => {
           <div className="p-5 border-b border-border/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 group">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 duration-300">
-                  <Truck className="w-4 h-4 text-primary-foreground" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 duration-300 overflow-hidden">
+                  <img 
+                    src={logo} 
+                    alt="Logo Les Casaniers" 
+                    className="w-full h-full object-cover rounded-xl"
+                  />
                 </div>
                 <div>
                   <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
@@ -172,23 +177,6 @@ const LivreurLayout: React.FC = () => {
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="p-3 border-t border-border/50 space-y-2">
-            <button 
-              onClick={toggleTheme}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-all duration-200"
-            >
-              <span className="text-sm text-muted-foreground">Thème</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs">{isDarkMode ? 'Sombre' : 'Clair'}</span>
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-amber-500" />
-                ) : (
-                  <Moon className="w-4 h-4 text-slate-700" />
-                )}
-              </div>
-            </button>
-          </div>
         </div>
       </aside>
 
