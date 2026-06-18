@@ -28,7 +28,7 @@ const DashboardClientLayout = () => {
     { icon: Package, label: "Mes commandes", path: "/DashboardClient/commandes" },
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
-    { icon: CreditCard, label: "Paiement", path: "/DashboardClient/paiement" },
+    { icon: CreditCard, label: "Facture", path: "/DashboardClient/paiement" },
     { icon: User, label: "Détails-Client", path: "/DashboardClient/details-client" },
   ];
 
