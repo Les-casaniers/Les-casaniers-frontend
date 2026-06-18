@@ -55,7 +55,7 @@ export const ProductMiniCard = ({ product, onClose }: ProductMiniCardProps) => {
           {product.nom}
         </p>
         <p className="text-xs text-muted-foreground">
-          {product.prix} €
+          {product.prix} Ar
         </p>
       </div>
     </Link>

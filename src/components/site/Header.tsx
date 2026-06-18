@@ -718,7 +718,7 @@ export const Header = () => {
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                           <Truck className="h-3.5 w-3.5" /> Livraison offerte
-                          dès 50€
+                          dès + de 5 000 000 Ar
                         </span>
                         <span className="flex items-center gap-1.5">
                           <Shield className="h-3.5 w-3.5" /> Paiement sécurisé
