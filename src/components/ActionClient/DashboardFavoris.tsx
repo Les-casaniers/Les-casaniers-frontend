@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Trash2, ShoppingBag, Star, Sparkles, Shield, Eye, X, Check, TrendingUp, Clock, Zap, Gift, Truck, Award, ChevronRight, Loader2 } from "lucide-react";
+import { Heart, Trash2, ShoppingBag, Eye, Gift, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useShop } from "@/store/shop";
@@ -20,6 +20,10 @@ type Produit = {
   actif: boolean;
   date_creation: string;
   date_modification: string;
+  images?: any[];
+  image?: string | null;
+  image_url?: string;
+  photo?: string;
 };
 
 type Favori = {
@@ -30,6 +34,177 @@ type Favori = {
   produit?: Produit;
 };
 
+// Composant ProductImage amélioré
+const ProductImage = ({ produit, className = "" }: { produit: Produit; className?: string }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setImageError(false);
+    setIsLoading(true);
+    
+    const extractImage = (obj: any): string | null => {
+      if (!obj) return null;
+      
+      // Vérifier le tableau images
+      if (obj.images && Array.isArray(obj.images) && obj.images.length > 0) {
+        const firstImage = obj.images[0];
+        if (firstImage && typeof firstImage === 'object') {
+          if (firstImage.url) {
+            console.log(`✅ Image trouvée dans images[0].url:`, firstImage.url);
+            return firstImage.url;
+          }
+          if (firstImage.path) {
+            console.log(`✅ Image trouvée dans images[0].path:`, firstImage.path);
+            return firstImage.path;
+          }
+          if (firstImage.filename) {
+            console.log(`✅ Image trouvée dans images[0].filename:`, firstImage.filename);
+            return firstImage.filename;
+          }
+        }
+        if (typeof firstImage === 'string') {
+          console.log(`✅ Image trouvée dans images[0]:`, firstImage);
+          return firstImage;
+        }
+      }
+      
+      // Vérifier les autres champs
+      const imageFields = ['image', 'image_url', 'photo', 'url_image'];
+      for (const field of imageFields) {
+        const value = obj[field];
+        if (value && typeof value === 'string' && value.trim() !== '') {
+          console.log(`✅ Image trouvée dans "${field}":`, value);
+          return value;
+        }
+      }
+      
+      return null;
+    };
+
+    const imageSource = extractImage(produit);
+    console.log(`🎯 Source d'image pour ${produit.id}:`, imageSource);
+
+    if (!imageSource) {
+      setImageUrl(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // Si c'est une URL de données (base64)
+    if (imageSource.startsWith('data:image')) {
+      setImageUrl(imageSource);
+      setIsLoading(false);
+      return;
+    }
+
+    // Si c'est une URL complète
+    if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+      // Vérifier si l'URL est déjà accessible
+      setImageUrl(imageSource);
+      setIsLoading(false);
+      return;
+    }
+
+    // Si c'est un chemin relatif, construire l'URL
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    let fileName = imageSource;
+    if (fileName.includes('/')) {
+      fileName = fileName.split('/').pop() || fileName;
+    }
+    
+    // Construire l'URL finale
+    const finalUrl = `${baseUrl}/image/${fileName}`;
+    console.log(`🔗 URL finale pour ${produit.id}:`, finalUrl);
+    setImageUrl(finalUrl);
+    setIsLoading(false);
+  }, [produit]);
+
+  // Fonction pour réessayer avec un autre chemin
+  const tryAlternativePath = (currentUrl: string) => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+    const fileName = currentUrl.split('/').pop() || '';
+    
+    const alternatives = [
+      `${baseUrl}/storage/image/${fileName}`,
+      `${baseUrl}/storage/images/${fileName}`,
+      `${baseUrl}/public/image/${fileName}`,
+      `${baseUrl}/images/${fileName}`,
+      `${baseUrl}/uploads/image/${fileName}`,
+      `${baseUrl}/api/image/${fileName}`,
+    ];
+    
+    // Trouver une alternative qui n'est pas l'actuelle
+    for (const alt of alternatives) {
+      if (alt !== currentUrl) {
+        console.log(`🔄 Essai avec chemin alternatif:`, alt);
+        return alt;
+      }
+    }
+    return null;
+  };
+
+  const handleImageError = () => {
+    if (imageUrl) {
+      const alternative = tryAlternativePath(imageUrl);
+      if (alternative) {
+        setImageUrl(alternative);
+        return;
+      }
+    }
+    setImageError(true);
+  };
+
+  return (
+    <div className={`relative overflow-hidden bg-gradient-to-br from-secondary/30 to-muted/20 ${className}`}>
+      {isLoading ? (
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : imageUrl && !imageError ? (
+        <img
+          src={imageUrl}
+          alt={produit.nom}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={handleImageError}
+          onLoad={() => {
+            console.log(`✅ Image chargée avec succès: ${produit.nom}`);
+          }}
+          loading="lazy"
+        />
+      ) : (
+        // Fallback quand l'image n'existe pas ou erreur
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+          <div className="text-center p-4">
+            <div className="text-5xl mb-3">🖼️</div>
+            <p className="text-xs font-medium text-muted-foreground">{produit.reference}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {imageError ? '❌ Image indisponible' : '📷 Aucune image'}
+            </p>
+            {imageError && (
+              <button 
+                onClick={() => {
+                  setImageError(false);
+                  if (imageUrl) {
+                    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                    const fileName = imageUrl.split('/').pop() || '';
+                    setImageUrl(`${baseUrl}/image/${fileName}`);
+                  }
+                }}
+                className="mt-2 text-xs text-primary hover:underline"
+              >
+                Réessayer
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Composant DashboardFavoris complet
 const DashboardFavoris = () => {
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [produitsFavoris, setProduitsFavoris] = useState<Produit[]>([]);
@@ -38,7 +213,6 @@ const DashboardFavoris = () => {
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const { addToCart } = useShop();
 
-  // Récupérer les favoris de l'utilisateur connecté
   useEffect(() => {
     fetchFavoris();
   }, []);
@@ -47,63 +221,52 @@ const DashboardFavoris = () => {
     try {
       setIsLoading(true);
       
-      // 1. Récupérer les favoris de l'utilisateur connecté
       const response = await api.get('/favoris');
-      console.log("Favoris récupérés:", response.data);
+      console.log("=== RÉPONSE FAVORIS ===", response.data);
       
       let favorisData: Favori[] = [];
-      if (response.data.data) {
+      if (response.data?.data) {
         favorisData = Array.isArray(response.data.data) ? response.data.data : [];
       } else if (Array.isArray(response.data)) {
         favorisData = response.data;
-      } else if (response.data.favoris) {
+      } else if (response.data?.favoris) {
         favorisData = response.data.favoris;
-      } else {
-        favorisData = [];
       }
       
       setFavoris(favorisData);
       
-      // 2. Si l'utilisateur a des favoris, récupérer les détails des produits
       if (favorisData.length > 0) {
         const produitIds = favorisData.map(f => f.produit_id);
-        console.log("IDs des produits favoris:", produitIds);
+        console.log("=== IDs PRODUITS ===", produitIds);
         
-        // Récupérer les détails de chaque produit favori
         const produitsDetails: Produit[] = [];
         
         for (const produitId of produitIds) {
           try {
             const produitResponse = await api.get(`/produits/${produitId}`);
-            let produit = null;
+            console.log(`📦 Produit ${produitId}:`, produitResponse.data);
             
-            if (produitResponse.data.data) {
-              produit = produitResponse.data.data;
-            } else if (produitResponse.data) {
-              produit = produitResponse.data;
-            }
+            let produit = produitResponse.data?.data || produitResponse.data;
             
-            if (produit && produit.actif === true) {
+            if (produit && produit.actif !== false) {
               produitsDetails.push(produit);
             }
           } catch (error) {
-            console.error(`Erreur chargement produit ${produitId}:`, error);
+            console.error(`❌ Erreur produit ${produitId}:`, error);
           }
         }
         
+        console.log("=== PRODUITS RÉCUPÉRÉS ===", produitsDetails);
         setProduitsFavoris(produitsDetails);
         
-        // 3. Charger les recommandations (produits similaires)
         if (produitsDetails.length > 0) {
           await fetchRecommandations(produitsDetails);
         }
       }
       
     } catch (error: any) {
-      console.error("Erreur lors du chargement des favoris:", error);
-      if (error.response?.status !== 401) {
-        toast.error("Impossible de charger vos favoris");
-      }
+      console.error("Erreur:", error);
+      toast.error("Impossible de charger vos favoris");
     } finally {
       setIsLoading(false);
     }
@@ -111,11 +274,9 @@ const DashboardFavoris = () => {
 
   const fetchRecommandations = async (produitsFavorisList: Produit[]) => {
     try {
-      // Récupérer les catégories des produits favoris
       const categoriesFavorites = [...new Set(produitsFavorisList.map(p => p.categorie_id))];
       const produitIdsFavoris = produitsFavorisList.map(p => p.id);
       
-      // Récupérer d'autres produits des mêmes catégories (exclure ceux déjà favoris)
       const response = await api.get('/produits', {
         params: {
           ...(categoriesFavorites.length > 0 && { categorie_id: categoriesFavorites[0] }),
@@ -124,15 +285,12 @@ const DashboardFavoris = () => {
       });
       
       let allProducts: Produit[] = [];
-      if (response.data.data) {
+      if (response.data?.data) {
         allProducts = Array.isArray(response.data.data) ? response.data.data : [];
       } else if (Array.isArray(response.data)) {
         allProducts = response.data;
-      } else {
-        allProducts = [];
       }
       
-      // Filtrer pour exclure les produits déjà dans les favoris
       const recommandationsList = allProducts
         .filter(p => !produitIdsFavoris.includes(p.id) && p.actif === true && p.quantite_stock > 0)
         .slice(0, 4);
@@ -140,18 +298,20 @@ const DashboardFavoris = () => {
       setRecommandations(recommandationsList);
       
     } catch (error) {
-      console.error("Erreur lors du chargement des recommandations:", error);
+      console.error("Erreur recommandations:", error);
     }
   };
 
   const handleToggleSelect = (id: number) => {
-    const newSelected = new Set(selectedItems);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedItems(newSelected);
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
   };
 
   const handleSelectAll = () => {
@@ -167,8 +327,6 @@ const DashboardFavoris = () => {
       const favori = favoris.find(f => f.produit_id === produitId);
       if (favori) {
         await api.delete(`/favoris/${favori.id}`);
-        
-        // Mettre à jour les états
         setFavoris(favoris.filter(f => f.produit_id !== produitId));
         setProduitsFavoris(produitsFavoris.filter(p => p.id !== produitId));
         setSelectedItems(prev => {
@@ -176,11 +334,10 @@ const DashboardFavoris = () => {
           newSet.delete(produitId);
           return newSet;
         });
-        
         toast.success(`${nom} retiré des favoris`);
       }
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
+      console.error("Erreur suppression:", error);
       toast.error("Erreur lors de la suppression");
     }
   };
@@ -188,7 +345,6 @@ const DashboardFavoris = () => {
   const handleRemoveSelected = async () => {
     const itemsToRemove = Array.from(selectedItems);
     let removedCount = 0;
-    
     for (const produitId of itemsToRemove) {
       const favori = favoris.find(f => f.produit_id === produitId);
       if (favori) {
@@ -200,7 +356,6 @@ const DashboardFavoris = () => {
         }
       }
     }
-    
     setFavoris(favoris.filter(f => !itemsToRemove.includes(f.produit_id)));
     setProduitsFavoris(produitsFavoris.filter(p => !itemsToRemove.includes(p.id)));
     setSelectedItems(new Set());
@@ -390,7 +545,7 @@ const DashboardFavoris = () => {
         </div>
       </div>
 
-      {/* Grille des produits favoris - UNIQUEMENT les produits sélectionnés par l'utilisateur */}
+      {/* Grille des produits favoris */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {produitsFavoris.map((produit) => (
           <div
@@ -399,8 +554,7 @@ const DashboardFavoris = () => {
               selectedItems.has(produit.id) ? 'ring-2 ring-primary shadow-lg' : 'border border-border/50'
             }`}
           >
-            {/* Image placeholder */}
-            <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-secondary to-muted">
+            <div className="relative aspect-square overflow-hidden">
               <div className="absolute top-4 left-4 z-20">
                 <label className="relative cursor-pointer">
                   <input
@@ -420,19 +574,7 @@ const DashboardFavoris = () => {
               </button>
 
               <Link to={`/produit/${produit.id}`} className="block w-full h-full">
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/20">
-                  <div className="text-center p-4">
-                    <div className="text-6xl mb-2">
-                      {produit.type_produit === 'pc' && '🖥️'}
-                      {produit.type_produit === 'portable' && '💻'}
-                      {produit.type_produit === 'composant' && '🔧'}
-                      {produit.type_produit === 'peripherique' && '🎮'}
-                      {produit.type_produit === 'service' && '⚙️'}
-                      {!produit.type_produit && '📦'}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{produit.reference}</p>
-                  </div>
-                </div>
+                <ProductImage produit={produit} className="w-full h-full" />
               </Link>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -443,6 +585,11 @@ const DashboardFavoris = () => {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">
                   {produit.type_produit || 'Produit'}
                 </span>
+                {produit.images && produit.images.length > 0 && (
+                  <span className="text-[10px] text-primary/60 bg-primary/10 px-2 py-0.5 rounded-full">
+                    📷 Photo
+                  </span>
+                )}
               </div>
 
               <Link to={`/produit/${produit.id}`}>
@@ -468,6 +615,11 @@ const DashboardFavoris = () => {
                 <span className={`text-[10px] font-medium uppercase ${produit.quantite_stock > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                   {produit.quantite_stock > 0 ? 'EN STOCK' : 'RUPTURE DE STOCK'}
                 </span>
+                {produit.quantite_stock > 0 && produit.quantite_stock < 5 && (
+                  <span className="text-[10px] text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                    Dernières pièces
+                  </span>
+                )}
               </div>
 
               <div className="flex gap-3 pt-3">
@@ -491,7 +643,7 @@ const DashboardFavoris = () => {
         ))}
       </div>
 
-      {/* Recommandations - Vous pourriez aussi aimer */}
+      {/* Recommandations */}
       {recommandations.length > 0 && (
         <div className="mt-12 pt-8 border-t border-border/50">
           <div className="flex items-center justify-between mb-8">
@@ -516,16 +668,10 @@ const DashboardFavoris = () => {
                 <div className="group relative bg-card border border-border/50 rounded-2xl p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <div className="relative">
-                    <div className="w-full aspect-square bg-gradient-to-br from-secondary to-muted rounded-xl flex items-center justify-center mb-4">
-                      <div className="text-4xl">
-                        {produit.type_produit === 'pc' && '🖥️'}
-                        {produit.type_produit === 'portable' && '💻'}
-                        {produit.type_produit === 'composant' && '🔧'}
-                        {produit.type_produit === 'peripherique' && '🎮'}
-                        {!produit.type_produit && '📦'}
-                      </div>
+                    <div className="w-full aspect-square rounded-xl overflow-hidden">
+                      <ProductImage produit={produit} className="w-full h-full rounded-xl" />
                     </div>
-                    <h4 className="font-semibold text-foreground text-sm line-clamp-2 mb-2 text-center">
+                    <h4 className="font-semibold text-foreground text-sm line-clamp-2 mb-2 mt-3 text-center">
                       {produit.nom}
                     </h4>
                     <p className="text-lg font-bold text-primary text-center">
@@ -534,6 +680,12 @@ const DashboardFavoris = () => {
                     <p className="text-[10px] text-muted-foreground text-center mt-1">
                       {produit.type_produit || 'Produit'}
                     </p>
+                    {produit.quantite_stock > 0 && (
+                      <div className="flex items-center justify-center gap-1 mt-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <span className="text-[10px] text-emerald-600 font-medium">En stock</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Link>
