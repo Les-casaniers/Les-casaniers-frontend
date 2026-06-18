@@ -32,6 +32,7 @@ import { Product, productImage } from "@/hooks/useProducts";
 import api from "@/service/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import AICompatibilityPanel from "@/components/AICompatibilityPanel";
 
 // Mapping des références pour chaque catégorie
 const referenceMapping = {
@@ -151,7 +152,7 @@ const filterProductsByReference = (
 // Composant badge d'atout
 const AtoutBadge = ({ atout }: { atout?: string }) => {
   if (!atout || atout.trim() === "") return null;
-  
+
   const getAtoutIcon = () => {
     const lowerAtout = atout.toLowerCase();
     if (lowerAtout.includes("perf") || lowerAtout.includes("puiss")) return atoutIcons.performance;
@@ -440,16 +441,15 @@ const Configurateur = () => {
                 <button
                   key={step.key}
                   onClick={() => setCurrentStep(idx)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                    idx === currentStep
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : selections[step.key]
-                        ? "bg-primary/10 text-primary"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/80"
-                  }`}
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${idx === currentStep
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : selections[step.key]
+                      ? "bg-primary/10 text-primary"
+                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                    }`}
                 >
                   {selections[step.key] && <Check className="h-2.5 w-2.5 inline mr-0.5" />}
-                  {step.subtitle}
+                  {step.title}
                 </button>
               ))}
             </div>
@@ -484,11 +484,10 @@ const Configurateur = () => {
                     <button
                       key={product.id}
                       onClick={() => handleSelect(product)}
-                      className={`group text-left rounded-xl border transition-all duration-200 overflow-hidden ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border/70 bg-card hover:border-primary/30 hover:shadow-sm"
-                      }`}
+                      className={`group text-left rounded-xl border transition-all duration-200 overflow-hidden ${isSelected
+                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                        : "border-border/70 bg-card hover:border-primary/30 hover:shadow-sm"
+                        }`}
                     >
                       <div className="aspect-video bg-secondary/20 overflow-hidden">
                         <img
@@ -504,7 +503,7 @@ const Configurateur = () => {
                         <h3 className="font-semibold text-xs line-clamp-2 leading-tight mb-1.5">
                           {product.nom}
                         </h3>
-                        
+
                         <AtoutBadge atout={product.atout} />
 
                         <div className="flex items-center justify-between mt-2 pt-1 border-t border-border/30">
@@ -564,9 +563,8 @@ const Configurateur = () => {
                 return (
                   <div
                     key={step.key}
-                    className={`flex items-center justify-between gap-2 py-1.5 border-b border-border/30 last:border-0 ${
-                      !selectedProduct ? "opacity-60" : ""
-                    }`}
+                    className={`flex items-center justify-between gap-2 py-1.5 border-b border-border/30 last:border-0 ${!selectedProduct ? "opacity-60" : ""
+                      }`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
@@ -632,6 +630,12 @@ const Configurateur = () => {
             </div>
           </div>
 
+          <AICompatibilityPanel
+            selections={selections}
+            autoAnalyze={true}
+            apiKey={import.meta.env.VITE_GEMINI_API_KEY}
+          />
+          
           {/* Conseil supplémentaire compact */}
           <div className="rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10 p-3">
             <div className="flex items-start gap-2">
@@ -639,7 +643,7 @@ const Configurateur = () => {
               <div>
                 <p className="text-[10px] font-medium text-primary">Conseil Casanier</p>
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  Notre équipe peut vous aider à affiner votre configuration. 
+                  Notre équipe peut vous aider à affiner votre configuration.
                   <a href="/contact" className="text-primary hover:underline ml-1">Contactez-nous</a>
                 </p>
               </div>
@@ -647,6 +651,8 @@ const Configurateur = () => {
           </div>
         </aside>
       </section>
+
+
     </SiteLayout>
   );
 };
