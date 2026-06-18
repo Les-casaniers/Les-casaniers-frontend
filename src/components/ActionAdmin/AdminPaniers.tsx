@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/service/api";
+import ProductImage from "@/components/ProductImage"; // Import du composant partagé
 
 // Types
 type Produit = {
@@ -23,6 +24,7 @@ type Produit = {
   slug?: string;
   images?: any[];
   image?: string | null;
+  reference?: string;
 };
 
 type PanierItem = {
@@ -49,119 +51,6 @@ type UtilisateurAvecPanier = {
   montant_total: number;
 };
 
-// Composant ImageProduit réutilisable
-const ProductImageItem = ({ 
-  produit, 
-  className = "w-12 h-12 rounded-lg object-cover border border-border",
-  fallbackClassName = "w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
-}: { 
-  produit?: Produit | null;
-  className?: string;
-  fallbackClassName?: string;
-}) => {
-  const [imageError, setImageError] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setImageError(false);
-    setIsLoading(true);
-
-    const extractImage = (obj: any): string | null => {
-      if (!obj) return null;
-
-      if (obj.images && Array.isArray(obj.images) && obj.images.length > 0) {
-        const firstImage = obj.images[0];
-        if (firstImage && typeof firstImage === 'object') {
-          if (firstImage.url) return firstImage.url;
-          if (firstImage.path) return firstImage.path;
-          if (firstImage.filename) return firstImage.filename;
-        }
-        if (typeof firstImage === 'string') return firstImage;
-      }
-
-      const imageFields = ['image', 'image_url', 'photo', 'url_image'];
-      for (const field of imageFields) {
-        const value = obj[field];
-        if (value && typeof value === 'string' && value.trim() !== '') {
-          return value;
-        }
-      }
-
-      return null;
-    };
-
-    const imageSource = extractImage(produit);
-    console.log(`🎯 Source d'image pour produit ${produit?.id}:`, imageSource);
-
-    if (!imageSource) {
-      setImageUrl(null);
-      setIsLoading(false);
-      return;
-    }
-
-    if (imageSource.startsWith('data:image')) {
-      setImageUrl(imageSource);
-      setIsLoading(false);
-      return;
-    }
-
-    if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
-      setImageUrl(imageSource);
-      setIsLoading(false);
-      return;
-    }
-
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    let fileName = imageSource;
-    if (fileName.includes('/')) {
-      fileName = fileName.split('/').pop() || fileName;
-    }
-
-    const finalUrl = `${baseUrl}/image/${fileName}`;
-    console.log(`🔗 URL finale:`, finalUrl);
-    setImageUrl(finalUrl);
-    setIsLoading(false);
-  }, [produit]);
-
-  // Si pas de produit ou pas d'image
-  if (!produit) {
-    return (
-      <div className={fallbackClassName}>
-        <Package className="h-6 w-6 text-muted-foreground" />
-      </div>
-    );
-  }
-
-  return (
-    <div className={`relative ${className}`}>
-      {isLoading ? (
-        <div className={`${className} flex items-center justify-center bg-gray-100`}>
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
-        </div>
-      ) : imageUrl && !imageError ? (
-        <img
-          src={imageUrl}
-          alt={produit.nom || 'Produit'}
-          className={className}
-          onError={() => {
-            console.error(`❌ Erreur chargement image:`, imageUrl);
-            setImageError(true);
-          }}
-          onLoad={() => {
-            console.log(`✅ Image chargée avec succès: ${produit.nom}`);
-          }}
-          loading="lazy"
-        />
-      ) : (
-        <div className={fallbackClassName}>
-          <Package className="h-6 w-6 text-muted-foreground" />
-        </div>
-      )}
-    </div>
-  );
-};
-
 // Composant principal
 const AdminPaniers = () => {
   const [utilisateurs, setUtilisateurs] = useState<UtilisateurAvecPanier[]>([]);
@@ -182,33 +71,49 @@ const AdminPaniers = () => {
     fetchStats();
   }, []);
 
-  const fetchUtilisateursAvecPaniers = async () => {
-    try {
-      setIsLoading(true);
+const fetchUtilisateursAvecPaniers = async () => {
+  try {
+    setIsLoading(true);
 
-      const response = await api.get("/admin/utilisateurs-avec-paniers");
-      console.log("Réponse API:", response.data);
-
-      let utilisateursData = [];
-      if (response.data.data && Array.isArray(response.data.data)) {
-        utilisateursData = response.data.data;
-      } else if (Array.isArray(response.data)) {
-        utilisateursData = response.data;
-      } else {
-        utilisateursData = [];
-      }
-
-      setUtilisateurs(utilisateursData);
-    } catch (error: any) {
-      console.error("Erreur chargement données:", error);
-      toast.error(
-        error.response?.data?.message || "Impossible de charger les paniers",
-      );
-    } finally {
-      setIsLoading(false);
+    const response = await api.get("/admin/utilisateurs-avec-paniers");
+    console.log("=== RÉPONSE API COMPLÈTE ===", response.data);
+    
+    // Log détaillé des produits
+    if (response.data.data && Array.isArray(response.data.data)) {
+      response.data.data.forEach((user: any) => {
+        if (user.paniers && Array.isArray(user.paniers)) {
+          user.paniers.forEach((item: any) => {
+            if (item.produit) {
+              console.log(`📦 Produit ID: ${item.produit.id}`);
+              console.log(`📦 Nom: ${item.produit.nom}`);
+              console.log(`📦 Images:`, item.produit.images);
+              console.log(`📦 Image:`, item.produit.image);
+              console.log(`📦 Image URL:`, item.produit.image_url);
+            }
+          });
+        }
+      });
     }
-  };
 
+    let utilisateursData = [];
+    if (response.data.data && Array.isArray(response.data.data)) {
+      utilisateursData = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      utilisateursData = response.data;
+    } else {
+      utilisateursData = [];
+    }
+
+    setUtilisateurs(utilisateursData);
+  } catch (error: any) {
+    console.error("Erreur chargement données:", error);
+    toast.error(
+      error.response?.data?.message || "Impossible de charger les paniers",
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
   const fetchStats = async () => {
     try {
       const response = await api.get("/admin/paniers/stats");
@@ -244,21 +149,17 @@ const AdminPaniers = () => {
           // Récupérer l'URL de l'image pour l'email
           let imageUrl = "/image/placeholder.jpg";
           if (produit) {
-            const imageSource = produit.image_url || 
-                              (produit.images && produit.images.length > 0 ? produit.images[0]?.url : null) ||
-                              produit.image ||
-                              null;
-            if (imageSource) {
-              if (imageSource.startsWith('http')) {
-                imageUrl = imageSource;
-              } else {
-                const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-                let fileName = imageSource;
-                if (fileName.includes('/')) {
-                  fileName = fileName.split('/').pop() || fileName;
-                }
-                imageUrl = `${baseUrl}/image/${fileName}`;
+            if (produit.images && produit.images.length > 0 && produit.images[0]?.url) {
+              imageUrl = produit.images[0].url;
+            } else if (produit.image_url) {
+              imageUrl = produit.image_url;
+            } else if (produit.image) {
+              const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+              let fileName = produit.image;
+              if (fileName.includes('/')) {
+                fileName = fileName.split('/').pop() || fileName;
               }
+              imageUrl = `${baseUrl}/image/${fileName}`;
             }
           }
           
@@ -408,7 +309,7 @@ const AdminPaniers = () => {
         </button>
       </div>
 
-      {/* 3 Statistiques uniquement */}
+      {/* 3 Statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-xl p-4 text-center">
           <User className="h-6 w-6 text-primary mx-auto mb-2" />
@@ -503,16 +404,18 @@ const AdminPaniers = () => {
                     </div>
                   </div>
 
-                  {/* Mini aperçu des produits avec images */}
+                  {/* Mini aperçu des produits avec ProductImage */}
                   {utilisateur.paniers && utilisateur.paniers.length > 0 && (
                     <div className="mt-3 flex items-center gap-2 flex-wrap">
                       {utilisateur.paniers.slice(0, 3).map((item) => (
                         <div key={item.id} className="relative group">
-                          <ProductImageItem 
-                            produit={item.produit}
-                            className="w-12 h-12 rounded-lg object-cover border border-border"
-                            fallbackClassName="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
-                          />
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
+                            <ProductImage 
+                              produit={item.produit} 
+                              className="w-full h-full"
+                              showReference={false}
+                            />
+                          </div>
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
                             <span className="text-white text-[8px] text-center px-1">
                               {item.titre}
@@ -521,8 +424,8 @@ const AdminPaniers = () => {
                         </div>
                       ))}
                       {utilisateur.paniers.length > 3 && (
-                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                          <span className="text-xs text-muted-foreground">
+                        <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center border border-border">
+                          <span className="text-xs text-muted-foreground font-medium">
                             +{utilisateur.paniers.length - 3}
                           </span>
                         </div>
@@ -611,11 +514,13 @@ const AdminPaniers = () => {
                       key={item.id}
                       className="flex gap-4 p-4 bg-card border border-border rounded-xl hover:shadow-md transition"
                     >
-                      <ProductImageItem 
-                        produit={item.produit}
-                        className="w-24 h-24 rounded-lg object-cover border border-border"
-                        fallbackClassName="w-24 h-24 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center border border-border"
-                      />
+                      <div className="w-24 h-24 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                        <ProductImage 
+                          produit={item.produit} 
+                          className="w-full h-full"
+                          showReference={false}
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-foreground">
                           {item.titre}
