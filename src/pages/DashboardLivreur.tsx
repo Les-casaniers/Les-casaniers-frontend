@@ -65,7 +65,7 @@ const DashboardLivreur: React.FC = () => {
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [actionInProgress, setActionInProgress] = useState<number | null>(null);
 
-  // ✅ Récupération des données réelles
+  //  Récupération des données réelles
   useEffect(() => {
     fetchDashboardData();
   }, []);
@@ -145,7 +145,7 @@ const DashboardLivreur: React.FC = () => {
 
       setCurrentDeliveries(livraisonsData);
 
-      // ✅ Calculer les statistiques
+      // Calculer les statistiques
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -187,7 +187,7 @@ const DashboardLivreur: React.FC = () => {
     }
   };
 
-  // ✅ Fonction pour marquer comme livrée
+  // Fonction pour marquer comme livrée
   const marquerLivree = async (commande_uuid: string) => {
     try {
       setActionInProgress(commande_uuid as any);
@@ -201,7 +201,7 @@ const DashboardLivreur: React.FC = () => {
 
       if (response.data.success) {
         toast({
-          title: '✅ Livraison confirmée',
+          title: ' Livraison confirmée',
           description: `La commande ${commande_uuid} a été marquée comme livrée`,
         });
         await fetchDashboardData();
@@ -529,7 +529,7 @@ const DashboardLivreur: React.FC = () => {
                         <Navigation className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                         Naviguer
                       </button>
-                      <button 
+                      {/* <button 
                         onClick={() => marquerLivree(delivery.commande_uuid)}
                         disabled={actionInProgress === delivery.id}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:shadow-md hover:-translate-y-0.5 transition-all group disabled:opacity-50"
@@ -540,7 +540,7 @@ const DashboardLivreur: React.FC = () => {
                           <CheckCircle className="w-4 h-4 transition-transform group-hover:scale-110" />
                         )}
                         Livrée
-                      </button>
+                      </button> */}
                     </>
                   )}
                   {delivery.status === 'delivered' && (

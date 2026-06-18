@@ -1,6 +1,6 @@
 // src/components/layout/LivreurLayout.tsx
-import React, { useState, useEffect } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
@@ -17,13 +17,26 @@ import {
   Sun,
   Moon,
   TrendingUp,
-  Award
+  Award,
+  ExternalLink
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LivreurLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showLogout, setShowLogout] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Données utilisateur
+  const userData = {
+    name: user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : (user?.prenom || user?.nom || "Livreur"),
+    email: user?.email || "livreur@lescasaniers.mg",
+  };
 
   // Vérifier le thème au chargement
   useEffect(() => {
@@ -42,11 +55,26 @@ const LivreurLayout: React.FC = () => {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  // Gérer le clic en dehors pour fermer le dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLogout(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const menuItems = [
     { path: '/DashboardLivreur', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/DashboardLivreur/livraisons', icon: Package, label: 'Mes livraisons' },
-    { path: '/DashboardLivreur/planning', icon: Calendar, label: 'Planning' },
-    { path: '/DashboardLivreur/statistiques', icon: BarChart3, label: 'Statistiques' },
   ];
 
   const toggleTheme = () => {
@@ -61,9 +89,9 @@ const LivreurLayout: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+    logout();
+    navigate('/login');
+    setShowLogout(false);
   };
 
   // Vérifier si le chemin est actif
@@ -101,7 +129,7 @@ const LivreurLayout: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                    LivraFlow
+                    Livraison
                   </h1>
                   <p className="text-[10px] text-muted-foreground">Espace Livreur</p>
                 </div>
@@ -114,8 +142,6 @@ const LivreurLayout: React.FC = () => {
               </button>
             </div>
           </div>
-
-       
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -137,17 +163,7 @@ const LivreurLayout: React.FC = () => {
                   <item.icon className={`w-4 h-4 transition-all duration-200 ${isActive ? 'text-primary-foreground' : 'group-hover:text-primary'}`} />
                   <div className="flex-1">
                     <span className="text-sm font-medium">{item.label}</span>
-                    <p className="text-[10px] opacity-70">{item.description}</p>
                   </div>
-                  {item.badge && (
-                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                      isActive 
-                        ? 'bg-primary-foreground/20 text-primary-foreground' 
-                        : 'bg-primary/10 text-primary'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
                   {isActive && (
                     <ChevronRight className="w-3 h-3 animate-pulse-slow" />
                   )}
@@ -171,13 +187,6 @@ const LivreurLayout: React.FC = () => {
                   <Moon className="w-4 h-4 text-slate-700" />
                 )}
               </div>
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:bg-red-500/10 hover:text-red-600 transition-all duration-200 group"
-            >
-              <LogOut className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              <span>Déconnexion</span>
             </button>
           </div>
         </div>
@@ -219,8 +228,6 @@ const LivreurLayout: React.FC = () => {
                 )}
               </button>
 
-          
-
               {/* Status */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                 <div className="relative">
@@ -232,18 +239,45 @@ const LivreurLayout: React.FC = () => {
                 </span>
               </div>
 
-              {/* User */}
-              <div className="flex items-center gap-2 cursor-pointer group">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-medium">Jean Dupont</p>
-                  <p className="text-xs text-muted-foreground">Livreur</p>
-                </div>
-                <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 duration-300">
-                    <User className="w-4 h-4 text-primary-foreground" />
+              {/* User avec dropdown */}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  ref={buttonRef}
+                  onClick={() => setShowLogout(!showLogout)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-all duration-200"
+                >
+                  <div className="text-right hidden sm:block">
+                    <p className="text-sm font-medium text-foreground">{userData.name}</p>
+                    <p className="text-xs text-muted-foreground">Livreur</p>
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card"></div>
-                </div>
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 duration-300">
+                      <span className="text-sm font-bold text-primary-foreground">
+                        {userData.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card"></div>
+                  </div>
+                </button>
+
+                {/* Dropdown - Uniquement Déconnexion */}
+                {showLogout && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50">
+                    <div className="px-4 py-2 border-b border-border">
+                      <p className="text-sm font-medium text-foreground">{userData.name}</p>
+                      <p className="text-xs text-muted-foreground">{userData.email}</p>
+                    </div>
+
+                    {/* Bouton Déconnexion en rouge */}
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
