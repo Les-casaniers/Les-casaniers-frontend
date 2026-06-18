@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/service/api";
+import ProductImage from "@/components/ProductImage";
 
 // Types
 type Utilisateur = {
@@ -32,6 +33,9 @@ type Produit = {
   prix: number;
   image_url?: string;
   slug?: string;
+  images?: any[];
+  image?: string | null;
+  reference?: string;
 };
 
 type FavoriItem = {
@@ -78,7 +82,6 @@ const AdminFavoris = () => {
     try {
       setIsLoading(true);
       
-      // Utiliser la bonne route admin
       const response = await api.get('/admin/utilisateurs-avec-favoris');
       console.log("Réponse API:", response.data);
       
@@ -126,13 +129,29 @@ const AdminFavoris = () => {
     setSendingEmail(utilisateur.id);
     
     try {
-      // Générer le contenu HTML de l'email
+      // Générer le HTML des produits avec images
       const produitsListHtml = utilisateur.favoris.map((fav: FavoriItem) => {
         const produit = fav.produit;
         if (!produit) return '';
+        
+        // Récupérer l'URL de l'image
+        let imageUrl = '/image/placeholder.jpg';
+        if (produit.images && produit.images.length > 0) {
+          imageUrl = produit.images[0]?.url || produit.image_url || '/image/placeholder.jpg';
+        } else if (produit.image_url) {
+          imageUrl = produit.image_url;
+        } else if (produit.image) {
+          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+          let fileName = produit.image;
+          if (fileName.includes('/')) {
+            fileName = fileName.split('/').pop() || fileName;
+          }
+          imageUrl = `${baseUrl}/image/${fileName}`;
+        }
+        
         return `
           <div style="display: inline-block; width: 200px; margin: 10px; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; text-align: center;">
-            <img src="${produit.image_url || '/image/placeholder.jpg'}" alt="${produit.nom}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" />
+            <img src="${imageUrl}" alt="${produit.nom}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;" onerror="this.src='/image/placeholder.jpg'" />
             <h4 style="margin: 10px 0; font-size: 16px; font-weight: bold;">${produit.nom}</h4>
             <p style="color: #e67e22; font-size: 14px; font-weight: bold;">${formatPrice(produit.prix)} Ar</p>
             <a href="${window.location.origin}/produit/${produit.id}" style="display: inline-block; margin-top: 10px; padding: 8px 16px; background-color: #e67e22; color: white; text-decoration: none; border-radius: 5px;">Voir le produit</a>
@@ -198,7 +217,6 @@ const AdminFavoris = () => {
         </html>
       `;
       
-      // Envoyer l'email via l'API admin
       await api.post('/admin/favoris/envoyer-email', {
         utilisateur_id: utilisateur.id,
         email: utilisateur.email,
@@ -342,16 +360,18 @@ const AdminFavoris = () => {
                     </div>
                   </div>
                   
-                  {/* Mini aperçu des produits favoris */}
+                  {/* Mini aperçu des produits favoris avec ProductImage */}
                   {utilisateur.favoris && utilisateur.favoris.length > 0 && (
                     <div className="mt-3 flex items-center gap-2 flex-wrap">
                       {utilisateur.favoris.slice(0, 3).map((fav) => (
                         <div key={fav.id} className="relative group">
-                          <img
-                            src={fav.produit?.image_url || '/image/placeholder.jpg'}
-                            alt={fav.produit?.nom || 'Produit'}
-                            className="w-12 h-12 rounded-lg object-cover border border-border"
-                          />
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border border-border">
+                            <ProductImage 
+                              produit={fav.produit} 
+                              className="w-full h-full"
+                              showReference={false}
+                            />
+                          </div>
                           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition rounded-lg flex items-center justify-center">
                             <span className="text-white text-[8px] text-center px-1">{fav.produit?.nom}</span>
                           </div>
@@ -436,11 +456,13 @@ const AdminFavoris = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {selectedUtilisateur.favoris.map((fav) => (
                     <div key={fav.id} className="flex gap-4 p-4 bg-card border border-border rounded-xl hover:shadow-md transition">
-                      <img
-                        src={fav.produit?.image_url || '/image/placeholder.jpg'}
-                        alt={fav.produit?.nom || 'Produit'}
-                        className="w-24 h-24 rounded-lg object-cover border border-border"
-                      />
+                      <div className="w-24 h-24 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                        <ProductImage 
+                          produit={fav.produit} 
+                          className="w-full h-full"
+                          showReference={false}
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-foreground line-clamp-2">{fav.produit?.nom}</h3>
                         <p className="text-lg font-bold text-primary mt-1">{formatPrice(fav.produit?.prix || 0)} Ar</p>
