@@ -339,7 +339,7 @@ export const Favorites = () => {
     try {
       const favori = favoris.find(f => f.produit_id === productId);
       if (favori) {
-        await api.delete(`/favoris/${favori.id}`);
+        await api.delete(`/favoris/${productId}`);
         setFavoris(favoris.filter(f => f.produit_id !== productId));
         setProducts(products.filter(p => p.id !== productId));
         setSelectedProducts(prev => {
@@ -402,7 +402,7 @@ export const Favorites = () => {
       const favori = favoris.find(f => f.produit_id === productId);
       if (favori) {
         try {
-          await api.delete(`/favoris/${favori.id}`);
+          await api.delete(`/favoris/${productId}`);
         } catch (error) {
           console.error("Erreur suppression:", error);
         }
