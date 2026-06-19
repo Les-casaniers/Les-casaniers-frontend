@@ -11,12 +11,12 @@ type Adresse = {
   utilisateur_id: number;
   etiquette: string;
   nom_complet: string;
-  telephone: string;
+  telephone: string | null;
   adresse_ligne1: string;
   adresse_ligne2: string | null;
   ville: string;
-  region: string;
-  code_postal: string;
+  region: string | null;
+  code_postal: string | null;
   pays: string;
   par_defaut_expedition: boolean;
   par_defaut_facturation: boolean;
@@ -45,7 +45,9 @@ const DashboardAdresses = () => {
   const [selectedAdresse, setSelectedAdresse] = useState<Adresse | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
+
   const [form, setForm] = useState<Partial<Adresse>>({
     etiquette: "",
     nom_complet: "",
@@ -67,7 +69,6 @@ const DashboardAdresses = () => {
     fetchUserAndAdresses();
   }, []);
 
-  // ✅ Fonction utilitaire pour formater les coordonnées
   const formatCoordinate = (value: any): string => {
     if (value === null || value === undefined || value === '') return '0.0000';
     const num = Number(value);
@@ -79,10 +80,10 @@ const DashboardAdresses = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const userResponse = await api.get('/utilisateurs/profile');
-      console.log("Utilisateur connecté:", userResponse.data);
-      
+      console.log("👤 Utilisateur connecté:", userResponse.data);
+
       let currentUser = null;
       if (userResponse.data.success && userResponse.data.data) {
         currentUser = userResponse.data.data;
@@ -91,14 +92,16 @@ const DashboardAdresses = () => {
       } else {
         currentUser = userResponse.data;
       }
-      
+
       setUser(currentUser);
-      
-      const adressesResponse = await api.get(`/adresses?utilisateur_id=${currentUser.id}`);
-      console.log("Adresses récupérées:", adressesResponse.data);
-      
+
+      const adressesResponse = await api.get('/adresses');
+      console.log("📦 Adresses récupérées:", adressesResponse.data);
+
       let userAdresses = [];
-      if (adressesResponse.data.data) {
+      if (adressesResponse.data.success && adressesResponse.data.data) {
+        userAdresses = Array.isArray(adressesResponse.data.data) ? adressesResponse.data.data : [];
+      } else if (adressesResponse.data.data) {
         userAdresses = Array.isArray(adressesResponse.data.data) ? adressesResponse.data.data : [];
       } else if (Array.isArray(adressesResponse.data)) {
         userAdresses = adressesResponse.data;
@@ -107,12 +110,13 @@ const DashboardAdresses = () => {
       } else {
         userAdresses = [];
       }
-      
+
       setAdresses(userAdresses);
-      
+
     } catch (error: any) {
-      console.error("Erreur lors du chargement:", error);
+      console.error("❌ Erreur lors du chargement:", error);
       setError("Impossible de charger vos adresses. Veuillez réessayer.");
+      toast.error("Erreur de chargement des adresses");
     } finally {
       setIsLoading(false);
     }
@@ -134,8 +138,8 @@ const DashboardAdresses = () => {
       latitude: lat,
       longitude: lng,
     }));
-    
-    toast.success(`Position sélectionnée: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+
+    toast.success(`📍 Position sélectionnée: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,7 +157,7 @@ const DashboardAdresses = () => {
     }
 
     setImageFile(file);
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target?.result as string);
@@ -163,7 +167,7 @@ const DashboardAdresses = () => {
 
   const handleOpenAdd = () => {
     const nomComplet = user ? `${user.prenom} ${user.nom}` : "";
-    
+
     setForm({
       etiquette: "",
       nom_complet: nomComplet,
@@ -183,14 +187,21 @@ const DashboardAdresses = () => {
     setSelectedAdresse(null);
     setImagePreview(null);
     setImageFile(null);
+    setErrorDetails(null);
     setShowModal(true);
   };
 
   const handleOpenEdit = (adresse: Adresse) => {
     setSelectedAdresse(adresse);
-    setForm(adresse);
+    setForm({
+      ...adresse,
+      telephone: adresse.telephone || "",
+      region: adresse.region || "",
+      code_postal: adresse.code_postal || "",
+    });
     setImagePreview(adresse.image_adress);
     setImageFile(null);
+    setErrorDetails(null);
     setShowModal(true);
   };
 
@@ -202,77 +213,156 @@ const DashboardAdresses = () => {
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('image', file);
-    
+
     const response = await api.post('/adresses/upload-image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
-    return response.data.image_url;
+
+    console.log("📸 Réponse upload:", response.data);
+
+    if (response.data.success && response.data.image_url) {
+      return response.data.image_url;
+    }
+
+    throw new Error(response.data.message || "Erreur lors de l'upload de l'image");
   };
 
+
+
+const getImageUrl = (imagePath: string | null): string => {
+    if (!imagePath) return '/placeholder-image.jpg';
+    
+    // ✅ Si l'image a déjà une URL complète
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+        return imagePath;
+    }
+    
+  
+    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    
+    // ✅ Si le chemin commence par /storage/ (recommandé)
+    if (imagePath.startsWith('/storage/')) {
+        return `${baseUrl}${imagePath}`;
+    }
+    
+    // ✅ Si le chemin commence par /image-lieu/ (ancien système)
+    if (imagePath.startsWith('/image-lieu/')) {
+        return `${baseUrl}${imagePath}`;
+    }
+    
+    // ✅ Si c'est un nom de fichier seul
+    return `${baseUrl}/storage/image-lieu/${imagePath}`;
+};
   const handleSave = async () => {
-    if (!form.nom_complet || !form.telephone || !form.adresse_ligne1 || !form.code_postal || !form.ville || !form.region) {
-      toast.error("Veuillez remplir tous les champs obligatoires");
+    // Validation des champs obligatoires
+    if (!form.nom_complet?.trim()) {
+      toast.error("Le nom complet est obligatoire");
+      return;
+    }
+    if (!form.adresse_ligne1?.trim()) {
+      toast.error("L'adresse ligne 1 est obligatoire");
+      return;
+    }
+    if (!form.ville?.trim()) {
+      toast.error("La ville est obligatoire");
+      return;
+    }
+    if (!form.pays?.trim()) {
+      toast.error("Le pays est obligatoire");
       return;
     }
 
+    setIsSaving(true);
+    setErrorDetails(null);
+
     try {
       let imageFilename = form.image_adress || null;
-      
+
       if (imageFile) {
-        imageFilename = await uploadImage(imageFile);
+        try {
+          imageFilename = await uploadImage(imageFile);
+          console.log("📸 Image uploadée avec succès:", imageFilename);
+        } catch (uploadError: any) {
+          console.error("❌ Erreur upload image:", uploadError);
+          toast.error(uploadError.message || "Erreur lors du téléchargement de l'image");
+          setIsSaving(false);
+          return;
+        }
       }
 
       const adresseData = {
-        etiquette: form.etiquette || "Livraison",
-        nom_complet: form.nom_complet,
-        telephone: form.telephone,
-        adresse_ligne1: form.adresse_ligne1,
-        adresse_ligne2: form.adresse_ligne2 || null,
-        ville: form.ville,
-        region: form.region,
-        code_postal: form.code_postal,
-        pays: form.pays,
-        par_defaut_expedition: form.par_defaut_expedition || false,
-        par_defaut_facturation: form.par_defaut_facturation || false,
+        etiquette: form.etiquette?.trim() || "Livraison",
+        nom_complet: form.nom_complet.trim(),
+        telephone: form.telephone?.trim() || null,
+        adresse_ligne1: form.adresse_ligne1.trim(),
+        adresse_ligne2: form.adresse_ligne2?.trim() || null,
+        ville: form.ville.trim(),
+        region: form.region?.trim() || null,
+        code_postal: form.code_postal?.trim() || null,
+        pays: form.pays.trim(),
+        par_defaut_expedition: form.par_defaut_expedition ? 1 : 0,
+        par_defaut_facturation: form.par_defaut_facturation ? 1 : 0,
         image_adress: imageFilename,
-        latitude: form.latitude || null,
-        longitude: form.longitude || null,
+        latitude: form.latitude ? parseFloat(String(form.latitude)) : null,
+        longitude: form.longitude ? parseFloat(String(form.longitude)) : null,
       };
 
+      console.log("📤 Données envoyées:", JSON.stringify(adresseData, null, 2));
+
+      let response;
       if (selectedAdresse) {
-        await api.put(`/adresses/${selectedAdresse.id}`, adresseData);
-        
-        if (form.par_defaut_expedition) {
-          await api.put(`/adresses/${selectedAdresse.id}/defaut-expedition`);
-        }
-        
-        await fetchUserAndAdresses();
-        toast.success("Adresse modifiée avec succès");
+        response = await api.put(`/adresses/${selectedAdresse.id}`, adresseData);
       } else {
-        await api.post('/adresses', {
-          utilisateur_id: user?.id,
-          ...adresseData,
-          par_defaut_expedition: form.par_defaut_expedition || adresses.length === 0,
-          par_defaut_facturation: form.par_defaut_facturation || adresses.length === 0,
-        });
-        
-        await fetchUserAndAdresses();
-        toast.success("Adresse ajoutée avec succès");
+        response = await api.post('/adresses', adresseData);
       }
-      
+
+      console.log("✅ Réponse du serveur:", response.data);
+
+      toast.success(selectedAdresse ? "Adresse modifiée avec succès" : "Adresse ajoutée avec succès");
+      await fetchUserAndAdresses();
       setShowModal(false);
+
     } catch (error: any) {
-      console.error("Erreur lors de la sauvegarde:", error);
-      toast.error(error.response?.data?.message || "Erreur lors de la sauvegarde");
+      console.error("❌ Erreur lors de la sauvegarde:", error);
+
+      if (error.response) {
+        console.error("📄 Status:", error.response.status);
+        console.error("📄 Data:", error.response.data);
+
+        setErrorDetails(JSON.stringify(error.response.data, null, 2));
+
+        if (error.response.data?.errors) {
+          const errors = error.response.data.errors;
+          const firstErrorMessage = Object.values(errors)[0];
+          if (Array.isArray(firstErrorMessage)) {
+            toast.error(firstErrorMessage[0]);
+          } else {
+            toast.error("Erreur de validation des données");
+          }
+        } else if (error.response.data?.message) {
+          toast.error(error.response.data.message);
+        } else if (typeof error.response.data === 'string') {
+          toast.error(error.response.data);
+        } else {
+          toast.error(`Erreur ${error.response.status}: ${error.response.statusText}`);
+        }
+      } else if (error.request) {
+        console.error("📄 No response received:", error.request);
+        toast.error("Le serveur ne répond pas. Vérifiez votre connexion.");
+      } else {
+        console.error("📄 Error:", error.message);
+        toast.error(error.message || "Erreur inconnue");
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async () => {
     if (!selectedAdresse) return;
-    
+
     try {
       await api.delete(`/adresses/${selectedAdresse.id}`);
       await fetchUserAndAdresses();
@@ -280,7 +370,7 @@ const DashboardAdresses = () => {
       setSelectedAdresse(null);
       toast.success("Adresse supprimée avec succès");
     } catch (error: any) {
-      console.error("Erreur lors de la suppression:", error);
+      console.error("❌ Erreur lors de la suppression:", error);
       toast.error(error.response?.data?.message || "Erreur lors de la suppression");
     }
   };
@@ -291,7 +381,7 @@ const DashboardAdresses = () => {
       await fetchUserAndAdresses();
       toast.success("Adresse par défaut mise à jour");
     } catch (error: any) {
-      console.error("Erreur lors du changement d'adresse par défaut:", error);
+      console.error("❌ Erreur lors du changement d'adresse par défaut:", error);
       toast.error(error.response?.data?.message || "Erreur lors de la mise à jour");
     }
   };
@@ -326,7 +416,7 @@ const DashboardAdresses = () => {
       <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 text-center">
         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
         <p className="text-red-500 mb-4">{error}</p>
-        <button 
+        <button
           onClick={fetchUserAndAdresses}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
         >
@@ -353,6 +443,16 @@ const DashboardAdresses = () => {
         </button>
       </div>
 
+      {/* Affichage des détails de l'erreur en mode debug */}
+      {errorDetails && (
+        <div className="bg-red-50 border border-red-300 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-red-800 mb-2">Détails de l'erreur :</p>
+          <pre className="text-xs text-red-700 whitespace-pre-wrap overflow-auto max-h-40">
+            {errorDetails}
+          </pre>
+        </div>
+      )}
+
       {/* Liste des adresses */}
       {adresses.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-12 text-center">
@@ -374,9 +474,8 @@ const DashboardAdresses = () => {
           {adresses.map((adresse) => (
             <div
               key={adresse.id}
-              className={`relative bg-card border rounded-2xl p-5 transition-all hover:shadow-md ${
-                adresse.par_defaut_expedition ? 'border-primary/50 bg-primary/5' : 'border-border'
-              }`}
+              className={`relative bg-card border rounded-2xl p-5 transition-all hover:shadow-md ${adresse.par_defaut_expedition ? 'border-primary/50 bg-primary/5' : 'border-border'
+                }`}
             >
               {/* Badge par défaut */}
               {adresse.par_defaut_expedition && (
@@ -388,11 +487,8 @@ const DashboardAdresses = () => {
                 </div>
               )}
 
-              {/* Layout avec image à droite */}
               <div className="flex gap-4">
-                {/* Informations - gauche */}
                 <div className="flex-1 min-w-0">
-                  {/* Type d'adresse */}
                   <div className="flex items-center gap-2 mb-3">
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                       {getTypeIcon(adresse.etiquette)}
@@ -408,38 +504,38 @@ const DashboardAdresses = () => {
                     )}
                   </div>
 
-                  {/* Informations */}
                   <div className="space-y-2">
                     <p className="font-semibold text-foreground">
                       {adresse.nom_complet}
                     </p>
-                    <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
+                    {adresse.telephone && (
+                      <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
+                    )}
                     <p className="text-sm text-foreground leading-relaxed">
                       {adresse.adresse_ligne1}
                       {adresse.adresse_ligne2 && <><br />{adresse.adresse_ligne2}</>}
                       <br />
                       {adresse.code_postal} {adresse.ville}
                       <br />
-                      {adresse.region}, {adresse.pays}
+                      {adresse.region && <>{adresse.region}, </>}
+                      {adresse.pays}
                     </p>
                   </div>
                 </div>
 
-                {/* ✅ Image - droite (agrandie à 32x32) */}
                 <div className="flex-shrink-0">
                   {adresse.image_adress ? (
                     <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 group">
-                      <img 
-                        src={adresse.image_adress} 
+                      <img
+                        src={getImageUrl(adresse.image_adress)}
                         alt="Photo du lieu"
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
                         }}
                       />
-                      {/* ✅ Bouton pour agrandir l'image */}
                       <button
-                        onClick={() => window.open(adresse.image_adress || '', '_blank')}
+                        onClick={() => window.open(getImageUrl(adresse.image_adress), '_blank')}
                         className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                         title="Agrandir l'image"
                       >
@@ -454,9 +550,7 @@ const DashboardAdresses = () => {
                 </div>
               </div>
 
-              {/* ✅ Bouton Google Maps et Actions */}
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
-                {/* ✅ Bouton Google Maps à gauche */}
                 {adresse.latitude && adresse.longitude && (
                   <button
                     onClick={() => {
@@ -469,9 +563,8 @@ const DashboardAdresses = () => {
                     Voir sur Google Maps
                   </button>
                 )}
-                
-                {/* Actions à droite */}
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 ml-auto">
                   {!adresse.par_defaut_expedition && (
                     <button
                       onClick={() => handleSetDefault(adresse.id)}
@@ -500,7 +593,7 @@ const DashboardAdresses = () => {
         </div>
       )}
 
-      {/* MODAL AJOUTER/MODIFIER - Reste inchangé */}
+      {/* MODAL AJOUTER/MODIFIER */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in">
@@ -518,62 +611,134 @@ const DashboardAdresses = () => {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-secondary transition">
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 rounded-lg hover:bg-secondary transition"
+                disabled={isSaving}
+              >
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
 
             <div className="overflow-y-auto p-6 flex-1">
               <div className="space-y-5">
-                {/* Nom complet - READONLY (masqué) */}
-                <div className="hidden">
-                  <label className="block text-sm font-medium text-foreground mb-2">Nom complet</label>
-                  <input 
-                    name="nom_complet" 
-                    value={form.nom_complet || ""} 
-                    readOnly
-                    className={`${inputClass} bg-muted/50 cursor-not-allowed`} 
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Nom complet <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    name="nom_complet"
+                    value={form.nom_complet || ""}
+                    onChange={handleInputChange}
+                    placeholder="Votre nom et prénom"
+                    className={inputClass}
+                    required
+                    disabled={isSaving}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Téléphone <span className="text-destructive">*</span></label>
-                    <input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="034 12 345 67" className={inputClass} />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Téléphone
+                  </label>
+                  <input
+                    name="telephone"
+                    value={form.telephone || ""}
+                    onChange={handleInputChange}
+                    placeholder="034 12 345 67"
+                    className={inputClass}
+                    disabled={isSaving}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Adresse ligne 1 <span className="text-destructive">*</span></label>
-                  <input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange} placeholder="Numéro et nom de rue" className={inputClass} />
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Adresse ligne 1 <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    name="adresse_ligne1"
+                    value={form.adresse_ligne1 || ""}
+                    onChange={handleInputChange}
+                    placeholder="Numéro et nom de rue"
+                    className={inputClass}
+                    required
+                    disabled={isSaving}
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Adresse ligne 2 (optionnel)</label>
-                  <input name="adresse_ligne2" value={form.adresse_ligne2 || ""} onChange={handleInputChange} placeholder="Appartement, étage, bâtiment..." className={inputClass} />
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Adresse ligne 2 (optionnel)
+                  </label>
+                  <input
+                    name="adresse_ligne2"
+                    value={form.adresse_ligne2 || ""}
+                    onChange={handleInputChange}
+                    placeholder="Appartement, étage, bâtiment..."
+                    className={inputClass}
+                    disabled={isSaving}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Code postal <span className="text-destructive">*</span></label>
-                    <input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange} className={inputClass} />
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Code postal
+                    </label>
+                    <input
+                      name="code_postal"
+                      value={form.code_postal || ""}
+                      onChange={handleInputChange}
+                      className={inputClass}
+                      disabled={isSaving}
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Ville <span className="text-destructive">*</span></label>
-                    <input name="ville" value={form.ville || ""} onChange={handleInputChange} className={inputClass} />
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Ville <span className="text-destructive">*</span>
+                    </label>
+                    <input
+                      name="ville"
+                      value={form.ville || ""}
+                      onChange={handleInputChange}
+                      className={inputClass}
+                      required
+                      disabled={isSaving}
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Région <span className="text-destructive">*</span></label>
-                    <input name="region" value={form.region || ""} onChange={handleInputChange} className={inputClass} placeholder="Analamanga, Atsinanana..." />
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Région
+                    </label>
+                    <input
+                      name="region"
+                      value={form.region || ""}
+                      onChange={handleInputChange}
+                      className={inputClass}
+                      placeholder="Analamanga, Atsinanana..."
+                      disabled={isSaving}
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Pays</label>
-                  <select name="pays" value={form.pays} onChange={handleInputChange} className={inputClass}>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Pays <span className="text-destructive">*</span>
+                  </label>
+                  <select
+                    name="pays"
+                    value={form.pays || "Madagascar"}
+                    onChange={handleInputChange}
+                    className={inputClass}
+                    required
+                    disabled={isSaving}
+                  >
                     <option value="Madagascar">Madagascar</option>
                     <option value="France">France</option>
                     <option value="Canada">Canada</option>
+                    <option value="Belgique">Belgique</option>
+                    <option value="Suisse">Suisse</option>
+                    <option value="Autre">Autre</option>
                   </select>
                 </div>
 
@@ -589,11 +754,11 @@ const DashboardAdresses = () => {
                         key={type.value}
                         type="button"
                         onClick={() => setForm(prev => ({ ...prev, etiquette: type.value }))}
-                        className={`px-4 py-2 text-sm font-medium rounded-xl transition border ${
-                          form.etiquette === type.value
+                        disabled={isSaving}
+                        className={`px-4 py-2 text-sm font-medium rounded-xl transition border ${form.etiquette === type.value
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-background text-foreground border-border hover:bg-secondary"
-                        }`}
+                          } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         {type.label}
                       </button>
@@ -601,12 +766,13 @@ const DashboardAdresses = () => {
                   </div>
                 </div>
 
-                {/* Upload d'image */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Photo du lieu</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Photo du lieu (optionnel)
+                  </label>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <label className="flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors">
+                      <label className={`flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Upload className="h-4 w-4" />
                           <span>{imageFile ? imageFile.name : "Choisir une image"}</span>
@@ -616,6 +782,7 @@ const DashboardAdresses = () => {
                           accept="image/*"
                           onChange={handleImageUpload}
                           className="hidden"
+                          disabled={isSaving}
                         />
                       </label>
                     </div>
@@ -628,7 +795,8 @@ const DashboardAdresses = () => {
                             setImageFile(null);
                             setForm(prev => ({ ...prev, image_adress: null }));
                           }}
-                          className="absolute -top-1 -right-1 p-0.5 bg-destructive text-white rounded-full hover:bg-destructive/80"
+                          disabled={isSaving}
+                          className="absolute -top-1 -right-1 p-0.5 bg-destructive text-white rounded-full hover:bg-destructive/80 disabled:opacity-50"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -638,7 +806,6 @@ const DashboardAdresses = () => {
                   <p className="text-xs text-muted-foreground mt-1">Formats acceptés: JPG, PNG, GIF, WEBP (max 2MB)</p>
                 </div>
 
-                {/* Carte pour sélectionner la position */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Localisation sur la carte <span className="text-xs text-muted-foreground">(cliquez pour sélectionner)</span>
@@ -648,10 +815,10 @@ const DashboardAdresses = () => {
                     longitude={typeof form.longitude === 'string' ? parseFloat(form.longitude) : form.longitude || null}
                     onLocationSelect={handleLocationSelect}
                     address={`${form.adresse_ligne1 || ''} ${form.ville || ''}`}
+                    disabled={isSaving}
                   />
                 </div>
 
-                {/* Latitude et Longitude - READONLY */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Latitude</label>
@@ -683,6 +850,7 @@ const DashboardAdresses = () => {
                     checked={form.par_defaut_expedition || false}
                     onChange={handleInputChange}
                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
+                    disabled={isSaving}
                   />
                   <label htmlFor="par_defaut_expedition" className="text-sm text-foreground">
                     Définir comme adresse par défaut pour l'expédition
@@ -692,12 +860,29 @@ const DashboardAdresses = () => {
             </div>
 
             <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-secondary/10">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition"
+                disabled={isSaving}
+              >
                 Annuler
               </button>
-              <button onClick={handleSave} className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition">
-                <Check className="h-4 w-4" />
-                {selectedAdresse ? "Enregistrer" : "Ajouter"}
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    {selectedAdresse ? "Enregistrer" : "Ajouter"}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -724,10 +909,16 @@ const DashboardAdresses = () => {
               <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>
             </div>
             <div className="flex gap-3 p-6 pt-0">
-              <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition">
+              <button
+                onClick={() => setShowDeleteAlert(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition"
+              >
                 Annuler
               </button>
-              <button onClick={handleDelete} className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition">
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition"
+              >
                 Supprimer
               </button>
             </div>
