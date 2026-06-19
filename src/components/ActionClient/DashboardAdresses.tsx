@@ -1,11 +1,15 @@
-// src/pages/DashboardAdresses.tsx
 import { useState, useEffect } from "react";
-import { MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package, Star, AlertCircle, Loader2, Upload, Image as ImageIcon, Map, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import {
+  MapPin, Plus, Edit2, Trash2, Check, X, Home, Building, Package,
+  Star, AlertCircle, Loader2, Upload, Image as ImageIcon, Map, Eye,
+  ChevronDown, Phone, User, Navigation,
+} from "lucide-react";
 import { toast } from "sonner";
 import api from "@/service/api";
 import MapPicker from "@/components/MapPicker";
 
-// Interface pour les adresses
+// ─── Types ───────────────────────────────────────────────────────────────────
 type Adresse = {
   id: number;
   utilisateur_id: number;
@@ -35,6 +39,94 @@ type User = {
   telephone?: string;
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const formatCoordinate = (value: any): string => {
+  if (value === null || value === undefined || value === "") return "0.0000";
+  const num = Number(value);
+  return isNaN(num) ? "0.0000" : num.toFixed(4);
+};
+
+const getImageUrl = (imagePath: string | null): string => {
+  if (!imagePath) return "/placeholder-image.jpg";
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) return imagePath;
+  const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
+  if (imagePath.startsWith("/storage/") || imagePath.startsWith("/image-lieu/")) return `${baseUrl}${imagePath}`;
+  return `${baseUrl}/storage/image-lieu/${imagePath}`;
+};
+
+const getTypeIcon = (etiquette: string) => {
+  const t = etiquette?.toLowerCase() ?? "";
+  if (t.includes("maison") || t.includes("home")) return <Home className="h-4 w-4" />;
+  if (t.includes("appartement") || t.includes("apartment")) return <Building className="h-4 w-4" />;
+  if (t.includes("bureau") || t.includes("office")) return <Package className="h-4 w-4" />;
+  return <MapPin className="h-4 w-4" />;
+};
+
+// ─── Styles partagés ────────────────────────────────────────────────────────
+const INPUT =
+  "w-full px-4 py-2.5 text-sm border border-border/60 rounded-xl bg-background/60 text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all duration-200 outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+
+const LABEL = "block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5";
+
+const MODAL_PANEL =
+  "bg-card border border-border/60 rounded-2xl w-full shadow-2xl shadow-black/30 flex flex-col";
+
+// ─── ModalPortal ─────────────────────────────────────────────────────────────
+const ModalPortal = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ margin: 0 }}>
+      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full flex items-center justify-center">{children}</div>
+    </div>,
+    document.body,
+  );
+};
+
+// ─── ModalHeader ─────────────────────────────────────────────────────────────
+const ModalHeader = ({ icon: Icon, title, subtitle, onClose, disabled = false }: {
+  icon: any; title: string; subtitle?: string; onClose: () => void; disabled?: boolean;
+}) => (
+  <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 rounded-t-2xl bg-gradient-to-r from-primary/5 to-transparent shrink-0">
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded-xl bg-primary/10 text-primary">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div>
+        <h2 className="text-base font-bold text-foreground">{title}</h2>
+        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+      </div>
+    </div>
+    <button
+      onClick={onClose}
+      disabled={disabled}
+      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-40"
+    >
+      <X className="h-4 w-4" />
+    </button>
+  </div>
+);
+
+// ─── FormSection ─────────────────────────────────────────────────────────────
+const FormSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="space-y-4">
+    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+      <span className="h-px flex-1 bg-border/50" />
+      {title}
+      <span className="h-px flex-1 bg-border/50" />
+    </h3>
+    {children}
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPOSANT PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════════
 const DashboardAdresses = () => {
   const [adresses, setAdresses] = useState<Adresse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,56 +157,24 @@ const DashboardAdresses = () => {
     longitude: null,
   });
 
-  useEffect(() => {
-    fetchUserAndAdresses();
-  }, []);
-
-  const formatCoordinate = (value: any): string => {
-    if (value === null || value === undefined || value === '') return '0.0000';
-    const num = Number(value);
-    if (isNaN(num)) return '0.0000';
-    return num.toFixed(4);
-  };
+  useEffect(() => { fetchUserAndAdresses(); }, []);
 
   const fetchUserAndAdresses = async () => {
     try {
       setIsLoading(true);
       setError(null);
-
-      const userResponse = await api.get('/utilisateurs/profile');
-      console.log("👤 Utilisateur connecté:", userResponse.data);
-
-      let currentUser = null;
-      if (userResponse.data.success && userResponse.data.data) {
-        currentUser = userResponse.data.data;
-      } else if (userResponse.data.data) {
-        currentUser = userResponse.data.data;
-      } else {
-        currentUser = userResponse.data;
-      }
-
+      const userRes = await api.get("/utilisateurs/profile");
+      const currentUser = userRes.data?.data ?? userRes.data;
       setUser(currentUser);
 
-      const adressesResponse = await api.get('/adresses');
-      console.log("📦 Adresses récupérées:", adressesResponse.data);
-
-      let userAdresses = [];
-      if (adressesResponse.data.success && adressesResponse.data.data) {
-        userAdresses = Array.isArray(adressesResponse.data.data) ? adressesResponse.data.data : [];
-      } else if (adressesResponse.data.data) {
-        userAdresses = Array.isArray(adressesResponse.data.data) ? adressesResponse.data.data : [];
-      } else if (Array.isArray(adressesResponse.data)) {
-        userAdresses = adressesResponse.data;
-      } else if (adressesResponse.data.adresses) {
-        userAdresses = adressesResponse.data.adresses;
-      } else {
-        userAdresses = [];
-      }
-
-      setAdresses(userAdresses);
-
-    } catch (error: any) {
-      console.error("❌ Erreur lors du chargement:", error);
+      const adressesRes = await api.get("/adresses");
+      const d = adressesRes.data;
+      const list: Adresse[] =
+        Array.isArray(d?.data) ? d.data :
+        Array.isArray(d) ? d :
+        Array.isArray(d?.adresses) ? d.adresses : [];
+      setAdresses(list);
+    } catch {
       setError("Impossible de charger vos adresses. Veuillez réessayer.");
       toast.error("Erreur de chargement des adresses");
     } finally {
@@ -122,55 +182,34 @@ const DashboardAdresses = () => {
     }
   };
 
-  const inputClass = "w-full px-4 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200";
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
     }));
   };
 
   const handleLocationSelect = (lat: number, lng: number) => {
-    setForm(prev => ({
-      ...prev,
-      latitude: lat,
-      longitude: lng,
-    }));
-
-    toast.success(`📍 Position sélectionnée: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    setForm((prev) => ({ ...prev, latitude: lat, longitude: lng }));
+    toast.success(`Position sélectionnée : ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Veuillez sélectionner une image valide');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('L\'image ne doit pas dépasser 2MB');
-      return;
-    }
-
+    if (!file.type.startsWith("image/")) { toast.error("Veuillez sélectionner une image valide"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("L'image ne doit pas dépasser 2MB"); return; }
     setImageFile(file);
-
     const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
+    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
     reader.readAsDataURL(file);
   };
 
   const handleOpenAdd = () => {
-    const nomComplet = user ? `${user.prenom} ${user.nom}` : "";
-
     setForm({
       etiquette: "",
-      nom_complet: nomComplet,
+      nom_complet: user ? `${user.prenom} ${user.nom}` : "",
       telephone: user?.telephone || "",
       adresse_ligne1: "",
       adresse_ligne2: "",
@@ -193,115 +232,44 @@ const DashboardAdresses = () => {
 
   const handleOpenEdit = (adresse: Adresse) => {
     setSelectedAdresse(adresse);
-    setForm({
-      ...adresse,
-      telephone: adresse.telephone || "",
-      region: adresse.region || "",
-      code_postal: adresse.code_postal || "",
-    });
+    setForm({ ...adresse, telephone: adresse.telephone || "", region: adresse.region || "", code_postal: adresse.code_postal || "" });
     setImagePreview(adresse.image_adress);
     setImageFile(null);
     setErrorDetails(null);
     setShowModal(true);
   };
 
-  const handleOpenDelete = (adresse: Adresse) => {
-    setSelectedAdresse(adresse);
-    setShowDeleteAlert(true);
-  };
-
   const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await api.post('/adresses/upload-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    console.log("📸 Réponse upload:", response.data);
-
-    if (response.data.success && response.data.image_url) {
-      return response.data.image_url;
-    }
-
-    throw new Error(response.data.message || "Erreur lors de l'upload de l'image");
+    const fd = new FormData();
+    fd.append("image", file);
+    const res = await api.post("/adresses/upload-image", fd, { headers: { "Content-Type": "multipart/form-data" } });
+    if (res.data.success && res.data.image_url) return res.data.image_url;
+    throw new Error(res.data.message || "Erreur lors de l'upload de l'image");
   };
 
-
-
-const getImageUrl = (imagePath: string | null): string => {
-    if (!imagePath) return '/placeholder-image.jpg';
-    
-    // ✅ Si l'image a déjà une URL complète
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-        return imagePath;
-    }
-    
-  
-    const baseUrl = import.meta.env.VITE_API_URL || window.location.origin;
-    
-    // ✅ Si le chemin commence par /storage/ (recommandé)
-    if (imagePath.startsWith('/storage/')) {
-        return `${baseUrl}${imagePath}`;
-    }
-    
-    // ✅ Si le chemin commence par /image-lieu/ (ancien système)
-    if (imagePath.startsWith('/image-lieu/')) {
-        return `${baseUrl}${imagePath}`;
-    }
-    
-    // ✅ Si c'est un nom de fichier seul
-    return `${baseUrl}/storage/image-lieu/${imagePath}`;
-};
   const handleSave = async () => {
-    // Validation des champs obligatoires
-    if (!form.nom_complet?.trim()) {
-      toast.error("Le nom complet est obligatoire");
-      return;
-    }
-    if (!form.adresse_ligne1?.trim()) {
-      toast.error("L'adresse ligne 1 est obligatoire");
-      return;
-    }
-    if (!form.ville?.trim()) {
-      toast.error("La ville est obligatoire");
-      return;
-    }
-    if (!form.pays?.trim()) {
-      toast.error("Le pays est obligatoire");
-      return;
-    }
+    if (!form.nom_complet?.trim()) { toast.error("Le nom complet est obligatoire"); return; }
+    if (!form.adresse_ligne1?.trim()) { toast.error("L'adresse ligne 1 est obligatoire"); return; }
+    if (!form.ville?.trim()) { toast.error("La ville est obligatoire"); return; }
+    if (!form.pays?.trim()) { toast.error("Le pays est obligatoire"); return; }
 
     setIsSaving(true);
     setErrorDetails(null);
 
     try {
       let imageFilename = form.image_adress || null;
+      if (imageFile) imageFilename = await uploadImage(imageFile);
 
-      if (imageFile) {
-        try {
-          imageFilename = await uploadImage(imageFile);
-          console.log("📸 Image uploadée avec succès:", imageFilename);
-        } catch (uploadError: any) {
-          console.error("❌ Erreur upload image:", uploadError);
-          toast.error(uploadError.message || "Erreur lors du téléchargement de l'image");
-          setIsSaving(false);
-          return;
-        }
-      }
-
-      const adresseData = {
+      const payload = {
         etiquette: form.etiquette?.trim() || "Livraison",
-        nom_complet: form.nom_complet.trim(),
+        nom_complet: form.nom_complet!.trim(),
         telephone: form.telephone?.trim() || null,
-        adresse_ligne1: form.adresse_ligne1.trim(),
+        adresse_ligne1: form.adresse_ligne1!.trim(),
         adresse_ligne2: form.adresse_ligne2?.trim() || null,
-        ville: form.ville.trim(),
+        ville: form.ville!.trim(),
         region: form.region?.trim() || null,
         code_postal: form.code_postal?.trim() || null,
-        pays: form.pays.trim(),
+        pays: form.pays!.trim(),
         par_defaut_expedition: form.par_defaut_expedition ? 1 : 0,
         par_defaut_facturation: form.par_defaut_facturation ? 1 : 0,
         image_adress: imageFilename,
@@ -309,50 +277,23 @@ const getImageUrl = (imagePath: string | null): string => {
         longitude: form.longitude ? parseFloat(String(form.longitude)) : null,
       };
 
-      console.log("📤 Données envoyées:", JSON.stringify(adresseData, null, 2));
-
-      let response;
-      if (selectedAdresse) {
-        response = await api.put(`/adresses/${selectedAdresse.id}`, adresseData);
-      } else {
-        response = await api.post('/adresses', adresseData);
-      }
-
-      console.log("✅ Réponse du serveur:", response.data);
+      if (selectedAdresse) await api.put(`/adresses/${selectedAdresse.id}`, payload);
+      else await api.post("/adresses", payload);
 
       toast.success(selectedAdresse ? "Adresse modifiée avec succès" : "Adresse ajoutée avec succès");
       await fetchUserAndAdresses();
       setShowModal(false);
-
     } catch (error: any) {
-      console.error("❌ Erreur lors de la sauvegarde:", error);
-
       if (error.response) {
-        console.error("📄 Status:", error.response.status);
-        console.error("📄 Data:", error.response.data);
-
         setErrorDetails(JSON.stringify(error.response.data, null, 2));
-
-        if (error.response.data?.errors) {
-          const errors = error.response.data.errors;
-          const firstErrorMessage = Object.values(errors)[0];
-          if (Array.isArray(firstErrorMessage)) {
-            toast.error(firstErrorMessage[0]);
-          } else {
-            toast.error("Erreur de validation des données");
-          }
-        } else if (error.response.data?.message) {
-          toast.error(error.response.data.message);
-        } else if (typeof error.response.data === 'string') {
-          toast.error(error.response.data);
+        const errors = error.response.data?.errors;
+        if (errors) {
+          const first = Object.values(errors)[0];
+          toast.error(Array.isArray(first) ? first[0] : "Erreur de validation");
         } else {
-          toast.error(`Erreur ${error.response.status}: ${error.response.statusText}`);
+          toast.error(error.response.data?.message || `Erreur ${error.response.status}`);
         }
-      } else if (error.request) {
-        console.error("📄 No response received:", error.request);
-        toast.error("Le serveur ne répond pas. Vérifiez votre connexion.");
       } else {
-        console.error("📄 Error:", error.message);
         toast.error(error.message || "Erreur inconnue");
       }
     } finally {
@@ -362,7 +303,6 @@ const getImageUrl = (imagePath: string | null): string => {
 
   const handleDelete = async () => {
     if (!selectedAdresse) return;
-
     try {
       await api.delete(`/adresses/${selectedAdresse.id}`);
       await fetchUserAndAdresses();
@@ -370,7 +310,6 @@ const getImageUrl = (imagePath: string | null): string => {
       setSelectedAdresse(null);
       toast.success("Adresse supprimée avec succès");
     } catch (error: any) {
-      console.error("❌ Erreur lors de la suppression:", error);
       toast.error(error.response?.data?.message || "Erreur lors de la suppression");
     }
   };
@@ -381,210 +320,214 @@ const getImageUrl = (imagePath: string | null): string => {
       await fetchUserAndAdresses();
       toast.success("Adresse par défaut mise à jour");
     } catch (error: any) {
-      console.error("❌ Erreur lors du changement d'adresse par défaut:", error);
       toast.error(error.response?.data?.message || "Erreur lors de la mise à jour");
     }
   };
 
-  const getTypeIcon = (etiquette: string) => {
-    const type = etiquette?.toLowerCase() || "";
-    if (type.includes("maison") || type.includes("home")) return <Home className="h-4 w-4" />;
-    if (type.includes("appartement") || type.includes("apartment")) return <Building className="h-4 w-4" />;
-    if (type.includes("bureau") || type.includes("office")) return <Package className="h-4 w-4" />;
-    return <MapPin className="h-4 w-4" />;
-  };
-
-  const getTypeLabel = (etiquette: string) => {
-    const type = etiquette?.toLowerCase() || "";
-    if (type.includes("maison") || type.includes("home")) return "Maison";
-    if (type.includes("appartement") || type.includes("apartment")) return "Appartement";
-    if (type.includes("bureau") || type.includes("office")) return "Bureau";
-    return etiquette || "Adresse";
-  };
-
+  // ─── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Chargement de vos adresses...</p>
+      <div className="flex flex-col items-center justify-center py-24">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="text-sm text-muted-foreground">Chargement de vos adresses...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-500/10 border border-red-500 rounded-lg p-6 text-center">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <p className="text-red-500 mb-4">{error}</p>
-        <button
-          onClick={fetchUserAndAdresses}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-        >
+      <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-10 text-center">
+        <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-3" />
+        <p className="font-medium text-destructive mb-4">{error}</p>
+        <button onClick={fetchUserAndAdresses} className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition">
           Réessayer
         </button>
       </div>
     );
   }
 
+  // ─── Rendu principal ───────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 max-w-5xl mx-auto">
+
+      {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Mes adresses</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gérez vos adresses de livraison</p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+            <MapPin className="h-3.5 w-3.5" />
+            <span>Mon compte</span>
+            <ChevronDown className="h-3 w-3 -rotate-90" />
+            <span className="text-foreground font-medium">Adresses</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Mes adresses</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {adresses.length > 0
+              ? `${adresses.length} adresse${adresses.length > 1 ? "s" : ""} enregistrée${adresses.length > 1 ? "s" : ""}`
+              : "Gérez vos adresses de livraison"}
+          </p>
         </div>
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition text-sm font-medium"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 w-full sm:w-auto justify-center"
         >
           <Plus className="h-4 w-4" />
           Ajouter une adresse
         </button>
       </div>
 
-      {/* Affichage des détails de l'erreur en mode debug */}
+      {/* Debug error */}
       {errorDetails && (
-        <div className="bg-red-50 border border-red-300 rounded-lg p-4 text-sm">
-          <p className="font-semibold text-red-800 mb-2">Détails de l'erreur :</p>
-          <pre className="text-xs text-red-700 whitespace-pre-wrap overflow-auto max-h-40">
-            {errorDetails}
-          </pre>
+        <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4">
+          <p className="text-xs font-semibold text-destructive mb-1.5">Détails de l'erreur :</p>
+          <pre className="text-[10px] text-destructive/80 whitespace-pre-wrap overflow-auto max-h-32">{errorDetails}</pre>
         </div>
       )}
 
-      {/* Liste des adresses */}
-      {adresses.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center">
-          <div className="w-20 h-20 mx-auto mb-4 bg-secondary rounded-full flex items-center justify-center">
-            <MapPin className="h-10 w-10 text-muted-foreground" />
+      {/* Vide */}
+      {adresses.length === 0 && (
+        <div className="bg-card border border-border/50 rounded-2xl p-14 text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-secondary/40 rounded-2xl flex items-center justify-center">
+            <MapPin className="h-10 w-10 text-muted-foreground/30" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Aucune adresse</h3>
-          <p className="text-muted-foreground mb-6">Vous n'avez pas encore ajouté d'adresse de livraison</p>
+          <h3 className="text-base font-semibold text-foreground mb-1.5">Aucune adresse enregistrée</h3>
+          <p className="text-sm text-muted-foreground mb-6">Ajoutez une adresse de livraison pour passer commande</p>
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition"
           >
-            <Plus className="h-4 w-4" />
-            Ajouter une adresse
+            <Plus className="h-4 w-4" /> Ajouter une adresse
           </button>
         </div>
-      ) : (
+      )}
+
+      {/* Grille adresses */}
+      {adresses.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {adresses.map((adresse) => (
             <div
               key={adresse.id}
-              className={`relative bg-card border rounded-2xl p-5 transition-all hover:shadow-md ${adresse.par_defaut_expedition ? 'border-primary/50 bg-primary/5' : 'border-border'
-                }`}
+              className={`relative bg-card border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${
+                adresse.par_defaut_expedition
+                  ? "border-primary/40 ring-1 ring-primary/15 hover:border-primary/60"
+                  : "border-border/50 hover:border-primary/20"
+              }`}
             >
               {/* Badge par défaut */}
               {adresse.par_defaut_expedition && (
-                <div className="absolute -top-2 -left-2">
-                  <div className="flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow-md">
-                    <Star className="h-3 w-3 fill-current" />
+                <div className="absolute -top-2.5 left-4">
+                  <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md shadow-primary/20">
+                    <Star className="h-2.5 w-2.5 fill-current" />
                     PAR DÉFAUT
-                  </div>
+                  </span>
                 </div>
               )}
 
               <div className="flex gap-4">
+                {/* Infos */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                      {getTypeIcon(adresse.etiquette)}
+                  {/* Type + coordonnées */}
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/50 border border-border/40 text-xs font-medium text-muted-foreground">
+                      <span className="text-primary">{getTypeIcon(adresse.etiquette)}</span>
+                      {adresse.etiquette || "Adresse"}
                     </div>
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {getTypeLabel(adresse.etiquette)}
-                    </span>
                     {adresse.latitude && adresse.longitude && (
-                      <span className="text-[10px] text-muted-foreground ml-auto flex items-center gap-1">
-                        <Map className="h-3 w-3" />
-                        📍 {formatCoordinate(adresse.latitude)}, {formatCoordinate(adresse.longitude)}
+                      <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1 font-mono">
+                        <Navigation className="h-3 w-3" />
+                        {formatCoordinate(adresse.latitude)}, {formatCoordinate(adresse.longitude)}
                       </span>
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <p className="font-semibold text-foreground">
+                  {/* Nom + téléphone */}
+                  <div className="space-y-1 mb-3">
+                    <p className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                      <User className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
                       {adresse.nom_complet}
                     </p>
                     {adresse.telephone && (
-                      <p className="text-sm text-muted-foreground">{adresse.telephone}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5 shrink-0" />
+                        {adresse.telephone}
+                      </p>
                     )}
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {adresse.adresse_ligne1}
-                      {adresse.adresse_ligne2 && <><br />{adresse.adresse_ligne2}</>}
-                      <br />
-                      {adresse.code_postal} {adresse.ville}
-                      <br />
-                      {adresse.region && <>{adresse.region}, </>}
-                      {adresse.pays}
+                  </div>
+
+                  {/* Adresse */}
+                  <div className="text-xs text-muted-foreground leading-relaxed space-y-0.5">
+                    <p className="text-foreground/80">{adresse.adresse_ligne1}</p>
+                    {adresse.adresse_ligne2 && <p>{adresse.adresse_ligne2}</p>}
+                    <p>
+                      {adresse.code_postal && `${adresse.code_postal} `}{adresse.ville}
+                    </p>
+                    <p>
+                      {adresse.region && `${adresse.region}, `}{adresse.pays}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex-shrink-0">
+                {/* Image */}
+                <div className="shrink-0">
                   {adresse.image_adress ? (
-                    <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-border/50 bg-secondary/20 group">
+                    <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-border/40 group">
                       <img
                         src={getImageUrl(adresse.image_adress)}
                         alt="Photo du lieu"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
-                        }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-image.jpg"; }}
                       />
                       <button
-                        onClick={() => window.open(getImageUrl(adresse.image_adress), '_blank')}
-                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                        title="Agrandir l'image"
+                        onClick={() => window.open(getImageUrl(adresse.image_adress), "_blank")}
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                       >
-                        <Eye className="h-6 w-6 text-white" />
+                        <Eye className="h-5 w-5 text-white" />
                       </button>
                     </div>
                   ) : (
-                    <div className="w-32 h-32 rounded-xl border border-dashed border-border/50 bg-secondary/10 flex items-center justify-center">
-                      <ImageIcon className="h-10 w-10 text-muted-foreground/40" />
+                    <div className="w-28 h-28 rounded-xl border border-dashed border-border/40 bg-secondary/10 flex flex-col items-center justify-center gap-1.5">
+                      <ImageIcon className="h-7 w-7 text-muted-foreground/25" />
+                      <span className="text-[10px] text-muted-foreground/40">Aucune photo</span>
                     </div>
                   )}
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
-                {adresse.latitude && adresse.longitude && (
-                  <button
-                    onClick={() => {
-                      const url = `https://www.google.com/maps?q=${adresse.latitude},${adresse.longitude}`;
-                      window.open(url, '_blank');
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all"
-                  >
-                    <Map className="h-3.5 w-3.5" />
-                    Voir sur Google Maps
-                  </button>
-                )}
-
-                <div className="flex items-center gap-2 ml-auto">
+                <div>
+                  {adresse.latitude && adresse.longitude && (
+                    <button
+                      onClick={() => window.open(`https://www.google.com/maps?q=${adresse.latitude},${adresse.longitude}`, "_blank")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all duration-200"
+                    >
+                      <Map className="h-3.5 w-3.5" />
+                      Google Maps
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5">
                   {!adresse.par_defaut_expedition && (
                     <button
                       onClick={() => handleSetDefault(adresse.id)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 rounded-lg transition-all duration-200"
                     >
                       <Star className="h-3.5 w-3.5" />
-                      Définir par défaut
+                      Par défaut
                     </button>
                   )}
                   <button
                     onClick={() => handleOpenEdit(adresse)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
+                    title="Modifier"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
-                    onClick={() => handleOpenDelete(adresse)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition"
+                    onClick={() => { setSelectedAdresse(adresse); setShowDeleteAlert(true); }}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
+                    title="Supprimer"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               </div>
@@ -593,338 +536,254 @@ const getImageUrl = (imagePath: string | null): string => {
         </div>
       )}
 
-      {/* MODAL AJOUTER/MODIFIER */}
+      {/* ═══════════════════════════════════════════════════════════════════════
+          MODALS — via createPortal
+      ══════════════════════════════════════════════════════════════════════════ */}
+
+      {/* Modal: Ajouter / Modifier */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-xl">
-                  <MapPin className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">
-                    {selectedAdresse ? "Modifier l'adresse" : "Ajouter une adresse"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {selectedAdresse ? "Modifiez les informations ci-dessous" : "Remplissez les informations de livraison"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 rounded-lg hover:bg-secondary transition"
-                disabled={isSaving}
-              >
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </div>
+        <ModalPortal onClose={() => !isSaving && setShowModal(false)}>
+          <div className={`${MODAL_PANEL} max-w-2xl max-h-[90vh]`}>
+            <ModalHeader
+              icon={MapPin}
+              title={selectedAdresse ? "Modifier l'adresse" : "Ajouter une adresse"}
+              subtitle={selectedAdresse ? "Modifiez les informations ci-dessous" : "Remplissez les informations de livraison"}
+              onClose={() => setShowModal(false)}
+              disabled={isSaving}
+            />
 
-            <div className="overflow-y-auto p-6 flex-1">
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Nom complet <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    name="nom_complet"
-                    value={form.nom_complet || ""}
-                    onChange={handleInputChange}
-                    placeholder="Votre nom et prénom"
-                    className={inputClass}
-                    required
-                    disabled={isSaving}
-                  />
-                </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Téléphone
-                  </label>
-                  <input
-                    name="telephone"
-                    value={form.telephone || ""}
-                    onChange={handleInputChange}
-                    placeholder="034 12 345 67"
-                    className={inputClass}
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Adresse ligne 1 <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    name="adresse_ligne1"
-                    value={form.adresse_ligne1 || ""}
-                    onChange={handleInputChange}
-                    placeholder="Numéro et nom de rue"
-                    className={inputClass}
-                    required
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Adresse ligne 2 (optionnel)
-                  </label>
-                  <input
-                    name="adresse_ligne2"
-                    value={form.adresse_ligne2 || ""}
-                    onChange={handleInputChange}
-                    placeholder="Appartement, étage, bâtiment..."
-                    className={inputClass}
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Code postal
-                    </label>
-                    <input
-                      name="code_postal"
-                      value={form.code_postal || ""}
-                      onChange={handleInputChange}
-                      className={inputClass}
-                      disabled={isSaving}
-                    />
+              {/* Identité */}
+              <FormSection title="Identité">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className={LABEL}>Nom complet <span className="text-destructive normal-case">*</span></label>
+                    <input name="nom_complet" value={form.nom_complet || ""} onChange={handleInputChange}
+                      placeholder="Prénom Nom" className={INPUT} required disabled={isSaving} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Ville <span className="text-destructive">*</span>
-                    </label>
-                    <input
-                      name="ville"
-                      value={form.ville || ""}
-                      onChange={handleInputChange}
-                      className={inputClass}
-                      required
-                      disabled={isSaving}
-                    />
+                    <label className={LABEL}>Téléphone</label>
+                    <input name="telephone" value={form.telephone || ""} onChange={handleInputChange}
+                      placeholder="034 12 345 67" className={INPUT} disabled={isSaving} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      Région
-                    </label>
-                    <input
-                      name="region"
-                      value={form.region || ""}
-                      onChange={handleInputChange}
-                      className={inputClass}
-                      placeholder="Analamanga, Atsinanana..."
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Pays <span className="text-destructive">*</span>
-                  </label>
-                  <select
-                    name="pays"
-                    value={form.pays || "Madagascar"}
-                    onChange={handleInputChange}
-                    className={inputClass}
-                    required
-                    disabled={isSaving}
-                  >
-                    <option value="Madagascar">Madagascar</option>
-                    <option value="France">France</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Belgique">Belgique</option>
-                    <option value="Suisse">Suisse</option>
-                    <option value="Autre">Autre</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">Étiquette</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { value: "Maison", label: "🏠 Maison" },
-                      { value: "Appartement", label: "🏢 Appartement" },
-                      { value: "Bureau", label: "💼 Bureau" }
-                    ].map((type) => (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => setForm(prev => ({ ...prev, etiquette: type.value }))}
-                        disabled={isSaving}
-                        className={`px-4 py-2 text-sm font-medium rounded-xl transition border ${form.etiquette === type.value
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground border-border hover:bg-secondary"
-                          } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        {type.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Photo du lieu (optionnel)
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <label className={`flex items-center justify-center w-full px-4 py-3 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-colors ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Upload className="h-4 w-4" />
-                          <span>{imageFile ? imageFile.name : "Choisir une image"}</span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          disabled={isSaving}
-                        />
-                      </label>
-                    </div>
-                    {imagePreview && (
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border flex-shrink-0">
-                        <img src={imagePreview} alt="Prévisualisation" className="w-full h-full object-cover" />
+                    <label className={LABEL}>Étiquette</label>
+                    <div className="flex gap-2">
+                      {[
+                        { value: "Maison",      label: "🏠 Maison" },
+                        { value: "Appartement", label: "🏢 Appart" },
+                        { value: "Bureau",      label: "💼 Bureau" },
+                      ].map((type) => (
                         <button
-                          onClick={() => {
-                            setImagePreview(null);
-                            setImageFile(null);
-                            setForm(prev => ({ ...prev, image_adress: null }));
-                          }}
+                          key={type.value}
+                          type="button"
+                          onClick={() => setForm((p) => ({ ...p, etiquette: type.value }))}
                           disabled={isSaving}
-                          className="absolute -top-1 -right-1 p-0.5 bg-destructive text-white rounded-full hover:bg-destructive/80 disabled:opacity-50"
+                          className={`flex-1 py-2 text-xs font-medium rounded-xl transition-all border ${
+                            form.etiquette === type.value
+                              ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                              : "bg-background/60 text-foreground border-border/60 hover:bg-secondary/50"
+                          } disabled:opacity-50`}
                         >
-                          <X className="h-3 w-3" />
+                          {type.label}
                         </button>
-                      </div>
-                    )}
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Formats acceptés: JPG, PNG, GIF, WEBP (max 2MB)</p>
                 </div>
+              </FormSection>
 
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Localisation sur la carte <span className="text-xs text-muted-foreground">(cliquez pour sélectionner)</span>
-                  </label>
-                  <MapPicker
-                    latitude={typeof form.latitude === 'string' ? parseFloat(form.latitude) : form.latitude || null}
-                    longitude={typeof form.longitude === 'string' ? parseFloat(form.longitude) : form.longitude || null}
-                    onLocationSelect={handleLocationSelect}
-                    address={`${form.adresse_ligne1 || ''} ${form.ville || ''}`}
-                    disabled={isSaving}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+              {/* Adresse */}
+              <FormSection title="Adresse">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Latitude</label>
-                    <input
-                      name="latitude"
-                      value={form.latitude || ""}
-                      readOnly
-                      className={`${inputClass} bg-muted/50 cursor-not-allowed`}
-                      placeholder="Sélectionnez sur la carte"
-                    />
+                    <label className={LABEL}>Adresse ligne 1 <span className="text-destructive normal-case">*</span></label>
+                    <input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange}
+                      placeholder="Numéro et nom de rue" className={INPUT} required disabled={isSaving} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Longitude</label>
-                    <input
-                      name="longitude"
-                      value={form.longitude || ""}
-                      readOnly
-                      className={`${inputClass} bg-muted/50 cursor-not-allowed`}
-                      placeholder="Sélectionnez sur la carte"
-                    />
+                    <label className={LABEL}>Adresse ligne 2 <span className="text-muted-foreground/60 normal-case font-normal">(optionnel)</span></label>
+                    <input name="adresse_ligne2" value={form.adresse_ligne2 || ""} onChange={handleInputChange}
+                      placeholder="Appartement, étage, bâtiment..." className={INPUT} disabled={isSaving} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className={LABEL}>Code postal</label>
+                      <input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange}
+                        className={INPUT} disabled={isSaving} />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Ville <span className="text-destructive normal-case">*</span></label>
+                      <input name="ville" value={form.ville || ""} onChange={handleInputChange}
+                        className={INPUT} required disabled={isSaving} />
+                    </div>
+                    <div>
+                      <label className={LABEL}>Région</label>
+                      <input name="region" value={form.region || ""} onChange={handleInputChange}
+                        placeholder="Analamanga..." className={INPUT} disabled={isSaving} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={LABEL}>Pays <span className="text-destructive normal-case">*</span></label>
+                    <select name="pays" value={form.pays || "Madagascar"} onChange={handleInputChange}
+                      className={INPUT} required disabled={isSaving}>
+                      <option value="Madagascar">Madagascar</option>
+                      <option value="France">France</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Belgique">Belgique</option>
+                      <option value="Suisse">Suisse</option>
+                      <option value="Autre">Autre</option>
+                    </select>
                   </div>
                 </div>
+              </FormSection>
 
-                <div className="flex items-center gap-3 pt-2">
-                  <input
-                    type="checkbox"
-                    id="par_defaut_expedition"
-                    name="par_defaut_expedition"
-                    checked={form.par_defaut_expedition || false}
-                    onChange={handleInputChange}
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
-                    disabled={isSaving}
-                  />
-                  <label htmlFor="par_defaut_expedition" className="text-sm text-foreground">
-                    Définir comme adresse par défaut pour l'expédition
+              {/* Photo */}
+              <FormSection title="Photo du lieu">
+                <div className="flex items-center gap-4">
+                  <label className={`flex-1 flex items-center gap-3 px-4 py-3 border border-dashed border-border/60 rounded-xl cursor-pointer bg-secondary/10 hover:bg-secondary/20 hover:border-primary/40 transition-all group ${isSaving ? "opacity-50 pointer-events-none" : ""}`}>
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15 transition-colors">
+                      <Upload className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">
+                        {imageFile ? imageFile.name : "Choisir une image"}
+                      </p>
+                      <p className="text-xs text-muted-foreground/60">JPG, PNG, WEBP · max 2MB</p>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" disabled={isSaving} />
                   </label>
+                  {imagePreview && (
+                    <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/40 shrink-0">
+                      <img src={imagePreview} alt="Prévisualisation" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => { setImagePreview(null); setImageFile(null); setForm((p) => ({ ...p, image_adress: null })); }}
+                        disabled={isSaving}
+                        className="absolute -top-1 -right-1 p-0.5 bg-destructive text-white rounded-full hover:bg-destructive/80 disabled:opacity-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </FormSection>
+
+              {/* Localisation */}
+              <FormSection title="Localisation GPS">
+                <MapPicker
+                  latitude={typeof form.latitude === "string" ? parseFloat(form.latitude) : form.latitude || null}
+                  longitude={typeof form.longitude === "string" ? parseFloat(form.longitude) : form.longitude || null}
+                  onLocationSelect={handleLocationSelect}
+                  address={`${form.adresse_ligne1 || ""} ${form.ville || ""}`}
+                  disabled={isSaving}
+                />
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label className={LABEL}>Latitude</label>
+                    <input value={form.latitude || ""} readOnly
+                      className={`${INPUT} bg-secondary/20 cursor-not-allowed`}
+                      placeholder="Sélectionnez sur la carte" />
+                  </div>
+                  <div>
+                    <label className={LABEL}>Longitude</label>
+                    <input value={form.longitude || ""} readOnly
+                      className={`${INPUT} bg-secondary/20 cursor-not-allowed`}
+                      placeholder="Sélectionnez sur la carte" />
+                  </div>
+                </div>
+              </FormSection>
+
+              {/* Préférences */}
+              <FormSection title="Préférences">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div
+                    className={`w-10 h-6 rounded-full transition-colors duration-200 flex items-center px-1 shrink-0 ${form.par_defaut_expedition ? "bg-primary" : "bg-border"}`}
+                    onClick={() => setForm((p) => ({ ...p, par_defaut_expedition: !p.par_defaut_expedition }))}
+                  >
+                    <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${form.par_defaut_expedition ? "translate-x-4" : "translate-x-0"}`} />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-foreground">Adresse par défaut</div>
+                    <div className="text-xs text-muted-foreground">Utilisée automatiquement pour l'expédition</div>
+                  </div>
+                </label>
+              </FormSection>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-secondary/10">
+            {/* Footer */}
+            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl shrink-0">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition"
                 disabled={isSaving}
+                className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground transition-all disabled:opacity-40"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 inline-flex items-center gap-2 disabled:opacity-50 transition-all"
               >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4" />
-                    {selectedAdresse ? "Enregistrer" : "Ajouter"}
-                  </>
-                )}
+                {isSaving
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement...</>
+                  : <><Check className="h-3.5 w-3.5" /> {selectedAdresse ? "Enregistrer" : "Ajouter"}</>}
               </button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
-      {/* MODAL SUPPRESSION */}
-      {showDeleteAlert && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-destructive/10 rounded-full flex items-center justify-center">
-                <AlertCircle className="h-8 w-8 text-destructive" />
+      {/* Modal: Supprimer */}
+      {showDeleteAlert && selectedAdresse && (
+        <ModalPortal onClose={() => setShowDeleteAlert(false)}>
+          <div className={`${MODAL_PANEL} max-w-md`}>
+            <div className="px-6 py-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-destructive/10 text-destructive shrink-0">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-foreground">Supprimer l'adresse</h3>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                    Voulez-vous vraiment supprimer l'adresse de{" "}
+                    <span className="font-semibold text-foreground">{selectedAdresse.ville}</span>{" "}?
+                  </p>
+                  {selectedAdresse.par_defaut_expedition && (
+                    <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      Cette adresse est votre adresse par défaut.
+                    </div>
+                  )}
+                  <p className="text-xs text-destructive/70 mt-2">Cette action est irréversible.</p>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Supprimer l'adresse</h3>
-              <p className="text-muted-foreground">
-                Voulez-vous vraiment supprimer cette adresse ?
-              </p>
-              {selectedAdresse?.par_defaut_expedition && (
-                <p className="text-sm text-amber-600 mt-2">
-                  ⚠️ Cette adresse est votre adresse par défaut.
-                </p>
-              )}
-              <p className="text-sm text-destructive mt-2">Cette action est irréversible.</p>
             </div>
-            <div className="flex gap-3 p-6 pt-0">
+            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl">
               <button
                 onClick={() => setShowDeleteAlert(false)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-xl hover:bg-secondary transition"
+                className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground transition-all"
               >
                 Annuler
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition"
+                className="px-5 py-2 text-sm font-semibold rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex items-center gap-2 transition-all"
               >
+                <Trash2 className="h-3.5 w-3.5" />
                 Supprimer
               </button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.3); }
+      `}</style>
     </div>
   );
 };
