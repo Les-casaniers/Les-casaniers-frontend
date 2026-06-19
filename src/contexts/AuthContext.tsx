@@ -16,6 +16,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const buildLoginPayload = (email: string, password: string) => ({
+  email: email.trim().toLowerCase(),
+  mot_de_passe: password,
+  password,
+});
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUserState] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -91,14 +97,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Tentative de connexion pour:', email);
+      const credentials = buildLoginPayload(email, password);
+      console.log('Tentative de connexion pour:', credentials.email);
       
       // ✅ Étape 1: Essayer la connexion admin (pour admin et livreur)
       try {
-        const adminResponse = await api.post('/admin/login', { 
-          email, 
-          mot_de_passe: password 
-        });
+        const adminResponse = await api.post('/admin/login', credentials);
         
         console.log('Réponse login admin:', adminResponse.data);
         
@@ -139,10 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // ✅ Étape 2: Essayer la connexion client
       try {
-        const clientResponse = await api.post('/utilisateurs/login', { 
-          email, 
-          mot_de_passe: password 
-        });
+        const clientResponse = await api.post('/utilisateurs/login', credentials);
         
         console.log('Réponse login client:', clientResponse.data);
         
