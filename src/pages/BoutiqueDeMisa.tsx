@@ -183,25 +183,7 @@ const BoutiqueDeMisa = () => {
     };
   }, []);
 
-  const speakText = (text: string, onEnd?: () => void) => {
-    if (!speechSynthesisRef.current) return;
-    const clean = text.replace(/[*_~`]/g, "").replace(/[🐾🌿🛒❤️✅]/g, "");
-    if (currentUtteranceRef.current) speechSynthesisRef.current.cancel();
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = "fr-FR";
-    u.rate = 0.9;
-    u.pitch = 0.8;
-    u.volume = 1;
-    if (selectedVoice) u.voice = selectedVoice;
-    u.onstart = () => setIsSpeaking(true);
-    u.onend = () => {
-      setIsSpeaking(false);
-      if (onEnd) onEnd();
-    };
-    u.onerror = () => setIsSpeaking(false);
-    currentUtteranceRef.current = u;
-    speechSynthesisRef.current.speak(u);
-  };
+ 
 
   const stopSpeaking = () => {
     speechSynthesisRef.current?.cancel();
@@ -260,17 +242,10 @@ const BoutiqueDeMisa = () => {
   const speakAboutProduct = (p: MerchProduct) => {
     const msg = `${p.nom}. ${p.description_courte} Référence ${p.reference}. Prix : ${formatAr(p.prix)}. ${p.stock} en stock.`;
     setCurrentMessage(msg);
-    speakText(msg);
+  
   };
 
-  const handleMascotClick = () => {
-    setIsChatOpen(true);
-    setShowHelp(false);
-    const msg =
-      "Bienvenue dans la Boutique de Misa ! Je suis Misa, votre guide. Découvrez nos produits de qualité, tous à l'image du fosa, le plus grand carnivore endémique de Madagascar. Passez la souris sur un produit pour que je vous le présente !";
-    setCurrentMessage(msg);
-    speakText(msg);
-  };
+
 
   const handleHelpClick = () => {
     setShowHelp(!showHelp);
@@ -278,7 +253,7 @@ const BoutiqueDeMisa = () => {
       const msg =
         "Voici comment naviguer : utilisez les filtres pour choisir une catégorie, le curseur pour ajuster votre budget, et le cœur sur chaque produit pour l'ajouter à vos favoris !";
       setCurrentMessage(msg);
-      speakText(msg);
+      
     }
   };
 
@@ -610,25 +585,7 @@ const BoutiqueDeMisa = () => {
         )}
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Mascotte flottante — même pattern que Catalog                        */}
-      {/* ------------------------------------------------------------------ */}
-      <button
-        onClick={handleMascotClick}
-        className="fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full overflow-hidden border-2 border-amber-500/60 shadow-lg hover:scale-105 transition-transform"
-        title="Parler à Misa"
-        aria-label="Ouvrir l'assistant Misa"
-      >
-        <img
-          src={fosa}
-          alt="Misa"
-          className="w-full h-full object-contain bg-amber-950/80 p-1"
-        />
-      </button>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Chatbot popup Misa — même structure que Catalog                      */}
-      {/* ------------------------------------------------------------------ */}
+ 
       {isChatOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-background rounded-xl shadow-xl border border-border overflow-hidden animate-slide-up">
           {/* Header */}
@@ -673,7 +630,7 @@ const BoutiqueDeMisa = () => {
               </div>
               {currentMessage && (
                 <button
-                  onClick={() => speakText(currentMessage)}
+                  onClick={() => (currentMessage)}
                   className="mt-1 text-[8px] opacity-60 hover:opacity-100 flex items-center gap-1"
                 >
                   <Volume2 className="h-2 w-2" /> Réécouter
