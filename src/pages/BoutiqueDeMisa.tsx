@@ -585,14 +585,7 @@ const BoutiqueDeMisa = () => {
         )}
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Mascotte flottante — même pattern que Catalog                        */}
-      {/* ------------------------------------------------------------------ */}
-   
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Chatbot popup Misa — même structure que Catalog                      */}
-      {/* ------------------------------------------------------------------ */}
+ 
       {isChatOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-background rounded-xl shadow-xl border border-border overflow-hidden animate-slide-up">
           {/* Header */}
