@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useShop } from "@/store/shop";
 import api from "@/service/api";
-import ProductImage from "@/components/ProductImage"; // Import du composant partagé
+import ProductImage from "@/components/ProductImage";
 
 type Produit = {
   id: number;
@@ -35,9 +35,6 @@ type Favori = {
   produit?: Produit;
 };
 
-// Le composant ProductImage a été supprimé car il est importé
-
-// Composant DashboardFavoris complet
 const DashboardFavoris = () => {
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [produitsFavoris, setProduitsFavoris] = useState<Produit[]>([]);
@@ -244,14 +241,24 @@ const DashboardFavoris = () => {
     toast.success(`${removedCount} favoris supprimés`);
   };
 
+  // FONCTION FORMATPRICE CORRIGÉE
   const formatPrice = (prix: number, devise: string = 'MGA') => {
+    // Vérification que le prix est un nombre valide
+    if (!prix || isNaN(prix) || prix === 0) {
+      return `0 ${devise}`;
+    }
     return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
   };
 
+  // CALCUL DES STATISTIQUES CORRIGÉ
   const stats = {
     total: produitsFavoris.length,
     enStock: produitsFavoris.filter(p => p.quantite_stock > 0).length,
-    valeurTotale: produitsFavoris.reduce((sum, p) => sum + p.prix, 0),
+    valeurTotale: produitsFavoris.reduce((sum, p) => {
+      // S'assurer que le prix est un nombre
+      const prix = typeof p.prix === 'number' ? p.prix : parseFloat(String(p.prix)) || 0;
+      return sum + prix;
+    }, 0),
   };
 
   if (isLoading) {
@@ -312,8 +319,11 @@ const DashboardFavoris = () => {
               <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">En stock</p>
             </div>
             <div className="rounded-2xl bg-background/50 backdrop-blur-sm border border-border/50 p-4 text-center">
-              <p className="text-2xl font-bold text-primary">{(stats.valeurTotale / 1000).toFixed(0)}k</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Valeur</p>
+              {/* AFFICHAGE CORRIGÉ - Valeur totale formatée correctement */}
+              <p className="text-2xl font-bold text-primary">
+                {formatPrice(stats.valeurTotale, 'MGA')}
+              </p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Valeur totale</p>
             </div>
           </div>
         </div>
