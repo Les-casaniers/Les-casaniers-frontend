@@ -6,7 +6,7 @@ import {
   Sun, Moon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/casaniers-logo.png";
+import logo from "@/assets/casaniers-logo.jpg";
 
 const DashboardAdmin = () => {
   const location = useLocation();
