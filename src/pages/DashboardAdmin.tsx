@@ -30,7 +30,7 @@ const DashboardAdmin = () => {
     { icon: Package,         label: "Produits",        path: "/DashboardAdmin/produits" },
     { icon: FileText,        label: "Guides",          path: "/DashboardAdmin/guides" },
     { icon: ShoppingCart,    label: "Commandes",       path: "/DashboardAdmin/commandes" },
-    { icon: ClipboardList,   label: "Devis",           path: "/DashboardAdmin/devis" },
+    // { icon: ClipboardList,   label: "Devis",           path: "/DashboardAdmin/devis" },
     { icon: Users,           label: "Clients",         path: "/DashboardAdmin/clients" },
     { icon: Users,           label: "Favoris",         path: "/DashboardAdmin/favoris" },
     { icon: ShoppingCart,    label: "Paniers",         path: "/DashboardAdmin/paniers" },
