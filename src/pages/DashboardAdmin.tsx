@@ -36,7 +36,7 @@ const DashboardAdmin = () => {
     { icon: ShoppingCart,    label: "Paniers",         path: "/DashboardAdmin/paniers" },
     { icon: Store,           label: "Boutique Misa",   path: "/DashboardAdmin/boutique-misa" },
     { icon: FileText,        label: "Factures",        path: "/DashboardAdmin/factures" },
-    { icon: Star,            label: "Avis clients",    path: "/DashboardAdmin/avis" },
+    // { icon: Star,            label: "Avis clients",    path: "/DashboardAdmin/avis" },
     { icon: FileText,        label: "Devis express",   path: "/DashboardAdmin/devis-express" },
     { icon: Shield,          label: "Administrateurs", path: "/DashboardAdmin/admins" },
     { icon: Bell,            label: "Notifications",   path: "/DashboardAdmin/notifications" },
