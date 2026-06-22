@@ -1,4 +1,6 @@
-﻿import { SiteLayout } from "@/components/site/SiteLayout";
+﻿// src/pages/Product.tsx
+
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -10,6 +12,7 @@ import fosa from "@/assets/casaniers-mascot.png";
 import { Product, productImage, productSpec, useProduct, useProducts } from "@/hooks/useProducts";
 import api from "@/service/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCartApi } from "@/hooks/useCartApi";
 
 const specIcons = { 
   processeur: Cpu, 
@@ -41,15 +44,35 @@ const ProductPage = () => {
   const { data: allProducts } = useProducts();
   
   const { addToCart: addToLocalCart, toggleFavorite, favorites } = useShop();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
+  // ✅ Utiliser le hook useCartApi pour gérer le panier
+  const { addToCart, updateQuantity, cartItems, refreshCart } = useCartApi();
+  
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<"specs" | "configs" | "story" | "garantie">("specs");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
+  const [cartItemId, setCartItemId] = useState<number | null>(null);
 
   useEffect(() => {
     if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
   }, [product]);
+
+  // ✅ Vérifier si le produit est déjà dans le panier
+  useEffect(() => {
+    if (product && cartItems.length > 0) {
+      const existingItem = cartItems.find((item: any) => 
+        item.produit_id === product.id
+      );
+      if (existingItem) {
+        setCartItemId(existingItem.id);
+        setQty(existingItem.quantite);
+      } else {
+        setCartItemId(null);
+        setQty(1);
+      }
+    }
+  }, [product, cartItems]);
 
   const activeConfig = product?.configurations?.find((c) => c.id === selectedConfigId);
   const displayedPrice = activeConfig ? Number(activeConfig.prix_total) : (product ? Number(product.prix) : 0);
@@ -57,91 +80,75 @@ const ProductPage = () => {
     ? `${product?.nom} (${activeConfig.nom_configuration_autre || activeConfig.nom_configuration})`
     : (product?.nom || "");
 
-  // Fonction pour ajouter au panier dans la base de données
-  const addToCartDatabase = async (productId: number, quantite: number) => {
+  // ✅ Fonction pour ajouter au panier avec le hook useCartApi
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
     if (!isAuthenticated) {
       toast({
-        title: "Connexion requise",
+        title: "🔒 Connexion requise",
         description: "Veuillez vous connecter pour ajouter au panier",
         variant: "destructive"
       });
-      return false;
+      return;
     }
 
+    setIsAddingToCart(true);
     try {
-      setIsAddingToCart(true);
-      
-      // Appel à la route POST api/panier/ajouter
-      const response = await api.post('/panier/ajouter', {
-        produit_id: productId,
-        quantite: quantite,
-        utilisateur_id: user?.id,
-        configuration_id: selectedConfigId,
+      const success = await addToCart({
+        produit_id: product.id,
+        quantite: qty,
         prix_unitaire: displayedPrice,
         titre: displayedTitle
       });
       
-      console.log("Réponse ajout panier:", response.data);
-      
-      toast({
-        title: "Ajouté au panier",
-        description: `${quantite} x ${displayedTitle}`
-      });
-      
-      // Mettre à jour le store local également pour la cohérence
-      addToLocalCart(String(productId), quantite, toCartProduct({ ...product!, prix: displayedPrice, nom: displayedTitle }));
-      
-      return true;
-    } catch (error: any) {
-      console.error("Erreur lors de l'ajout au panier:", error);
-      toast({
-        title: "Erreur",
-        description: error.response?.data?.message || "Impossible d'ajouter au panier",
-        variant: "destructive"
-      });
-      return false;
+      if (success) {
+        // ✅ Mettre à jour le store local
+        addToLocalCart(String(product.id), qty, {
+          id: String(product.id),
+          name: displayedTitle,
+          category: product.categorie?.nom || product.type_produit,
+          tagline: product.description_courte || product.tagline || "Configuration Les Casaniers",
+          price: displayedPrice,
+          image: productImage(product),
+        });
+        
+        // ✅ Rafraîchir le panier pour mettre à jour l'ID
+        await refreshCart();
+      }
     } finally {
       setIsAddingToCart(false);
     }
   };
 
-  // Fonction pour mettre à jour la quantité en temps réel
-  const updateCartQuantity = async (productId: number, newQuantity: number) => {
-    if (!isAuthenticated || !product) return;
-    
-    try {
-      // D'abord, récupérer l'ID de l'item dans le panier
-      const cartResponse = await api.get('/panier', {
-        params: {
-          utilisateur_id: user?.id
-        }
-      });
-      
-      const cartItems = cartResponse.data?.data || [];
-      const cartItem = cartItems.find((item: any) => item.produit_id === productId);
-      
-      if (cartItem) {
-        // Appel à la route PUT api/panier/modifier/{itemId}
-        await api.put(`/panier/modifier/${cartItem.id}`, {
-          quantite: newQuantity
-        });
-        
-        // Mettre à jour le store local
-        addToLocalCart(String(productId), newQuantity, toCartProduct(product));
-        
-        toast({
-          title: "Quantité mise à jour",
-          description: `${newQuantity} x ${product.nom}`
-        });
-      }
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour de la quantité:", error);
+  // ✅ Fonction pour mettre à jour la quantité en temps réel
+  const handleUpdateQuantity = async (newQty: number) => {
+    if (newQty < 1) {
+      setQty(1);
+      return;
+    }
+
+    setQty(newQty);
+
+    // ✅ Si le produit est déjà dans le panier, mettre à jour la quantité
+    if (cartItemId) {
+      await updateQuantity(cartItemId, newQty);
+      await refreshCart();
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!product) return;
-    await addToCartDatabase(product.id, qty);
+  // ✅ Fonction pour augmenter la quantité
+  const increaseQty = async () => {
+    const newQty = qty + 1;
+    await handleUpdateQuantity(newQty);
+  };
+
+  // ✅ Fonction pour diminuer la quantité
+  const decreaseQty = async () => {
+    if (qty > 1) {
+      const newQty = qty - 1;
+      await handleUpdateQuantity(newQty);
+    }
   };
 
   if (isLoading) {
@@ -248,7 +255,6 @@ const ProductPage = () => {
                 Choisir une configuration :
               </div>
               <div className="flex flex-col gap-2">
-                {/* Standard Config Button */}
                 <button
                   onClick={() => setSelectedConfigId(null)}
                   className={`w-full text-left p-4 rounded-xl border transition-all flex justify-between items-center ${
@@ -266,7 +272,6 @@ const ProductPage = () => {
                   </div>
                 </button>
 
-                {/* Other Configs Buttons */}
                 {product.configurations.map((cfg) => (
                   <button
                     key={cfg.id}
@@ -296,22 +301,26 @@ const ProductPage = () => {
             </div>
           )}
 
+          {/* ✅ Contrôle de quantité avec mise à jour en temps réel */}
           <div className="flex items-center gap-3">
             <div className="flex items-center bg-secondary rounded-full">
               <button 
-                onClick={() => setQty(Math.max(1, qty - 1))} 
-                className="h-12 w-12 flex items-center justify-center hover:text-accent"
+                onClick={decreaseQty}
+                className="h-12 w-12 flex items-center justify-center hover:text-accent transition-colors"
+                disabled={qty <= 1}
               >
                 <Minus className="h-4 w-4" />
               </button>
               <span className="w-10 text-center font-semibold tabular-nums">{qty}</span>
               <button 
-                onClick={() => setQty(qty + 1)} 
-                className="h-12 w-12 flex items-center justify-center hover:text-accent"
+                onClick={increaseQty}
+                className="h-12 w-12 flex items-center justify-center hover:text-accent transition-colors"
               >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
+
+            {/* ✅ Bouton Ajouter / Mettre à jour */}
             <Button 
               variant="hero" 
               size="lg" 
@@ -324,12 +333,20 @@ const ProductPage = () => {
               ) : (
                 <ShoppingBag className="h-4 w-4" />
               )}
-              Ajouter au panier
+              {cartItemId ? "Mettre à jour" : "Ajouter au panier"}
             </Button>
+
             <Button variant="soft" size="icon" className="h-12 w-12" onClick={() => toggleFavorite(product.id.toString())}>
               <Heart className={fav ? "fill-accent text-accent" : ""} />
             </Button>
           </div>
+
+          {/* ✅ Affichage du statut du panier */}
+          {cartItemId && (
+            <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center">
+              ✅ Déjà dans votre panier (quantité: {qty})
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div className="card-soft p-3 flex flex-col items-center text-center gap-1">

@@ -23,6 +23,8 @@ import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { MiniHero } from "@/components/layout/MiniHero";
 import { useBoutiqueMisa } from "@/hooks/useBoutiqueMisa";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCartApi } from "@/hooks/useCartApi";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,7 +74,7 @@ const FILTER_COLORS: Record<string, string> = {
 // Helper pour l'URL des images
 const getFullImageUrl = (imageUrl: string | null): string => {
   if (!imageUrl) {
-    return '/images/placeholder.jpg'; // Image par défaut
+    return '/images/placeholder.jpg';
   }
   
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
@@ -102,6 +104,10 @@ const BoutiqueDeMisa = () => {
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
+  // ✅ Hooks d'authentification et panier
+  const { isAuthenticated } = useAuth();
+  const { addToCart, refreshCart } = useCartApi();
+
   // 🔥 Récupération des données réelles depuis la base de données
   const { data: apiData, isLoading, error } = useBoutiqueMisa({ per_page: 100 });
 
@@ -110,7 +116,6 @@ const BoutiqueDeMisa = () => {
     if (!apiData?.data) return [];
 
     return apiData.data.map((item: any) => {
-      // Déterminer le type et la catégorie en fonction du nom ou d'autres critères
       let type: "vetement" | "papeterie" | "accessoire" | "limited" = "accessoire";
       let categorie = "Accessoire";
       
@@ -123,7 +128,6 @@ const BoutiqueDeMisa = () => {
         categorie = "Papeterie";
       }
 
-      // Créer des tags basés sur la description
       const tags: string[] = [];
       if (item.description) {
         const descLower = item.description.toLowerCase();
@@ -144,7 +148,7 @@ const BoutiqueDeMisa = () => {
         description_courte: item.description ? item.description.substring(0, 100) : 'Description non disponible',
         description: item.description || 'Description non disponible',
         prix: parseFloat(item.prix),
-        note: 4.5 + Math.random() * 0.5, // Note aléatoire pour l'instant
+        note: 4.5 + Math.random() * 0.5,
         badge: item.stock < 10 ? "limited" : null,
         badgeLabel: item.stock < 10 ? "Stock limité" : null,
         tags: tags,
@@ -183,7 +187,25 @@ const BoutiqueDeMisa = () => {
     };
   }, []);
 
- 
+  const speakText = (text: string, onEnd?: () => void) => {
+    if (!speechSynthesisRef.current) return;
+    const clean = text.replace(/[*_~`]/g, "").replace(/[🐾🌿🛒❤️✅]/g, "");
+    if (currentUtteranceRef.current) speechSynthesisRef.current.cancel();
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = "fr-FR";
+    u.rate = 0.9;
+    u.pitch = 0.8;
+    u.volume = 1;
+    if (selectedVoice) u.voice = selectedVoice;
+    u.onstart = () => setIsSpeaking(true);
+    u.onend = () => {
+      setIsSpeaking(false);
+      if (onEnd) onEnd();
+    };
+    u.onerror = () => setIsSpeaking(false);
+    currentUtteranceRef.current = u;
+    speechSynthesisRef.current.speak(u);
+  };
 
   const stopSpeaking = () => {
     speechSynthesisRef.current?.cancel();
@@ -205,11 +227,40 @@ const BoutiqueDeMisa = () => {
     }
   };
 
-  const addToCart = (product: MerchProduct) => {
-    toast({
-      title: "Ajouté au panier",
-      description: `${product.nom} — ${formatAr(product.prix)}`,
+  // ✅ Fonction pour ajouter au panier
+  const handleAddToCart = async (product: MerchProduct) => {
+    // Vérifier si l'utilisateur est connecté
+    if (!isAuthenticated) {
+      toast({
+        title: "🔒 Connexion requise",
+        description: "Veuillez vous connecter pour ajouter au panier.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Vérifier le stock
+    if (product.stock <= 0) {
+      toast({
+        title: "❌ Rupture de stock",
+        description: `${product.nom} n'est plus disponible.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Ajouter au panier avec boutique_id
+    const success = await addToCart({
+      boutique_id: product.id,
+      quantite: 1,
+      titre: product.nom,
+      prix_unitaire: product.prix,
     });
+
+    if (success) {
+      // Rafraîchir le panier après ajout
+      await refreshCart();
+    }
   };
 
   // Filtrage & tri
@@ -242,10 +293,17 @@ const BoutiqueDeMisa = () => {
   const speakAboutProduct = (p: MerchProduct) => {
     const msg = `${p.nom}. ${p.description_courte} Référence ${p.reference}. Prix : ${formatAr(p.prix)}. ${p.stock} en stock.`;
     setCurrentMessage(msg);
-  
+    speakText(msg);
   };
 
-
+  const handleMascotClick = () => {
+    setIsChatOpen(true);
+    setShowHelp(false);
+    const msg =
+      "Bienvenue dans la Boutique de Misa ! Je suis Misa, votre guide. Découvrez nos produits de qualité, tous à l'image du fosa, le plus grand carnivore endémique de Madagascar. Passez la souris sur un produit pour que je vous le présente !";
+    setCurrentMessage(msg);
+    speakText(msg);
+  };
 
   const handleHelpClick = () => {
     setShowHelp(!showHelp);
@@ -253,7 +311,7 @@ const BoutiqueDeMisa = () => {
       const msg =
         "Voici comment naviguer : utilisez les filtres pour choisir une catégorie, le curseur pour ajuster votre budget, et le cœur sur chaque produit pour l'ajouter à vos favoris !";
       setCurrentMessage(msg);
-      
+      speakText(msg);
     }
   };
 
@@ -306,9 +364,7 @@ const BoutiqueDeMisa = () => {
 
   return (
     <SiteLayout>
-      {/* ------------------------------------------------------------------ */}
-      {/* Hero                                                                 */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Hero */}
       <MiniHero
         title="Portez la fierté de Madagascar."
         description="Collection Misa — vêtements, papeterie et accessoires à l'image du fosa, carnivore endémique et symbole sauvage de l'île."
@@ -319,9 +375,7 @@ const BoutiqueDeMisa = () => {
         }}
       />
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Barre de filtres — sticky, même pattern que Catalog                  */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Barre de filtres */}
       <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container-x py-3">
           {/* Mobile */}
@@ -369,9 +423,7 @@ const BoutiqueDeMisa = () => {
         </div>
       </nav>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Barre de recherche et tri — même structure que Catalog               */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Barre de recherche et tri */}
       <section className="border-b border-border bg-background/50">
         <div className="container-x py-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -425,18 +477,14 @@ const BoutiqueDeMisa = () => {
         </div>
       </section>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Bannière Endemika — identité Boutique de Misa */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Bannière Endemika */}
       <div className="container-x pt-5">
         <p className="text-xs text-muted-foreground">
           Tous les gains seront dédiés pour aider au reboisement de l'île rouge.
         </p>
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Grille produits — même structure que Catalog                         */}
-      {/* ------------------------------------------------------------------ */}
+      {/* Grille produits */}
       <section className="container-x py-6">
         <div className="text-[11px] text-muted-foreground mb-4 flex items-center justify-between">
           <span>{filtered.length} produit(s)</span>
@@ -567,11 +615,16 @@ const BoutiqueDeMisa = () => {
                         </span>
                         <div className="font-bold text-xs">{formatAr(p.prix)}</div>
                       </div>
+                      {/* ✅ Bouton Ajouter au panier */}
                       <Button
                         variant="hero"
                         size="sm"
                         className="h-6 px-2 text-[10px]"
-                        onClick={() => addToCart(p)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(p);
+                        }}
+                        disabled={p.stock <= 0}
                       >
                         <ShoppingBag className="h-3 w-3 mr-1" />
                         Ajouter
@@ -585,7 +638,21 @@ const BoutiqueDeMisa = () => {
         )}
       </section>
 
- 
+      {/* Mascotte flottante */}
+      <button
+        onClick={handleMascotClick}
+        className="fixed bottom-6 left-6 z-50 h-14 w-14 rounded-full overflow-hidden border-2 border-amber-500/60 shadow-lg hover:scale-105 transition-transform"
+        title="Parler à Misa"
+        aria-label="Ouvrir l'assistant Misa"
+      >
+        <img
+          src={fosa}
+          alt="Misa"
+          className="w-full h-full object-contain bg-amber-950/80 p-1"
+        />
+      </button>
+
+      {/* Chatbot popup */}
       {isChatOpen && (
         <div className="fixed bottom-6 right-6 z-50 w-80 bg-background rounded-xl shadow-xl border border-border overflow-hidden animate-slide-up">
           {/* Header */}
@@ -630,7 +697,7 @@ const BoutiqueDeMisa = () => {
               </div>
               {currentMessage && (
                 <button
-                  onClick={() => (currentMessage)}
+                  onClick={() => speakText(currentMessage)}
                   className="mt-1 text-[8px] opacity-60 hover:opacity-100 flex items-center gap-1"
                 >
                   <Volume2 className="h-2 w-2" /> Réécouter
