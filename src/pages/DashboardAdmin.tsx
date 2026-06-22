@@ -40,7 +40,7 @@ const DashboardAdmin = () => {
     { icon: FileText,        label: "Devis express",   path: "/DashboardAdmin/devis-express" },
     { icon: Shield,          label: "Administrateurs", path: "/DashboardAdmin/admins" },
     { icon: Bell,            label: "Notifications",   path: "/DashboardAdmin/notifications" },
-    { icon: Settings,        label: "Paramètres",      path: "/DashboardAdmin/parametres" },
+    // { icon: Settings,        label: "Paramètres",      path: "/DashboardAdmin/parametres" },
   ];
 
   const isActive = (path: string) => {
