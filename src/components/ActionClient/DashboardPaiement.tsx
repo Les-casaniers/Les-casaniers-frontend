@@ -15,7 +15,8 @@ import {
   Clock,
   CheckCircle,
   ShoppingBag,
-  UserCircle
+  UserCircle,
+  Check
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/service/api";
@@ -62,7 +63,7 @@ type Facture = {
     utilisateur_id: number;
     total: number | string;
     devise: string;
-    statut: string;
+    statut: string;  // Statut de la commande
     titre?: string;
     quantite?: number | string;
     prix_unitaire?: number | string;
@@ -84,7 +85,7 @@ type Facture = {
 };
 
 const DashboardPaiement = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [factures, setFactures] = useState<Facture[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,14 +93,24 @@ const DashboardPaiement = () => {
   const [selectedFacture, setSelectedFacture] = useState<Facture | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+  const [validatingId, setValidatingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchFactures();
-  }, []);
+    if (!authLoading) {
+      if (isAuthenticated) {
+        fetchFactures();
+      } else {
+        setIsLoading(false);
+        toast.error("Veuillez vous connecter pour voir vos factures");
+      }
+    }
+  }, [authLoading, isAuthenticated]);
 
   const fetchFactures = async () => {
     try {
       setIsLoading(true);
+      console.log("Récupération des factures...");
+      
       const response = await api.get('/factures');
       console.log("Factures récupérées:", response.data);
       
@@ -115,9 +126,57 @@ const DashboardPaiement = () => {
       setFactures(facturesData);
     } catch (error: any) {
       console.error("Erreur chargement factures:", error);
-      toast.error("Impossible de charger vos factures");
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+      } else {
+        toast.error("Impossible de charger vos factures");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fonction pour valider une facture (changer le statut en "payee")
+  const handleValidateFacture = async (facture: Facture) => {
+    try {
+      setValidatingId(facture.id);
+      
+      console.log('Validation de la facture:', facture.facture_ref);
+      
+      const response = await api.put(`/factures/${facture.id}/mark-as-paid`, {
+        methode: facture.methode_paiement || 'carte'
+      });
+      
+      if (response.data.success) {
+        toast.success(`Facture ${facture.facture_ref} validée avec succès`);
+        
+        // Mettre à jour la facture dans la liste
+        setFactures(prevFactures => 
+          prevFactures.map(f => 
+            f.id === facture.id 
+              ? { 
+                  ...f, 
+                  statut: 'payee', 
+                  date_paiement: new Date().toISOString(),
+                  commande: f.commande ? { ...f.commande, statut: 'payee' } : undefined
+                } 
+              : f
+          )
+        );
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de la validation');
+      }
+    } catch (error: any) {
+      console.error("Erreur validation:", error);
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+      } else {
+        toast.error(error.response?.data?.message || "Impossible de valider la facture");
+      }
+    } finally {
+      setValidatingId(null);
     }
   };
 
@@ -141,7 +200,12 @@ const DashboardPaiement = () => {
       }
     } catch (error: any) {
       console.error("Erreur suppression:", error);
-      toast.error(error.response?.data?.message || "Impossible de supprimer la facture");
+      
+      if (error.response?.status === 401) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+      } else {
+        toast.error(error.response?.data?.message || "Impossible de supprimer la facture");
+      }
     } finally {
       setDeletingId(null);
       setShowDeleteAlert(false);
@@ -262,7 +326,6 @@ const DashboardPaiement = () => {
         const userInfo = `${user.prenom || ''} ${user.nom || ''}`.trim();
         doc.text(`Client: ${userInfo || 'Non spécifié'}`, 24, y + 14);
         doc.text(`Email: ${user.email || 'Non spécifié'}`, 24, y + 22);
-    
       } else if (client) {
         const clientInfo = `${client.prenom || ''} ${client.nom || ''}`.trim();
         doc.text(`Client: ${clientInfo || 'Non spécifié'}`, 24, y + 14);
@@ -291,7 +354,8 @@ const DashboardPaiement = () => {
       if (commande) {
         doc.text(`Commande: ${commande.commande_uuid || 'N/A'}`, 20, y + 4);
         y += 8;
-        doc.text(`Statut: ${getStatutLabel(commande.statut) || 'N/A'}`, 20, y + 4);
+        // Utiliser le statut de la commande
+        doc.text(`Statut Commande: ${getStatutLabel(commande.statut) || 'N/A'}`, 20, y + 4);
         y += 8;
         if (commande.titre) {
           doc.text(`Titre: ${commande.titre}`, 20, y + 4);
@@ -429,7 +493,7 @@ const DashboardPaiement = () => {
         y += 25;
       }
       
-      // 11. STATUT (brouillon devient en_attente)
+      // 11. STATUT (correspond au statut de la facture)
       const statutLabel = getStatutLabel(facture.statut);
       const isPaid = facture.statut === 'payee';
       const isDraft = facture.statut === 'brouillon';
@@ -461,9 +525,7 @@ const DashboardPaiement = () => {
       doc.setTextColor(0, 0, 0);
      
       
-    
-      
- 
+      y += 25;
       
       // 12. PIED DE PAGE
       const footerY = pageHeight - 25;
@@ -475,7 +537,6 @@ const DashboardPaiement = () => {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('Merci pour votre confiance !', pageWidth / 2, footerY + 6, { align: 'center' });
-     
       
       doc.setFontSize(7);
       doc.text('Page 1/1', pageWidth - 20, footerY + 12, { align: 'right' });
@@ -546,11 +607,44 @@ const DashboardPaiement = () => {
     const labels: Record<string, string> = {
       'payee': 'Payée',
       'en_attente': 'En attente',
-      'brouillon': 'En attente',  // ICI: brouillon devient En attente
+      'brouillon': 'En attente',
       'emise': 'Émise',
       'annulee': 'Annulée'
     };
     return labels[statut] || statut;
+  };
+
+  // Fonction pour déterminer le statut affiché
+  const getDisplayStatut = (facture: Facture) => {
+    // Si la commande est terminée (payee, terminee, livree), afficher le statut réel
+    const commandeStatut = facture.commande?.statut;
+    const commandeTerminee = ['payee', 'terminee', 'livree', 'completed'].includes(commandeStatut || '');
+    
+    // Si la commande est terminée, on affiche "Payée" ou le statut de la commande
+    if (commandeTerminee) {
+      if (facture.statut === 'payee') return 'Payée';
+      if (facture.statut === 'annulee') return 'Annulée';
+      return getStatutLabel(commandeStatut || 'Payée');
+    }
+    
+    // Sinon, on affiche "En attente" pour les statuts non payés
+    if (facture.statut === 'payee') return 'Payée';
+    if (facture.statut === 'annulee') return 'Annulée';
+    return 'En attente';
+  };
+
+  // Fonction pour déterminer le style du statut affiché
+  const getDisplayStatutStyle = (facture: Facture) => {
+    const commandeStatut = facture.commande?.statut;
+    const commandeTerminee = ['payee', 'terminee', 'livree', 'completed'].includes(commandeStatut || '');
+    
+    if (commandeTerminee || facture.statut === 'payee') {
+      return "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30";
+    }
+    if (facture.statut === 'annulee') {
+      return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30";
+    }
+    return "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30";
   };
 
   const facturesFiltrees = factures.filter(facture => {
@@ -565,14 +659,34 @@ const DashboardPaiement = () => {
     );
   });
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Chargement de vos factures...</p>
+        <p className="text-muted-foreground">
+          {authLoading ? "Vérification de l'authentification..." : "Chargement de vos factures..."}
+        </p>
       </div>
     );
   }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Accès non autorisé</h3>
+        <p className="text-muted-foreground">Veuillez vous connecter pour accéder à vos factures</p>
+        <button 
+          onClick={() => window.location.href = '/login'}
+          className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition"
+        >
+          Se connecter
+        </button>
+      </div>
+    );
+  }
+
+  const isAdmin = user?.role === 'admin' || user?.is_admin === true;
 
   return (
     <div className="space-y-6">
@@ -593,7 +707,7 @@ const DashboardPaiement = () => {
               <span>Client</span>
             )}
           </div>
-          <div className="text-sm text-muted-foreground bg-card px-4 py-2 rounded-lg border border-border">
+          <div className="text-sm text-muted-foreground bg-card px-4 py-2">
             Total: <span className="font-semibold text-foreground">{factures.length}</span> factures
           </div>
         </div>
@@ -611,7 +725,40 @@ const DashboardPaiement = () => {
         />
       </div>
 
-     
+      {/* Stats rapides */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Total</p>
+              <p className="text-2xl font-bold text-foreground">{factures.length}</p>
+            </div>
+            <FileText className="h-8 w-8 text-primary opacity-50" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">Payées</p>
+              <p className="text-2xl font-bold text-green-600">
+                {factures.filter(f => f.statut === 'payee').length}
+              </p>
+            </div>
+            <CheckCircle className="h-8 w-8 text-green-500 opacity-50" />
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">En attente</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {factures.filter(f => f.statut !== 'payee' && f.statut !== 'annulee').length}
+              </p>
+            </div>
+            <Clock className="h-8 w-8 text-yellow-500 opacity-50" />
+          </div>
+        </div>
+      </div>
 
       {/* Liste des factures */}
       {facturesFiltrees.length === 0 ? (
@@ -624,78 +771,108 @@ const DashboardPaiement = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {facturesFiltrees.map((facture) => (
-            <div
-              key={facture.id}
-              className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <p className="font-mono font-semibold text-foreground">{facture.facture_ref}</p>
-                    <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${getStatutStyle(facture.statut)}`}>
-                      {getStatutLabel(facture.statut)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 mt-2 text-sm flex-wrap">
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {formatDate(facture.date_emission)}
-                    </span>
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <ShoppingBag className="h-3.5 w-3.5" />
-                      Commande: {facture.commande?.commande_uuid || 'N/A'}
-                    </span>
-                    {facture.commande?.utilisateur && (
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <User className="h-3.5 w-3.5" />
-                        {facture.commande.utilisateur.prenom} {facture.commande.utilisateur.nom}
+          {facturesFiltrees.map((facture) => {
+            const displayStatut = getDisplayStatut(facture);
+            const displayStyle = getDisplayStatutStyle(facture);
+            
+            return (
+              <div
+                key={facture.id}
+                className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <p className="font-mono font-semibold text-foreground">{facture.facture_ref}</p>
+                      {/* Statut affiché (en attente ou payée selon la commande) */}
+                      <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border ${displayStyle}`}>
+                        {displayStatut}
                       </span>
-                    )}
+                      {/* Afficher le statut réel de la commande si différent */}
+                      {facture.commande && facture.commande.statut && 
+                       !['payee', 'terminee', 'livree', 'completed'].includes(facture.commande.statut) &&
+                       facture.statut !== 'payee' && (
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium border bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30`}>
+                          {getStatutLabel(facture.commande.statut)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-sm flex-wrap">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {formatDate(facture.date_emission)}
+                      </span>
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <ShoppingBag className="h-3.5 w-3.5" />
+                        Commande: {facture.commande?.commande_uuid || 'N/A'}
+                      </span>
+                      {facture.commande?.utilisateur && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <User className="h-3.5 w-3.5" />
+                          {facture.commande.utilisateur.prenom} {facture.commande.utilisateur.nom}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center gap-4 text-sm flex-wrap">
+                      {facture.commande && (
+                        <p className="text-sm text-muted-foreground">
+                          <DollarSign className="h-3.5 w-3.5 inline mr-1" />
+                          Total: {formatPrice(facture.commande.total || facture.montant_total, facture.devise)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-2 flex items-center gap-4 text-sm flex-wrap">
-               
-                    {facture.commande && (
-                      <p className="text-sm text-muted-foreground">
-                        <DollarSign className="h-3.5 w-3.5 inline mr-1" />
-                        Total: {formatPrice(facture.commande.total || facture.montant_total, facture.devise)}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
-                <div className="text-right">
-                  <p className="text-xl font-bold text-foreground">{formatPrice(facture.montant_total, facture.devise)}</p>
-                  <div className="flex items-center justify-end gap-2 mt-2">
-                    <button
-                      onClick={() => handleDownload(facture)}
-                      disabled={downloadingId === facture.id}
-                      className="inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-lg border border-blue-200 hover:bg-blue-50"
-                    >
-                      {downloadingId === facture.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Download className="h-4 w-4" />
+                  <div className="text-right">
+                    <p className="text-xl font-bold text-foreground">{formatPrice(facture.montant_total, facture.devise)}</p>
+                    <div className="flex items-center justify-end gap-2 mt-2 flex-wrap">
+                      {/* Bouton Valider - visible uniquement pour l'admin et si la facture n'est pas déjà payée */}
+                      {isAdmin && facture.statut !== 'payee' && facture.statut !== 'annulee' && (
+                        <button
+                          onClick={() => handleValidateFacture(facture)}
+                          disabled={validatingId === facture.id}
+                          className="inline-flex items-center gap-1 text-sm text-green-500 hover:text-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-lg border border-green-200 hover:bg-green-50"
+                        >
+                          {validatingId === facture.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                          {validatingId === facture.id ? 'Validation...' : 'Valider'}
+                        </button>
                       )}
-                      {downloadingId === facture.id ? 'Téléchargement...' : 'PDF'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(facture)}
-                      disabled={deletingId === facture.id}
-                      className="inline-flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-lg border border-red-200 hover:bg-red-50"
-                    >
-                      {deletingId === facture.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      Supprimer
-                    </button>
+                      
+                      <button
+                        onClick={() => handleDownload(facture)}
+                        disabled={downloadingId === facture.id}
+                        className="inline-flex items-center gap-1 text-sm text-blue-500 hover:text-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-lg border border-blue-200 hover:bg-blue-50"
+                      >
+                        {downloadingId === facture.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
+                        {downloadingId === facture.id ? 'Téléchargement...' : 'PDF'}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(facture)}
+                        disabled={deletingId === facture.id}
+                        className="inline-flex items-center gap-1 text-sm text-red-500 hover:text-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1 rounded-lg border border-red-200 hover:bg-red-50"
+                      >
+                        {deletingId === facture.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
