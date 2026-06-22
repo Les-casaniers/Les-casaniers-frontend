@@ -68,15 +68,48 @@ export const useBoutiqueMisaItem = (id: number) => {
 /**
  * Crée un nouvel article dans la boutique Misa (ADMIN)
  */
+// export const useCreateBoutiqueMisa = () => {
+//   const queryClient = useQueryClient();
+//   const { toast } = useToast();
+
+//   return useMutation({
+//     mutationFn: async (formData: FormData) => {
+//       // ✅ URL ADMIN (avec /admin/)
+//       const { data } = await api.post('/admin/boutique-misa', formData, {
+//         headers: { 'Content-Type': 'multipart/form-data' },
+//       });
+//       return data;
+//     },
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['boutique-misa'] });
+//       toast({ title: 'Succès', description: 'Article ajouté avec succès' });
+//     },
+//     onError: (error: any) => {
+//       toast({
+//         title: 'Erreur',
+//         description: error?.response?.data?.message || 'Impossible d\'ajouter l\'article',
+//         variant: 'destructive',
+//       });
+//     },
+//   });
+// };
+
 export const useCreateBoutiqueMisa = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (formData: FormData) => {
-      // ✅ URL ADMIN (avec /admin/)
+      // ✅ Vérifier le contenu du FormData
+      console.log("📦 Mutation - FormData envoyé:");
+      for (let pair of formData.entries()) {
+        console.log("  ", pair[0], pair[1] instanceof File ? `[File: ${pair[1].name}]` : pair[1]);
+      }
+      
       const { data } = await api.post('/admin/boutique-misa', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return data;
     },
@@ -85,6 +118,7 @@ export const useCreateBoutiqueMisa = () => {
       toast({ title: 'Succès', description: 'Article ajouté avec succès' });
     },
     onError: (error: any) => {
+      console.error("❌ Mutation - Erreur:", error.response?.data);
       toast({
         title: 'Erreur',
         description: error?.response?.data?.message || 'Impossible d\'ajouter l\'article',
