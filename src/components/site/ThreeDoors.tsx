@@ -10,7 +10,7 @@ const portes = [
     icon: Briefcase,
     image: pcPro,
     tag: "Porte 1 · Rationnel",
-    title: "Pro & Freelance",
+    title: "Pro & freelance",
     desc: "Bureautique, mini PC, portables, tablettes. Productivité sans compromis.",
     cta: "Configurateur productivité",
     accent: "from-primary/80 to-primary",
