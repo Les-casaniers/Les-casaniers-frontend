@@ -11,6 +11,7 @@ import {
   Search,
   Eye,
   ChevronDown,
+  ChevronRight,
   Grid,
   List,
   FolderTree,
@@ -28,6 +29,7 @@ import {
   FileText,
   Plus,
   Loader2,
+  Filter,
 } from "lucide-react";
 import {
   useProducts,
@@ -100,6 +102,16 @@ const initialCategoryForm: CategoryForm = {
 };
 
 type Produit = APIProduct;
+
+interface TemplateCaracteristique {
+  id: number;
+  sous_categorie_id: number;
+  nom_champ: string;
+  type_champ: string;
+  ordre_affichage: number;
+  est_obligatoire: boolean;
+  valeur_par_defaut: string | null;
+}
 
 const REFERENCE_PREFIXES = [
   { key: "CASE", label: "CASE-", description: "Unité Central", exemple: "CASE-001" },
@@ -179,6 +191,12 @@ const ProductForm = ({
   generateReference,
   isEditMode = false,
   onCaracteristiquesChange,
+  templatesDisponibles = [],
+  caracteristiques = {},
+  setCaracteristiques,
+  loadTemplates,
+  onDeleteTemplate,
+  onEditTemplate,
 }: {
   value: ProduitForm;
   setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
@@ -190,34 +208,40 @@ const ProductForm = ({
   generateReference: (prefixKey: string) => Promise<void>;
   isEditMode?: boolean;
   onCaracteristiquesChange?: (caracts: Record<string, string>) => void;
+  templatesDisponibles?: TemplateCaracteristique[];
+  caracteristiques?: Record<string, string>;
+  setCaracteristiques?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  loadTemplates?: (sousCategorieId: string) => Promise<void>;
+  onDeleteTemplate?: (templateId: number, nomChamp: string) => void;
+  onEditTemplate?: (templateId: number, oldNomChamp: string, newNomChamp: string) => Promise<void>;
 }) => {
-  // États pour les caractéristiques
-  const [caracteristiques, setCaracteristiques] = useState<Record<string, string>>({});
   const [newCaractNom, setNewCaractNom] = useState("");
   const [newCaractValeur, setNewCaractValeur] = useState("");
   const [newCaractType, setNewCaractType] = useState<"texte" | "nombre" | "booleen" | "date">("texte");
   const [newCaractObligatoire, setNewCaractObligatoire] = useState(false);
   const [showAddCaract, setShowAddCaract] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [editingCaract, setEditingCaract] = useState<string | null>(null);
+  const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
 
   // Notifier le parent des changements de caractéristiques
   useEffect(() => {
-    if (onCaracteristiquesChange) {
+    if (onCaracteristiquesChange && caracteristiques) {
       onCaracteristiquesChange(caracteristiques);
     }
   }, [caracteristiques, onCaracteristiquesChange]);
 
-  // Ajouter une caractéristique
-  const handleAddCaracteristique = async () => {
-    if (!newCaractNom.trim() || !newCaractValeur.trim()) {
-      return;
+  // Ajouter une caractéristique personnalisée
+  const handleAddCaracteristique = () => {
+    if (!newCaractNom.trim() || !newCaractValeur.trim()) return;
+    
+    if (setCaracteristiques) {
+      setCaracteristiques((prev) => ({
+        ...prev,
+        [newCaractNom.trim()]: newCaractValeur.trim(),
+      }));
     }
-
-    setCaracteristiques((prev) => ({
-      ...prev,
-      [newCaractNom.trim()]: newCaractValeur.trim(),
-    }));
-
+    
     setNewCaractNom("");
     setNewCaractValeur("");
     setNewCaractType("texte");
@@ -225,19 +249,98 @@ const ProductForm = ({
     setShowAddCaract(false);
   };
 
-  // Supprimer une caractéristique
+  // Supprimer une caractéristique personnalisée
   const handleRemoveCaracteristique = (nomChamp: string) => {
-    const newCaracts = { ...caracteristiques };
-    delete newCaracts[nomChamp];
-    setCaracteristiques(newCaracts);
+    if (setCaracteristiques) {
+      setCaracteristiques((prev) => {
+        const newCaracts = { ...prev };
+        delete newCaracts[nomChamp];
+        return newCaracts;
+      });
+    }
   };
 
   // Modifier une valeur de caractéristique
   const handleCaractValueChange = (nomChamp: string, value: string) => {
-    setCaracteristiques((prev) => ({
-      ...prev,
-      [nomChamp]: value,
-    }));
+    if (setCaracteristiques) {
+      setCaracteristiques((prev) => ({
+        ...prev,
+        [nomChamp]: value,
+      }));
+    }
+  };
+
+  // Démarrer l'édition d'une caractéristique personnalisée
+  const startEditingCaract = (nomChamp: string) => {
+    setEditingCaract(nomChamp);
+    setEditingTemplateId(null);
+    setIsEditingTemplate(false);
+    setNewCaractNom(nomChamp);
+    setNewCaractValeur(caracteristiques?.[nomChamp] || "");
+  };
+
+  // Démarrer l'édition d'un template
+  const startEditingTemplate = (template: TemplateCaracteristique) => {
+    setEditingTemplateId(template.id);
+    setEditingCaract(template.nom_champ);
+    setIsEditingTemplate(true);
+    setNewCaractNom(template.nom_champ);
+    setNewCaractValeur(caracteristiques?.[template.nom_champ] || "");
+  };
+
+  // Sauvegarder la modification d'une caractéristique personnalisée
+  const saveEditingCaract = () => {
+    if (!editingCaract || !newCaractNom.trim() || !newCaractValeur.trim()) return;
+    
+    if (setCaracteristiques) {
+      setCaracteristiques((prev) => {
+        const newCaracts = { ...prev };
+        delete newCaracts[editingCaract];
+        newCaracts[newCaractNom.trim()] = newCaractValeur.trim();
+        return newCaracts;
+      });
+    }
+    
+    setEditingCaract(null);
+    setEditingTemplateId(null);
+    setIsEditingTemplate(false);
+    setNewCaractNom("");
+    setNewCaractValeur("");
+  };
+
+  // Sauvegarder la modification d'un template
+  const saveEditingTemplate = async () => {
+    if (!editingTemplateId || !editingCaract || !newCaractNom.trim() || !newCaractValeur.trim()) return;
+    
+    if (onEditTemplate) {
+      await onEditTemplate(editingTemplateId, editingCaract, newCaractNom.trim());
+      
+      // Mettre à jour localement
+      if (setCaracteristiques) {
+        setCaracteristiques((prev) => {
+          const newCaracts = { ...prev };
+          const oldValue = newCaracts[editingCaract] || "";
+          delete newCaracts[editingCaract];
+          newCaracts[newCaractNom.trim()] = oldValue || newCaractValeur.trim();
+          return newCaracts;
+        });
+      }
+    }
+    
+    setEditingCaract(null);
+    setEditingTemplateId(null);
+    setIsEditingTemplate(false);
+    setNewCaractNom("");
+    setNewCaractValeur("");
+  };
+
+  // Annuler l'édition
+  const cancelEditing = () => {
+    setEditingCaract(null);
+    setEditingTemplateId(null);
+    setIsEditingTemplate(false);
+    setNewCaractNom("");
+    setNewCaractValeur("");
   };
 
   return (
@@ -317,7 +420,13 @@ const ProductForm = ({
           <select
             className={INPUT}
             value={value.id_sous_categorie}
-            onChange={(e) => setValue((p) => ({ ...p, id_sous_categorie: e.target.value }))}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setValue((p) => ({ ...p, id_sous_categorie: newValue }));
+              if (!isEditMode && loadTemplates && newValue) {
+                loadTemplates(newValue);
+              }
+            }}
             disabled={!value.categorie_id}
           >
             <option value="">— Sous-catégorie —</option>
@@ -387,43 +496,209 @@ const ProductForm = ({
             <Award className="h-3.5 w-3.5" /> Caractéristiques
           </label>
           <span className="text-[10px] text-muted-foreground">
-            {Object.keys(caracteristiques).length} caractéristique(s)
+            {Object.keys(caracteristiques || {}).length} caractéristique(s)
           </span>
         </div>
 
-        {/* Liste des caractéristiques ajoutées */}
-        {Object.entries(caracteristiques).map(([nomChamp, valeur]) => (
-          <div
-            key={nomChamp}
-            className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-primary">
-                  {nomChamp}
-                </span>
-                <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">
-                  personnalisé
-                </span>
+        {/* Templates existants (modifiables et supprimables en édition) */}
+        {templatesDisponibles.map((template) => {
+          const isEditing = isEditMode && editingTemplateId === template.id;
+          
+          if (isEditing) {
+            return (
+              <div
+                key={template.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-primary">Modifier le template</span>
+                    <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">template</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <input
+                      className="px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                      placeholder="Nom du champ"
+                      value={newCaractNom}
+                      onChange={(e) => setNewCaractNom(e.target.value)}
+                    />
+                    <input
+                      className="px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                      placeholder="Valeur par défaut"
+                      value={newCaractValeur}
+                      onChange={(e) => setNewCaractValeur(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={saveEditingTemplate}
+                    disabled={!newCaractNom.trim()}
+                    className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-              <input
-                className="w-full mt-1 px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
-                placeholder={`Valeur pour ${nomChamp}`}
-                value={valeur}
-                onChange={(e) => handleCaractValueChange(nomChamp, e.target.value)}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => handleRemoveCaracteristique(nomChamp)}
-              className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            );
+          }
+          
+          return (
+            <div
+              key={template.id}
+              className="flex items-center gap-3 p-3 rounded-xl bg-secondary/10 border border-border/40"
             >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {template.nom_champ}
+                  </span>
+                  {template.est_obligatoire && (
+                    <span className="text-[10px] text-red-500">*</span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">
+                    {template.type_champ}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground bg-primary/10 px-1.5 py-0.5 rounded">
+                    template
+                  </span>
+                </div>
+                <input
+                  className="w-full mt-1 px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                  placeholder={`Valeur pour ${template.nom_champ}`}
+                  value={caracteristiques?.[template.nom_champ] || ""}
+                  onChange={(e) => handleCaractValueChange(template.nom_champ, e.target.value)}
+                  required={template.est_obligatoire}
+                />
+              </div>
+              {/* Boutons pour les templates (uniquement en mode édition) */}
+              {isEditMode && (
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => startEditingTemplate(template)}
+                    className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors"
+                    title="Modifier le nom du champ"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  {onDeleteTemplate && (
+                    <button
+                      type="button"
+                      onClick={() => onDeleteTemplate(template.id, template.nom_champ)}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                      title="Supprimer cette caractéristique"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
-        {/* Bouton Ajouter une caractéristique */}
+        {/* Caractéristiques personnalisées (modifiables et supprimables) */}
+        {Object.entries(caracteristiques || {})
+          .filter(([key]) => !templatesDisponibles.some((t) => t.nom_champ === key))
+          .map(([nomChamp, valeur]) => {
+            const isEditing = editingCaract === nomChamp && !isEditingTemplate;
+            
+            if (isEditing) {
+              return (
+                <div
+                  key={nomChamp}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/30"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-primary">Modifier</span>
+                      <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">personnalisé</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <input
+                        className="px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                        placeholder="Nom du champ"
+                        value={newCaractNom}
+                        onChange={(e) => setNewCaractNom(e.target.value)}
+                      />
+                      <input
+                        className="px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                        placeholder="Valeur"
+                        value={newCaractValeur}
+                        onChange={(e) => setNewCaractValeur(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={saveEditingCaract}
+                      disabled={!newCaractNom.trim() || !newCaractValeur.trim()}
+                      className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEditing}
+                      className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <div
+                key={nomChamp}
+                className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-primary">{nomChamp}</span>
+                    <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">personnalisé</span>
+                  </div>
+                  <input
+                    className="w-full mt-1 px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                    placeholder={`Valeur pour ${nomChamp}`}
+                    value={valeur}
+                    onChange={(e) => handleCaractValueChange(nomChamp, e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => startEditingCaract(nomChamp)}
+                    className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors"
+                    title="Modifier le nom"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCaracteristique(nomChamp)}
+                    className="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+        {/* Bouton Ajouter une caractéristique personnalisée */}
         {!showAddCaract ? (
           <button
             type="button"
@@ -431,15 +706,13 @@ const ProductForm = ({
             className="w-full py-2.5 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 text-sm text-muted-foreground hover:text-primary font-medium flex items-center justify-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Ajouter une caractéristique
+            Ajouter une caractéristique personnalisée
           </button>
         ) : (
           <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Nom du champ *
-                </label>
+                <label className="text-xs font-medium text-muted-foreground">Nom du champ *</label>
                 <input
                   className={INPUT}
                   placeholder="Ex: Couleur, Poids..."
@@ -448,9 +721,7 @@ const ProductForm = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Valeur *
-                </label>
+                <label className="text-xs font-medium text-muted-foreground">Valeur *</label>
                 <input
                   className={INPUT}
                   placeholder="Ex: Rouge, 1.5kg..."
@@ -461,9 +732,7 @@ const ProductForm = ({
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Type:
-                </label>
+                <label className="text-xs font-medium text-muted-foreground">Type:</label>
                 <select
                   className="px-3 py-1.5 text-sm border border-border/60 rounded-lg bg-background/60 outline-none focus:border-primary/60 transition-all"
                   value={newCaractType}
@@ -511,7 +780,6 @@ const ProductForm = ({
           </div>
         )}
       </div>
-      {/* ─── FIN SECTION CARACTÉRISTIQUES ─── */}
     </div>
   );
 };
@@ -655,8 +923,18 @@ const ExistingImagesManager = ({
 };
 
 // ─── ProductMobileCard ───────────────────────────────────────────────────────
-const ProductMobileCard = ({ product, onEdit, onDelete, onView, getMainImage }: any) => {
+const ProductMobileCard = ({ 
+  product, 
+  onEdit, 
+  onDelete, 
+  onView, 
+  getMainImage,
+  expanded,
+  onToggleExpand,
+}: any) => {
   const mainImage = getMainImage(product);
+  const caracteristiques = product.caracteristiques || {};
+
   return (
     <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3 hover:border-primary/30 transition-all duration-200 hover:shadow-md">
       <div className="flex gap-3">
@@ -694,14 +972,49 @@ const ProductMobileCard = ({ product, onEdit, onDelete, onView, getMainImage }: 
           </span>
         </div>
       </div>
+      
+      {Object.keys(caracteristiques).length > 0 && (
+        <button
+          onClick={onToggleExpand}
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+        >
+          {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {expanded ? "Masquer les caractéristiques" : "Voir les caractéristiques"}
+          <span className="text-[10px] text-muted-foreground/50">({Object.keys(caracteristiques).length})</span>
+        </button>
+      )}
+
+      {expanded && Object.keys(caracteristiques).length > 0 && (
+        <div className="pt-2 border-t border-border/50 space-y-1.5">
+          {Object.entries(caracteristiques).map(([nom, valeur]) => (
+            <div key={nom} className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-medium">{nom}:</span>
+              <span className="text-foreground">{valeur}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
-        <button onClick={() => onView(product)} className="p-2 rounded-lg border border-border/50 hover:bg-secondary/50 transition-colors" title="Voir détails">
-          <Eye className="h-4 w-4" />
+        <button 
+          onClick={() => onView(product)} 
+          className="p-2 rounded-lg bg-white border border-border/50 hover:bg-secondary/50 transition-colors shadow-sm" 
+          title="Voir détails"
+        >
+          <Eye className="h-4 w-4 text-foreground" />
         </button>
-        <button onClick={() => onEdit(product)} className="p-2 rounded-lg border border-border/50 hover:bg-secondary/50 transition-colors" title="Modifier">
-          <Pencil className="h-4 w-4" />
+        <button 
+          onClick={() => onEdit(product)} 
+          className="p-2 rounded-lg bg-white border border-border/50 hover:bg-secondary/50 transition-colors shadow-sm" 
+          title="Modifier"
+        >
+          <Pencil className="h-4 w-4 text-foreground" />
         </button>
-        <button onClick={() => onDelete(product)} className="p-2 rounded-lg border border-border/50 hover:bg-destructive/10 transition-colors text-destructive" title="Supprimer">
+        <button 
+          onClick={() => onDelete(product)} 
+          className="p-2 rounded-lg bg-white border border-border/50 hover:bg-destructive/10 transition-colors shadow-sm text-destructive" 
+          title="Supprimer"
+        >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
@@ -804,9 +1117,31 @@ const AdminProduits = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // États pour les caractéristiques
+  // États pour les caractéristiques du formulaire
   const [createCaracteristiques, setCreateCaracteristiques] = useState<Record<string, string>>({});
   const [editCaracteristiques, setEditCaracteristiques] = useState<Record<string, string>>({});
+  const [createTemplates, setCreateTemplates] = useState<TemplateCaracteristique[]>([]);
+  const [editTemplates, setEditTemplates] = useState<TemplateCaracteristique[]>([]);
+
+  // États pour les filtres avancés
+  const [filterCategorieId, setFilterCategorieId] = useState<string>("");
+  const [filterSousCategorieId, setFilterSousCategorieId] = useState<string>("");
+  const [filterCaracteristiques, setFilterCaracteristiques] = useState<Record<string, string[]>>({});
+  const [templatesBySousCategorie, setTemplatesBySousCategorie] = useState<TemplateCaracteristique[]>([]);
+  const [valeursByTemplate, setValeursByTemplate] = useState<Record<string, string[]>>({});
+  const [showFilters, setShowFilters] = useState(false);
+
+  // État pour gérer l'expansion des cartes
+  const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
+
+  // État pour les produits avec leurs caractéristiques
+  const [produitsWithCaracts, setProduitsWithCaracts] = useState<Produit[]>([]);
+
+  // États pour la suppression/édition des caractéristiques
+  const [showDeleteCaractModal, setShowDeleteCaractModal] = useState(false);
+  const [caractToDelete, setCaractToDelete] = useState<{id: number, nom_champ: string, isTemplate: boolean} | null>(null);
+  const [isDeletingCaract, setIsDeletingCaract] = useState(false);
+  const [isEditingTemplate, setIsEditingTemplate] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -835,10 +1170,86 @@ const AdminProduits = () => {
     if (!authLoading && (!isAdmin || !user)) logout("/login?redirect_admin=true");
   }, [isAdmin, user, authLoading, logout]);
 
-  const normalizedProduits = produits ?? [];
+  // Charger les caractéristiques pour chaque produit
+  useEffect(() => {
+    const loadCaracteristiques = async () => {
+      const normalizedProduits = produits ?? [];
+      if (!normalizedProduits || normalizedProduits.length === 0) {
+        setProduitsWithCaracts(normalizedProduits);
+        return;
+      }
+
+      try {
+        const produitsAvecCaracts = await Promise.all(
+          normalizedProduits.map(async (produit) => {
+            try {
+              const response = await api.get(`/produits/${produit.id}/caracteristiques`);
+              const caracts = response?.data?.data || [];
+              const caractsObj: Record<string, string> = {};
+              caracts.forEach((c: any) => {
+                caractsObj[c.nom_champ] = c.valeur;
+              });
+              return {
+                ...produit,
+                caracteristiques: caractsObj
+              };
+            } catch (error) {
+              console.error(`Erreur chargement caractéristiques pour produit ${produit.id}:`, error);
+              return {
+                ...produit,
+                caracteristiques: {}
+              };
+            }
+          })
+        );
+        setProduitsWithCaracts(produitsAvecCaracts);
+      } catch (error) {
+        console.error("Erreur lors du chargement des caractéristiques:", error);
+        setProduitsWithCaracts(normalizedProduits);
+      }
+    };
+
+    loadCaracteristiques();
+  }, [produits]);
+
+  // Charger les templates et valeurs pour une sous-catégorie (filtres)
+  useEffect(() => {
+    if (filterSousCategorieId) {
+      loadTemplatesAndValues(filterSousCategorieId);
+    } else {
+      setTemplatesBySousCategorie([]);
+      setValeursByTemplate({});
+      setFilterCaracteristiques({});
+    }
+  }, [filterSousCategorieId]);
+
   const normalizedCategories = categories ?? [];
   const normalizedSousCategories = sousCategoriesData ?? [];
-  const filteredProduits = normalizedProduits;
+  
+  // Filtrer les produits avec les filtres avancés
+  const filteredProduits = useMemo(() => {
+    let result = produitsWithCaracts;
+
+    if (filterCategorieId) {
+      result = result.filter(p => String(p.categorie_id) === filterCategorieId);
+    }
+
+    if (filterSousCategorieId) {
+      result = result.filter(p => String(p.id_sous_categorie) === filterSousCategorieId);
+    }
+
+    Object.entries(filterCaracteristiques).forEach(([nomChamp, valeurs]) => {
+      if (valeurs.length > 0) {
+        result = result.filter(p => {
+          const produitCaracts = p.caracteristiques || {};
+          const valeurProduit = produitCaracts[nomChamp] || "";
+          return valeurs.some(v => valeurProduit.includes(v));
+        });
+      }
+    });
+
+    return result;
+  }, [produitsWithCaracts, filterCategorieId, filterSousCategorieId, filterCaracteristiques]);
 
   const getMainImage = (product: Produit) => {
     const images = product.images ?? [];
@@ -855,6 +1266,135 @@ const AdminProduits = () => {
       message = Array.isArray(firstError) ? firstError[0] : String(firstError);
     }
     toast({ title: "Erreur", description: message, variant: "destructive" });
+  };
+
+  const toggleExpand = (productId: number) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [productId]: !prev[productId]
+    }));
+  };
+
+  // Charger les templates pour une sous-catégorie (création/édition)
+  const loadTemplatesForSousCategorie = async (sousCategorieId: string) => {
+    if (!sousCategorieId) {
+      setCreateTemplates([]);
+      setCreateCaracteristiques({});
+      return;
+    }
+
+    try {
+      const response = await api.get(`/sous-categories/${sousCategorieId}/templates`);
+      const templates = response?.data?.data || [];
+      setCreateTemplates(templates);
+
+      const initialCaracts: Record<string, string> = {};
+      templates.forEach((t: TemplateCaracteristique) => {
+        if (t.valeur_par_defaut) {
+          initialCaracts[t.nom_champ] = t.valeur_par_defaut;
+        }
+      });
+      setCreateCaracteristiques(initialCaracts);
+    } catch (error) {
+      console.error("Erreur chargement templates:", error);
+    }
+  };
+
+  // Charger les templates et leurs valeurs pour les filtres
+  const loadTemplatesAndValues = async (sousCategorieId: string) => {
+    try {
+      const templatesResponse = await api.get(`/sous-categories/${sousCategorieId}/templates`);
+      const templates = templatesResponse?.data?.data || [];
+      setTemplatesBySousCategorie(templates);
+
+      const valeursMap: Record<string, string[]> = {};
+      
+      for (const template of templates) {
+        try {
+          const valuesResponse = await api.get(`/templates/${template.id}/valeurs-uniques`);
+          const valeurs = valuesResponse?.data?.data || [];
+          valeursMap[template.nom_champ] = valeurs;
+        } catch (error) {
+          console.error(`Erreur chargement valeurs pour ${template.nom_champ}:`, error);
+          valeursMap[template.nom_champ] = [];
+        }
+      }
+      
+      setValeursByTemplate(valeursMap);
+    } catch (error) {
+      console.error("Erreur chargement templates:", error);
+    }
+  };
+
+  // Supprimer une caractéristique (template)
+  const deleteCaracteristique = async () => {
+    if (!caractToDelete) return;
+    
+    setIsDeletingCaract(true);
+    try {
+      await api.delete(`/templates-caracteristiques/${caractToDelete.id}`);
+      
+      // Mettre à jour l'état local
+      setEditTemplates(prev => prev.filter(t => t.id !== caractToDelete.id));
+      setEditCaracteristiques(prev => {
+        const newCaracts = { ...prev };
+        delete newCaracts[caractToDelete.nom_champ];
+        return newCaracts;
+      });
+      
+      toast({
+        title: "Caractéristique supprimée",
+        description: `"${caractToDelete.nom_champ}" a été supprimé avec succès`
+      });
+      
+      setShowDeleteCaractModal(false);
+      setCaractToDelete(null);
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression:", error);
+      toast({
+        title: "Erreur",
+        description: error?.response?.data?.message || "Impossible de supprimer cette caractéristique",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeletingCaract(false);
+    }
+  };
+
+  // Modifier un template (nom du champ)
+  const editTemplate = async (templateId: number, oldNomChamp: string, newNomChamp: string) => {
+    try {
+      await api.put(`/templates-caracteristiques/${templateId}`, {
+        nom_champ: newNomChamp
+      });
+      
+      // Mettre à jour l'état local
+      setEditTemplates(prev => prev.map(t => 
+        t.id === templateId ? { ...t, nom_champ: newNomChamp } : t
+      ));
+      
+      // Mettre à jour les caractéristiques
+      setEditCaracteristiques(prev => {
+        const newCaracts = { ...prev };
+        const value = newCaracts[oldNomChamp] || "";
+        delete newCaracts[oldNomChamp];
+        newCaracts[newNomChamp] = value;
+        return newCaracts;
+      });
+      
+      toast({
+        title: "Caractéristique modifiée",
+        description: `"${oldNomChamp}" renommé en "${newNomChamp}"`
+      });
+    } catch (error: any) {
+      console.error("Erreur lors de la modification:", error);
+      toast({
+        title: "Erreur",
+        description: error?.response?.data?.message || "Impossible de modifier cette caractéristique",
+        variant: "destructive"
+      });
+      throw error;
+    }
   };
 
   const generateNextReference = async (prefixKey: string): Promise<string> => {
@@ -901,10 +1441,8 @@ const AdminProduits = () => {
     return fd;
   };
 
-  // Sauvegarder les caractéristiques d'un produit
   const saveCaracteristiques = async (produitId: number, caracteristiques: Record<string, string>) => {
     const entries = Object.entries(caracteristiques).filter(([_, valeur]) => valeur && valeur.trim() !== "");
-    
     if (entries.length === 0) return;
 
     try {
@@ -933,10 +1471,7 @@ const AdminProduits = () => {
       const createdProductId = created?.data?.data?.id as number | undefined;
       
       if (createdProductId) {
-        // Sauvegarder les caractéristiques
         await saveCaracteristiques(createdProductId, createCaracteristiques);
-
-        // Ajouter les images
         if (createImageFiles.length > 0) {
           await Promise.all(createImageFiles.map((file, index) =>
             uploadImage.mutateAsync({ produitId: createdProductId, imageFile: file, alt: `${form.nom} - image ${index + 1}`, ordre: index }),
@@ -950,6 +1485,7 @@ const AdminProduits = () => {
       setGeneratedReference("");
       setCreateImageFiles([]);
       setCreateCaracteristiques({});
+      setCreateTemplates([]);
       await refetch();
       toast({ title: "Produit créé avec la référence " + form.reference });
     } catch (e: any) { 
@@ -980,9 +1516,14 @@ const AdminProduits = () => {
       actif: p.actif ?? true,
     });
     setEditImageFiles([]);
-    
-    // Charger les caractéristiques existantes
+
+    // Charger les templates de la sous-catégorie
     try {
+      const templatesResponse = await api.get(`/sous-categories/${p.id_sous_categorie}/templates`);
+      const templates = templatesResponse?.data?.data || [];
+      setEditTemplates(templates);
+
+      // Charger les caractéristiques existantes
       const response = await api.get(`/produits/${p.id}/caracteristiques`);
       const caracts = response?.data?.data || [];
       const caractsObj: Record<string, string> = {};
@@ -1006,8 +1547,6 @@ const AdminProduits = () => {
     setIsUpdating(true);
     try {
       await updateProductMutation.mutateAsync({ id: selectedProduit.id, updatedProduct: buildFormData(editForm) });
-      
-      // Sauvegarder les caractéristiques
       await saveCaracteristiques(selectedProduit.id, editCaracteristiques);
 
       if (editImageFiles.length > 0) {
@@ -1023,6 +1562,7 @@ const AdminProduits = () => {
       setEditImageFiles([]);
       setExistingImages([]);
       setEditCaracteristiques({});
+      setEditTemplates([]);
       await refetch();
       toast({ title: "Produit mis à jour" });
     } catch (e: any) { 
@@ -1068,6 +1608,7 @@ const AdminProduits = () => {
     setGeneratedReference("");
     setForm(initialForm);
     setCreateCaracteristiques({});
+    setCreateTemplates([]);
   };
 
   const closeEditModal = () => {
@@ -1077,6 +1618,18 @@ const AdminProduits = () => {
     setSelectedPrefix("");
     setGeneratedReference("");
     setEditCaracteristiques({});
+    setEditTemplates([]);
+  };
+
+  const handleCaracteristiqueFilterChange = (nomChamp: string, valeur: string, checked: boolean) => {
+    setFilterCaracteristiques(prev => {
+      const current = prev[nomChamp] || [];
+      if (checked) {
+        return { ...prev, [nomChamp]: [...current, valeur] };
+      } else {
+        return { ...prev, [nomChamp]: current.filter(v => v !== valeur) };
+      }
+    });
   };
 
   // ─── Rendu ─────────────────────────────────────────────────────────────────
@@ -1106,9 +1659,9 @@ const AdminProduits = () => {
       {/* Onglets */}
       <div className="flex gap-1.5 flex-wrap border-b border-border/50 pb-0">
         {[
-          { id: "produits",        label: "Produits",         icon: Package },
-          { id: "categories",      label: "Catégories",       icon: FolderTree },
-          { id: "sous-categories", label: "Sous-catégories",  icon: Layers },
+          { id: "produits", label: "Produits", icon: Package },
+          { id: "categories", label: "Catégories", icon: FolderTree },
+          { id: "sous-categories", label: "Sous-catégories", icon: Layers },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -1128,41 +1681,147 @@ const AdminProduits = () => {
       {/* ── TAB: Produits ── */}
       {activeTab === "produits" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-              <input
-                className="w-full pl-9 pr-3 py-2.5 border border-border/60 rounded-xl text-sm bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
-                placeholder="Rechercher un produit..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                className="px-3 py-2.5 border border-border/60 rounded-xl bg-background/60 text-sm outline-none focus:border-primary/60 transition-all"
-                value={dispoFilter}
-                onChange={(e) => setDispoFilter(e.target.value as any)}
-              >
-                <option value="all">Tous</option>
-                <option value="available">Disponibles</option>
-                <option value="unavailable">Indisponibles</option>
-              </select>
-              <div className="flex gap-1 border border-border/60 rounded-xl p-1 bg-background/60">
-                <button
-                  onClick={() => setViewMode("table")}
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+          {/* Barre de recherche et filtres */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <input
+                  className="w-full pl-9 pr-3 py-2.5 border border-border/60 rounded-xl text-sm bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                  placeholder="Rechercher un produit..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <select
+                  className="px-3 py-2.5 border border-border/60 rounded-xl bg-background/60 text-sm outline-none focus:border-primary/60 transition-all"
+                  value={dispoFilter}
+                  onChange={(e) => setDispoFilter(e.target.value as any)}
                 >
-                  <List className="h-4 w-4" />
-                </button>
+                  <option value="all">Tous</option>
+                  <option value="available">Disponibles</option>
+                  <option value="unavailable">Indisponibles</option>
+                </select>
                 <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`px-4 py-2.5 rounded-xl border border-border/60 text-sm font-medium transition-all flex items-center gap-2 ${
+                    showFilters ? "bg-primary/10 text-primary border-primary/30" : "hover:bg-secondary/50"
+                  }`}
                 >
-                  <Grid className="h-4 w-4" />
+                  <Filter className="h-4 w-4" />
+                  Filtres
                 </button>
+                <div className="flex gap-1 border border-border/60 rounded-xl p-1 bg-background/60">
+                  <button
+                    onClick={() => setViewMode("table")}
+                    className={`p-1.5 rounded-lg transition-all ${viewMode === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    className={`p-1.5 rounded-lg transition-all ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
+
+            {/* Filtres avancés */}
+            {showFilters && (
+              <div className="border border-border/50 rounded-2xl bg-card p-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Catégorie
+                    </label>
+                    <select
+                      className={INPUT}
+                      value={filterCategorieId}
+                      onChange={(e) => {
+                        setFilterCategorieId(e.target.value);
+                        setFilterSousCategorieId("");
+                        setFilterCaracteristiques({});
+                      }}
+                    >
+                      <option value="">Toutes les catégories</option>
+                      {normalizedCategories.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.nom}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Sous-catégorie
+                    </label>
+                    <select
+                      className={INPUT}
+                      value={filterSousCategorieId}
+                      onChange={(e) => {
+                        setFilterSousCategorieId(e.target.value);
+                        setFilterCaracteristiques({});
+                      }}
+                      disabled={!filterCategorieId}
+                    >
+                      <option value="">Toutes les sous-catégories</option>
+                      {normalizedSousCategories
+                        .filter((sc: any) => String(sc.id_categorie) === filterCategorieId)
+                        .map((sc: any) => (
+                          <option key={sc.id} value={sc.id}>{sc.nom}</option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                {filterSousCategorieId && templatesBySousCategorie.length > 0 && (
+                  <div className="border-t border-border/50 pt-4">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 block">
+                      Caractéristiques
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {templatesBySousCategorie.map((template) => (
+                        <div key={template.id} className="space-y-1.5">
+                          <span className="text-sm font-medium text-foreground">
+                            {template.nom_champ}
+                          </span>
+                          <div className="space-y-1 max-h-32 overflow-y-auto">
+                            {(valeursByTemplate[template.nom_champ] || []).map((valeur) => (
+                              <label key={valeur} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={(filterCaracteristiques[template.nom_champ] || []).includes(valeur)}
+                                  onChange={(e) => handleCaracteristiqueFilterChange(template.nom_champ, valeur, e.target.checked)}
+                                  className="rounded border-border/60 text-primary focus:ring-primary/20"
+                                />
+                                {valeur}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2 border-t border-border/50">
+                  <button
+                    onClick={() => {
+                      setFilterCategorieId("");
+                      setFilterSousCategorieId("");
+                      setFilterCaracteristiques({});
+                      setTemplatesBySousCategorie([]);
+                      setValeursByTemplate({});
+                    }}
+                    className="px-4 py-2 text-sm font-medium rounded-lg border border-border/60 hover:bg-secondary/50 transition-all"
+                  >
+                    Réinitialiser les filtres
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tableau Desktop */}
@@ -1172,7 +1831,7 @@ const AdminProduits = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50 bg-secondary/20">
-                      {["Image","Référence","Nom","Catégorie","Prix","Stock","Disponibilité","Actions"].map((h) => (
+                      {["Image","Référence","Nom","Catégorie","Prix","Stock","Disponibilité","Caractéristiques","Actions"].map((h) => (
                         <th key={h} className={`p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider ${h === "Actions" ? "text-right" : "text-left"}`}>{h}</th>
                       ))}
                     </tr>
@@ -1180,6 +1839,9 @@ const AdminProduits = () => {
                   <tbody>
                     {filteredProduits.map((p) => {
                       const mainImage = getMainImage(p);
+                      const caracteristiques = p.caracteristiques || {};
+                      const isExpanded = expandedItems[p.id] || false;
+                      
                       return (
                         <tr key={p.id} className="border-b border-border/30 hover:bg-secondary/10 transition-colors last:border-0">
                           <td className="p-4">
@@ -1215,14 +1877,47 @@ const AdminProduits = () => {
                             </span>
                           </td>
                           <td className="p-4">
-                            <div className="flex justify-end gap-1">
-                              <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="p-1.5 rounded-lg border border-border/40 hover:bg-secondary/50 transition-colors" title="Voir">
-                                <Eye className="h-3.5 w-3.5" />
+                            {Object.keys(caracteristiques).length > 0 && (
+                              <button
+                                onClick={() => toggleExpand(p.id)}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                              >
+                                {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                {isExpanded ? "Masquer" : "Voir"} ({Object.keys(caracteristiques).length})
                               </button>
-                              <button onClick={() => handleOpenEdit(p)} className="p-1.5 rounded-lg border border-border/40 hover:bg-secondary/50 transition-colors" title="Modifier">
-                                <Pencil className="h-3.5 w-3.5" />
+                            )}
+                            {isExpanded && (
+                              <div className="mt-2 space-y-1 text-xs">
+                                {Object.entries(caracteristiques).map(([nom, valeur]) => (
+                                  <div key={nom} className="flex justify-between gap-4">
+                                    <span className="text-muted-foreground">{nom}:</span>
+                                    <span className="text-foreground">{valeur}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex justify-end gap-1.5">
+                              <button 
+                                onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} 
+                                className="p-1.5 rounded-lg bg-white border border-border/40 hover:bg-secondary/50 transition-colors shadow-sm" 
+                                title="Voir"
+                              >
+                                <Eye className="h-3.5 w-3.5 text-foreground" />
                               </button>
-                              <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="p-1.5 rounded-lg border border-border/40 hover:bg-destructive/10 transition-colors text-destructive" title="Supprimer">
+                              <button 
+                                onClick={() => handleOpenEdit(p)} 
+                                className="p-1.5 rounded-lg bg-white border border-border/40 hover:bg-secondary/50 transition-colors shadow-sm" 
+                                title="Modifier"
+                              >
+                                <Pencil className="h-3.5 w-3.5 text-foreground" />
+                              </button>
+                              <button 
+                                onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} 
+                                className="p-1.5 rounded-lg bg-white border border-border/40 hover:bg-destructive/10 transition-colors shadow-sm text-destructive" 
+                                title="Supprimer"
+                              >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
@@ -1248,6 +1943,9 @@ const AdminProduits = () => {
             <div className="hidden md:grid grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredProduits.map((p) => {
                 const mainImage = getMainImage(p);
+                const isExpanded = expandedItems[p.id] || false;
+                const caracteristiques = p.caracteristiques || {};
+                
                 return (
                   <div key={p.id} className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
                     <div className="relative">
@@ -1274,14 +1972,47 @@ const AdminProduits = () => {
                         <span className="font-bold text-primary">{p.prix} {p.devise}</span>
                         <span className="text-xs text-muted-foreground">Stock: {p.quantite_stock}</span>
                       </div>
+                      
+                      {Object.keys(caracteristiques).length > 0 && (
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => toggleExpand(p.id)}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            {isExpanded ? "Masquer les caractéristiques" : "Voir les caractéristiques"}
+                            <span className="text-[10px] text-muted-foreground/50">({Object.keys(caracteristiques).length})</span>
+                          </button>
+                          {isExpanded && (
+                            <div className="space-y-1 text-xs">
+                              {Object.entries(caracteristiques).map(([nom, valeur]) => (
+                                <div key={nom} className="flex justify-between gap-4">
+                                  <span className="text-muted-foreground">{nom}:</span>
+                                  <span className="text-foreground">{valeur}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex gap-1.5">
-                        <button onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} className="flex-1 p-1.5 rounded-lg border border-border/40 hover:bg-secondary/50 transition-colors flex items-center justify-center">
-                          <Eye className="h-3.5 w-3.5" />
+                        <button 
+                          onClick={() => navigate(`/DashboardAdmin/produits/${p.id}`)} 
+                          className="flex-1 p-1.5 rounded-lg bg-white border border-border/40 hover:bg-secondary/50 transition-colors shadow-sm flex items-center justify-center"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-foreground" />
                         </button>
-                        <button onClick={() => handleOpenEdit(p)} className="flex-1 p-1.5 rounded-lg border border-border/40 hover:bg-secondary/50 transition-colors flex items-center justify-center">
-                          <Pencil className="h-3.5 w-3.5" />
+                        <button 
+                          onClick={() => handleOpenEdit(p)} 
+                          className="flex-1 p-1.5 rounded-lg bg-white border border-border/40 hover:bg-secondary/50 transition-colors shadow-sm flex items-center justify-center"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-foreground" />
                         </button>
-                        <button onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} className="flex-1 p-1.5 rounded-lg border border-border/40 hover:bg-destructive/10 transition-colors flex items-center justify-center text-destructive">
+                        <button 
+                          onClick={() => { setSelectedProduit(p); setShowDeleteAlert(true); }} 
+                          className="flex-1 p-1.5 rounded-lg bg-white border border-border/40 hover:bg-destructive/10 transition-colors shadow-sm flex items-center justify-center text-destructive"
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -1307,6 +2038,8 @@ const AdminProduits = () => {
                 onDelete={(product: Produit) => { setSelectedProduit(product); setShowDeleteAlert(true); }}
                 onView={(product: Produit) => navigate(`/DashboardAdmin/produits/${product.id}`)}
                 getMainImage={getMainImage}
+                expanded={expandedItems[p.id] || false}
+                onToggleExpand={() => toggleExpand(p.id)}
               />
             ))}
           </div>
@@ -1444,6 +2177,10 @@ const AdminProduits = () => {
                 generateReference={generateReference}
                 isEditMode={false}
                 onCaracteristiquesChange={setCreateCaracteristiques}
+                templatesDisponibles={createTemplates}
+                caracteristiques={createCaracteristiques}
+                setCaracteristiques={setCreateCaracteristiques}
+                loadTemplates={loadTemplatesForSousCategorie}
               />
               <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
             </div>
@@ -1474,6 +2211,14 @@ const AdminProduits = () => {
                 generateReference={generateReference}
                 isEditMode={true}
                 onCaracteristiquesChange={setEditCaracteristiques}
+                templatesDisponibles={editTemplates}
+                caracteristiques={editCaracteristiques}
+                setCaracteristiques={setEditCaracteristiques}
+                onDeleteTemplate={(templateId, nomChamp) => {
+                  setCaractToDelete({ id: templateId, nom_champ: nomChamp, isTemplate: true });
+                  setShowDeleteCaractModal(true);
+                }}
+                onEditTemplate={editTemplate}
               />
               <ExistingImagesManager
                 selectedProduit={selectedProduit}
@@ -1576,7 +2321,7 @@ const AdminProduits = () => {
         </ModalPortal>
       )}
 
-      {/* Modal: Supprimer */}
+      {/* Modal: Supprimer produit */}
       {showDeleteAlert && (
         <ModalPortal onClose={() => setShowDeleteAlert(false)}>
           <div className={`${MODAL_PANEL} max-w-md`}>
@@ -1602,6 +2347,50 @@ const AdminProduits = () => {
               confirmIcon={Trash2}
               danger
             />
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Modal: Confirmation suppression caractéristique */}
+      {showDeleteCaractModal && (
+        <ModalPortal onClose={() => setShowDeleteCaractModal(false)}>
+          <div className={`${MODAL_PANEL} max-w-md`}>
+            <div className="px-6 py-6 space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-destructive/10 text-destructive shrink-0">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-foreground">
+                    Supprimer la caractéristique
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                    Êtes-vous sûr de vouloir supprimer la caractéristique{" "}
+                    <span className="font-semibold text-foreground">« {caractToDelete?.nom_champ} »</span> ?
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2 text-red-500">
+                    ⚠️ Cette action supprimera également toutes les valeurs associées à cette caractéristique.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl">
+              <button
+                onClick={() => setShowDeleteCaractModal(false)}
+                disabled={isDeletingCaract}
+                className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all duration-200 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={deleteCaracteristique}
+                disabled={isDeletingCaract}
+                className="px-5 py-2 text-sm font-semibold rounded-xl inline-flex items-center gap-2 transition-all duration-200 shadow-sm bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isDeletingCaract ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {isDeletingCaract ? "Suppression..." : "Supprimer définitivement"}
+              </button>
+            </div>
           </div>
         </ModalPortal>
       )}
