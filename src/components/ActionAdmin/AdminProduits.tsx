@@ -26,7 +26,8 @@ import {
   Hash,
   Award,
   FileText,
-  Store,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import {
   useProducts,
@@ -129,8 +130,6 @@ const getFullImageUrl = (url: string) => {
 };
 
 // ─── Modal Portal wrapper ────────────────────────────────────────────────────
-// Rend le modal directement dans document.body → centrage parfait quelle que
-// soit la profondeur du composant dans le layout.
 const ModalPortal = ({
   children,
   onClose,
@@ -138,7 +137,6 @@ const ModalPortal = ({
   children: React.ReactNode;
   onClose: () => void;
 }) => {
-  // Bloque le scroll du body pendant que le modal est ouvert
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -150,12 +148,10 @@ const ModalPortal = ({
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ margin: 0 }}
     >
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/65 backdrop-blur-sm"
         onClick={onClose}
       />
-      {/* Contenu */}
       <div className="relative z-10 w-full flex items-center justify-center">
         {children}
       </div>
@@ -182,6 +178,7 @@ const ProductForm = ({
   generatedReference,
   generateReference,
   isEditMode = false,
+  onCaracteristiquesChange,
 }: {
   value: ProduitForm;
   setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
@@ -192,147 +189,332 @@ const ProductForm = ({
   generatedReference: string;
   generateReference: (prefixKey: string) => Promise<void>;
   isEditMode?: boolean;
-}) => (
-  <div className="space-y-4">
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-        <Hash className="h-3.5 w-3.5" /> Type de référence
-      </label>
-      <select
-        className={INPUT}
-        value={selectedPrefix}
-        onChange={(e) => {
-          setSelectedPrefix(e.target.value);
-          if (!isEditMode) generateReference(e.target.value);
-        }}
-        disabled={isEditMode}
-      >
-        <option value="">Sélectionner un type</option>
-        {REFERENCE_PREFIXES.map((p) => (
-          <option key={p.key} value={p.key}>
-            {p.label} — {p.description}
-          </option>
-        ))}
-      </select>
-      {generatedReference && !isEditMode && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-xs">
-          <Zap className="h-3.5 w-3.5 text-primary shrink-0" />
-          <span className="text-muted-foreground">Référence :</span>
-          <span className="font-mono font-bold text-primary">{generatedReference}</span>
-        </div>
-      )}
-      {isEditMode && value.reference && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 border border-border/50 text-xs">
-          <Tag className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-muted-foreground">Référence actuelle :</span>
-          <span className="font-mono font-bold text-primary">{value.reference}</span>
-        </div>
-      )}
-    </div>
+  onCaracteristiquesChange?: (caracts: Record<string, string>) => void;
+}) => {
+  // États pour les caractéristiques
+  const [caracteristiques, setCaracteristiques] = useState<Record<string, string>>({});
+  const [newCaractNom, setNewCaractNom] = useState("");
+  const [newCaractValeur, setNewCaractValeur] = useState("");
+  const [newCaractType, setNewCaractType] = useState<"texte" | "nombre" | "booleen" | "date">("texte");
+  const [newCaractObligatoire, setNewCaractObligatoire] = useState(false);
+  const [showAddCaract, setShowAddCaract] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-    <input type="hidden" name="reference" value={value.reference} />
+  // Notifier le parent des changements de caractéristiques
+  useEffect(() => {
+    if (onCaracteristiquesChange) {
+      onCaracteristiquesChange(caracteristiques);
+    }
+  }, [caracteristiques, onCaracteristiquesChange]);
 
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-        <Package className="h-3.5 w-3.5" /> Nom du produit
-      </label>
-      <input
-        className={INPUT}
-        placeholder="Ex: RTX 4070 Ti Super 16GB"
-        value={value.nom}
-        onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))}
-      />
-    </div>
+  // Ajouter une caractéristique
+  const handleAddCaracteristique = async () => {
+    if (!newCaractNom.trim() || !newCaractValeur.trim()) {
+      return;
+    }
 
-    <div className="grid grid-cols-2 gap-3">
+    setCaracteristiques((prev) => ({
+      ...prev,
+      [newCaractNom.trim()]: newCaractValeur.trim(),
+    }));
+
+    setNewCaractNom("");
+    setNewCaractValeur("");
+    setNewCaractType("texte");
+    setNewCaractObligatoire(false);
+    setShowAddCaract(false);
+  };
+
+  // Supprimer une caractéristique
+  const handleRemoveCaracteristique = (nomChamp: string) => {
+    const newCaracts = { ...caracteristiques };
+    delete newCaracts[nomChamp];
+    setCaracteristiques(newCaracts);
+  };
+
+  // Modifier une valeur de caractéristique
+  const handleCaractValueChange = (nomChamp: string, value: string) => {
+    setCaracteristiques((prev) => ({
+      ...prev,
+      [nomChamp]: value,
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <FolderTree className="h-3.5 w-3.5" /> Catégorie
+          <Hash className="h-3.5 w-3.5" /> Type de référence
         </label>
         <select
           className={INPUT}
-          value={value.categorie_id}
-          onChange={(e) =>
-            setValue((p) => ({ ...p, categorie_id: e.target.value, id_sous_categorie: "" }))
-          }
+          value={selectedPrefix}
+          onChange={(e) => {
+            setSelectedPrefix(e.target.value);
+            if (!isEditMode) generateReference(e.target.value);
+          }}
+          disabled={isEditMode}
         >
-          <option value="">— Catégorie —</option>
-          {categories.map((c: any) => (
-            <option key={c.id} value={c.id}>{c.nom}</option>
+          <option value="">Sélectionner un type</option>
+          {REFERENCE_PREFIXES.map((p) => (
+            <option key={p.key} value={p.key}>
+              {p.label} — {p.description}
+            </option>
           ))}
         </select>
+        {generatedReference && !isEditMode && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/8 border border-primary/20 text-xs">
+            <Zap className="h-3.5 w-3.5 text-primary shrink-0" />
+            <span className="text-muted-foreground">Référence :</span>
+            <span className="font-mono font-bold text-primary">{generatedReference}</span>
+          </div>
+        )}
+        {isEditMode && value.reference && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40 border border-border/50 text-xs">
+            <Tag className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">Référence actuelle :</span>
+            <span className="font-mono font-bold text-primary">{value.reference}</span>
+          </div>
+        )}
       </div>
+
+      <input type="hidden" name="reference" value={value.reference} />
+
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Layers className="h-3.5 w-3.5" /> Sous-catégorie
+          <Package className="h-3.5 w-3.5" /> Nom du produit
         </label>
-        <select
+        <input
           className={INPUT}
-          value={value.id_sous_categorie}
-          onChange={(e) => setValue((p) => ({ ...p, id_sous_categorie: e.target.value }))}
-          disabled={!value.categorie_id}
-        >
-          <option value="">— Sous-catégorie —</option>
-          {sousCategories
-            .filter((sc: any) => String(sc.id_categorie) === String(value.categorie_id))
-            .map((sc: any) => (
-              <option key={sc.id} value={sc.id}>{sc.nom}</option>
+          placeholder="Ex: RTX 4070 Ti Super 16GB"
+          value={value.nom}
+          onChange={(e) => setValue((p) => ({ ...p, nom: e.target.value }))}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <FolderTree className="h-3.5 w-3.5" /> Catégorie
+          </label>
+          <select
+            className={INPUT}
+            value={value.categorie_id}
+            onChange={(e) =>
+              setValue((p) => ({ ...p, categorie_id: e.target.value, id_sous_categorie: "" }))
+            }
+          >
+            <option value="">— Catégorie —</option>
+            {categories.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.nom}</option>
             ))}
-        </select>
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5" /> Sous-catégorie
+          </label>
+          <select
+            className={INPUT}
+            value={value.id_sous_categorie}
+            onChange={(e) => setValue((p) => ({ ...p, id_sous_categorie: e.target.value }))}
+            disabled={!value.categorie_id}
+          >
+            <option value="">— Sous-catégorie —</option>
+            {sousCategories
+              .filter((sc: any) => String(sc.id_categorie) === String(value.categorie_id))
+              .map((sc: any) => (
+                <option key={sc.id} value={sc.id}>{sc.nom}</option>
+              ))}
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <DollarSign className="h-3.5 w-3.5" /> Prix (MGA)
+          </label>
+          <input
+            className={INPUT}
+            placeholder="0"
+            value={value.prix}
+            onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Warehouse className="h-3.5 w-3.5" /> Stock
+          </label>
+          <input
+            className={INPUT}
+            placeholder="0"
+            value={value.quantite_stock}
+            onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))}
+          />
+        </div>
+      </div>
+
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <DollarSign className="h-3.5 w-3.5" /> Prix (MGA)
+          <FileText className="h-3.5 w-3.5" /> Description
+        </label>
+        <textarea
+          className={INPUT}
+          placeholder="Description du produit..."
+          value={value.description}
+          onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))}
+          rows={3}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <Award className="h-3.5 w-3.5" /> Point fort
         </label>
         <input
           className={INPUT}
-          placeholder="0"
-          value={value.prix}
-          onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))}
+          placeholder="Ex: Garantie 2 ans, Livraison gratuite..."
+          value={value.atout}
+          onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))}
         />
       </div>
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-          <Warehouse className="h-3.5 w-3.5" /> Stock
-        </label>
-        <input
-          className={INPUT}
-          placeholder="0"
-          value={value.quantite_stock}
-          onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))}
-        />
+
+      {/* ─── SECTION CARACTÉRISTIQUES ─── */}
+      <div className="space-y-3 border-t border-border/50 pt-4">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Award className="h-3.5 w-3.5" /> Caractéristiques
+          </label>
+          <span className="text-[10px] text-muted-foreground">
+            {Object.keys(caracteristiques).length} caractéristique(s)
+          </span>
+        </div>
+
+        {/* Liste des caractéristiques ajoutées */}
+        {Object.entries(caracteristiques).map(([nomChamp, valeur]) => (
+          <div
+            key={nomChamp}
+            className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-primary">
+                  {nomChamp}
+                </span>
+                <span className="text-[10px] text-muted-foreground bg-secondary/30 px-1.5 py-0.5 rounded">
+                  personnalisé
+                </span>
+              </div>
+              <input
+                className="w-full mt-1 px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                placeholder={`Valeur pour ${nomChamp}`}
+                value={valeur}
+                onChange={(e) => handleCaractValueChange(nomChamp, e.target.value)}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => handleRemoveCaracteristique(nomChamp)}
+              className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+
+        {/* Bouton Ajouter une caractéristique */}
+        {!showAddCaract ? (
+          <button
+            type="button"
+            onClick={() => setShowAddCaract(true)}
+            className="w-full py-2.5 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 text-sm text-muted-foreground hover:text-primary font-medium flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter une caractéristique
+          </button>
+        ) : (
+          <div className="p-4 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Nom du champ *
+                </label>
+                <input
+                  className={INPUT}
+                  placeholder="Ex: Couleur, Poids..."
+                  value={newCaractNom}
+                  onChange={(e) => setNewCaractNom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Valeur *
+                </label>
+                <input
+                  className={INPUT}
+                  placeholder="Ex: Rouge, 1.5kg..."
+                  value={newCaractValeur}
+                  onChange={(e) => setNewCaractValeur(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Type:
+                </label>
+                <select
+                  className="px-3 py-1.5 text-sm border border-border/60 rounded-lg bg-background/60 outline-none focus:border-primary/60 transition-all"
+                  value={newCaractType}
+                  onChange={(e) => setNewCaractType(e.target.value as any)}
+                >
+                  <option value="texte">Texte</option>
+                  <option value="nombre">Nombre</option>
+                  <option value="booleen">Booléen</option>
+                  <option value="date">Date</option>
+                </select>
+              </div>
+              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newCaractObligatoire}
+                  onChange={(e) => setNewCaractObligatoire(e.target.checked)}
+                  className="rounded border-border/60 text-primary focus:ring-primary/20"
+                />
+                Obligatoire
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleAddCaracteristique}
+                disabled={!newCaractNom.trim() || !newCaractValeur.trim()}
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Ajouter
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddCaract(false);
+                  setNewCaractNom("");
+                  setNewCaractValeur("");
+                  setNewCaractType("texte");
+                  setNewCaractObligatoire(false);
+                }}
+                className="px-4 py-2 text-sm font-medium rounded-lg border border-border/60 hover:bg-secondary/50 transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+      {/* ─── FIN SECTION CARACTÉRISTIQUES ─── */}
     </div>
-
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-        <FileText className="h-3.5 w-3.5" /> Description
-      </label>
-      <textarea
-        className={INPUT}
-        placeholder="Description du produit..."
-        value={value.description}
-        onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))}
-        rows={3}
-      />
-    </div>
-
-    <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-        <Award className="h-3.5 w-3.5" /> Point fort
-      </label>
-      <input
-        className={INPUT}
-        placeholder="Ex: Garantie 2 ans, Livraison gratuite..."
-        value={value.atout}
-        onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))}
-      />
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── ImageUploadField ────────────────────────────────────────────────────────
 const ImageUploadField = ({
@@ -562,30 +744,34 @@ const ModalFooter = ({
   confirmLabel = "Enregistrer",
   confirmIcon: ConfirmIcon = Save,
   danger = false,
+  isLoading = false,
 }: {
   onCancel: () => void;
   onConfirm: () => void;
   confirmLabel?: string;
   confirmIcon?: any;
   danger?: boolean;
+  isLoading?: boolean;
 }) => (
   <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl">
     <button
       onClick={onCancel}
-      className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all duration-200"
+      disabled={isLoading}
+      className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground hover:text-foreground transition-all duration-200 disabled:opacity-50"
     >
       Annuler
     </button>
     <button
       onClick={onConfirm}
+      disabled={isLoading}
       className={`px-5 py-2 text-sm font-semibold rounded-xl inline-flex items-center gap-2 transition-all duration-200 shadow-sm ${
         danger
           ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
           : "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20"
-      }`}
+      } disabled:opacity-50 disabled:cursor-not-allowed`}
     >
-      <ConfirmIcon className="h-3.5 w-3.5" />
-      {confirmLabel}
+      {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ConfirmIcon className="h-3.5 w-3.5" />}
+      {isLoading ? "Enregistrement..." : confirmLabel}
     </button>
   </div>
 );
@@ -615,6 +801,12 @@ const AdminProduits = () => {
   const [selectedPrefix, setSelectedPrefix] = useState<string>("");
   const [generatedReference, setGeneratedReference] = useState<string>("");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // États pour les caractéristiques
+  const [createCaracteristiques, setCreateCaracteristiques] = useState<Record<string, string>>({});
+  const [editCaracteristiques, setEditCaracteristiques] = useState<Record<string, string>>({});
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -709,27 +901,62 @@ const AdminProduits = () => {
     return fd;
   };
 
+  // Sauvegarder les caractéristiques d'un produit
+  const saveCaracteristiques = async (produitId: number, caracteristiques: Record<string, string>) => {
+    const entries = Object.entries(caracteristiques).filter(([_, valeur]) => valeur && valeur.trim() !== "");
+    
+    if (entries.length === 0) return;
+
+    try {
+      await api.post(`/produits/${produitId}/caracteristiques/sync`, {
+        caracteristiques: entries.map(([nom, valeur]) => ({
+          nom_champ: nom,
+          valeur: valeur.trim(),
+          type_champ: "texte",
+          est_obligatoire: false
+        }))
+      });
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde des caractéristiques:", error);
+      throw error;
+    }
+  };
+
   const handleCreate = async () => {
     if (!form.reference) {
       toast({ title: "Erreur", description: "Veuillez sélectionner un type de référence", variant: "destructive" });
       return;
     }
+    setIsCreating(true);
     try {
       const created = await createProductMutation.mutateAsync(buildFormData(form));
       const createdProductId = created?.data?.data?.id as number | undefined;
-      if (createdProductId && createImageFiles.length > 0) {
-        await Promise.all(createImageFiles.map((file, index) =>
-          uploadImage.mutateAsync({ produitId: createdProductId, imageFile: file, alt: `${form.nom} - image ${index + 1}`, ordre: index }),
-        ));
+      
+      if (createdProductId) {
+        // Sauvegarder les caractéristiques
+        await saveCaracteristiques(createdProductId, createCaracteristiques);
+
+        // Ajouter les images
+        if (createImageFiles.length > 0) {
+          await Promise.all(createImageFiles.map((file, index) =>
+            uploadImage.mutateAsync({ produitId: createdProductId, imageFile: file, alt: `${form.nom} - image ${index + 1}`, ordre: index }),
+          ));
+        }
       }
+      
       setShowModal(false);
       setForm(initialForm);
       setSelectedPrefix("");
       setGeneratedReference("");
       setCreateImageFiles([]);
+      setCreateCaracteristiques({});
       await refetch();
       toast({ title: "Produit créé avec la référence " + form.reference });
-    } catch (e: any) { handleApiError(e, "Impossible de créer le produit."); }
+    } catch (e: any) { 
+      handleApiError(e, "Impossible de créer le produit."); 
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleOpenEdit = async (p: Produit) => {
@@ -753,6 +980,20 @@ const AdminProduits = () => {
       actif: p.actif ?? true,
     });
     setEditImageFiles([]);
+    
+    // Charger les caractéristiques existantes
+    try {
+      const response = await api.get(`/produits/${p.id}/caracteristiques`);
+      const caracts = response?.data?.data || [];
+      const caractsObj: Record<string, string> = {};
+      caracts.forEach((c: any) => {
+        caractsObj[c.nom_champ] = c.valeur;
+      });
+      setEditCaracteristiques(caractsObj);
+    } catch (error) {
+      console.error("Erreur chargement caractéristiques:", error);
+    }
+
     try {
       const details = await api.get(`/produits/${p.id}`);
       setExistingImages(details?.data?.data?.images ?? []);
@@ -762,22 +1003,33 @@ const AdminProduits = () => {
 
   const handleEdit = async () => {
     if (!selectedProduit) return;
+    setIsUpdating(true);
     try {
       await updateProductMutation.mutateAsync({ id: selectedProduit.id, updatedProduct: buildFormData(editForm) });
+      
+      // Sauvegarder les caractéristiques
+      await saveCaracteristiques(selectedProduit.id, editCaracteristiques);
+
       if (editImageFiles.length > 0) {
         const startOrder = existingImages.length;
         await Promise.all(editImageFiles.map((file, index) =>
           uploadImage.mutateAsync({ produitId: selectedProduit.id, imageFile: file, alt: `${editForm.nom} - image ${startOrder + index + 1}`, ordre: startOrder + index }),
         ));
       }
+      
       setShowEditModal(false);
       setSelectedProduit(null);
       setSelectedPrefix("");
       setEditImageFiles([]);
       setExistingImages([]);
+      setEditCaracteristiques({});
       await refetch();
       toast({ title: "Produit mis à jour" });
-    } catch (e: any) { handleApiError(e, "Impossible de modifier le produit."); }
+    } catch (e: any) { 
+      handleApiError(e, "Impossible de modifier le produit."); 
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -815,6 +1067,7 @@ const AdminProduits = () => {
     setSelectedPrefix("");
     setGeneratedReference("");
     setForm(initialForm);
+    setCreateCaracteristiques({});
   };
 
   const closeEditModal = () => {
@@ -823,6 +1076,7 @@ const AdminProduits = () => {
     setExistingImages([]);
     setSelectedPrefix("");
     setGeneratedReference("");
+    setEditCaracteristiques({});
   };
 
   // ─── Rendu ─────────────────────────────────────────────────────────────────
@@ -1170,7 +1424,7 @@ const AdminProduits = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          MODALS — tous via createPortal → centrage parfait sur l'écran entier
+          MODALS
       ══════════════════════════════════════════════════════════════════════════ */}
 
       {/* Modal: Créer produit */}
@@ -1189,10 +1443,16 @@ const AdminProduits = () => {
                 generatedReference={generatedReference}
                 generateReference={generateReference}
                 isEditMode={false}
+                onCaracteristiquesChange={setCreateCaracteristiques}
               />
               <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
             </div>
-            <ModalFooter onCancel={closeCreateModal} onConfirm={handleCreate} confirmLabel="Créer le produit" />
+            <ModalFooter 
+              onCancel={closeCreateModal} 
+              onConfirm={handleCreate} 
+              confirmLabel="Créer le produit"
+              isLoading={isCreating}
+            />
           </div>
         </ModalPortal>
       )}
@@ -1213,6 +1473,7 @@ const AdminProduits = () => {
                 generatedReference={generatedReference}
                 generateReference={generateReference}
                 isEditMode={true}
+                onCaracteristiquesChange={setEditCaracteristiques}
               />
               <ExistingImagesManager
                 selectedProduit={selectedProduit}
@@ -1225,7 +1486,12 @@ const AdminProduits = () => {
               />
               <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
             </div>
-            <ModalFooter onCancel={closeEditModal} onConfirm={handleEdit} confirmLabel="Enregistrer" />
+            <ModalFooter 
+              onCancel={closeEditModal} 
+              onConfirm={handleEdit} 
+              confirmLabel="Enregistrer"
+              isLoading={isUpdating}
+            />
           </div>
         </ModalPortal>
       )}
