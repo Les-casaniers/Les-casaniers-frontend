@@ -122,7 +122,7 @@ const PromoBanner: FC<PromoBannerProps> = ({
       {/* CTA */}
       <button
         type="button"
-        onClick={onCtaClick}
+        onClick={handleCtaClick}
         className="absolute bottom-4 right-4 z-20 rounded-md bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-black shadow-md transition hover:bg-white/90 sm:bottom-6 sm:right-6 sm:px-5 sm:py-2.5 sm:text-sm"
       >
         {ctaLabel}
