@@ -4,8 +4,8 @@ import bannerBg from "../../assets/t11.jpg";
 import keyboardImg from "../../assets/clavs.png";
 import phoneImg from "../../assets/phone1.png";
 import monitorImg from "../../assets/pc.png";
-import headsetImg from "../../assets/casque1.png";
-import laptopImg from "../../assets/ordi.png";
+import headsetImg from "../../assets/CASQUE1.png";
+import laptopImg from "../../assets/ORDI.png";
 
 /**
  * PromoBanner
