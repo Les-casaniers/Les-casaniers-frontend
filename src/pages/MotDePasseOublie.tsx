@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import api from "@/service/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +8,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const MotDePasseOublie = () => {
   const [formData, setFormData] = useState({
     email: "",
-    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -16,7 +15,6 @@ const MotDePasseOublie = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({
     email: "",
-    currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -46,7 +44,7 @@ const MotDePasseOublie = () => {
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { email: "", currentPassword: "", newPassword: "", confirmPassword: "" };
+    const newErrors = { email: "", newPassword: "", confirmPassword: "" };
 
     if (!formData.email) {
       newErrors.email = "L'email est requis";
@@ -58,10 +56,6 @@ const MotDePasseOublie = () => {
     }
     if (!formData.newPassword) {
       newErrors.newPassword = "Le mot de passe est requis";
-      isValid = false;
-    }
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = "Le mot de passe actuel est requis";
       isValid = false;
     }
     if (!formData.confirmPassword) {
@@ -103,14 +97,13 @@ const MotDePasseOublie = () => {
     try {
       const response = await api.post("/change-password", {
         email: formData.email,
-        current_password: formData.currentPassword,
         new_password: formData.newPassword,
         new_password_confirmation: formData.confirmPassword,
       });
 
       if (response.data.success) {
         if (isMountedRef.current) {
-          setErrors({ email: "", currentPassword: "", newPassword: "", confirmPassword: "" });
+          setErrors({ email: "", newPassword: "", confirmPassword: "" });
           setShowSuccess(true);
           redirectTimeoutRef.current = window.setTimeout(() => {
             navigate("/login");
@@ -125,7 +118,6 @@ const MotDePasseOublie = () => {
         const backendErrors = responseData.errors;
         const newErrors: Record<string, string> = {};
         if (backendErrors.email) newErrors.email = backendErrors.email[0];
-        if (backendErrors.current_password) newErrors.currentPassword = backendErrors.current_password[0];
         if (backendErrors.new_password) newErrors.newPassword = backendErrors.new_password[0];
         if (backendErrors.new_password_confirmation) newErrors.confirmPassword = backendErrors.new_password_confirmation[0];
         if (isMountedRef.current) {
@@ -144,177 +136,157 @@ const MotDePasseOublie = () => {
 
   return (
     <SiteLayout>
-      <section className="py-16">
-        <div className="container-x">
-          <div className="max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center p-3 bg-foreground/10 rounded-full mb-4">
-                <Lock className="h-6 w-6 text-foreground" />
-              </div>
-              <h1 className="text-3xl font-bold">Mot de passe oublie</h1>
-              <p className="text-muted-foreground">Reserve aux comptes clients</p>
-            </div>
+      <section className="relative min-h-[calc(100vh-200px)] flex items-center justify-center bg-black py-16">
+        <div className="w-full container-x">
+          <div className="max-w-md mx-auto border border-white/20 rounded-2xl p-8 md:p-10">
+            <h1 className="text-center text-xl font-sans font-bold text-white mb-6">
+              Retrouve ton mot de passe
+            </h1>
 
             {showSuccess && (
-              <div className="mb-6 p-4 bg-green-500/10 border border-green-500 rounded-xl flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Mot de passe mis a jour. Redirection vers la connexion...
+              <div className="mb-5 p-3 rounded-xl border border-emerald-500/40 text-emerald-400 flex items-center gap-3">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <p className="text-sm font-sans">
+                  Mot de passe mis à jour. Redirection vers la connexion...
                 </p>
               </div>
             )}
 
             {generalError && (
-              <div className="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-xl flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-red-500" />
-                <p className="text-sm text-red-600 dark:text-red-400">{generalError}</p>
+              <div className="mb-5 p-3 rounded-xl border border-red-500/40 text-red-400 flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 shrink-0" />
+                <p className="text-sm font-sans">{generalError}</p>
               </div>
             )}
 
-            <div className="border border-border rounded-xl p-6 md:p-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className={`w-full pl-10 pr-3 py-2.5 bg-background border ${errors.email ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
-                      placeholder="exemple@email.com"
-                    />
-                  </div>
-                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="currentPassword" className="block text-sm font-medium mb-2">
-                    Mot de passe actuel
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="currentPassword"
-                      name="currentPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.currentPassword}
-                      onChange={handleChange}
-                      required
-                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.currentPassword ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.currentPassword && (
-                    <p className="mt-1 text-xs text-red-500">{errors.currentPassword}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="newPassword" className="block text-sm font-medium mb-2">
-                    Nouveau mot de passe
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="newPassword"
-                      name="newPassword"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.newPassword}
-                      onChange={handleChange}
-                      required
-                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.newPassword ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.newPassword && <p className="mt-1 text-xs text-red-500">{errors.newPassword}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                    Confirmer le mot de passe
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      required
-                      className={`w-full pl-10 pr-10 py-2.5 bg-background border ${errors.confirmPassword ? "border-red-500" : "border-border"} rounded-lg focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-foreground transition`}
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-muted-foreground hover:text-foreground transition" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="mt-1 text-xs text-red-500">{errors.confirmPassword}</p>
-                  )}
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 bg-foreground text-background font-semibold rounded-lg hover:bg-foreground/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? "Mise a jour..." : "Mettre a jour le mot de passe"}
-                </button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Retour a la{" "}
-                  <Link to="/login" className="text-foreground font-medium hover:underline">
-                    connexion
-                  </Link>
-                </p>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="email" className="block text-[13px] font-sans text-white/70 mb-1.5">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="Obligatoire"
+                  className={`w-full px-4 py-2.5 bg-black text-white font-sans text-sm placeholder:text-white/40 placeholder:italic border rounded-lg focus:outline-none transition-colors duration-200 ${
+                    errors.email
+                      ? 'border-red-500 focus:border-red-500'
+                      : 'border-white/20 focus:border-white/60'
+                  }`}
+                />
+                {errors.email && (
+                  <p className="mt-1.5 text-xs font-sans text-red-400 flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {errors.email}
+                  </p>
+                )}
               </div>
+
+              <div>
+                <label htmlFor="newPassword" className="block text-[13px] font-sans text-white/70 mb-1.5">
+                  Nouveau mot de passe
+                </label>
+                <div className="relative">
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    required
+                    placeholder="••••••••••"
+                    className={`w-full px-4 pr-12 py-2.5 bg-black text-white font-sans text-sm placeholder:text-white/40 border rounded-lg focus:outline-none transition-colors duration-200 ${
+                      errors.newPassword
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-white/20 focus:border-white/60'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-white/50 hover:text-white transition-colors duration-200" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-white/50 hover:text-white transition-colors duration-200" />
+                    )}
+                  </button>
+                </div>
+                {errors.newPassword && (
+                  <p className="mt-1.5 text-xs font-sans text-red-400 flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {errors.newPassword}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-[13px] font-sans text-white/70 mb-1.5">
+                  Confirme ton mot de passe
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    placeholder="••••••••••"
+                    className={`w-full px-4 pr-12 py-2.5 bg-black text-white font-sans text-sm placeholder:text-white/40 border rounded-lg focus:outline-none transition-colors duration-200 ${
+                      errors.confirmPassword
+                        ? 'border-red-500 focus:border-red-500'
+                        : 'border-white/20 focus:border-white/60'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5 text-white/50 hover:text-white transition-colors duration-200" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-white/50 hover:text-white transition-colors duration-200" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="mt-1.5 text-xs font-sans text-red-400 flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 bg-white text-black font-sans font-semibold text-sm rounded-full hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>Mise à jour...</span>
+                  </>
+                ) : (
+                  <span>Valider</span>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-5 text-center">
+              <p className="text-[13px] font-sans text-white/50">
+                Retour à la{" "}
+                <Link to="/login" className="font-bold text-white hover:underline">
+                  connexion
+                </Link>
+              </p>
             </div>
           </div>
         </div>
