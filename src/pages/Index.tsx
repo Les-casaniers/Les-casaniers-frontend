@@ -1,6 +1,6 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Hero } from "@/components/site/Hero";
-import { FeaturedProducts } from "@/components/site/FeaturedProducts";
+import PromoBanner from "@/components/site/FeaturedProducts";
 import { ThreeDoors } from "@/components/site/ThreeDoors";
 import { Pillars } from "@/components/site/Pillars";
 import { Team } from "@/components/site/Team";
@@ -22,12 +22,12 @@ const Index = () => {
       <h1 className="sr-only">Les Casaniers Madagascar — PC sur-mesure</h1>
       <Hero />
       <ThreeDoors />
-      <FeaturedProducts />
+      <PromoBanner />
       {/* <Pillars /> 
       <Configurator />
       <ProductExample />
        <Team /> */}
-      <ProSection />
+      {/* <ProSection /> */}
 
     </SiteLayout>
   );
