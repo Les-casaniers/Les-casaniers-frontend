@@ -50,7 +50,6 @@ import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useShop } from "@/store/shop";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
@@ -119,15 +118,10 @@ const quickNavLinks = [
     icon: <Briefcase className="h-3.5 w-3.5" />,
   },
   {
-    label: "GAMER",
+    label: "Gamer",
     href: "/gaming",
     icon: <Gamepad2 className="h-3.5 w-3.5" />,
     accent: true,
-  },
-  {
-    label: "Importation",
-    href: "/importation",
-    icon: <Package className="h-3.5 w-3.5" />,
   },
   {
     label: "Guides",
@@ -135,9 +129,19 @@ const quickNavLinks = [
     icon: <BookOpen className="h-3.5 w-3.5" />,
   },
   {
+    label: "Importation",
+    href: "/importation",
+    icon: <Package className="h-3.5 w-3.5" />,
+  },
+  {
     label: "Boutique de MISA",
     href: "/boutique-de-misa",
     icon: <Cat className="h-3.5 w-3.5" />,
+  },
+  {
+    label: "Devis Express",
+    href: "/devis",
+    icon: <FileText className="h-3.5 w-3.5" />,
   },
 ];
 
@@ -353,21 +357,21 @@ export const Header = () => {
     : [];
 
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-border theme-transition">
+    <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
       {/* Main header */}
       <div className="container-x py-3 lg:py-3.5">
-        <div className="flex items-center gap-3 lg:gap-5">
+        <div className="flex items-center gap-3 lg:gap-7">
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
             <img
               src={logo}
               alt="Les Casaniers"
-              className="h-10 sm:h-11 lg:h-20 w-auto object-contain dark:brightness-0 dark:invert transition-transform duration-300 group-hover:scale-105"
+              className="h-10 sm:h-11 lg:h-[78px] w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
 
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex-1 max-w-2xl"
+            className="relative flex-1 max-w-xl"
           >
             <div className="relative flex items-center">
               <div className="relative flex-1">
@@ -378,18 +382,18 @@ export const Header = () => {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
                   placeholder="Rechercher un produit, une référence..."
-                  className="w-full h-10 lg:h-11 pl-4 lg:pl-5 pr-24 rounded-full bg-secondary border-2 border-transparent focus:border-primary/50 focus:bg-background focus:outline-none text-sm transition-all"
+                  className="w-full h-10 lg:h-11 pl-4 lg:pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className={`absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+                  className={`hidden absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                 </button>
                 <button
                   type="submit"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-foreground text-background hover:bg-foreground/80 transition-all flex items-center justify-center"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
                 >
                   <Search className="h-3.5 w-3.5" />
                 </button>
@@ -398,7 +402,7 @@ export const Header = () => {
                 src={isSearchFocused ? mascotListening : mascot}
                 alt=""
                 aria-hidden
-                className="hidden lg:block absolute -top-6 right-20 h-20 w-auto object-contain pointer-events-none transition-all duration-300"
+                className="hidden"
               />
             </div>
 
@@ -464,8 +468,7 @@ export const Header = () => {
             )}
           </form>
 
-          <div className="hidden md:flex items-center gap-1 lg:gap-2">
-            <ThemeToggle />
+          <div className="hidden md:flex items-center gap-3 lg:gap-5">
             <ActionButton
               to="/favoris"
               icon={<Heart className="h-5 w-5" />}
@@ -479,13 +482,13 @@ export const Header = () => {
               count={cartCount}
             />
 
-            <div className="relative">
+            <div className="relative order-first">
               {isAuthenticated ? (
                 <>
                   <button
                     ref={userButtonRef}
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-secondary transition-all"
+                    className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/10 transition-all"
                   >
                     <div className="relative">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-sm">
@@ -493,12 +496,9 @@ export const Header = () => {
                       </div>
                       <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
                     </div>
-                    <span className="text-sm font-medium hidden lg:inline">
+                    <span className="text-[10px] uppercase tracking-wider font-medium">
                       {getUserName()}
                     </span>
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 transition-transform duration-200 ${showUserMenu ? "rotate-180" : ""}`}
-                    />
                   </button>
                   {showUserMenu && (
                     <div
@@ -584,9 +584,9 @@ export const Header = () => {
       </div>
 
       {/* Desktop Navigation Bar */}
-      <nav className="hidden lg:block border-t border-border bg-background">
+      <nav className="hidden lg:block border-t border-white/20 bg-black">
         <div className="container-x">
-          <div className="flex items-center gap-0">
+          <div className="flex items-center gap-3 py-1.5">
             {/* "Nos Produits" mega trigger */}
             <div
               className="relative"
@@ -595,10 +595,10 @@ export const Header = () => {
             >
               <button
                 className={`
-                  flex items-center gap-2 px-5 py-3.5 font-bold text-sm transition-all
-                  bg-foreground text-background rounded-md
-                  hover:bg-foreground/90
-                  ${megaMenuOpen ? "bg-foreground/90" : ""}
+                  flex items-center gap-2 px-5 py-2.5 font-bold text-xs transition-all
+                  bg-white text-black rounded-md
+                  hover:bg-zinc-200
+                  ${megaMenuOpen ? "bg-zinc-200" : ""}
                 `}
               >
                 <Menu className="h-4 w-4" />
@@ -745,16 +745,15 @@ export const Header = () => {
                 key={item.label}
                 to={item.href}
                 className={`
-                  relative group flex items-center border border-1 rounded-md m-1 gap-1 px-4 py-3.5 text-xs font-semibold uppercase tracking-wide transition-all whitespace-nowrap
+                  relative group flex items-center border rounded-md gap-1.5 px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
                   ${item.highlight
-                    ? "text-amber-600 dark:text-amber-400 hover:text-amber-700"
+                    ? "text-white hover:text-white"
                     : item.accent
-                      ? "text-primary hover:text-primary/80"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "text-white hover:text-white"
+                      : "text-zinc-200 hover:text-white"
                   }
                   ${isActive(item.href) ? "text-primary" : ""}
-                  border-r border-border
-                  bg-background
+                  border-zinc-600 bg-black
                 `}
               >
                 <span className="transition-transform duration-200 group-hover:scale-110">
@@ -774,7 +773,7 @@ export const Header = () => {
 
             <Link
               to="/configurateur"
-              className="ml-auto flex items-center gap-2 px-5 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 transition-all rounded-full shadow-md hover:shadow-xl transform hover:-translate-y-0.5 mr-1 whitespace-nowrap"
+              className="ml-auto flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
             >
               <Zap className="h-3.5 w-3.5" />
               <span>Configurateur Pro</span>
@@ -1040,7 +1039,7 @@ const ActionButton = ({
 }) => (
   <Link
     to={to}
-    className="relative flex flex-col items-center gap-0.5 group px-2 py-1 rounded-lg hover:bg-secondary transition-all"
+    className="relative flex flex-col items-center gap-0.5 group px-2 py-1 rounded-lg hover:bg-white/10 transition-all"
   >
     <div className="relative">
       {icon}
