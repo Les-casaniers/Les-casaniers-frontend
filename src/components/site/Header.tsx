@@ -358,20 +358,20 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
-      {/* Main header */}
-      <div className="container-x py-3 lg:py-3.5">
-        <div className="flex items-center gap-3 lg:gap-7">
-          <Link to="/" className="flex items-center gap-2 shrink-0 group">
+      {/* Top row: logo (large) + search + account/favorites/cart */}
+      <div className="container-x py-3 lg:py-2">
+        <div className="flex items-center gap-3 lg:gap-8 lg:min-h-[120px]">
+          <Link to="/" className="flex items-center shrink-0 group self-end">
             <img
               src={logo}
               alt="Les Casaniers"
-              className="h-10 sm:h-11 lg:h-[78px] w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
+              className="h-20 sm:h-24 lg:h-[140px] xl:h-[150px] w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
 
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex-1 max-w-xl"
+            className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] self-end"
           >
             <div className="relative flex items-center">
               <div className="relative flex-1">
@@ -468,35 +468,23 @@ export const Header = () => {
             )}
           </form>
 
-          <div className="hidden md:flex items-center gap-3 lg:gap-5">
-            <ActionButton
-              to="/favoris"
-              icon={<Heart className="h-5 w-5" />}
-              label="Favoris"
-              count={favorites?.length}
-            />
-            <ActionButton
-              to="/panier"
-              icon={<ShoppingBag className="h-5 w-5" />}
-              label="Panier"
-              count={cartCount}
-            />
-
-            <div className="relative order-first">
+          {/* Compte / Favoris / Panier — top right, aligned above "Configurateur Pro" */}
+          <div className="hidden md:flex items-center gap-1.5 lg:ml-auto lg:gap-3 xl:gap-4 shrink-0 self-end pb-2">
+            <div className="relative">
               {isAuthenticated ? (
                 <>
                   <button
                     ref={userButtonRef}
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-white/10 transition-all"
+                    className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
                   >
                     <div className="relative">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-[10px]">
                         {getUserName().charAt(0).toUpperCase()}
                       </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border-2 border-background" />
                     </div>
-                    <span className="text-[10px] uppercase tracking-wider font-medium">
+                    <span className="text-[8px] uppercase tracking-wider font-medium">
                       {getUserName()}
                     </span>
                   </button>
@@ -542,17 +530,28 @@ export const Header = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="flex flex-col items-center gap-0.5 group px-2 py-1 rounded-lg hover:bg-secondary transition-all"
+                  className="flex flex-col items-center gap-0.5 group px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
                 >
-                  <div>
-                    <User className="h-5 w-5" />
-                  </div>
-                  <span className="text-[10px] uppercase tracking-wider font-medium">
+                  <User className="h-3.5 w-3.5" />
+                  <span className="text-[8px] uppercase tracking-wider font-medium">
                     Compte
                   </span>
                 </Link>
               )}
             </div>
+
+            <ActionButton
+              to="/favoris"
+              icon={<Heart className="h-3.5 w-3.5" />}
+              label="Favoris"
+              count={favorites?.length}
+            />
+            <ActionButton
+              to="/panier"
+              icon={<ShoppingBag className="h-3.5 w-3.5" />}
+              label="Panier"
+              count={cartCount}
+            />
           </div>
 
           <div className="flex items-center gap-1 md:hidden">
@@ -583,8 +582,8 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Desktop Navigation Bar */}
-      <nav className="hidden lg:block border-t border-white/20 bg-black">
+      {/* Desktop Navigation Bar — categorie sits below the logo, Configurateur Pro sits below the account icons */}
+      <nav className="hidden lg:block bg-black border-t border-white/10">
         <div className="container-x">
           <div className="flex items-center gap-3 py-1.5">
             {/* "Nos Produits" mega trigger */}
@@ -1039,17 +1038,17 @@ const ActionButton = ({
 }) => (
   <Link
     to={to}
-    className="relative flex flex-col items-center gap-0.5 group px-2 py-1 rounded-lg hover:bg-white/10 transition-all"
+    className="relative flex flex-col items-center gap-0.5 group px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
   >
     <div className="relative">
       {icon}
       {count !== undefined && count > 0 && (
-        <span className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center animate-in zoom-in">
+        <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center animate-in zoom-in">
           {count > 99 ? "99+" : count}
         </span>
       )}
     </div>
-    <span className="text-[10px] uppercase tracking-wider font-medium">
+    <span className="text-[8px] uppercase tracking-wider font-medium">
       {label}
     </span>
   </Link>
