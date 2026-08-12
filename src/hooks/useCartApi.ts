@@ -327,7 +327,7 @@ export const useCartApi = () => {
   };
 
   const fetchCart = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || user?.poste === 'admin' || user?.poste === 'livreur') {
       setCartItems([]);
       setCartCount(0);
       setCartTotal(0);
@@ -374,6 +374,15 @@ export const useCartApi = () => {
         title: "🔒 Connexion requise", 
         description: "Veuillez vous connecter pour ajouter au panier",
         variant: "destructive"
+      });
+      return false;
+    }
+
+    if (user?.poste === 'admin' || user?.poste === 'livreur') {
+      toast({
+        title: "Accès refusé",
+        description: "Seuls les clients peuvent utiliser le panier.",
+        variant: "destructive",
       });
       return false;
     }
