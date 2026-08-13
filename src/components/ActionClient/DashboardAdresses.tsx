@@ -89,28 +89,28 @@ const ModalPortal = ({ children, onClose }: { children: React.ReactNode; onClose
 };
 
 // ─── ModalHeader ─────────────────────────────────────────────────────────────
-const ModalHeader = ({ icon: Icon, title, subtitle, onClose, disabled = false }: {
-  icon: any; title: string; subtitle?: string; onClose: () => void; disabled?: boolean;
-}) => (
-  <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 rounded-t-2xl bg-gradient-to-r from-primary/5 to-transparent shrink-0">
-    <div className="flex items-center gap-3">
-      <div className="p-2 rounded-xl bg-primary/10 text-primary">
-        <Icon className="h-4 w-4" />
+  const ModalHeader = ({ icon: Icon, title, subtitle, onClose, disabled = false }: {
+    icon: any; title: string; subtitle?: string; onClose: () => void; disabled?: boolean;
+  }) => (
+    <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-border/50 rounded-t-2xl bg-gradient-to-r from-primary/5 to-transparent shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </div>
+        <div>
+          <h2 className="text-sm sm:text-base font-bold text-black">{title}</h2>
+          {subtitle && <p className="text-[10px] sm:text-xs text-black/70">{subtitle}</p>}
+        </div>
       </div>
-      <div>
-        <h2 className="text-base font-bold text-black">{title}</h2>
-        {subtitle && <p className="text-xs text-black/70">{subtitle}</p>}
-      </div>
+      <button
+        onClick={onClose}
+        disabled={disabled}
+        className="p-1 sm:p-1.5 rounded-lg text-black/70 hover:text-black hover:bg-black/10 transition-all disabled:opacity-40"
+      >
+        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+      </button>
     </div>
-    <button
-      onClick={onClose}
-      disabled={disabled}
-      className="p-1.5 rounded-lg text-black/70 hover:text-black hover:bg-black/10 transition-all disabled:opacity-40"
-    >
-      <X className="h-4 w-4" />
-    </button>
-  </div>
-);
+  );
 
 // ─── FormSection ─────────────────────────────────────────────────────────────
 const FormSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -560,7 +560,7 @@ const DashboardAdresses = () => {
       {/* Modal: Ajouter / Modifier */}
       {showModal && (
         <ModalPortal onClose={() => !isSaving && setShowModal(false)}>
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-white text-black shadow-2xl">
+          <div className="max-h-[85vh] w-full max-w-lg sm:max-w-xl md:max-w-2xl mx-4 overflow-y-auto bg-white text-black shadow-2xl">
             <ModalHeader
               icon={MapPin}
               title={selectedAdresse ? "Modifie ton adresse" : "Ajoute ton adresse"}
@@ -728,30 +728,30 @@ const DashboardAdresses = () => {
               </FormSection>
             </div>
 
-            <div className="space-y-6 px-5 py-8 sm:px-8">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <div><label className="mb-2 block text-lg font-medium">Nom</label><input name="nom_complet" value={(form.nom_complet || "").split(" ").slice(-1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${(p.nom_complet || "").split(" ").slice(0, -1).join(" ")} ${e.target.value}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
-                <div><label className="mb-2 block text-lg font-medium">Prénom</label><input value={(form.nom_complet || "").split(" ").slice(0, -1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${e.target.value} ${(p.nom_complet || "").split(" ").slice(-1).join(" ")}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
-              </div>
-              <div><label className="mb-2 block text-lg font-medium">Téléphone</label><input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
-              <div><label className="mb-2 block text-lg font-medium">Adresse</label><input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
-              <div><label className="mb-2 block text-lg font-medium">Ville</label><input name="ville" value={form.ville || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
-              <div><label className="mb-2 block text-lg font-medium">Code Postal</label><input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+            <div className="space-y-4 sm:space-y-6 px-4 sm:px-6 py-4 sm:py-5">
+               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                 <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Nom</label><input name="nom_complet" value={(form.nom_complet || "").split(" ").slice(-1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${(p.nom_complet || "").split(" ").slice(0, -1).join(" ")} ${e.target.value}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
+                 <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Prénom</label><input value={(form.nom_complet || "").split(" ").slice(0, -1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${e.target.value} ${(p.nom_complet || "").split(" ").slice(-1).join(" ")}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
+               </div>
+               <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Téléphone</label><input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
+               <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Adresse</label><input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
+               <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Ville</label><input name="ville" value={form.ville || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
+               <div><label className="mb-1.5 block text-sm sm:text-base font-medium">Code Postal</label><input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-lg sm:rounded-xl border border-black/40 px-3 py-2 text-sm sm:text-base italic outline-none focus:border-black" disabled={isSaving} /></div>
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end gap-4 px-6 py-5 shrink-0">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 shrink-0">
               <button
                 onClick={() => setShowModal(false)}
                 disabled={isSaving}
-                className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black/80 disabled:opacity-40"
+                className="rounded-lg sm:rounded-xl bg-black px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-black/80 disabled:opacity-40"
               >
                 J'annule
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg sm:rounded-xl bg-orange-500 px-4 py-2 text-xs sm:text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
               >
                 {isSaving
                   ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement...</>
@@ -762,49 +762,49 @@ const DashboardAdresses = () => {
         </ModalPortal>
       )}
 
-      {/* Modal: Supprimer */}
-      {showDeleteAlert && selectedAdresse && (
-        <ModalPortal onClose={() => setShowDeleteAlert(false)}>
-          <div className={`${MODAL_PANEL} max-w-md`}>
-            <div className="px-6 py-6 space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-destructive/10 text-destructive shrink-0">
-                  <Trash2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-foreground">Supprimer l'adresse</h3>
-                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                    Voulez-vous vraiment supprimer l'adresse de{" "}
-                    <span className="font-semibold text-foreground">{selectedAdresse.ville}</span>{" "}?
-                  </p>
-                  {selectedAdresse.par_defaut_expedition && (
-                    <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      Cette adresse est votre adresse par défaut.
-                    </div>
-                  )}
-                  <p className="text-xs text-destructive/70 mt-2">Cette action est irréversible.</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl">
-              <button
-                onClick={() => setShowDeleteAlert(false)}
-                className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground transition-all"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDelete}
-                className="px-5 py-2 text-sm font-semibold rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex items-center gap-2 transition-all"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
+       {/* Modal: Supprimer */}
+       {showDeleteAlert && selectedAdresse && (
+         <ModalPortal onClose={() => setShowDeleteAlert(false)}>
+           <div className={`${MODAL_PANEL} max-w-xs sm:max-w-sm md:max-w-md mx-4`}>
+             <div className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
+               <div className="flex items-start gap-3 sm:gap-4">
+                 <div className="p-2 sm:p-3 rounded-xl bg-destructive/10 text-destructive shrink-0">
+                   <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                 </div>
+                 <div>
+                   <h3 className="font-bold text-sm sm:text-base text-foreground">Supprimer l'adresse</h3>
+                   <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
+                     Voulez-vous vraiment supprimer l'adresse de{" "}
+                     <span className="font-semibold text-foreground">{selectedAdresse.ville}</span>{" "}?
+                   </p>
+                   {selectedAdresse.par_defaut_expedition && (
+                     <div className="flex items-center gap-1.5 mt-2 text-[10px] sm:text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2">
+                       <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                       Cette adresse est votre adresse par défaut.
+                     </div>
+                   )}
+                   <p className="text-[10px] sm:text-xs text-destructive/70 mt-1.5 sm:mt-2">Cette action est irréversible.</p>
+                 </div>
+               </div>
+             </div>
+             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 px-4 sm:px-6 py-3 sm:py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl">
+               <button
+                 onClick={() => setShowDeleteAlert(false)}
+                 className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm border border-border/60 rounded-lg sm:rounded-xl hover:bg-secondary/50 text-muted-foreground transition-all"
+               >
+                 Annuler
+               </button>
+               <button
+                 onClick={handleDelete}
+                 className="px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex items-center justify-center gap-1.5 sm:gap-2 transition-all"
+               >
+                 <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                 Supprimer
+               </button>
+             </div>
+           </div>
+         </ModalPortal>
+       )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
