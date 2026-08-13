@@ -359,19 +359,21 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
       {/* Top row: logo (large) + search + account/favorites/cart */}
-      <div className="container-x py-3 lg:py-2">
-        <div className="flex items-center gap-3 lg:gap-8 lg:min-h-[120px]">
-          <Link to="/" className="flex items-center shrink-0 group self-end">
+      <div className="w-full py-3 lg:py-2 px-4 lg:px-8">
+        <div className="flex items-end gap-2 lg:gap-3 lg:min-h-[120px]">
+          {/* Logo — Left */}
+          <Link to="/" className="flex items-center shrink-0 group ">
             <img
               src={logo}
               alt="Les Casaniers"
-              className="h-20 sm:h-24 lg:h-[140px] xl:h-[150px] w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
+              className="h-16 sm:h-20 lg:h-28 xl:h-36 w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
             />
           </Link>
 
+          {/* Search — Center (flex-1 pour prendre l'espace disponible) */}
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] self-end"
+            className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] mx-2"
           >
             <div className="relative flex items-center">
               <div className="relative flex-1">
@@ -469,7 +471,7 @@ export const Header = () => {
           </form>
 
           {/* Compte / Favoris / Panier — top right, aligned above "Configurateur Pro" */}
-          <div className="hidden md:flex items-center gap-1.5 lg:ml-auto lg:gap-3 xl:gap-4 shrink-0 self-end pb-2">
+          <div className="hidden md:flex items-center gap-1.5 lg:ml-auto lg:gap-3 xl:gap-4 shrink-0 pb-2">
             <div className="relative">
               {isAuthenticated ? (
                 <>
@@ -584,7 +586,7 @@ export const Header = () => {
 
       {/* Desktop Navigation Bar — categorie sits below the logo, Configurateur Pro sits below the account icons */}
       <nav className="hidden lg:block bg-black border-t border-white/10">
-        <div className="container-x">
+        <div className="w-full px-4 lg:px-8">
           <div className="flex items-center gap-3 py-1.5">
             {/* "Nos Produits" mega trigger */}
             <div
@@ -745,11 +747,9 @@ export const Header = () => {
                 to={item.href}
                 className={`
                   relative group flex items-center border rounded-md gap-1.5 px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-                  ${item.highlight
+                  ${item.accent
                     ? "text-white hover:text-white"
-                    : item.accent
-                      ? "text-white hover:text-white"
-                      : "text-zinc-200 hover:text-white"
+                    : "text-zinc-200 hover:text-white"
                   }
                   ${isActive(item.href) ? "text-primary" : ""}
                   border-zinc-600 bg-black
@@ -759,11 +759,6 @@ export const Header = () => {
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
-                {item.badge && (
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500 text-white leading-none">
-                    {item.badge}
-                  </span>
-                )}
                 <span
                   className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
                 />
@@ -834,7 +829,7 @@ export const Header = () => {
                 </Link>
               )}
             </div>
-
+{/* 
             <div className="p-4 border-b border-border">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Thème
@@ -851,7 +846,7 @@ export const Header = () => {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             <div className="py-4">
               <div className="px-4 space-y-1">
@@ -936,11 +931,6 @@ export const Header = () => {
                   >
                     <span className="text-primary">{item.icon}</span>
                     <span>{item.label}</span>
-                    {item.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-white ml-auto">
-                        {item.badge}
-                      </span>
-                    )}
                   </Link>
                 ))}
               </div>
