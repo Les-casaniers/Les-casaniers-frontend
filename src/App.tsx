@@ -73,7 +73,7 @@ import LivreurPlanning from "./components/ActionLivreur/LivreurPlanning.tsx";
 import LivreurStats from "./components/ActionLivreur/LivreurStats.tsx";
 import LivreurNotifications from "./components/ActionLivreur/LivreurNotifications.tsx";
 import LivreurParametres from "./components/ActionLivreur/LivreurParametres.tsx";
-import ClientDashboard from "./components/ActionClient/DashboardClient.tsx";
+import DashboardProfile from "@/components/ActionClient/DashboardProfile.tsx";
 import Profreelance from "@/pages/Pro";
 
 
@@ -152,7 +152,7 @@ const App = () => (
                 <Route path="favoris" element={<DashboardFavoris />} />
                 <Route path="paiement" element={<DashboardPaiement />} />
                 <Route path="parametres" element={<DashboardParametres />} />
-                <Route path="details-client" element={<ClientDashboard />} />
+                <Route path="details-client" element={<DashboardProfile />} />
               </Route>
 
               {/* ============ ROUTES LIVREUR ============ */}

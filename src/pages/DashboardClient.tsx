@@ -1,35 +1,27 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, MapPin, Heart,
-  CreditCard, Settings, LogOut, ChevronRight, User, Bell,
-  Menu, X, ExternalLink, Sun, Moon
+  CreditCard, Settings, LogOut, ChevronRight,
+  Menu, X
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Header } from "@/components/site/Header";
+import { TopBar } from "@/components/site/TopBar";
 import logo from "@/assets/casaniers-logo.png";
 
 const DashboardClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const userData = {
-    name: user?.prenom && user?.nom ? `${user.prenom} ${user.nom}` : (user?.prenom || user?.nom || "Client"),
-    email: user?.email || "client@lescasaniers.mg",
-  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Aperçu", path: "/DashboardClient" },
     { icon: Package, label: "Mes commandes", path: "/DashboardClient/commandes" },
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
-    { icon: CreditCard, label: "Facture", path: "/DashboardClient/paiement" },
-    { icon: User, label: "Détails-Client", path: "/DashboardClient/details-client" },
+    { icon: CreditCard, label: "Factures", path: "/DashboardClient/paiement" },
   ];
 
   const isActive = (path: string) => {
@@ -37,33 +29,7 @@ const DashboardClientLayout = () => {
     return location.pathname.startsWith(path);
   };
 
-  const activeLabel = menuItems.find((item) => isActive(item.path))?.label || "Aperçu";
-
-  // Thème au chargement
-  useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    const dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setIsDarkMode(dark);
-    document.documentElement.classList.toggle("dark", dark);
-  }, []);
-
-  // Fermer le dropdown en dehors
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
-        setShowLogout(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Fermer le menu mobile au resize
+  // Fermer le menu mobile au resize (>= lg)
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) setMobileMenuOpen(false);
@@ -77,22 +43,11 @@ const DashboardClientLayout = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const toggleTheme = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-  };
-
   const handleLogout = () => {
-    logout();
-    navigate("/login");
-    setShowLogout(false);
-  };
-
-  const handleViewSite = () => {
-    navigate("/catalogue");
-    setShowLogout(false);
+    if (typeof logout === "function") {
+      logout();
+    }
+    navigate("/");
   };
 
   // ─── Sidebar partagée ──────────────────────────────────────────────────────
@@ -101,33 +56,48 @@ const DashboardClientLayout = () => {
       {/* Logo */}
       <div className="p-3 border-b border-white/7">
         <div className="flex items-center justify-between">
-          <Link
-            to="/DashboardClient"
-            className="flex items-center gap-3 group"
-            onClick={onNavClick}
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md transition-transform group-hover:scale-105 duration-300 overflow-hidden">
-              <img 
-                src={logo} 
-                alt="Logo Les Casaniers" 
-                className="w-full h-full object-cover rounded-xl"
-              />
-            </div>
-            <div>
-              <h1 className="text-base font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Mon compte
-              </h1>
-              <p className="text-[10px] text-muted-foreground">Les Casaniers</p>
-            </div>
-          </Link>
+       
           {onNavClick && (
             <button
               onClick={onNavClick}
               className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-all duration-200"
+              aria-label="Fermer le menu"
             >
               <X className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Profil court en haut de la sidebar */}
+        <div className="px-3 py-3">
+          <Link
+            to=""
+            onClick={onNavClick}
+            className="flex items-center gap-3 p-3 rounded-lg border border-white/7 hover:bg-muted/50 transition-colors"
+          >
+            <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold">
+              {user?.prenom || user?.nom
+                ? (user.prenom || user.nom)?.charAt(0).toUpperCase()
+                : "U"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground line-clamp-1">
+                {user?.prenom && user?.nom
+                  ? `${user.prenom} ${user.nom}`
+                  : user?.prenom || user?.nom || "Client"}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <span
+                  className={
+                    "inline-block w-2 h-2 rounded-full " +
+                    (user && (user as any).statut ? "bg-green-400" : "bg-gray-400")
+                  }
+                />
+                {user && (user as any).statut ? "Actif" : "Inactif"}
+              </p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </Link>
         </div>
       </div>
 
@@ -149,7 +119,11 @@ const DashboardClientLayout = () => {
                 }
               `}
             >
-              <item.icon className={`w-4 h-4 transition-all duration-200 ${active ? "text-primary-foreground" : "group-hover:text-primary"}`} />
+              <item.icon
+                className={`w-4 h-4 transition-all duration-200 ${
+                  active ? "text-primary-foreground" : "group-hover:text-primary"
+                }`}
+              />
               <span className="text-sm font-medium flex-1">{item.label}</span>
               {active && <ChevronRight className="w-3 h-3 animate-pulse-slow" />}
             </Link>
@@ -157,128 +131,82 @@ const DashboardClientLayout = () => {
         })}
       </nav>
 
+      {/* Footer sidebar : paramètres + déconnexion */}
+        {/* <div className="p-3 border-t border-white/7 space-y-0.5">
+          <Link
+            to="/DashboardClient/details-client"
+            onClick={onNavClick}
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg
+              transition-all duration-200 group
+              ${isActive("/DashboardClient/details-client")
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:translate-x-1"
+              }
+            `}
+          >
+            <Settings className="w-4 h-4 group-hover:text-primary transition-all duration-200" />
+            <span className="text-sm font-medium flex-1">Paramètres</span>
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 group"
+          >
+            <LogOut className="w-4 h-4 group-hover:text-destructive transition-all duration-200" />
+            <span className="text-sm font-medium flex-1 text-left">Déconnexion</span>
+          </button>
+        </div> */}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Overlay mobile */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
+      {/* TopBar en haut */}
+      <TopBar />
 
-      {/* Sidebar Desktop + Mobile */}
-      <aside
-        className={`
-          fixed top-0 left-0 h-full w-72 bg-card/95 backdrop-blur-md border-r border-border
-          transform transition-all duration-300 ease-out z-50
-          shadow-2xl lg:shadow-none
-          ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        <SidebarContent onNavClick={mobileMenuOpen ? () => setMobileMenuOpen(false) : undefined} />
-      </aside>
+      {/* Header en haut, pleine largeur */}
+      <Header />
 
-      {/* Main content */}
-      <div className="lg:pl-72 min-h-screen">
-        {/* Header */}
-        <header className="sticky top-0 bg-card/80 backdrop-blur-md border-b border-border/50 z-30 shadow-sm">
-          <div className="flex items-center justify-between px-4 py-3">
-            {/* Menu burger mobile + Breadcrumb */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 hover:bg-muted rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <div className="hidden md:flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Mon compte</span>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <span className="font-medium text-foreground">{activeLabel}</span>
-              </div>
+      {/* Layout wrapper */}
+      <div className="flex flex-1 relative">
+        {/* Sidebar Desktop - toujours visible */}
+        <aside className="hidden lg:flex w-72 bg-card/95 backdrop-blur-md border-r border-border flex-col overflow-y-auto">
+          <SidebarContent />
+        </aside>
+
+        {/* Sidebar Mobile - overlay */}
+        {mobileMenuOpen && (
+          <>
+            {/* Overlay */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden animate-fade-in"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Mobile Sidebar */}
+            <aside className="lg:hidden fixed left-0 top-0 w-72 h-screen bg-card/95 backdrop-blur-md border-r border-border flex flex-col z-40 overflow-y-auto animate-fade-in">
+              <SidebarContent onNavClick={() => setMobileMenuOpen(false)} />
+            </aside>
+          </>
+        )}
+
+        {/* Bouton menu mobile */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden fixed bottom-8 right-8 z-50 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all"
+          aria-label="Ouvrir le menu"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+
+        {/* Main content */}
+        <div className="flex-1 w-full overflow-y-auto">
+          <main className="p-4 md:p-6 lg:p-8">
+            <div className="animate-fade-up">
+              <Outlet />
             </div>
-
-            {/* Actions header */}
-            <div className="flex items-center gap-3">
-              {/* Theme rapide */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-110 active:scale-95"
-              >
-                {isDarkMode
-                  ? <Sun className="w-4 h-4 text-amber-500" />
-                  : <Moon className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
-              </button>
-
-              {/* Badge statut */}
-              <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                <div className="relative">
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping opacity-75" />
-                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full absolute top-0" />
-                </div>
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hidden sm:inline">
-                  En ligne
-                </span>
-              </div>
-
-              {/* Profil avec dropdown */}
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  ref={buttonRef}
-                  onClick={() => setShowLogout(!showLogout)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-all duration-200"
-                >
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-medium text-foreground">{userData.name}</p>
-                    <p className="text-xs text-muted-foreground">Client</p>
-                  </div>
-                  <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
-                      <span className="text-sm font-bold text-primary-foreground">
-                        {userData.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-card" />
-                  </div>
-                </button>
-
-                {showLogout && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 z-50 animate-fade-in">
-                    <div className="px-4 py-2 border-b border-border">
-                      <p className="text-sm font-medium text-foreground">{userData.name}</p>
-                      <p className="text-xs text-muted-foreground">{userData.email}</p>
-                    </div>
-                    <button
-                      onClick={handleViewSite}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-secondary transition"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Voir le site
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Déconnexion
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Contenu de la page */}
-        <main className="p-4 md:p-6 lg:p-8">
-          <div className="animate-fade-up">
-            <Outlet />
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
 
       <style>{`

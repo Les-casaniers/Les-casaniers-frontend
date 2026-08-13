@@ -98,14 +98,14 @@ const ModalHeader = ({ icon: Icon, title, subtitle, onClose, disabled = false }:
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <h2 className="text-base font-bold text-foreground">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        <h2 className="text-base font-bold text-black">{title}</h2>
+        {subtitle && <p className="text-xs text-black/70">{subtitle}</p>}
       </div>
     </div>
     <button
       onClick={onClose}
       disabled={disabled}
-      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all disabled:opacity-40"
+      className="p-1.5 rounded-lg text-black/70 hover:text-black hover:bg-black/10 transition-all disabled:opacity-40"
     >
       <X className="h-4 w-4" />
     </button>
@@ -251,6 +251,8 @@ const DashboardAdresses = () => {
     if (!form.nom_complet?.trim()) { toast.error("Le nom complet est obligatoire"); return; }
     if (!form.adresse_ligne1?.trim()) { toast.error("L'adresse ligne 1 est obligatoire"); return; }
     if (!form.ville?.trim()) { toast.error("La ville est obligatoire"); return; }
+    if (!form.telephone?.trim()) { toast.error("Le téléphone est obligatoire"); return; }
+    if (!form.code_postal?.trim()) { toast.error("Le code postal est obligatoire"); return; }
     if (!form.pays?.trim()) { toast.error("Le pays est obligatoire"); return; }
 
     setIsSaving(true);
@@ -348,19 +350,21 @@ const DashboardAdresses = () => {
 
   // ─── Rendu principal ───────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="min-h-[calc(100vh-12rem)] max-w-none bg-black px-5 py-6 text-white sm:px-7 md:px-9 md:py-8">
+      <div className="max-w-5xl">
 
       {/* En-tête */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-8">
         <div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+          <div className="hidden">
             <MapPin className="h-3.5 w-3.5" />
             <span>Mon compte</span>
             <ChevronDown className="h-3 w-3 -rotate-90" />
             <span className="text-foreground font-medium">Adresses</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Mes adresses</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Salut,</h1>
+          <p className="mt-1 inline-block border-b border-white/60 pb-1 text-sm font-medium italic text-white/75">Voici tes adresses enregistrées</p>
+          <p className="hidden">
             {adresses.length > 0
               ? `${adresses.length} adresse${adresses.length > 1 ? "s" : ""} enregistrée${adresses.length > 1 ? "s" : ""}`
               : "Gérez vos adresses de livraison"}
@@ -368,7 +372,7 @@ const DashboardAdresses = () => {
         </div>
         <button
           onClick={handleOpenAdd}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 w-full sm:w-auto justify-center"
+          className="hidden"
         >
           <Plus className="h-4 w-4" />
           Ajouter une adresse
@@ -385,7 +389,19 @@ const DashboardAdresses = () => {
 
       {/* Vide */}
       {adresses.length === 0 && (
-        <div className="bg-card border border-border/50 rounded-2xl p-14 text-center">
+        <>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-sm font-semibold italic text-white/75">Adresse de livraison :</h2>
+            <p className="mt-2 text-xs italic text-white/60">Par défaut</p>
+            <button onClick={handleOpenAdd} className="mt-1 inline-flex items-center gap-2 rounded-md border border-white/45 px-5 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10"><Plus className="h-4 w-4" /> Ajouter une adresse</button>
+          </div>
+          <div>
+            <p className="text-xs italic text-white/60">Optionnelle</p>
+            <button onClick={handleOpenAdd} className="mt-1 inline-flex items-center gap-2 rounded-md border border-white/45 px-5 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10"><Plus className="h-4 w-4" /> Ajouter une nouvelle adresse</button>
+          </div>
+        </div>
+        <div className="hidden">
           <div className="w-20 h-20 mx-auto mb-4 bg-secondary/40 rounded-2xl flex items-center justify-center">
             <MapPin className="h-10 w-10 text-muted-foreground/30" />
           </div>
@@ -398,6 +414,7 @@ const DashboardAdresses = () => {
             <Plus className="h-4 w-4" /> Ajouter une adresse
           </button>
         </div>
+        </>
       )}
 
       {/* Grille adresses */}
@@ -543,16 +560,16 @@ const DashboardAdresses = () => {
       {/* Modal: Ajouter / Modifier */}
       {showModal && (
         <ModalPortal onClose={() => !isSaving && setShowModal(false)}>
-          <div className={`${MODAL_PANEL} max-w-2xl max-h-[90vh]`}>
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-white text-black shadow-2xl">
             <ModalHeader
               icon={MapPin}
-              title={selectedAdresse ? "Modifier l'adresse" : "Ajouter une adresse"}
+              title={selectedAdresse ? "Modifie ton adresse" : "Ajoute ton adresse"}
               subtitle={selectedAdresse ? "Modifiez les informations ci-dessous" : "Remplissez les informations de livraison"}
               onClose={() => setShowModal(false)}
               disabled={isSaving}
             />
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-6 hidden">
 
               {/* Identité */}
               <FormSection title="Identité">
@@ -711,23 +728,34 @@ const DashboardAdresses = () => {
               </FormSection>
             </div>
 
+            <div className="space-y-6 px-5 py-8 sm:px-8">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <div><label className="mb-2 block text-lg font-medium">Nom</label><input name="nom_complet" value={(form.nom_complet || "").split(" ").slice(-1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${(p.nom_complet || "").split(" ").slice(0, -1).join(" ")} ${e.target.value}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+                <div><label className="mb-2 block text-lg font-medium">Prénom</label><input value={(form.nom_complet || "").split(" ").slice(0, -1).join(" ")} onChange={(e) => setForm((p) => ({ ...p, nom_complet: `${e.target.value} ${(p.nom_complet || "").split(" ").slice(-1).join(" ")}`.trim() }))} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+              </div>
+              <div><label className="mb-2 block text-lg font-medium">Téléphone</label><input name="telephone" value={form.telephone || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+              <div><label className="mb-2 block text-lg font-medium">Adresse</label><input name="adresse_ligne1" value={form.adresse_ligne1 || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+              <div><label className="mb-2 block text-lg font-medium">Ville</label><input name="ville" value={form.ville || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+              <div><label className="mb-2 block text-lg font-medium">Code Postal</label><input name="code_postal" value={form.code_postal || ""} onChange={handleInputChange} placeholder="Obligatoire" className="w-full rounded-xl border border-black/40 px-3 py-2.5 text-lg italic outline-none focus:border-black" disabled={isSaving} /></div>
+            </div>
+
             {/* Footer */}
-            <div className="flex justify-end gap-2.5 px-6 py-4 border-t border-border/50 bg-secondary/10 rounded-b-2xl shrink-0">
+            <div className="flex justify-end gap-4 px-6 py-5 shrink-0">
               <button
                 onClick={() => setShowModal(false)}
                 disabled={isSaving}
-                className="px-4 py-2 text-sm border border-border/60 rounded-xl hover:bg-secondary/50 text-muted-foreground transition-all disabled:opacity-40"
+                className="rounded-xl bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black/80 disabled:opacity-40"
               >
-                Annuler
+                J'annule
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-5 py-2 text-sm font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 inline-flex items-center gap-2 disabled:opacity-50 transition-all"
+                className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-50"
               >
                 {isSaving
                   ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement...</>
-                  : <><Check className="h-3.5 w-3.5" /> {selectedAdresse ? "Enregistrer" : "Ajouter"}</>}
+                  : <><Check className="h-3.5 w-3.5" /> J'enregistre</>}
               </button>
             </div>
           </div>
@@ -784,6 +812,7 @@ const DashboardAdresses = () => {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.3); }
       `}</style>
+    </div>
     </div>
   );
 };
