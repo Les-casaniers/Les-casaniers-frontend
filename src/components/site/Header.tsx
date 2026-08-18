@@ -785,7 +785,7 @@ export const Header = () => {
           />
           <div
             ref={mobileMenuRef}
-            className="fixed top-0 right-0 h-full w-[85%] max-w-sm bg-background z-50 shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto"
+            className="dark fixed top-0 right-0 h-full w-[85%] max-w-sm bg-background z-50 shadow-2xl animate-in slide-in-from-right duration-300 overflow-y-auto"
           >
             <div className="sticky top-0 bg-background border-b border-border z-10">
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/5 to-transparent">
