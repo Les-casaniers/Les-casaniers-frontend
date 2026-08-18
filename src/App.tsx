@@ -170,7 +170,7 @@ const App = () => (
             </Routes>
 
             {/* Composants flottants sur toutes les pages */}
-            <FosaBot />
+            {/* <FosaBot /> */}
             <CookieConsentBanner />
           </BrowserRouter>
         </ShopProvider>
