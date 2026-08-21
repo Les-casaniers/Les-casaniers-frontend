@@ -1,4 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* Police de la maquette Adobe XD. Elle est employée si elle est installée sur le poste.
+   Pour la fournir à tous les visiteurs, ajoutez les fichiers .woff2 dans public/fonts
+   puis remplacez `local(...)` par l'URL de ces fichiers. */
+@font-face {
+  font-family: "Glacial Indifference";
+  src: local("Glacial Indifference"), local("GlacialIndifference-Regular");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Glacial Indifference";
+  src: local("Glacial Indifference Bold"), local("GlacialIndifference-Bold");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Glacial Indifference";
+  src: local("Glacial Indifference Italic"), local("GlacialIndifference-Italic");
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -112,8 +139,8 @@
     --duration-1000: 1000ms;
     
     /* Fonts */
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, sans-serif;
+    --font-display: 'Glacial Indifference', 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Glacial Indifference', 'Inter', system-ui, sans-serif;
     
     /* Letter spacing */
     --tracking-tighter: -0.03em;
@@ -903,3 +930,88 @@
 
 
 }
+
+/* ==================== TOKENS ADOBE XD ==================== */
+/* Export adapté : les styles existants et le thème Tailwind sont conservés. */
+:root {
+  --xd-white: #ffffff;
+  --xd-gray: #707070;
+  --xd-black: #000000;
+  --xd-font-display: "Glacial Indifference", "Space Grotesk", system-ui, sans-serif;
+  --xd-font-body: "Glacial Indifference", "Inter", system-ui, sans-serif;
+  --xd-font-calibri: Calibri, Arial, sans-serif;
+}
+
+/* Styles de texte issus de la maquette Adobe XD.
+   Utilisez-les directement dans vos composants, par exemple : className="xd-title-hero". */
+.xd-text-italic-lg { font-family: var(--xd-font-body); font-style: italic; font-size: 20px; line-height: 24px; letter-spacing: 1.4px; color: var(--xd-gray); }
+.xd-text-button { font-family: var(--xd-font-display); font-weight: 700; font-size: 16px; line-height: 19px; letter-spacing: 1.2px; color: var(--xd-white); }
+.xd-text-title { font-family: var(--xd-font-display); font-weight: 700; font-size: 20px; line-height: 24px; letter-spacing: .7px; color: var(--xd-black); }
+.xd-text-title-light { font-family: var(--xd-font-display); font-weight: 700; font-size: 20px; line-height: 24px; letter-spacing: .7px; color: var(--xd-white); }
+.xd-text-subtitle { font-family: var(--xd-font-display); font-weight: 700; font-size: 22px; line-height: 27px; letter-spacing: .99px; color: var(--xd-white); }
+.xd-text-italic-sm { font-family: var(--xd-font-body); font-style: italic; font-size: 16px; line-height: 19px; letter-spacing: 1.28px; color: var(--xd-gray); }
+.xd-title-hero { font-family: var(--xd-font-display); font-weight: 700; font-size: clamp(2.25rem, 5vw, 52px); line-height: 1.2; letter-spacing: 2.08px; color: var(--xd-white); text-transform: uppercase; }
+.xd-title-section { font-family: var(--xd-font-display); font-weight: 700; font-size: clamp(2rem, 4vw, 48px); line-height: 1.4; letter-spacing: 1.78px; color: var(--xd-black); }
+.xd-title-display { font-family: var(--xd-font-display); font-weight: 700; font-size: clamp(2.5rem, 6vw, 60px); line-height: 1.12; letter-spacing: 4.8px; color: var(--xd-white); text-transform: uppercase; }
+.xd-title-display-calibri { font-family: var(--xd-font-calibri); font-weight: 700; font-size: clamp(2.5rem, 6vw, 60px); line-height: 1.12; letter-spacing: 4.8px; color: var(--xd-white); text-transform: uppercase; }
+.xd-title-display-italic { font-family: var(--xd-font-body); font-style: italic; font-size: clamp(2.5rem, 6vw, 60px); line-height: 1.12; letter-spacing: 4.8px; color: var(--xd-white); text-transform: uppercase; }
+.xd-title-uppercase { font-family: var(--xd-font-display); font-weight: 700; font-size: 18px; line-height: 37px; letter-spacing: .63px; color: var(--xd-black); text-transform: uppercase; }
+.xd-text-italic { font-family: var(--xd-font-body); font-style: italic; font-size: 22px; line-height: 37px; letter-spacing: .81px; color: var(--xd-black); }
+.xd-text-body-light { font-family: var(--xd-font-body); font-size: 20px; line-height: 47px; letter-spacing: .7px; color: var(--xd-white); }
+.xd-text-body-dark { font-family: var(--xd-font-body); font-size: 22px; line-height: 40px; letter-spacing: .81px; color: var(--xd-gray); }
+.xd-text-eyebrow { font-family: var(--xd-font-body); font-style: italic; font-size: 24px; line-height: 57px; letter-spacing: 2.4px; color: var(--xd-gray); text-transform: uppercase; }
+
+@media (max-width: 640px) {
+  .xd-text-body-light { font-size: 18px; line-height: 1.7; }
+  .xd-text-body-dark { font-size: 18px; line-height: 1.6; }
+  .xd-text-italic { font-size: 19px; line-height: 1.5; }
+}
+
+/* ==================== EXPORT ADOBE XD COMPLET ====================
+   Classes conservées telles qu'exportées par Adobe XD, prêtes à être copiées. */
+:root {
+  --unnamed-color-ffffff: #ffffff;
+  --unnamed-color-707070: #707070;
+  --unnamed-color-000000: #000000;
+  --unnamed-font-family-glacial-indifference: "Glacial Indifference", "Space Grotesk", system-ui, sans-serif;
+  --unnamed-font-family-calibri: Calibri, Arial, sans-serif;
+  --unnamed-font-style-italic: italic;
+  --unnamed-font-style-normal: normal;
+  --unnamed-font-weight-normal: 400;
+  --unnamed-font-weight-bold: 700;
+  --unnamed-text-transform-uppercase: uppercase;
+}
+
+.unnamed-character-style-1 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 20px; line-height: 24px; letter-spacing: 1.4px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-2 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 16px; line-height: 19px; letter-spacing: 1.2px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-3 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 20px; line-height: 24px; letter-spacing: .7px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-4 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 20px; line-height: 24px; letter-spacing: .7px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-5 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 22px; line-height: 27px; letter-spacing: .99px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-6 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 16px; line-height: 19px; letter-spacing: 1.28px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-7 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 52px; line-height: 62px; letter-spacing: 2.08px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-8 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 32px; line-height: 47px; letter-spacing: 1.44px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-9 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 25px; line-height: 47px; letter-spacing: .88px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-10 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 20px; line-height: 47px; letter-spacing: .7px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-11 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 20px; line-height: 47px; letter-spacing: .7px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-12 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 20px; line-height: 47px; letter-spacing: .7px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-13 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 26px; line-height: 37px; letter-spacing: .78px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-14 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 60px; line-height: 47px; letter-spacing: 4.8px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-15 { font-family: var(--unnamed-font-family-calibri); font-weight: 700; font-size: 60px; line-height: 47px; letter-spacing: 4.8px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-16 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 60px; line-height: 47px; letter-spacing: 4.8px; color: var(--unnamed-color-ffffff); text-transform: uppercase; }
+.unnamed-character-style-17 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 18px; line-height: 37px; letter-spacing: .63px; color: var(--unnamed-color-000000); text-transform: uppercase; }
+.unnamed-character-style-18 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 22px; line-height: 37px; letter-spacing: .81px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-19 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 20px; line-height: 37px; letter-spacing: 1.5px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-20 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 48px; line-height: 67px; letter-spacing: 1.78px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-21 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 60px; line-height: 67px; letter-spacing: 2.22px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-22 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 52px; line-height: 67px; letter-spacing: 1.92px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-23 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 52px; line-height: 67px; letter-spacing: 1.92px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-24 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 48px; line-height: 67px; letter-spacing: 1.78px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-25 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 50px; line-height: 67px; letter-spacing: 1.85px; color: var(--unnamed-color-000000); }
+.unnamed-character-style-26 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 35px; line-height: 37px; letter-spacing: 1.65px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-27 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 45px; line-height: 37px; letter-spacing: 1.35px; color: var(--unnamed-color-ffffff); }
+.unnamed-character-style-28 { font-family: var(--unnamed-font-family-glacial-indifference); font-style: italic; font-weight: 400; font-size: 24px; line-height: 57px; letter-spacing: 2.4px; color: var(--unnamed-color-707070); text-transform: uppercase; }
+.unnamed-character-style-29 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 22px; line-height: 40px; letter-spacing: .81px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-30 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 22px; line-height: 45px; letter-spacing: .81px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-31 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 22px; line-height: 36px; letter-spacing: .81px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-32 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 400; font-size: 18px; line-height: 67px; letter-spacing: .54px; color: var(--unnamed-color-707070); }
+.unnamed-character-style-33 { font-family: var(--unnamed-font-family-glacial-indifference); font-weight: 700; font-size: 22px; line-height: 27px; letter-spacing: .99px; color: var(--unnamed-color-000000); }
