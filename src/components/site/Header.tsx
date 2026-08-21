@@ -46,6 +46,9 @@ import {
 import mascot from "@/assets/casaniers-mascot.png";
 import mascotListening from "@/assets/9.png";
 import logo from "@/assets/casaniers-logo.png";
+import favoriteIcon from "@/assets/favorite.png";
+import profileIncone from "@/assets/Profile.png"
+import panierIncone from"@/assets/Basket.png"
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -115,33 +118,33 @@ const quickNavLinks = [
   {
     label: "Pro & Freelance",
     href: "/pro",
-    icon: <Briefcase className="h-3.5 w-3.5" />,
+    //icon: <Briefcase className="h-3.5 w-3.5" />,
   },
   {
     label: "Gamer",
     href: "/gaming",
-    icon: <Gamepad2 className="h-3.5 w-3.5" />,
+    //icon: <Gamepad2 className="h-3.5 w-3.5" />,
     accent: true,
   },
   {
     label: "Guides",
     href: "/guides",
-    icon: <BookOpen className="h-3.5 w-3.5" />,
+    //icon: <BookOpen className="h-3.5 w-3.5" />,
   },
   {
     label: "Importation",
     href: "/importation",
-    icon: <Package className="h-3.5 w-3.5" />,
+    //icon: <Package className="h-3.5 w-3.5" />,
   },
   {
     label: "Boutique de MISA",
     href: "/boutique-de-misa",
-    icon: <Cat className="h-3.5 w-3.5" />,
+    //icon: <Cat className="h-3.5 w-3.5" />,
   },
   {
     label: "Devis Express",
     href: "/devis",
-    icon: <FileText className="h-3.5 w-3.5" />,
+    //icon: <FileText className="h-3.5 w-3.5" />,
   },
 ];
 
@@ -475,21 +478,21 @@ export const Header = () => {
             <div className="relative">
               {isAuthenticated ? (
                 <>
-                  <button
-                    ref={userButtonRef}
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
-                  >
-                    <div className="relative">
-                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-[10px]">
-                        {getUserName().charAt(0).toUpperCase()}
-                      </div>
-                      <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border-2 border-background" />
-                    </div>
-                    <span className="text-[8px] uppercase tracking-wider font-medium">
-                      {getUserName()}
-                    </span>
-                  </button>
+            <button
+              ref={userButtonRef}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+            >
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-xs">
+                  {getUserName().charAt(0).toUpperCase()}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+              </div>
+              <span className="text-[10px] uppercase tracking-wider font-medium">
+                {getUserName()}
+              </span>
+            </button>
                   {showUserMenu && (
                     <div
                       ref={userMenuRef}
@@ -530,27 +533,27 @@ export const Header = () => {
                   )}
                 </>
               ) : (
-                <Link
-                  to="/login"
-                  className="flex flex-col items-center gap-0.5 group px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
-                >
-                  <User className="h-3.5 w-3.5" />
-                  <span className="text-[8px] uppercase tracking-wider font-medium">
-                    Compte
-                  </span>
-                </Link>
+              <Link
+                to="/login"
+                className="flex flex-col items-center gap-1 group px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+              >
+                <img src={profileIncone} alt="" className="h-5 w-5 object-contain" />
+                <span className="text-[10px] uppercase tracking-wider font-medium">
+                  Compte
+                </span>
+              </Link>
               )}
             </div>
 
             <ActionButton
               to="/favoris"
-              icon={<Heart className="h-3.5 w-3.5" />}
+              icon={<img src={favoriteIcon} alt="" className="h-5 w-5 object-contain" />}
               label="Favoris"
               count={favorites?.length}
             />
             <ActionButton
               to="/panier"
-              icon={<ShoppingBag className="h-3.5 w-3.5" />}
+              icon={<img src={panierIncone} alt="" className="h-5 w-5 object-contain"/>}
               label="Panier"
               count={cartCount}
             />
@@ -756,7 +759,7 @@ export const Header = () => {
                 `}
               >
                 <span className="transition-transform duration-200 group-hover:scale-110">
-                  {item.icon}
+                  {/*item.icon*/}
                 </span>
                 <span>{item.label}</span>
                 <span
@@ -765,13 +768,13 @@ export const Header = () => {
               </Link>
             ))}
 
-            <Link
-              to="/configurateur"
-              className="ml-auto flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              <span>Configurateur Pro</span>
-            </Link>
+<Link
+  to="/configurateur"
+  className="ml-auto flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+>
+  <Zap className="h-3.5 w-3.5" />
+  <span className="text-sm">Configurateur Pro</span>
+</Link>
           </div>
         </div>
       </nav>
@@ -929,7 +932,7 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-sm ${isActive(item.href) ? "bg-primary/10 text-primary font-medium" : "hover:bg-secondary"} border border-border bg-background mb-2`}
                   >
-                    <span className="text-primary">{item.icon}</span>
+                    <span className="text-primary">{/*item.icon*/}</span>
                     <span>{item.label}</span>
                   </Link>
                 ))}
@@ -1014,7 +1017,6 @@ export const Header = () => {
     </header>
   );
 };
-
 const ActionButton = ({
   to,
   icon,
@@ -1028,17 +1030,17 @@ const ActionButton = ({
 }) => (
   <Link
     to={to}
-    className="relative flex flex-col items-center gap-0.5 group px-1 py-1 rounded-lg hover:bg-white/10 transition-all"
+    className="relative flex flex-col items-center gap-1 group px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
   >
     <div className="relative">
       {icon}
       {count !== undefined && count > 0 && (
-        <span className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center animate-in zoom-in">
+        <span className="absolute -top-2 -right-2 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center animate-in zoom-in">
           {count > 99 ? "99+" : count}
         </span>
       )}
     </div>
-    <span className="text-[8px] uppercase tracking-wider font-medium">
+    <span className="text-[10px] uppercase tracking-wider font-medium">
       {label}
     </span>
   </Link>
