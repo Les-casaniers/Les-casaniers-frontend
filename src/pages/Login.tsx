@@ -233,8 +233,7 @@ const Login = () => {
                     </>
                   ) : (
                     <>
-                      <span>Se connecter</span>
-                      <LogIn className="h-4 w-4" />
+                      <span>Je me connecte</span>
                     </>
                   )}
                 </button>
