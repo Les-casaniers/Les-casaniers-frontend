@@ -47,8 +47,10 @@ import mascot from "@/assets/casaniers-mascot.png";
 import mascotListening from "@/assets/9.png";
 import logo from "@/assets/casaniers-logo.png";
 import favoriteIcon from "@/assets/favorite.png";
-import profileIncone from "@/assets/Profile.png"
-import panierIncone from"@/assets/Basket.png"
+import profileIncone from "@/assets/Profile.png";
+import lightIncone from "@/assets/Light.png"
+import panierIncone from "@/assets/Basket.png";
+import searchIncone from "@/assets/Search.png"
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -65,7 +67,6 @@ import {
   type CategoryWithSubcategoriesAndProducts,
 } from "@/hooks/useProducts";
 import { SousCategoryMenuSection } from "../mega-menu/MenuProductComponents";
-
 
 const useTheme = () => {
   const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
@@ -115,38 +116,19 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 const quickNavLinks = [
-  {
-    label: "Pro & Freelance",
-    href: "/pro",
-    //icon: <Briefcase className="h-3.5 w-3.5" />,
-  },
-  {
-    label: "Gamer",
-    href: "/gaming",
-    //icon: <Gamepad2 className="h-3.5 w-3.5" />,
-    accent: true,
-  },
-  {
-    label: "Guides",
-    href: "/guides",
-    //icon: <BookOpen className="h-3.5 w-3.5" />,
-  },
-  {
-    label: "Importation",
-    href: "/importation",
-    //icon: <Package className="h-3.5 w-3.5" />,
-  },
-  {
-    label: "Boutique de MISA",
-    href: "/boutique-de-misa",
-    //icon: <Cat className="h-3.5 w-3.5" />,
-  },
-  {
-    label: "Devis Express",
-    href: "/devis",
-    //icon: <FileText className="h-3.5 w-3.5" />,
-  },
+  { label: "Pro & Freelance", href: "/pro" },
+  { label: "Gamer", href: "/gaming", accent: true },
+  { label: "Guides", href: "/guides" },
+  { label: "Importation", href: "/importation" },
+  { label: "Boutique de MISA", href: "/boutique-de-misa" },
+  { label: "Devis Express", href: "/devis-express" },
 ];
+
+// Padding horizontal partagé entre toutes les lignes du header, pour garantir l'alignement des bords
+const HEADER_PADDING_X = "px-4 lg:px-6";
+// Hauteur fixe de la ligne du haut — TOUT (logo, recherche, compte/favoris/panier) est centré dedans,
+// donc plus aucune dépendance au plus grand élément (fini les décalages verticaux imprévisibles)
+const HEADER_TOP_ROW_HEIGHT = "h-28 lg:h-32";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -172,7 +154,6 @@ export const Header = () => {
   const { data: categoriesWithProducts, isLoading: isLoadingProducts } =
     useProductsBySubcategory(3);
 
-  // Debug léger
   useEffect(() => {
     if (categoriesWithProducts) {
       let totalProducts = 0;
@@ -191,7 +172,6 @@ export const Header = () => {
     }
   }, [categoriesWithProducts]);
 
-  // Set default active category when categories load
   useEffect(() => {
     if (categories?.length && activeCategoryId === null) {
       setActiveCategoryId(categories[0].id);
@@ -338,19 +318,6 @@ export const Header = () => {
     return p === href || p.startsWith(href + "/");
   };
 
-  const themeOptions = [
-    {
-      value: "light" as const,
-      icon: <Sun className="h-4 w-4" />,
-      label: "Clair",
-    },
-    {
-      value: "dark" as const,
-      icon: <Moon className="h-4 w-4" />,
-      label: "Sombre",
-    },
-  ];
-
   const activeCategory =
     categories?.find((c) => c.id === activeCategoryId) ??
     categories?.[0] ??
@@ -361,23 +328,23 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
-      {/* Top row: logo (large) + search + account/favorites/cart */}
-      <div className="w-full py-3 lg:py-2 px-4 lg:px-8">
-        <div className="flex items-end gap-2 lg:gap-3 lg:min-h-[120px]">
-          {/* Logo — Left */}
-          <Link to="/" className="flex items-center shrink-0 group ">
-            <img
-              src={logo}
-              alt="Les Casaniers"
-              className="h-16 sm:h-20 lg:h-28 xl:h-36 w-auto object-contain brightness-0 invert transition-transform duration-300 group-hover:scale-105"
-            />
-          </Link>
-
-          {/* Search — Center (flex-1 pour prendre l'espace disponible) */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] mx-2"
-          >
+      {/* Top row: logo + search + account/favorites/cart — hauteur fixe, tout est centré dedans */}
+      <div className={`w-full ${HEADER_PADDING_X}`}>
+        <div className={`flex items-center gap-2 lg:gap-3 ${HEADER_TOP_ROW_HEIGHT}`}>
+         {/* Logo — hauteur ajustée pour correspondre visuellement au bouton CATEGORIE, sans toucher à CATEGORIE lui-même */}
+{/* Logo — encore plus grand */}
+<Link to="/" className="flex items-center shrink-0 group -ml-4 lg:-ml-4">
+  <img
+    src={logo}
+    alt="Les Casaniers"
+    className="h-40 w-auto object-contain brightness-0 invert scale-110 transition-transform duration-300 group-hover:scale-115"
+  />
+</Link>
+          {/* Search — Center */}
+<form
+  onSubmit={handleSearchSubmit}
+  className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] mx-6 translate-y-9 -translate-x-6"
+>
             <div className="relative flex items-center">
               <div className="relative flex-1">
                 <input
@@ -387,7 +354,7 @@ export const Header = () => {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
                   placeholder="Rechercher un produit, une référence..."
-                  className="w-full h-10 lg:h-11 pl-4 lg:pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm transition-all"
+                  className="w-full h-8 lg:h-9 pl-4 lg:pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
                 />
                 <button
                   type="button"
@@ -400,7 +367,11 @@ export const Header = () => {
                   type="submit"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
                 >
-                  <Search className="h-3.5 w-3.5" />
+                  <img
+          src={searchIncone}
+          alt="Rechercher"
+          className="h-6 w-6 object-contain"
+        />
                 </button>
               </div>
               <img
@@ -437,7 +408,7 @@ export const Header = () => {
                       <select
                         value={searchCategory}
                         onChange={(e) => setSearchCategory(e.target.value)}
-                        className="w-full h-10 px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
+                        className="w-full h- px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
                       >
                         <option value="">Toutes les catégories</option>
                         {categories?.map((cat) => (
@@ -473,26 +444,26 @@ export const Header = () => {
             )}
           </form>
 
-          {/* Compte / Favoris / Panier — top right, aligned above "Configurateur Pro" */}
-          <div className="hidden md:flex items-center gap-1.5 lg:ml-auto lg:gap-3 xl:gap-4 shrink-0 pb-2">
+          {/* Compte / Favoris / Panier — centré verticalement dans la ligne fixe, collé au bord droit grâce à lg:ml-auto */}
+<div className="hidden md:flex items-center gap-3 lg:ml-auto lg:gap-5 xl:gap-7 shrink-2 translate-y-8">
             <div className="relative">
               {isAuthenticated ? (
                 <>
-            <button
-              ref={userButtonRef}
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
-            >
-              <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-xs">
-                  {getUserName().charAt(0).toUpperCase()}
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
-              </div>
-              <span className="text-[10px] uppercase tracking-wider font-medium">
-                {getUserName()}
-              </span>
-            </button>
+                  <button
+                    ref={userButtonRef}
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex flex-col items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+                  >
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-xs">
+                        {getUserName().charAt(0).toUpperCase()}
+                      </div>
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider font-medium">
+                      {getUserName()}
+                    </span>
+                  </button>
                   {showUserMenu && (
                     <div
                       ref={userMenuRef}
@@ -533,32 +504,33 @@ export const Header = () => {
                   )}
                 </>
               ) : (
-              <Link
-                to="/login"
-                className="flex flex-col items-center gap-1 group px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
-              >
-                <img src={profileIncone} alt="" className="h-5 w-5 object-contain" />
-                <span className="text-[10px] uppercase tracking-wider font-medium">
-                  Compte
-                </span>
-              </Link>
+                <Link
+                  to="/login"
+                  className="flex flex-col items-center gap-1 group px-2 py-1.5 rounded-lg hover:bg-white/10 transition-all"
+                >
+                  <img src={profileIncone} alt="" className="h-7 w-7 object-contain" />
+                  <span className="text-[10px] uppercase tracking-wider font-medium">
+                    Compte
+                  </span>
+                </Link>
               )}
             </div>
 
             <ActionButton
               to="/favoris"
-              icon={<img src={favoriteIcon} alt="" className="h-5 w-5 object-contain" />}
+              icon={<img src={favoriteIcon} alt="" className="h-7 w-7 object-contain" />}
               label="Favoris"
               count={favorites?.length}
             />
             <ActionButton
               to="/panier"
-              icon={<img src={panierIncone} alt="" className="h-5 w-5 object-contain"/>}
+              icon={<img src={panierIncone} alt="" className="h-7 w-7 object-contain" />}
               label="Panier"
               count={cartCount}
             />
           </div>
 
+          {/* Mobile icons */}
           <div className="flex items-center gap-1 md:hidden">
             <Link to="/favoris" className="relative p-2">
               <Heart className="h-5 w-5" />
@@ -587,9 +559,9 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Desktop Navigation Bar — categorie sits below the logo, Configurateur Pro sits below the account icons */}
-      <nav className="hidden lg:block bg-black border-t border-white/10">
-        <div className="w-full px-4 lg:px-8">
+      {/* Desktop Navigation Bar — MÊME padding horizontal que la ligne du haut (HEADER_PADDING_X) */}
+      <nav className="hidden lg:block bg-black">
+        <div className={`w-full ${HEADER_PADDING_X}`}>
           <div className="flex items-center gap-3 py-1.5">
             {/* "Nos Produits" mega trigger */}
             <div
@@ -597,14 +569,14 @@ export const Header = () => {
               onMouseEnter={openMegaMenu}
               onMouseLeave={closeMegaMenu}
             >
-              <button
-                className={`
-                  flex items-center gap-2 px-5 py-2.5 font-bold text-xs transition-all
-                  bg-white text-black rounded-md
-                  hover:bg-zinc-200
-                  ${megaMenuOpen ? "bg-zinc-200" : ""}
-                `}
-              >
+<button
+  className={`
+    flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
+    bg-white text-black rounded-md ml-4
+    hover:bg-zinc-200
+    ${megaMenuOpen ? "bg-zinc-200" : ""}
+  `}
+>
                 <Menu className="h-4 w-4" />
                 <span>CATEGORIE </span>
                 <ChevronDown
@@ -695,7 +667,6 @@ export const Header = () => {
                                     ));
                                   }
 
-                                  // Fallback: liens simples
                                   return activeSousCategories.map((sc) => (
                                     <Link
                                       key={sc.id}
@@ -743,36 +714,48 @@ export const Header = () => {
               )}
             </div>
 
-            {/* Quick nav links */}
-            {quickNavLinks.map((item) => (
-              <Link
-                key={item.label}
-                to={item.href}
-                className={`
-                  relative group flex items-center border rounded-md gap-1.5 px-3.5 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-                  ${item.accent
-                    ? "text-white hover:text-white"
-                    : "text-zinc-200 hover:text-white"
-                  }
-                  ${isActive(item.href) ? "text-primary" : ""}
-                  border-zinc-600 bg-black
-                `}
-              >
-                <span className="transition-transform duration-200 group-hover:scale-110">
-                  {/*item.icon*/}
-                </span>
-                <span>{item.label}</span>
-                <span
-                  className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
-                />
-              </Link>
-            ))}
+            {/* Quick nav links — regroupés avec leur propre espacement, plus grand qu'avant */}
+            <div className="flex items-center gap-5 ml-8">
+{quickNavLinks.map((item) => (
+  <Link
+    key={item.label}
+    to={item.href}
+    className={`
+      relative group flex items-center border rounded-md gap-1.5 px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+      ${item.accent
+        ? "text-white hover:text-white"
+        : "text-zinc-200 hover:text-white"
+      }
+      ${isActive(item.href) ? "text-primary" : ""}
+      ${item.label === "Devis Express" ? "mr-4" : ""}
+      border-zinc-600 bg-black
+    `}
+  >
+    <span>{item.label}</span>
+    <span
+      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
+    />
+  </Link>
+))}
+           
+            </div>
 
+            {/* Configurateur Pro — ml-auto garde l'alignement à droite avec Panier ;
+                le padding plus large rapproche visuellement son bord gauche de "Devis Express"
+                sans toucher ni au gap CATEGORIE↔Pro&Freelance ni au gap-5 entre les 6 boutons */}
 <Link
   to="/configurateur"
-  className="ml-auto flex items-center gap-2 px-5 py-2.5 text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transition-all rounded-md shadow-md hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+  className="ml-auto mr-12 lg:mr-20 flex items-center gap-3 pl-12 pr-12 py-2
+  text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
+  text-white hover:from-orange-600 hover:to-orange-700 transition-all 
+  rounded-md shadow-md
+  hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
 >
-  <Zap className="h-3.5 w-3.5" />
+  <img 
+    src={lightIncone} 
+    alt="" 
+    className="h-7 w-7 object-contain" 
+  />
   <span className="text-sm">Configurateur Pro</span>
 </Link>
           </div>
@@ -795,7 +778,7 @@ export const Header = () => {
                 <img
                   src={logo}
                   alt="Les Casaniers"
-                  className="h-8 w-auto dark:brightness-0 dark:invert"
+                  className="h-12 w-auto dark:brightness-0 dark:invert"
                 />
                 <button
                   onClick={() => setMobileMenuOpen(false)}
@@ -832,24 +815,6 @@ export const Header = () => {
                 </Link>
               )}
             </div>
-{/* 
-            <div className="p-4 border-b border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Thème
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {themeOptions.map((o) => (
-                  <button
-                    key={o.value}
-                    onClick={() => setTheme(o.value)}
-                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition-all ${theme === o.value ? "bg-primary text-primary-foreground shadow-md" : "bg-secondary hover:bg-secondary/80"}`}
-                  >
-                    {o.icon}
-                    <span className="text-sm font-medium">{o.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div> */}
 
             <div className="py-4">
               <div className="px-4 space-y-1">
@@ -932,7 +897,6 @@ export const Header = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-sm ${isActive(item.href) ? "bg-primary/10 text-primary font-medium" : "hover:bg-secondary"} border border-border bg-background mb-2`}
                   >
-                    <span className="text-primary">{/*item.icon*/}</span>
                     <span>{item.label}</span>
                   </Link>
                 ))}
@@ -1017,6 +981,7 @@ export const Header = () => {
     </header>
   );
 };
+
 const ActionButton = ({
   to,
   icon,
