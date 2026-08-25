@@ -1,11 +1,28 @@
 import logoImg from "@/assets/casaniers-logo.jpg";
-import { Facebook, Instagram, Youtube, Twitch, MapPin, Phone, Mail, ArrowUpRight, ExternalLink } from "lucide-react";
+import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import circuitIncone from "@/assets/circuit1.png";
+import circuitIncone1 from "@/assets/circuit2.png";
+import circuitIncone2 from "@/assets/circuit3.png";
+
+const TiktokIcon = ({ className }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+);
 
 const cols = [
-  { title: "Services", links: ["SAV et maintenance", "Audit de parc", "Devis sur-mesure", "Livraison Tana & Provinces"] },
-  { title: "Légal", links: ["CGV", "CGU", "Mentions légales", "Confidentialité", "Cookies"] },
+  { title: "SERVICES", links: ["SAV et maintenance", "Audit de parc", "Devis sur-mesure", "Livraison Tana & Provinces"] },
+  { title: "LEGAL", links: ["CGV", "CGU", "Mentions légales", "Confidentialité", "Cookies"] },
 ];
 
 const MAPS_EMBED_URL =
@@ -27,7 +44,7 @@ export const Footer = () => {
   return (
     <footer className="bg-background text-foreground relative overflow-hidden">
 
-      {/* ── Newsletter band (citation style) ── */}
+      {/* ── Newsletter band ── */}
       <div className="border-b border-foreground/10">
         <div className="container-x py-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
           <h3 className="font-display text-2xl lg:text-3xl leading-snug">
@@ -59,18 +76,26 @@ export const Footer = () => {
         <div className="grid lg:grid-cols-12 gap-10 mb-14">
 
           {/* — Brand + contact — */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 relative">
+            
+            {/* Circuit 1 (Logo) */}
+            <img 
+              src={circuitIncone} 
+              alt="" 
+              className="absolute -top-16 left-28 h-28 w-auto pointer-events-none opacity-40 z-0 object-contain"
+            />
+
             <img
               src={logoImg}
               alt="Les Casaniers"
-              className="h-14 w-14 object-cover rounded-xl"
+              className="h-20 w-20 object-contain rounded-xl relative z-10"
             />
 
-            <p className="text-sm text-foreground/70 mt-5 leading-relaxed italic">
+            <p className="text-sm text-foreground/70 mt-5 leading-relaxed relative z-10">
               " T'accompagner vers le bon outil et son entretien durable. "
             </p>
 
-            <div className="space-y-2.5 mt-6 text-sm text-foreground/80">
+            <div className="space-y-2.5 mt-6 text-sm text-foreground/80 relative z-10">
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 flex-shrink-0" />
                 <a
@@ -97,16 +122,20 @@ export const Footer = () => {
               </a>
             </div>
 
-            <div className="flex gap-2 mt-6">
-              {[Facebook, Instagram, Youtube, Twitch].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
+            {/* Réseaux sociaux */}
+            <div className="flex gap-2 mt-6 relative z-10">
+              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+                <Facebook className="h-4 w-4" />
+              </a>
+              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+                <Instagram className="h-4 w-4" />
+              </a>
+              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+                <TiktokIcon className="h-4 w-4" />
+              </a>
+              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+                <Youtube className="h-4 w-4" />
+              </a>
             </div>
           </div>
 
@@ -133,13 +162,21 @@ export const Footer = () => {
             ))}
           </div>
 
-          {/* — Map (logique inchangée, chrome épuré) — */}
-          <div className="lg:col-span-4 lg:col-start-9">
-            <div className="italic font-display text-sm mb-4 text-foreground/60">
-              Nous trouver.
+          {/* — Map — */}
+          <div className="lg:col-span-4 lg:col-start-9 relative">
+            
+            {/* Circuit 3 (À côté de NOUS TROUVER) */}
+            <img 
+              src={circuitIncone2} 
+              alt="" 
+              className="absolute -top-16 right-0 h-24 w-auto pointer-events-none opacity-40 z-0 object-contain"
+            />
+
+            <div className="italic font-display text-sm mb-4 text-foreground/60 relative z-10">
+              NOUS TROUVER.
             </div>
 
-            <div className="relative w-full overflow-hidden rounded-lg border border-foreground/15" style={{ aspectRatio: "4/3" }}>
+            <div className="relative w-full overflow-hidden rounded-lg border border-foreground/15 z-10" style={{ aspectRatio: "4/3" }}>
               {!mapLoaded && (
                 <div className="absolute inset-0 bg-foreground/5 flex flex-col items-center justify-center gap-3">
                   <MapPin className="h-6 w-6 text-foreground/30 animate-pulse" />
@@ -167,8 +204,18 @@ export const Footer = () => {
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="container-x border-t border-foreground/10 py-6 text-center text-xs text-foreground/60">
-        © 2026 Les Casaniers Madagascar
+      <div className="container-x border-t border-foreground/10 py-6 text-center text-xs text-foreground/60 relative">
+        
+        {/* Circuit 2 (Devant le copyright 2026) */}
+        <img 
+          src={circuitIncone1} 
+          alt="" 
+          className="absolute left-0 bottom-0 h-8 w-auto pointer-events-none opacity-40 z-0 object-contain"
+        />
+
+        <span className="relative z-10">
+          © 2026 Les Casaniers Madagascar
+        </span>
       </div>
     </footer>
   );
