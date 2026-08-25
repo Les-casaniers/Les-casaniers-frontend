@@ -46,7 +46,7 @@ import {
 import mascot from "@/assets/casaniers-mascot.png";
 import mascotListening from "@/assets/9.png";
 import logo from "@/assets/casaniers-logo.png";
-import favoriteIcon from "@/assets/favorite.png";
+import favoriteIcon from "@/assets/Favorite.png";
 import profileIncone from "@/assets/Profile.png";
 import lightIncone from "@/assets/Light.png"
 import panierIncone from "@/assets/Basket.png";
