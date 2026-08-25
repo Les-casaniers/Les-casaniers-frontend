@@ -18,7 +18,8 @@ export function Toaster() {
           </Toast>
         );
       })}
-      <ToastViewport />
+      {/* w-screen + left-0 + right-0 force le composant à rester strictement dans le viewport */}
+      <ToastViewport className="left-0 right-0 w-screen max-w-full overflow-hidden box-border px-4" />
     </ToastProvider>
   );
 }
