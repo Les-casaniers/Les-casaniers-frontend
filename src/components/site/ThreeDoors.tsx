@@ -9,7 +9,8 @@ const doors = [
   {
     image: pcPro,
     label: "Pro & Freelance",
-    title: "Trouve ton équipement de travail.",
+    line1: "TROUVE TON",
+    line2: "ÉQUIPEMENT DE TRAVAIL.",
     href: "/pro-freelance",
     overlay: "bg-black/50",
     labelStyle: "pill" as const,
@@ -18,7 +19,8 @@ const doors = [
   {
     image: pcGaming,
     label: "Gamer",
-    title: "Monte ton setup de jeux.",
+    line1: "MONTE TON",
+    line2: "SETUP DE JEUX.",
     href: "/gaming",
     overlay: "bg-emerald-950/30",
     labelStyle: "pill" as const,
@@ -27,7 +29,8 @@ const doors = [
   {
     image: pcConfig,
     label: "Super Configurateur",
-    title: "Compose ta machine idéale.",
+    line1: "COMPOSE TA",
+    line2: "MACHINE IDÉALE.",
     href: "/configurateur",
     overlay: "bg-black/10",
     labelStyle: "bar" as const,
@@ -36,7 +39,8 @@ const doors = [
   {
     image: devis,
     label: "Devis Express",
-    title: "Fais-toi conseiller par un expert.",
+    line1: "FAIS-TOI CONSEILLER",
+    line2: "PAR UN EXPERT.",
     href: "/devis-express",
     overlay: "bg-zinc-900/10",
     labelStyle: "pill" as const,
@@ -62,7 +66,7 @@ export const ThreeDoors = () => (
           className="group flex flex-col overflow-hidden rounded-md bg-zinc-900"
         >
           {/* Zone image */}
-          <div className="relative aspect-[16/9] w-full overflow-hidden">
+          <div className="relative aspect-[4/3] w-full overflow-hidden">
             <img
               src={door.image}
               alt={door.label}
@@ -72,7 +76,7 @@ export const ThreeDoors = () => (
 
             {door.labelStyle === "pill" ? (
               <span
-                className={`absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-0.5 text-[9px] font-semibold italic shadow-sm ${door.labelClass}`}
+                className={`absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2.5 py-0.5 text-[10px] font-semibold italic shadow-sm ${door.labelClass}`}
               >
                 {door.label}
               </span>
@@ -85,18 +89,13 @@ export const ThreeDoors = () => (
             )}
           </div>
 
-          {/* Zone titre */}
-          <div className="flex h-[50px] flex-col items-center justify-center bg-zinc-900 px-3 text-center">
-            <h3 className="text-[12px] font-extrabold uppercase leading-tight tracking-wide sm:text-[13px]">
-              {door.title.split(" ").length > 2 ? (
-                <>
-                  {door.title.split(" ").slice(0, 2).join(" ")}
-                  <br />
-                  {door.title.split(" ").slice(2).join(" ")}
-                </>
-              ) : (
-                door.title
-              )}
+          {/* Zone texte alignée à gauche avec décalage sur la 2ème ligne */}
+          <div className="flex h-[75px] flex-col justify-center bg-zinc-900 px-4 text-left">
+            <h3 className="text-[11px] sm:text-[12px] font-extrabold uppercase leading-snug tracking-wide text-white">
+              {door.line1}
+              <span style={{ display: 'block', paddingLeft: '1.5rem' }}>
+                {door.line2}
+              </span>
             </h3>
           </div>
         </Link>
