@@ -22,7 +22,7 @@ export const Hero = () => {
 
   return (
   <>
-  <section className="relative  overflow-hidden rounded-md bg-zinc-950 min-h-[370px] md:min-h-[390px]">
+  <section className="relative overflow-hidden rounded-md bg-zinc-950 min-h-[370px] md:min-h-[390px]">
     {slides.map((slide, index) => (
       <img
         key={slide}
@@ -42,9 +42,11 @@ export const Hero = () => {
           Construisons ton outil de réussite
         </h1>
 
-        <p className="mt-9 max-w-2xl text-base font-medium italic leading-relaxed tracking-[0.06em] text-white/85 sm:text-lg">
-          &quot; Le meilleur pc n’est pas forcément le plus puissant du marché.<br className="hidden sm:block" />
-          <span className="sm:pl-10">C’est celui adapté à tes besoins, pour jouer et évoluer sereinement. &quot;</span>
+        <p className="mt-9 w-full text-base font-medium italic leading-relaxed tracking-[0.06em] text-white/85 sm:text-lg">
+          &quot; Le meilleur pc n’est pas forcément le plus puissant du marché.
+          <span style={{ display: 'block', paddingLeft: '2.5rem' }}>
+            C’est celui adapté à tes besoins, pour jouer et évoluer sereinement. &quot;
+          </span>
         </p>
 
         <Link
