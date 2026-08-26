@@ -66,6 +66,7 @@ import {
   type SousCategory,
   type CategoryWithSubcategoriesAndProducts,
 } from "@/hooks/useProducts";
+import { CategoriesMegaMenu } from '../mega-menu/CategoriesMegaMenu';
 import { SousCategoryMenuSection } from "../mega-menu/MenuProductComponents";
 
 const useTheme = () => {
@@ -590,126 +591,9 @@ export const Header = () => {
                   ref={megaMenuRef}
                   onMouseEnter={keepMegaMenuOpen}
                   onMouseLeave={closeMegaMenu}
-                  className="absolute left-0 top-full z-50 animate-in fade-in slide-in-from-top-1 duration-150"
-                  style={{ width: "1000px" }}
+                  className="absolute left-0 top-full z-50 animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
                 >
-                  <div className="mt-1 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden">
-                    <div className="flex" style={{ maxHeight: "560px" }}>
-                      {/* Sidebar catégories */}
-                      <div className="w-64 shrink-0 bg-gradient-to-b from-secondary/40 to-secondary/20 border-r border-border/50 overflow-y-auto">
-                        {categories?.map((cat) => (
-                          <button
-                            key={cat.id}
-                            onMouseEnter={() => setActiveCategoryId(cat.id)}
-                            onClick={() => {
-                              navigate(`/catalogue?categorie=${cat.id}`);
-                              setMegaMenuOpen(false);
-                            }}
-                            className={`
-                              w-full flex items-center justify-between gap-2 px-5 py-3 text-sm transition-all duration-200 text-left
-                              ${activeCategoryId === cat.id
-                                ? "bg-gradient-to-r from-primary/10 to-transparent text-primary font-semibold border-l-4 border-primary"
-                                : "text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
-                              }
-                            `}
-                          >
-                            <span className="flex items-center gap-3">
-                              <span
-                                className={`transition-colors duration-200 ${activeCategoryId === cat.id ? "text-primary" : "text-muted-foreground"}`}
-                              >
-                                {CATEGORY_ICONS.default}
-                              </span>
-                              <span className="font-medium">{cat.nom}</span>
-                            </span>
-                            <ChevronRight
-                              className={`h-3.5 w-3.5 transition-all duration-200 ${activeCategoryId === cat.id ? "text-primary translate-x-0.5" : "text-muted-foreground/40"}`}
-                            />
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Panel contenu - SOUS-CATÉGORIES AVEC PRODUITS */}
-                      <div className="flex-1 overflow-y-auto p-6 bg-popover">
-                        {activeCategory && (
-                          <div>
-                            <div className="flex items-center justify-between mb-5 pb-2 border-b border-border">
-                              <h3 className="text-sm font-bold uppercase tracking-wider bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                                {activeCategory.nom}
-                              </h3>
-                              <Link
-                                to={`/catalogue?categorie=${activeCategory.id}`}
-                                onClick={() => setMegaMenuOpen(false)}
-                                className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-                              >
-                                Voir tout <ChevronRight className="h-3 w-3" />
-                              </Link>
-                            </div>
-
-                            {isLoadingProducts ? (
-                              <div className="flex justify-center py-8">
-                                <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                                {(() => {
-                                  const activeCategoryData = categoriesWithProducts?.find(
-                                    (c) => c.id === activeCategory.id
-                                  );
-
-                                  if (activeCategoryData?.sous_categories?.length) {
-                                    return activeCategoryData.sous_categories.map((sousCat) => (
-                                      <SousCategoryMenuSection
-                                        key={sousCat.id}
-                                        sousCategory={sousCat}
-                                        categoryId={activeCategory.id}
-                                        onClose={() => setMegaMenuOpen(false)}
-                                      />
-                                    ));
-                                  }
-
-                                  return activeSousCategories.map((sc) => (
-                                    <Link
-                                      key={sc.id}
-                                      to={`/catalogue?categorie=${activeCategory.id}&sous_categorie=${sc.id}`}
-                                      onClick={() => setMegaMenuOpen(false)}
-                                      className="group/link flex items-center gap-2 py-2 text-sm text-foreground/75 hover:text-primary transition-all duration-200"
-                                    >
-                                      <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover/link:text-primary transition-all duration-200 shrink-0" />
-                                      <span className="group-hover/link:translate-x-0.5 transition-transform duration-200">
-                                        {sc.nom}
-                                      </span>
-                                    </Link>
-                                  ));
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Footer avec avantages */}
-                    <div className="border-t border-border/50 bg-gradient-to-r from-secondary/30 to-secondary/10 px-6 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5">
-                          <Truck className="h-3.5 w-3.5" /> Livraison offerte
-                          dès + de 5 000 000 Ar
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Shield className="h-3.5 w-3.5" /> Paiement sécurisé
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Headphones className="h-3.5 w-3.5" /> Support 7j/7
-                        </span>
-                      </div>
-                      <Link
-                        to="/promotions"
-                        className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
-                      >
-                        <Gift className="h-3.5 w-3.5" /> Voir les promotions
-                      </Link>
-                    </div>
-                  </div>
+                  <CategoriesMegaMenu />
                 </div>
               )}
             </div>
