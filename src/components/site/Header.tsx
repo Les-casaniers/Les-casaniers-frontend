@@ -561,9 +561,9 @@ export const Header = () => {
       </div>
 
       {/* Desktop Navigation Bar — MÊME padding horizontal que la ligne du haut (HEADER_PADDING_X) */}
-      <nav className="hidden lg:block bg-black">
+      <nav className="hidden sm:block bg-black">
         <div className={`w-full ${HEADER_PADDING_X}`}>
-          <div className="flex items-center gap-2 xl:gap-3 py-1.5 overflow-x-auto">
+          <div className="flex items-center gap-2 xl:gap-3 py-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {/* "Nos Produits" mega trigger */}
             <div
               className="relative shrink-0"
@@ -627,7 +627,7 @@ export const Header = () => {
             {/* Configurateur Pro — padding et marges resserrés à lg, comme avant à partir de xl */}
 <Link
   to="/configurateur"
-  className="ml-auto mr-2 xl:mr-12 2xl:mr-20 flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
+  className="ml-auto flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
   text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
   text-white hover:from-orange-600 hover:to-orange-700 transition-all 
   rounded-md shadow-md

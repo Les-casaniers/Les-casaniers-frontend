@@ -16,22 +16,51 @@ const QuiSommesNous = () => (
   <SiteLayout>
     <main className="bg-black py-10 text-white sm:py-14">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <header>
-          <h1 className="text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">Qui sommes <em className="font-light normal-case tracking-normal">nous ?</em></h1>
-          <div className="mt-1 w-64 border-t-2 border-dashed border-white/70" />
-        </header>
+      <header className="-ml-40">
+        <h1 className="inline-flex items-end text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
+          <span className="shrink-0 border-b-2 border-white pb-1 pr-3">
+            Qui sommes
+          </span>
 
+          <span className="inline-block border-b-2 border-dashed border-white pb-1 pl-3 font-light normal-case italic tracking-normal">
+            nous ?
+          </span>
+        </h1>
+      </header>
         <p className="mt-12 rounded-lg border border-white/45 px-5 py-4 text-base leading-relaxed text-white/80 sm:px-6 sm:text-lg">
           Bienvenue dans l’atelier où tes ambitions prennent forme. Ici, on écoute tes besoins et on met nos savoir-faire en commun pour te conseiller l’outil qui te correspond vraiment. On teste chaque machine, on soigne la livraison et on t’accompagne dans son entretien, parce qu’on tient à rester ton partenaire durable de performance.
         </p>
 
         <section className="mt-12 grid items-center gap-8 md:grid-cols-[250px_1fr]">
-          <div className="relative mx-auto w-56 overflow-hidden rounded-[2rem] bg-white"><img src={misa} alt="Misa, la mascotte" className="h-60 w-full object-contain" /><div className="rounded-xl bg-white px-3 py-2 text-center text-black shadow-lg"><p className="text-sm font-black underline">LA MASCOTTE</p><p className="text-xl leading-none">Misa</p></div></div>
-          <div className="space-y-6 text-base leading-relaxed text-white/80 sm:text-lg"><p>Sur notre site, Misa t’aide à te repérer, à mieux comprendre nos univers et à avancer plus facilement dans ton parcours.</p><p>Son nom vient de Misaotra, “merci” en malgache : une façon de remercier nos clients pour leur confiance et pour faire vivre ce projet.</p><p>À travers la Boutique de Misa, il porte aussi une mission qui nous tient à cœur : contribuer à la préservation de la forêt malgache.</p></div>
+          <div className="relative mx-auto w-56 overflow-hidden rounded-[2rem] bg-white">
+            <img src={misa} alt="Misa, la mascotte" className="h-60 w-full object-contain" />
+            <div className="rounded-xl bg-white px-3 py-2 text-center text-black shadow-lg">
+              <p className="text-sm font-black underline">LA MASCOTTE</p>
+              <p className="text-xl leading-none">Misa</p>
+            </div>
+          </div>
+          <div className="space-y-6 text-base leading-relaxed text-white/80 sm:text-lg">
+            <p>Sur notre site, Misa t’aide à te repérer, à mieux comprendre nos univers et à avancer plus facilement dans ton parcours.</p>
+            <p>Son nom vient de Misaotra, “merci” en malgache : une façon de remercier nos clients pour leur confiance et pour faire vivre ce projet.</p>
+            <p>À travers la Boutique de Misa, il porte aussi une mission qui nous tient à cœur : contribuer à la préservation de la forêt malgache.</p>
+          </div>
         </section>
 
         <section className="mt-16 space-y-14 sm:space-y-16">
-          {team.map((member) => <article key={member.name} className="grid items-start gap-8 sm:grid-cols-[240px_1fr] sm:gap-10"><div className="relative mx-auto h-64 w-56 rounded-lg bg-white shadow-sm"><div className="absolute -bottom-5 left-1/2 w-[calc(100%-12px)] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-center text-black shadow-lg"><p className="text-sm font-black underline">{member.role}</p><p className="text-xl leading-none">{member.name}</p></div></div><div className="pt-3 text-base leading-relaxed text-white/80 sm:text-lg"><h2 className="mb-3 text-xl font-medium italic text-white sm:text-2xl">{member.title}</h2><p>{member.text}</p></div></article>)}
+          {team.map((member) => (
+            <article key={member.name} className="grid items-start gap-8 sm:grid-cols-[240px_1fr] sm:gap-10">
+              <div className="relative mx-auto h-64 w-56 rounded-lg bg-white shadow-sm">
+                <div className="absolute -bottom-5 left-1/2 w-[calc(100%-12px)] -translate-x-1/2 rounded-xl bg-white px-3 py-2 text-center text-black shadow-lg">
+                  <p className="text-sm font-black underline">{member.role}</p>
+                  <p className="text-xl leading-none">{member.name}</p>
+                </div>
+              </div>
+              <div className="pt-3 text-base leading-relaxed text-white/80 sm:text-lg">
+                <h2 className="mb-3 text-xl font-medium italic text-white sm:text-2xl">{member.title}</h2>
+                <p>{member.text}</p>
+              </div>
+            </article>
+          ))}
         </section>
       </div>
     </main>

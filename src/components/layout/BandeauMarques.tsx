@@ -7,7 +7,7 @@ const benefits = [
 
 export const BandeauMarques = () => (
   <section className="bg-black text-white">
-    <div className="grid min-h-14 grid-cols-2 divide-x divide-white/10 md:grid-cols-4">
+    <div className="grid min-h-14 grid-cols-2 md:grid-cols-4">
       {benefits.map((benefit) => (
         <div key={benefit.title} className="px-3 py-2 text-center sm:py-2.5">
           <p className="text-[11px] font-extrabold uppercase leading-tight tracking-wide sm:text-xs">

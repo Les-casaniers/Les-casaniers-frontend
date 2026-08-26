@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import fosa from "@/assets/casaniers-mascot.png";
+import gorile from "@/assets/3.png";
+import fond from  "@/assets/fond3.jpg";
 import { Product, productSpec, useCategories } from "@/hooks/useProducts";
 import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
@@ -66,8 +67,7 @@ const Profreelance = () => {
       const proCategory = categories.find(cat => 
         cat.nom?.toLowerCase() === "pro" || 
         cat.nom?.toLowerCase() === "professionnel" ||
-        cat.nom?.toLowerCase().includes("pro") ||
-        cat.slug?.toLowerCase().includes("pro")
+        cat.nom?.toLowerCase().includes("pro")
       );
       
       if (proCategory) {
@@ -317,12 +317,22 @@ const Profreelance = () => {
 
   return (
     <SiteLayout>
-      <MiniHero
-        title={`Gamme ${proCategoryName} — Performance professionnelle`}
-        description="Des machines puissantes et fiables, conçues pour les professionnels exigeants."
-        bg="5.png"
-        pill={{ icon: <Filter className="h-3.5 w-3.5" />, label: `Catalogue ${proCategoryName}` }}
-      />
+<div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+ <MiniHero
+  title={`DES OUTILS À LA HAUTEUR DE VOS AMBITIONS`}
+  description={
+    <div className="flex flex-col">
+      <p>Optimise ton flux de travail du</p>
+      <p className="pl-[8.5rem] sm:pl-[10.5rem] md:pl-[12rem]">
+        matériel configuré pour la productivité.
+      </p>
+    </div>
+  }
+  bg={fond}
+  mascot={gorile}
+  pill={{ icon: <Filter className="h-3.5 w-3.5" />, label: `Catalogue ${proCategoryName}` }}
+/>
+</div>
 
       {/* Barre de navigation */}
       <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
@@ -624,6 +634,7 @@ const Profreelance = () => {
             })}
           </div>
         )}
+
       </section>
 
       <style>{`

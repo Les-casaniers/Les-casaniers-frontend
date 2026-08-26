@@ -1,6 +1,6 @@
 import * as React from "react";
 
-// Les breakpoints reprennent exactement ceux de Tailwind CSS par défaut, pour que ton JS et ton CSS soient toujours d'accord entre eux.
+
 const BREAKPOINTS = {
   sm: 640,
   md: 768,
@@ -11,7 +11,7 @@ const BREAKPOINTS = {
 
 type Breakpoint = keyof typeof BREAKPOINTS;
 
-// Hook générique qui dit si l'écran est actuellement plus large qu'un breakpoint donné.
+
 export function useBreakpoint(breakpoint: Breakpoint): boolean {
   // On calcule la vraie valeur dès le premier rendu, pour éviter le flash "faux mobile" au chargement.
   const [matches, setMatches] = React.useState<boolean>(() => {
