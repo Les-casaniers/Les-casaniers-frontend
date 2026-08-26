@@ -563,17 +563,17 @@ export const Header = () => {
       {/* Desktop Navigation Bar — MÊME padding horizontal que la ligne du haut (HEADER_PADDING_X) */}
       <nav className="hidden lg:block bg-black">
         <div className={`w-full ${HEADER_PADDING_X}`}>
-          <div className="flex items-center gap-3 py-1.5">
+          <div className="flex items-center gap-2 xl:gap-3 py-1.5 overflow-x-auto">
             {/* "Nos Produits" mega trigger */}
             <div
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={openMegaMenu}
               onMouseLeave={closeMegaMenu}
             >
 <button
   className={`
     flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
-    bg-white text-black rounded-md ml-4
+    bg-white text-black rounded-md ml-2 xl:ml-4
     hover:bg-zinc-200
     ${megaMenuOpen ? "bg-zinc-200" : ""}
   `}
@@ -598,20 +598,20 @@ export const Header = () => {
               )}
             </div>
 
-            {/* Quick nav links — regroupés avec leur propre espacement, plus grand qu'avant */}
-            <div className="flex items-center gap-5 ml-8">
+            {/* Quick nav links — espacement resserré à lg, comme avant à partir de xl */}
+            <div className="flex items-center gap-2 xl:gap-5 ml-3 xl:ml-8 shrink-0">
 {quickNavLinks.map((item) => (
   <Link
     key={item.label}
     to={item.href}
     className={`
-      relative group flex items-center border rounded-md gap-1.5 px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+      relative group flex items-center border rounded-md gap-1.5 px-3 xl:px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
       ${item.accent
         ? "text-white hover:text-white"
         : "text-zinc-200 hover:text-white"
       }
       ${isActive(item.href) ? "text-primary" : ""}
-      ${item.label === "Devis Express" ? "mr-4" : ""}
+      ${item.label === "Devis Express" ? "xl:mr-4" : ""}
       border-zinc-600 bg-black
     `}
   >
@@ -624,12 +624,10 @@ export const Header = () => {
            
             </div>
 
-            {/* Configurateur Pro — ml-auto garde l'alignement à droite avec Panier ;
-                le padding plus large rapproche visuellement son bord gauche de "Devis Express"
-                sans toucher ni au gap CATEGORIE↔Pro&Freelance ni au gap-5 entre les 6 boutons */}
+            {/* Configurateur Pro — padding et marges resserrés à lg, comme avant à partir de xl */}
 <Link
   to="/configurateur"
-  className="ml-auto mr-12 lg:mr-20 flex items-center gap-3 pl-12 pr-12 py-2
+  className="ml-auto mr-2 xl:mr-12 2xl:mr-20 flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
   text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
   text-white hover:from-orange-600 hover:to-orange-700 transition-all 
   rounded-md shadow-md
@@ -638,7 +636,7 @@ export const Header = () => {
   <img 
     src={lightIncone} 
     alt="" 
-    className="h-7 w-7 object-contain" 
+    className="h-5 w-5 xl:h-7 xl:w-7 object-contain" 
   />
   <span className="text-sm">Configurateur Pro</span>
 </Link>
