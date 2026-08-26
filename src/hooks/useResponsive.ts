@@ -1,7 +1,6 @@
 import * as React from "react";
 
-// Les breakpoints reprennent exactement ceux de Tailwind CSS par défaut,
-// pour que ton JS et ton CSS soient toujours d'accord entre eux.
+// Les breakpoints reprennent exactement ceux de Tailwind CSS par défaut, pour que ton JS et ton CSS soient toujours d'accord entre eux.
 const BREAKPOINTS = {
   sm: 640,
   md: 768,
@@ -12,46 +11,54 @@ const BREAKPOINTS = {
 
 type Breakpoint = keyof typeof BREAKPOINTS;
 
-/**
- * Hook générique : retourne true si la largeur de l'écran est
- * SUPÉRIEURE OU ÉGALE au breakpoint donné.
- * Exemple : useBreakpoint("lg") -> true si écran >= 1024px
- */
+// Hook générique qui dit si l'écran est actuellement plus large qu'un breakpoint donné.
 export function useBreakpoint(breakpoint: Breakpoint): boolean {
-  const [matches, setMatches] = React.useState<boolean>(false);
+  // On calcule la vraie valeur dès le premier rendu, pour éviter le flash "faux mobile" au chargement.
+  const [matches, setMatches] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia(`(min-width: ${BREAKPOINTS[breakpoint]}px)`).matches;
+  });
 
   React.useEffect(() => {
+    // On recrée la media query à chaque changement de breakpoint demandé.
     const mql = window.matchMedia(`(min-width: ${BREAKPOINTS[breakpoint]}px)`);
 
-    // Fonction appelée à chaque fois que la taille d'écran change
+    // Cette fonction se déclenche automatiquement quand la largeur d'écran franchit le seuil.
     const onChange = () => setMatches(mql.matches);
 
-    onChange(); // valeur initiale au montage du composant
+    // On resynchronise une fois au montage, au cas où la taille aurait changé entre-temps.
+    onChange();
+
+    // On écoute les changements de taille tant que le composant est affiché.
     mql.addEventListener("change", onChange);
+
+    // On arrête d'écouter quand le composant disparaît, pour ne pas laisser de fuite mémoire.
     return () => mql.removeEventListener("change", onChange);
   }, [breakpoint]);
 
   return matches;
 }
 
-/**
- * Hook tout-en-un : retourne l'état responsive complet de la page.
- * Utilise-le une seule fois dans un composant pour avoir accès à tout.
- */
+// Hook tout-en-un qui regroupe tous les breakpoints utiles en un seul endroit.
 export function useResponsive() {
-  const isSm = useBreakpoint("sm");   // >= 640px
-  const isMd = useBreakpoint("md");   // >= 768px
-  const isLg = useBreakpoint("lg");   // >= 1024px
-  const isXl = useBreakpoint("xl");   // >= 1280px
-  const is2xl = useBreakpoint("2xl"); // >= 1536px
+  // Chaque ligne vérifie un seuil de largeur précis.
+  const isSm = useBreakpoint("sm");
+  const isMd = useBreakpoint("md");
+  const isLg = useBreakpoint("lg");
+  const isXl = useBreakpoint("xl");
+  const is2xl = useBreakpoint("2xl");
 
   return {
-    // Catégories simples, les plus utilisées au quotidien
-    isMobile: !isMd,           // écran < 768px (téléphone)
-    isTablet: isMd && !isLg,   // écran entre 768px et 1024px (tablette)
-    isDesktop: isLg,           // écran >= 1024px (ordinateur)
+    // isMobile est vrai tant que l'écran n'a pas atteint la taille tablette.
+    isMobile: !isMd,
 
-    // Breakpoints détaillés, si tu as besoin de plus de précision
+    // isTablet est vrai seulement entre la taille tablette et la taille desktop.
+    isTablet: isMd && !isLg,
+
+    // isDesktop est vrai à partir de la taille desktop.
+    isDesktop: isLg,
+
+    // Les breakpoints bruts, si un composant a besoin d'une précision plus fine.
     isSm,
     isMd,
     isLg,
@@ -60,7 +67,7 @@ export function useResponsive() {
   };
 }
 
-
+// Raccourci pratique quand un composant n'a besoin de savoir qu'une seule chose : est-on sur mobile ou pas.
 export function useIsMobile(): boolean {
   return !useBreakpoint("md");
 }
