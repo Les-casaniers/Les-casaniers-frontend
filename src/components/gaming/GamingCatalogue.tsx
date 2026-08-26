@@ -533,7 +533,7 @@ export const GamingCatalogue = () => {
     <>
       <section className="py-8 bg-secondary/20">
         <div className="container-x">
-          {/* En-tête */}
+          {/*
           <div className="flex items-center justify-between mb-5 gap-3">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shrink-0">
@@ -546,23 +546,27 @@ export const GamingCatalogue = () => {
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={() => setMobileFiltersOpen(true)}
-              className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold shrink-0"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filtres
-              {activeFilterCount > 0 && (
-                <span className="h-4 min-w-4 px-1 rounded-full bg-purple-600 text-white text-[10px] flex items-center justify-center">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
           </div>
+          */}
+
+          {/*
+          <button
+            onClick={() => setMobileFiltersOpen(true)}
+            className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-background text-xs font-semibold shrink-0"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            Filtres
+            {activeFilterCount > 0 && (
+              <span className="h-4 min-w-4 px-1 rounded-full bg-purple-600 text-white text-[10px] flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          */}
 
           <div className="flex gap-6">
             {/* ── Sidebar filtres (desktop) ── */}
+            {/*
             <aside className="hidden lg:block w-64 shrink-0">
               <div className="sticky top-20">
                 <FilterPanel
@@ -586,10 +590,12 @@ export const GamingCatalogue = () => {
                 />
               </div>
             </aside>
+            */}
 
             {/* ── Zone produits ── */}
             <div className="flex-1 min-w-0">
-              {/* Barre de tri */}
+              {/* Barre de tri et textes de pertinence conservés en commentaire. */}
+              {/*
               <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-border/50">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">{filteredProducts.length}</span>{" "}
@@ -609,21 +615,8 @@ export const GamingCatalogue = () => {
                     </span>
                   )}
                 </p>
-                <div className="relative">
-                  <select
-                    value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value as SortOption)}
-                    className="appearance-none text-xs font-medium pl-3 pr-7 py-1.5 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    {(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => (
-                      <option key={opt} value={opt}>
-                        {SORT_LABELS[opt]}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
-                </div>
               </div>
+              */}
 
               {filteredProducts.length === 0 ? (
                 <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-8 text-center flex flex-col items-center gap-3">
@@ -669,8 +662,8 @@ export const GamingCatalogue = () => {
         `}</style>
       </section>
 
-      {/* ── Drawer filtres mobile ── */}
-      {mobileFiltersOpen &&
+      {/* ── Drawer filtres mobile désactivé ── */}
+      {false && mobileFiltersOpen &&
         createPortal(
           <>
             <div
@@ -817,8 +810,8 @@ const FilterPanel = ({
         )}
       </div>
 
-      {/* Type de produit - Désactivé quand une sous-catégorie est sélectionnée */}
-      <div className="space-y-2">
+      {/* Filtre de type désactivé : ce catalogue affiche uniquement les produits gamer. */}
+      {/* <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h4 className={`text-xs font-bold uppercase tracking-wider ${selectedSousCategories.size > 0 ? 'text-muted-foreground' : 'text-foreground/80'}`}>
             Type de produit
@@ -864,7 +857,7 @@ const FilterPanel = ({
             );
           })}
         </div>
-      </div>
+      </div> */}
 
       {/* Sous-catégories */}
       <div className="space-y-2">

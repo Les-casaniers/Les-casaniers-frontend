@@ -62,9 +62,11 @@ export const Footer = () => {
         <div className="container-x py-8 md:py-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 w-full max-w-full box-border">
           <h3 className="font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left">
             <span className="align-top text-2xl lg:text-4xl mr-1">"</span>
-            Recevez <span className="font-black">nos news</span>
-            <br className="hidden sm:block" />
-            {" "}avant tout le monde.
+            Recois <span className="font-black">nos news</span>
+            <br />
+            <span className="inline-block pl-20 sm:pl-28 lg:pl-44">
+              avant tout le monde.
+            </span>
             <span className="align-top text-2xl lg:text-4xl ml-1">"</span>
           </h3>
 
@@ -78,10 +80,10 @@ export const Footer = () => {
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               required
-              className="h-11 w-full sm:w-64 px-4 rounded-full border border-foreground/20 bg-transparent placeholder:text-foreground/40 focus:border-foreground focus:outline-none text-sm box-border"
+              className="h-11 w-full sm:w-64 px-4 placeholder:italic rounded-full border border-foreground/20 bg-transparent placeholder:text-foreground/40 focus:border-foreground focus:outline-none text-sm box-border"
             />
             <button className="h-11 w-full sm:w-auto px-6 rounded-full bg-foreground text-background font-bold text-xs whitespace-nowrap hover:bg-foreground/80 transition-colors">
-              S'inscrire
+              Je m'inscris
             </button>
           </form>
         </div>

@@ -49,12 +49,16 @@ const doors = [
 ];
 
 export const ThreeDoors = () => (
-  <section className="bg-black px-3 py-4 text-white sm:px-4 lg:px-3.5 lg:py-6">
+  <section className="bg-black px-8 py-4 text-white lg:py-6">
     <div className="mb-4">
-      <h2 className="flex items-center gap-2 text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[30px]">
-        <span className="border-b-2 border-dashed border-white pb-1">Choisis ton</span>
-        <span className="font-light italic tracking-[0.04em]">chemin.</span>
-        <CornerRightDown className="mt-3 h-5 w-5 stroke-[1.2]" />
+      <h2 className="flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[30px]">
+        <span className="border-b-2 border-white pb-2 pr-3">
+          Choisis ton
+        </span>
+        <span className="flex items-center border-b-2 border-dashed border-white pb-2 pl-3 font-light italic tracking-[0.04em]">
+          chemin.
+          <CornerRightDown className="ml-2 h-5 w-5 translate-y-1.5 stroke-[1.5]" />
+        </span>
       </h2>
     </div>
 
@@ -89,11 +93,11 @@ export const ThreeDoors = () => (
             )}
           </div>
 
-          {/* Zone texte alignée à gauche avec décalage sur la 2ème ligne */}
+          {/* Zone texte */}
           <div className="flex h-[75px] flex-col justify-center bg-zinc-900 px-4 text-left">
-            <h3 className="text-[11px] sm:text-[12px] font-extrabold uppercase leading-snug tracking-wide text-white">
+            <h3 className="text-[11px] font-extrabold uppercase leading-snug tracking-wide text-white sm:text-[12px]">
               {door.line1}
-              <span style={{ display: 'block', paddingLeft: '1.5rem' }}>
+              <span style={{ display: "block", paddingLeft: "1.5rem" }}>
                 {door.line2}
               </span>
             </h3>
