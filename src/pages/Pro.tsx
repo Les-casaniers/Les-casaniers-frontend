@@ -472,7 +472,7 @@ const Profreelance = () => {
       )}
 
       {/* Grille produits avec boutons WhatsApp et Super Configurateur */}
-      <section className="container-x py-6">
+      <section className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="text-[11px] text-muted-foreground mb-4 flex items-center justify-between">
           <span>
             {isLoadingProducts ? "Chargement..." : 

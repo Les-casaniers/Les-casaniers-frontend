@@ -2,9 +2,9 @@ import logoImg from "@/assets/casaniers-logo.jpg";
 import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import circuitIncone from "@/assets/circuit4.jpg";
-import circuitIncone1 from "@/assets/circuit4.jpg";
-import circuitIncone2 from "@/assets/circuit5.jpg";
+import circuitIncone from "@/assets/circuit4.png";
+import circuitIncone1 from "@/assets/circuit4.png";
+import circuitIncone2 from "@/assets/circuit5.png";
 import { useResponsive } from "@/hooks/useResponsive";
 
 // Icône TikTok personnalisée (non incluse dans lucide-react)

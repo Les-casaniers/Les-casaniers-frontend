@@ -531,8 +531,8 @@ export const GamingCatalogue = () => {
 
   return (
     <>
-      <section className="py-8 bg-secondary/20">
-        <div className="container-x">
+    <section className="py-8 bg-secondary/20">
+  <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           {/*
           <div className="flex items-center justify-between mb-5 gap-3">
             <div className="flex items-center gap-2">

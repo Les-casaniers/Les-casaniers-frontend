@@ -561,88 +561,96 @@ export const Header = () => {
       </div>
 
       {/* Desktop Navigation Bar — MÊME padding horizontal que la ligne du haut (HEADER_PADDING_X) */}
-      <nav className="hidden sm:block bg-black">
-        <div className={`w-full ${HEADER_PADDING_X}`}>
-          <div className="flex items-center gap-2 xl:gap-3 py-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {/* "Nos Produits" mega trigger */}
-            <div
-              className="relative shrink-0"
-              onMouseEnter={openMegaMenu}
-              onMouseLeave={closeMegaMenu}
-            >
-<button
-  className={`
-    flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
-    bg-white text-black rounded-md ml-2 xl:ml-4
-    hover:bg-zinc-200
-    ${megaMenuOpen ? "bg-zinc-200" : ""}
-  `}
->
-                <Menu className="h-4 w-4" />
-                <span>CATEGORIE </span>
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-200 ${megaMenuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
+     <nav className="hidden sm:block bg-black relative z-[100]">
+  <div className={`w-full ${HEADER_PADDING_X}`}>
+    {/* Remplacement de overflow-x-auto par flex-wrap ou overflow-visible */}
+    <div className="flex items-center gap-2 xl:gap-3 py-1.5">
+      
+      {/* "Nos Produits" mega trigger */}
+      <div
+        className="relative shrink-0"
+        onMouseEnter={openMegaMenu}
+        onMouseLeave={closeMegaMenu}
+      >
+        <button
+          className={`
+            flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
+            bg-white text-black rounded-md ml-2 xl:ml-4
+            hover:bg-zinc-200
+            ${megaMenuOpen ? "bg-zinc-200" : ""}
+          `}
+        >
+          <Menu className="h-4 w-4" />
+          <span>CATEGORIE </span>
+          <ChevronDown
+            className={`h-3.5 w-3.5 transition-transform duration-200 ${
+              megaMenuOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
 
-              {/* Mega Menu Panel */}
-              {megaMenuOpen && (
-                <div
-                  ref={megaMenuRef}
-                  onMouseEnter={keepMegaMenuOpen}
-                  onMouseLeave={closeMegaMenu}
-                  className="absolute left-0 top-full z-50 animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
-                >
-                  <CategoriesMegaMenu />
-                </div>
-              )}
-            </div>
-
-            {/* Quick nav links — espacement resserré à lg, comme avant à partir de xl */}
-            <div className="flex items-center gap-2 xl:gap-5 ml-3 xl:ml-8 shrink-0">
-{quickNavLinks.map((item) => (
-  <Link
-    key={item.label}
-    to={item.href}
-    className={`
-      relative group flex items-center border rounded-md gap-1.5 px-3 xl:px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-      ${item.accent
-        ? "text-white hover:text-white"
-        : "text-zinc-200 hover:text-white"
-      }
-      ${isActive(item.href) ? "text-primary" : ""}
-      ${item.label === "Devis Express" ? "xl:mr-4" : ""}
-      border-zinc-600 bg-black
-    `}
-  >
-    <span>{item.label}</span>
-    <span
-      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"}`}
-    />
-  </Link>
-))}
-           
-            </div>
-
-            {/* Configurateur Pro — padding et marges resserrés à lg, comme avant à partir de xl */}
-<Link
-  to="/configurateur"
-  className="ml-auto flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
-  text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
-  text-white hover:from-orange-600 hover:to-orange-700 transition-all 
-  rounded-md shadow-md
-  hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
->
-  <img 
-    src={lightIncone} 
-    alt="" 
-    className="h-5 w-5 xl:h-7 xl:w-7 object-contain" 
-  />
-  <span className="text-sm">Configurateur Pro</span>
-</Link>
+        {/* Mega Menu Panel - z-[110] garanti au-dessus de tout */}
+        {megaMenuOpen && (
+          <div
+            ref={megaMenuRef}
+            onMouseEnter={keepMegaMenuOpen}
+            onMouseLeave={closeMegaMenu}
+            className="absolute left-0 top-full z-[110] animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
+          >
+            <CategoriesMegaMenu />
           </div>
-        </div>
-      </nav>
+        )}
+      </div>
+
+      {/* Quick nav links */}
+      <div className="flex items-center gap-2 xl:gap-5 ml-3 xl:ml-8 shrink-0">
+        {quickNavLinks.map((item) => (
+          <Link
+            key={item.label}
+            to={item.href}
+            className={`
+              relative group flex items-center border rounded-md gap-1.5 px-3 xl:px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+              ${
+                item.accent
+                  ? "text-white hover:text-white"
+                  : "text-zinc-200 hover:text-white"
+              }
+              ${isActive(item.href) ? "text-primary" : ""}
+              ${item.label === "Devis Express" ? "xl:mr-4" : ""}
+              border-zinc-600 bg-black
+            `}
+          >
+            <span>{item.label}</span>
+            <span
+              className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
+                isActive(item.href)
+                  ? "opacity-100"
+                  : "opacity-0 group-hover:opacity-40"
+              }`}
+            />
+          </Link>
+        ))}
+      </div>
+
+      {/* Configurateur Pro */}
+      <Link
+        to="/configurateur"
+        className="ml-auto flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
+        text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
+        text-white hover:from-orange-600 hover:to-orange-700 transition-all 
+        rounded-md shadow-md
+        hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+      >
+        <img
+          src={lightIncone}
+          alt=""
+          className="h-5 w-5 xl:h-7 xl:w-7 object-contain"
+        />
+        <span className="text-sm">Configurateur Pro</span>
+      </Link>
+    </div>
+  </div>
+</nav>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
