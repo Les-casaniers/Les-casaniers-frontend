@@ -1,5 +1,6 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
+import { InfoBar } from "@/components/site/InfoBar";
 import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { 
@@ -317,24 +318,29 @@ const Profreelance = () => {
 
   return (
     <SiteLayout>
-<div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
- <MiniHero
-  title={`DES OUTILS À LA HAUTEUR DE VOS AMBITIONS`}
-  description={
-    <div className="flex flex-col">
-      <p>Optimise ton flux de travail du</p>
-      <p className="pl-[8.5rem] sm:pl-[10.5rem] md:pl-[12rem]">
-        matériel configuré pour la productivité.
-      </p>
-    </div>
-  }
-  bg={fond}
-  mascot={gorile}
-  pill={{ icon: <Filter className="h-3.5 w-3.5" />, label: `Catalogue ${proCategoryName}` }}
-/>
+<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+  
+  {/* 1. MiniHero */}
+  <MiniHero
+    title="Des outils a la hauteur de tes ambitions"
+    description={
+      <div className="flex flex-col">
+        <p>« Optimise et améliore tes performances</p>
+        <p className="pl-[8.5rem] sm:pl-[11rem] md:pl-[13rem]">
+          et domine chaque partie »
+        </p>
+      </div>
+    }
+    bg={fond}
+    mascot={gorile}
+  />
+
+  {/* 2. InfoBar */}
+  <InfoBar />
+
 </div>
 
-      {/* Barre de navigation */}
+      {/* Barre de navigation 
       <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container-x py-3">
           <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -350,8 +356,9 @@ const Profreelance = () => {
           </div>
         </div>
       </nav>
-
+*/}
       {/* Barre de recherche et tri */}
+      {/*
       <section className="border-b border-border bg-background/50">
         <div className="container-x py-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -390,7 +397,7 @@ const Profreelance = () => {
           </div>
         </div>
       </section>
-
+     */ }
       {/* Active Search Filters Indicator */}
       {(searchNom || searchRef || searchSousCategory) && (
         <div className="container-x pt-4">

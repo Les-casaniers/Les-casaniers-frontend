@@ -25,7 +25,8 @@ import { MiniHero } from "@/components/layout/MiniHero";
 import { useBoutiqueMisa } from "@/hooks/useBoutiqueMisa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartApi } from "@/hooks/useCartApi";
-
+import mascote from "@/assets/3.png";
+import {InfoBar} from "@/components/site/InfoBar"
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -365,16 +366,29 @@ const BoutiqueDeMisa = () => {
   return (
     <SiteLayout>
       {/* Hero */}
+     <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+      {/* 1. Composant MiniHero */}
       <MiniHero
         title="Portez la fierté de Madagascar."
-        description="Collection Misa — vêtements, papeterie et accessoires à l'image du fosa, carnivore endémique et symbole sauvage de l'île."
-        bg="fosa.png"
+        description={
+          <div className="flex flex-col">
+            <p>Collection Misa — vêtements, papeterie et accessoires</p>
+            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+              à l'image du fosa, carnivore endémique et symbole sauvage de l'île.
+            </p>
+          </div>
+        }
+        bg="/4.jpg" // Image provenant du dossier public/
+        mascot={mascote}
         pill={{
           icon: <Leaf className="h-3.5 w-3.5" />,
           label: "Boutique de Misa · Endemika Madagascar",
         }}
       />
 
+      {/* 2. InfoBar positionnée juste en dessous */}
+      <InfoBar />
+    </div>
       {/* Barre de filtres */}
       <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container-x py-3">
