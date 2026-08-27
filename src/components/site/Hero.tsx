@@ -13,32 +13,32 @@ const slides = [t1, t2, t3];
 export const Hero = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  useEffect(() => {
-    const interval = window.setInterval(
-      () => setCurrentSlide((index) => (index + 1) % slides.length),
-      5000,
-    );
-    return () => window.clearInterval(interval);
-  }, []);
+ useEffect(() => {
+  const interval = window.setInterval(
+    () => setCurrentSlide((index) => (index + 1) % slides.length),
+    5000,
+  );
+  return () => window.clearInterval(interval);
+}, [slides.length]); // Dépendance ajoutée pour s'assurer que slides est bien chargé
 
-  return (
-    <>
-      <div className="w-full bg-black">
-        {/* 'rounded-2xl' augmente l'arrondi du div (remplacez par rounded-3xl si vous voulez plus) */}
-        <section className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-2xl bg-zinc-950 min-h-[370px] md:min-h-[390px]">
-          {/* Carousel d'images */}
-          <div className="absolute inset-0">
-            {slides.map((slide, index) => (
-              <img
-                key={slide}
-                src={slide}
-                alt="Espace de travail Les Casaniers"
-                className={`h-full w-full object-cover object-center transition-opacity duration-700 ${
-                  index === currentSlide ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            ))}
-          </div>
+return (
+  <>
+    <div className="w-full bg-black">
+      {/* Container principal du carrousel */}
+      <section className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-2xl bg-zinc-950 min-h-[370px] md:min-h-[390px]">
+        {/* Carousel d'images */}
+        <div className="absolute inset-0">
+          {slides.map((slide, index) => (
+            <img
+              key={index}
+              src={slide}
+              alt="Espace de travail Les Casaniers"
+              className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
+                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+            />
+          ))}
+        </div>
 
           {/* Overlays d'assombrissement */}
           <div className="absolute inset-0 bg-black/55 pointer-events-none" />

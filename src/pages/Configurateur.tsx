@@ -33,7 +33,8 @@ import api from "@/service/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import AICompatibilityPanel from "@/components/AICompatibilityPanel";
-
+import mascote from "@/assets/3.png"
+import {InfoBar} from "@/components/site/InfoBar"
 // Mapping des références pour chaque catégorie
 const referenceMapping = {
   case: ["CASE-"],
@@ -412,13 +413,29 @@ const Configurateur = () => {
 
   return (
     <SiteLayout>
+<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+      {/* 1. Composant MiniHero */}
       <MiniHero
         title="Composez votre machine idéale."
-        description="Assemblez votre PC pièce par pièce avec nos experts"
-        bg="5.png"
-        pill={{ icon: <Cpu className="h-3.5 w-3.5" />, label: "Configurateur" }}
+        description={
+          <div className="flex flex-col">
+            <p>Assemblez votre PC pièce par pièce</p>
+            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+              avec nos experts.
+            </p>
+          </div>
+        }
+        bg="/5.png" // Image depuis le dossier public/
+        mascot={mascote}
+        pill={{ 
+          icon: <Cpu className="h-3.5 w-3.5" />, 
+          label: "Configurateur" 
+        }}
       />
 
+      {/* 2. InfoBar positionnée juste en dessous */}
+      <InfoBar />
+    </div>
       <section className="container-x py-8 grid lg:grid-cols-12 gap-6">
         {/* Colonne principale */}
         <div className="lg:col-span-8 space-y-5">

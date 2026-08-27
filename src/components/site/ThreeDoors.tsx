@@ -33,7 +33,7 @@ const doors = [
     line2: "MACHINE IDÉALE.",
     href: "/configurateur",
     overlay: "bg-black/10",
-    labelStyle: "bar" as const,
+    labelStyle: "pill" as const, 
     labelClass: "bg-orange-500 text-white",
   },
   {
@@ -78,26 +78,20 @@ export const ThreeDoors = () => (
             />
             <div className={`absolute inset-0 ${door.overlay}`} />
 
-            {door.labelStyle === "pill" ? (
-              <span
-                className={`absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2.5 py-0.5 text-[10px] font-semibold italic shadow-sm ${door.labelClass}`}
-              >
-                {door.label}
-              </span>
-            ) : (
-              <span
-                className={`absolute bottom-0 left-0 w-full px-3 py-1 text-center text-[10px] font-semibold italic ${door.labelClass}`}
-              >
-                {door.label}
-              </span>
-            )}
+            {/* Bouton pastille centré */}
+            <span
+              className={`absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-3 py-1 text-[10px] font-semibold italic shadow-sm ${door.labelClass}`}
+            >
+              {door.label}
+            </span>
           </div>
 
           {/* Zone texte */}
-          <div className="flex h-[75px] flex-col justify-center bg-zinc-900 px-4 text-left">
+          <div className="flex h-[80px] flex-col justify-center bg-zinc-900 px-4 text-left">
             <h3 className="text-[11px] font-extrabold uppercase leading-snug tracking-wide text-white sm:text-[12px]">
               {door.line1}
-              <span style={{ display: "block", paddingLeft: "1.5rem" }}>
+              {/* Indentation augmentée à pl-9 (~36px) pour créer plus de décalage */}
+              <span className="block pl-9 mt-0.5">
                 {door.line2}
               </span>
             </h3>

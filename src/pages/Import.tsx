@@ -4,7 +4,8 @@ import { Package, Truck, Clock, Shield, CheckCircle, Plus, Send, Plane, Ship } f
 import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
-
+import { InfoBar } from "@/components/site/InfoBar";
+import Mascote from "@/assets/3.png";
 const Importation = () => {
   const location = useLocation();
   
@@ -106,12 +107,29 @@ const Importation = () => {
 
   return (
     <SiteLayout>
+<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+      {/* 1. Composant MiniHero */}
       <MiniHero
         title="Importation Chine - Madagascar."
-        description="Importation de pièces détachées et appareils électroniques depuis la Chine. Tous vos équipements sur mesure, livrés à Tananarive."
-        bg="7.png"
+        description={
+          <div className="flex flex-col">
+            <p>Importation de pièces détachées et appareils électroniques depuis la Chine.</p>
+            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+              Tous vos équipements sur mesure, livrés à Tananarive.
+            </p>
+          </div>
+        }
+        bg="/7.png" // Image depuis le dossier public/
+        mascot={Mascote}
+        pill={{ 
+          icon: <Truck className="h-3.5 w-3.5" />, 
+          label: "Importation" 
+        }}
       />
 
+      {/* 2. InfoBar positionnée juste en dessous */}
+      <InfoBar />
+    </div>
       <section className="py-16 lg:py-24">
         <div className="container-x">
           <div className="max-w-6xl mx-auto space-y-12 lg:space-y-16">

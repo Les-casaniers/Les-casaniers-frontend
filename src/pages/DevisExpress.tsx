@@ -21,7 +21,8 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { MiniHero } from "@/components/layout/MiniHero";
-
+import { InfoBar } from "@/components/site/InfoBar";
+import Mascote from "@/assets/3.png";
 const DevisExpress = () => {
   const location = useLocation();
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -128,13 +129,29 @@ const DevisExpress = () => {
 
   return (
     <SiteLayout>
+     <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+      {/* 1. Composant MiniHero */}
       <MiniHero
         title="Besoin d'un devis rapide ?"
-        description="Pour les professionnels pressés ou les demandes spécifiques, contactez-nous directement. Réponse sous 24h ouvrées."
-        bg="4.png"
-        pill={{ icon: <Zap className="h-3.5 w-3.5" />, label: "Devis Express" }}
+        description={
+          <div className="flex flex-col">
+            <p>Pour les professionnels pressés ou les demandes spécifiques, contactez-nous directement.</p>
+            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+              Réponse sous 24h ouvrées.
+            </p>
+          </div>
+        }
+        bg="/7.png" 
+        mascot={Mascote}
+        pill={{ 
+          icon: <Zap className="h-3.5 w-3.5" />, 
+          label: "Devis Express" 
+        }}
       />
 
+      {/* 2. InfoBar positionnée juste en dessous */}
+      <InfoBar />
+    </div>
       <section className="py-8">
         <div className="container-x">
           <div className="grid lg:grid-cols-2 gap-6">
