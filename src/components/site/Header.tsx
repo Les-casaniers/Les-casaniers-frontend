@@ -125,11 +125,21 @@ const quickNavLinks = [
   { label: "Devis Express", href: "/devis-express" },
 ];
 
-// Padding horizontal partagé entre toutes les lignes du header, pour garantir l'alignement des bords
-const HEADER_PADDING_X = "px-4 lg:px-6";
-// Hauteur fixe de la ligne du haut — TOUT (logo, recherche, compte/favoris/panier) est centré dedans,
-// donc plus aucune dépendance au plus grand élément (fini les décalages verticaux imprévisibles)
-const HEADER_TOP_ROW_HEIGHT = "h-28 lg:h-32";
+// ─── Conteneur unique, fixe, non-responsive, partagé par TOUTES les lignes ────
+// Une seule classe, utilisée à l'identique sur la ligne du haut (Logo/Recherche/
+// Compte/Favoris/Panier) ET sur la ligne de nav (CATEGORIE/liens/Configurateur Pro).
+// Aucune variante lg:/xl: dedans => la boîte a TOUJOURS la même largeur max et le
+// même padding, donc le rendu ne change jamais avec la taille d'écran, le zoom
+// navigateur ou le scaling Windows. Sur les écrans plus larges que la limite,
+// le surplus devient une marge noire égale à gauche et à droite (le contenu se
+// centre) au lieu d'étirer ou de déplacer quoi que ce soit. En dessous de la
+// limite, la boîte occupe 100% de la largeur avec le même padding constant.
+// => Le bord droit de la ligne du haut (Panier) et celui de la ligne de nav
+//    (Configurateur Pro) sont donc TOUJOURS exactement le même point.
+const HEADER_CONTAINER = "w-full max-w-[1920px] mx-auto px-6";
+// Hauteur fixe de la ligne du haut (valeur unique, non-responsive) — tout
+// (logo, recherche, compte/favoris/panier) est centré dedans.
+const HEADER_TOP_ROW_HEIGHT = "h-28";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -330,21 +340,20 @@ export const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
       {/* Top row: logo + search + account/favorites/cart — hauteur fixe, tout est centré dedans */}
-      <div className={`w-full ${HEADER_PADDING_X}`}>
-        <div className={`flex items-center gap-2 lg:gap-3 ${HEADER_TOP_ROW_HEIGHT}`}>
-         {/* Logo — hauteur ajustée pour correspondre visuellement au bouton CATEGORIE, sans toucher à CATEGORIE lui-même */}
-{/* Logo — encore plus grand */}
-<Link to="/" className="flex items-center shrink-0 group -ml-4 lg:-ml-4">
+      <div className={HEADER_CONTAINER}>
+        <div className={`flex items-center gap-3 ${HEADER_TOP_ROW_HEIGHT}`}>
+         {/* Logo — taille fixe, non-responsive : n'est jamais recalculée selon l'écran */}
+<Link to="/" className="flex items-center shrink-0 group -ml-4">
   <img
     src={logo}
     alt="Les Casaniers"
     className="h-40 w-auto object-contain brightness-0 invert scale-110 transition-transform duration-300 group-hover:scale-115"
   />
 </Link>
-          {/* Search — Center */}
+          {/* Search — Center, largeur fixe non-responsive */}
 <form
   onSubmit={handleSearchSubmit}
-  className="relative flex-1 max-w-xl lg:max-w-[500px] xl:max-w-[560px] mx-6 translate-y-9 -translate-x-6"
+  className="relative flex-1 max-w-[520px] mx-6 translate-y-9 -translate-x-6"
 >
             <div className="relative flex items-center">
               <div className="relative flex-1">
@@ -355,7 +364,7 @@ export const Header = () => {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
                   placeholder="Rechercher un produit, une référence..."
-                  className="w-full h-8 lg:h-9 pl-4 lg:pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
+                  className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
                 />
                 <button
                   type="button"
@@ -445,8 +454,8 @@ export const Header = () => {
             )}
           </form>
 
-          {/* Compte / Favoris / Panier — centré verticalement dans la ligne fixe, collé au bord droit grâce à lg:ml-auto */}
-<div className="hidden md:flex items-center gap-3 lg:ml-auto lg:gap-5 xl:gap-7 shrink-2 translate-y-8">
+          {/* Compte / Favoris / Panier — collé au bord droit du conteneur fixe grâce à ml-auto (toujours actif dès md) */}
+<div className="hidden md:flex items-center gap-6 ml-auto shrink-0 translate-y-8">
             <div className="relative">
               {isAuthenticated ? (
                 <>
@@ -560,11 +569,10 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Desktop Navigation Bar — MÊME padding horizontal que la ligne du haut (HEADER_PADDING_X) */}
+      {/* Desktop Navigation Bar — MÊME conteneur fixe que la ligne du haut (HEADER_CONTAINER) */}
      <nav className="hidden sm:block bg-black relative z-[100]">
-  <div className={`w-full ${HEADER_PADDING_X}`}>
-    {/* Remplacement de overflow-x-auto par flex-wrap ou overflow-visible */}
-    <div className="flex items-center gap-2 xl:gap-3 py-1.5">
+  <div className={HEADER_CONTAINER}>
+    <div className="flex items-center gap-3 py-1.5">
       
       {/* "Nos Produits" mega trigger */}
       <div
@@ -575,7 +583,7 @@ export const Header = () => {
         <button
           className={`
             flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
-            bg-white text-black rounded-md ml-2 xl:ml-4
+            bg-white text-black rounded-md ml-4
             hover:bg-zinc-200
             ${megaMenuOpen ? "bg-zinc-200" : ""}
           `}
@@ -602,40 +610,49 @@ export const Header = () => {
         )}
       </div>
 
-      {/* Quick nav links */}
-      <div className="flex items-center gap-2 xl:gap-5 ml-3 xl:ml-8 shrink-0">
-        {quickNavLinks.map((item) => (
-          <Link
-            key={item.label}
-            to={item.href}
-            className={`
-              relative group flex items-center border rounded-md gap-1.5 px-3 xl:px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-              ${
-                item.accent
-                  ? "text-white hover:text-white"
-                  : "text-zinc-200 hover:text-white"
-              }
-              ${isActive(item.href) ? "text-primary" : ""}
-              ${item.label === "Devis Express" ? "xl:mr-4" : ""}
-              border-zinc-600 bg-black
-            `}
-          >
-            <span>{item.label}</span>
-            <span
-              className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
-                isActive(item.href)
-                  ? "opacity-100"
-                  : "opacity-0 group-hover:opacity-40"
-              }`}
-            />
-          </Link>
-        ))}
+      {/* Quick nav links — SEULE zone flexible/compressible de la ligne (flex-1 min-w-0).
+          Si le contenu (zoom, texte plus large) dépasse la place dispo, CETTE zone défile
+          horizontalement en interne (overflow-x-auto) au lieu de pousser ses voisins.
+          Résultat : CATEGORIE, la gouttière et Configurateur Pro ne bougent JAMAIS,
+          quel que soit le zoom navigateur ou le scaling d'affichage Windows. */}
+      <div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-5 ml-8 w-max">
+          {quickNavLinks.map((item) => (
+            <Link
+              key={item.label}
+              to={item.href}
+              className={`
+                relative group flex items-center border rounded-md gap-1.5 px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+                ${
+                  item.accent
+                    ? "text-white hover:text-white"
+                    : "text-zinc-200 hover:text-white"
+                }
+                ${isActive(item.href) ? "text-primary" : ""}
+                ${item.label === "Devis Express" ? "mr-4" : ""}
+                border-zinc-600 bg-black
+              `}
+            >
+              <span>{item.label}</span>
+              <span
+                className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
+                  isActive(item.href)
+                    ? "opacity-100"
+                    : "opacity-0 group-hover:opacity-40"
+                }`}
+              />
+            </Link>
+          ))}
+        </div>
       </div>
 
-      {/* Configurateur Pro */}
+      {/* Configurateur Pro — largeur/contenu fixes (shrink-0), jamais compressé.
+          Comme la zone des liens ci-dessus est flex-1 min-w-0, elle absorbe seule
+          tout manque de place ; ce bouton garde donc toujours sa position et son
+          bord droit reste exactement aligné sur le bord droit de Panier. */}
       <Link
         to="/configurateur"
-        className="ml-auto flex items-center gap-2 xl:gap-3 pl-4 xl:pl-12 pr-4 xl:pr-12 py-2 shrink-0
+        className="shrink-0 flex items-center gap-3 pl-10 pr-10 py-2
         text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
         text-white hover:from-orange-600 hover:to-orange-700 transition-all 
         rounded-md shadow-md
@@ -644,7 +661,7 @@ export const Header = () => {
         <img
           src={lightIncone}
           alt=""
-          className="h-5 w-5 xl:h-7 xl:w-7 object-contain"
+          className="h-6 w-6 object-contain"
         />
         <span className="text-sm">Configurateur Pro</span>
       </Link>
