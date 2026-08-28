@@ -172,54 +172,56 @@ const GuidesAchatSection = ({ key }: { key: string }) => {
   const colorMap: Record<string, string> = { purple: "from-purple-500 to-indigo-500", blue: "from-blue-500 to-cyan-500", green: "from-green-500 to-emerald-500" };
 
   return (
-    <section id="guides-achat" className="py-8 scroll-mt-20">
-      <div className="flex items-center gap-2 mb-5">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
-          <Gamepad className="h-4 w-4 text-white" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold">Guides d'achat</h2>
-          <p className="text-[10px] text-muted-foreground">Choisissez la configuration idéale</p>
-        </div>
+   <section id="guides-achat" className="w-full py-6 scroll-mt-10">
+  <div className="w-full max-w-[1700px] mx-auto px-6 md:px-8 xl:px-12">
+    <div className="flex items-center gap-2 mb-5">
+      <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
+        <Gamepad className="h-4 w-4 text-white" />
       </div>
+      <div>
+        <h2 className="text-lg font-bold">Guides d'achat</h2>
+        <p className="text-[10px] text-muted-foreground">Choisissez la configuration idéale</p>
+      </div>
+    </div>
 
-      {guides.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {guides.map((g) => <GuideCardCompact key={g.id} guide={g} />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {fallbackGuides.map((guide) => (
-            <div key={guide.id} className="bg-card border border-border/50 rounded-xl p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
-              <div className={`inline-flex h-8 w-8 rounded-lg bg-gradient-to-br ${colorMap[guide.color]} items-center justify-center mb-3`}>
-                <guide.icon className="h-4 w-4 text-white" />
-              </div>
-              <h3 className="font-bold text-sm mb-1">{guide.title}</h3>
-              <p className="text-[10px] text-muted-foreground mb-2">{guide.description}</p>
-              <p className="text-xs font-bold text-primary mb-3">{guide.price}</p>
-              <div className="space-y-1 mb-3">
-                {guide.features.slice(0, 2).map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-1.5 text-[9px]">
-                    <CheckCircle className="h-2.5 w-2.5 text-green-500 shrink-0" />
-                    <span className="text-muted-foreground">{feature}</span>
-                  </div>
-                ))}
-              </div>
-              <Link to="/configurateur" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
-                Configurer <ArrowRight className="h-2.5 w-2.5" />
-              </Link>
+    {guides.length > 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {guides.map((g) => <GuideCardCompact key={g.id} guide={g} />)}
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {fallbackGuides.map((guide) => (
+          <div key={guide.id} className="bg-card border border-border/50 rounded-xl p-4 transition-all hover:shadow-md hover:-translate-y-0.5">
+            <div className={`inline-flex h-8 w-8 rounded-lg bg-gradient-to-br ${colorMap[guide.color]} items-center justify-center mb-3`}>
+              <guide.icon className="h-4 w-4 text-white" />
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-5 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-        <p className="text-[10px] flex items-center gap-1.5">
-          <Zap className="h-3 w-3 text-amber-500 shrink-0" />
-          <span><strong>Conseil Casanier :</strong> Privilégiez les composants avec garantie internationale !</span>
-        </p>
+            <h3 className="font-bold text-sm mb-1">{guide.title}</h3>
+            <p className="text-[10px] text-muted-foreground mb-2">{guide.description}</p>
+            <p className="text-xs font-bold text-primary mb-3">{guide.price}</p>
+            <div className="space-y-1 mb-3">
+              {guide.features.slice(0, 2).map((feature, idx) => (
+                <div key={idx} className="flex items-center gap-1.5 text-[9px]">
+                  <CheckCircle className="h-2.5 w-2.5 text-green-500 shrink-0" />
+                  <span className="text-muted-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+            <Link to="/configurateur" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+              Configurer <ArrowRight className="h-2.5 w-2.5" />
+            </Link>
+          </div>
+        ))}
       </div>
-    </section>
+    )}
+
+    <div className="mt-5 bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+      <p className="text-[10px] flex items-center gap-1.5">
+        <Zap className="h-3 w-3 text-amber-500 shrink-0" />
+        <span><strong>Conseil Casanier :</strong> Privilégiez les composants avec garantie internationale !</span>
+      </p>
+    </div>
+  </div>
+</section>
   );
 };
 

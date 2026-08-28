@@ -30,6 +30,7 @@ export interface ProductConfiguration {
   nom_configuration: string;
   nom_configuration_autre?: string | null;
   devise?: string | null;
+
   prix_total: number;
   composants_json: { nom?: string; prix?: number; quantite?: number }[];
   date_creation?: string;
@@ -58,6 +59,7 @@ export interface Product {
   carte_graphique?: string | null;
   ram?: string | null;
   disque_dur?: string | null;
+  type_produit?: string | null;
   alimentation?: string | null;
   refroidissement?: string | null;
   carte_mere?: string | null;
