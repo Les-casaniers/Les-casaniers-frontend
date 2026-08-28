@@ -153,7 +153,8 @@ const DevisExpress = () => {
       <InfoBar />
     </div>
       <section className="py-8">
-        <div className="container-x">
+        {/* Même largeur et mêmes marges horizontales que le conteneur du MiniHero. */}
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Formulaire */}
             <div className="space-y-4">

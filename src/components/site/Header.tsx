@@ -51,6 +51,7 @@ import profileIncone from "@/assets/Profile.png";
 import lightIncone from "@/assets/Light.png"
 import panierIncone from "@/assets/Basket.png";
 import searchIncone from "@/assets/Search.png"
+import sunIncone from "@/assets/Sun.png"
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -125,20 +126,8 @@ const quickNavLinks = [
   { label: "Devis Express", href: "/devis-express" },
 ];
 
-// ─── Conteneur unique, fixe, non-responsive, partagé par TOUTES les lignes ────
-// Une seule classe, utilisée à l'identique sur la ligne du haut (Logo/Recherche/
-// Compte/Favoris/Panier) ET sur la ligne de nav (CATEGORIE/liens/Configurateur Pro).
-// Aucune variante lg:/xl: dedans => la boîte a TOUJOURS la même largeur max et le
-// même padding, donc le rendu ne change jamais avec la taille d'écran, le zoom
-// navigateur ou le scaling Windows. Sur les écrans plus larges que la limite,
-// le surplus devient une marge noire égale à gauche et à droite (le contenu se
-// centre) au lieu d'étirer ou de déplacer quoi que ce soit. En dessous de la
-// limite, la boîte occupe 100% de la largeur avec le même padding constant.
-// => Le bord droit de la ligne du haut (Panier) et celui de la ligne de nav
-//    (Configurateur Pro) sont donc TOUJOURS exactement le même point.
+
 const HEADER_CONTAINER = "w-full max-w-[1920px] mx-auto px-6";
-// Hauteur fixe de la ligne du haut (valeur unique, non-responsive) — tout
-// (logo, recherche, compte/favoris/panier) est centré dedans.
 const HEADER_TOP_ROW_HEIGHT = "h-28";
 
 export const Header = () => {
@@ -355,104 +344,105 @@ export const Header = () => {
   onSubmit={handleSearchSubmit}
   className="relative flex-1 max-w-[520px] mx-6 translate-y-9 -translate-x-6"
 >
-            <div className="relative flex items-center">
-              <div className="relative flex-1">
-                <input
-                  type="search"
-                  value={searchNom}
-                  onChange={(e) => setSearchNom(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  placeholder="Rechercher un produit, une référence..."
-                  className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className={`hidden absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
-                >
-                  <img
+  <div className="relative flex items-center">
+    <div className="relative flex-1">
+      <input
+        type="search"
+        value={searchNom}
+        onChange={(e) => setSearchNom(e.target.value)}
+        onFocus={() => setIsSearchFocused(true)}
+        onBlur={() => setIsSearchFocused(false)}
+        placeholder="Rechercher un produit, une référence..."
+        className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
+      />
+      <button
+        type="button"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className={`hidden absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+      >
+        <SlidersHorizontal className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="submit"
+        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
+      >
+        <img
           src={searchIncone}
           alt="Rechercher"
-          className="h-6 w-6 object-contain"
+          className="h-5 w-5 object-contain"
         />
-                </button>
-              </div>
-              <img
-                src={isSearchFocused ? mascotListening : mascot}
-                alt=""
-                aria-hidden
-                className="hidden"
-              />
-            </div>
+      </button>
+    </div>
+    <div className="ml-4 shrink-0">
+      <img
+        src={sunIncone}
+        alt="Sun"
+        className="h-8 w-8 object-contain"
+      />
+    </div>
+  </div>
 
-            {showAdvanced && (
-              <div
-                ref={advancedRef}
-                className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Référence
-                    </label>
-                    <input
-                      type="text"
-                      value={searchRef}
-                      onChange={(e) => setSearchRef(e.target.value)}
-                      placeholder="Ex: CPU-INTEL-12700K"
-                      className="w-full h-10 px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none text-sm"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Catégorie
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={searchCategory}
-                        onChange={(e) => setSearchCategory(e.target.value)}
-                        className="w-full h- px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
-                      >
-                        <option value="">Toutes les catégories</option>
-                        {categories?.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.nom}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchRef("");
-                      setSearchCategory("");
-                    }}
-                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Effacer
-                  </button>
-                  <button
-                    type="submit"
-                    onClick={handleSearchSubmit}
-                    className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                  >
-                    Appliquer
-                  </button>
-                </div>
-              </div>
-            )}
-          </form>
+  {showAdvanced && (
+    <div
+      ref={advancedRef}
+      className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Référence
+          </label>
+          <input
+            type="text"
+            value={searchRef}
+            onChange={(e) => setSearchRef(e.target.value)}
+            placeholder="Ex: CPU-INTEL-12700K"
+            className="w-full h-10 px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none text-sm"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Catégorie
+          </label>
+          <div className="relative">
+            <select
+              value={searchCategory}
+              onChange={(e) => setSearchCategory(e.target.value)}
+              className="w-full h- px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
+            >
+              <option value="">Toutes les catégories</option>
+              {categories?.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.nom}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
+        <button
+          type="button"
+          onClick={() => {
+            setSearchRef("");
+            setSearchCategory("");
+          }}
+          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Effacer
+        </button>
+        <button
+          type="submit"
+          onClick={handleSearchSubmit}
+          className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          Appliquer
+        </button>
+      </div>
+    </div>
+  )}
+</form>
 
           {/* Compte / Favoris / Panier — collé au bord droit du conteneur fixe grâce à ml-auto (toujours actif dès md) */}
 <div className="hidden md:flex items-center gap-6 ml-auto shrink-0 translate-y-8">

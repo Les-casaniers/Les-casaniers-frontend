@@ -436,7 +436,8 @@ const Configurateur = () => {
       {/* 2. InfoBar positionnée juste en dessous */}
       <InfoBar />
     </div>
-      <section className="container-x py-8 grid lg:grid-cols-12 gap-6">
+      {/* Même largeur et mêmes marges horizontales que le conteneur du MiniHero. */}
+      <section className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-12 gap-6">
         {/* Colonne principale */}
         <div className="lg:col-span-8 space-y-5">
           {/* Barre de progression compacte */}

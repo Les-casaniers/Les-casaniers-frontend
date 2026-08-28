@@ -7,7 +7,7 @@ import circuitIncone1 from "@/assets/circuit4.png";
 import circuitIncone2 from "@/assets/circuit5.png";
 import { useResponsive } from "@/hooks/useResponsive";
 
-// Icône TikTok personnalisée (non incluse dans lucide-react)
+// Icône TikTok personnalisée
 const TiktokIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -22,7 +22,6 @@ const TiktokIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Colonnes de liens affichées dans le footer (Services + Légal)
 const cols = [
   {
     title: "SERVICES",
@@ -34,19 +33,18 @@ const cols = [
   },
 ];
 
-// URL de la carte Google Maps intégrée (localisation de l'atelier)
 const MAPS_EMBED_URL =
   "https://maps.google.com/maps?q=5F4H%2BVPJ%2C+Antananarivo,+Madagascar&output=embed&z=16&t=k";
 
-export const Footer = () => {
+export const Footer = ({ className }: { className?: string }) => {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [mapLoaded, setMapLoaded] = useState(false);
   const navigate = useNavigate();
-
-  // isMobile permet d'éviter de charger des images/iframes lourdes sur téléphone
   const { isMobile } = useResponsive();
 
-  // Envoie l'email de newsletter vers la page d'inscription (via sessionStorage)
+  // Déterminer si le footer est en mode blanc
+  const isWhiteMode = className?.includes('bg-white');
+
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newsletterEmail && newsletterEmail.trim() !== "") {
@@ -56,11 +54,11 @@ export const Footer = () => {
   };
 
   return (
-    <footer className="bg-background text-foreground relative w-full max-w-full overflow-hidden box-border">
+    <footer className={className || "bg-black text-white"}>
       {/* ── Bandeau newsletter ── */}
-      <div className="border-b border-foreground/10 w-full">
+      <div className={`border-b ${isWhiteMode ? 'border-black/10' : 'border-white/10'} w-full`}>
         <div className="container-x py-8 md:py-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 w-full max-w-full box-border">
-          <h3 className="font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left">
+          <h3 className={`font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left ${isWhiteMode ? 'text-black' : 'text-white'}`}>
             <span className="align-top text-2xl lg:text-4xl mr-1">"</span>
             Recois <span className="font-black">nos news</span>
             <br />
@@ -80,9 +78,9 @@ export const Footer = () => {
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               required
-              className="h-11 w-full sm:w-64 px-4 placeholder:italic rounded-full border border-foreground/20 bg-transparent placeholder:text-foreground/40 focus:border-foreground focus:outline-none text-sm box-border"
+              className={`h-11 w-full sm:w-64 px-4 placeholder:italic rounded-full border ${isWhiteMode ? 'border-black/20 text-black placeholder:text-black/40' : 'border-white/20 text-white placeholder:text-white/40'} bg-transparent focus:border-${isWhiteMode ? 'black' : 'white'} focus:outline-none text-sm box-border`}
             />
-            <button className="h-11 w-full sm:w-auto px-6 rounded-full bg-foreground text-background font-bold text-xs whitespace-nowrap hover:bg-foreground/80 transition-colors">
+            <button className={`h-11 w-full sm:w-auto px-6 rounded-full ${isWhiteMode ? 'bg-black text-white hover:bg-black/80' : 'bg-white text-black hover:bg-white/80'} font-bold text-xs whitespace-nowrap transition-colors`}>
               Je m'inscris
             </button>
           </form>
@@ -95,8 +93,6 @@ export const Footer = () => {
 
           {/* — Marque + coordonnées — */}
           <div className="lg:col-span-3 relative flex flex-col items-center text-center lg:items-start lg:text-left w-full">
-
-            {/* Image décorative */}
             {!isMobile && (
               <img
                 src={circuitIncone}
@@ -111,20 +107,20 @@ export const Footer = () => {
               className="h-20 w-20 object-contain rounded-xl relative z-10"
             />
 
-            <p className="text-sm text-foreground/70 mt-5 leading-relaxed relative z-10">
+            <p className={`text-sm ${isWhiteMode ? 'text-black/70' : 'text-white/70'} mt-5 leading-relaxed relative z-10`}>
               " T'accompagner vers le bon outil et son entretien durable. "
             </p>
 
-            <div className="space-y-2.5 mt-6 text-sm text-foreground/80 relative z-10 w-full max-w-full overflow-hidden">
+            <div className={`space-y-2.5 mt-6 text-sm ${isWhiteMode ? 'text-black/80' : 'text-white/80'} relative z-10 w-full max-w-full overflow-hidden`}>
               <div className="flex items-center justify-center lg:justify-start gap-2 w-full">
-                <Mail className="h-4 w-4 shrink-0" />
-                <a href="mailto:contact@lescasaniers.mg" className="hover:text-foreground transition-colors truncate">
+                <Mail className={`h-4 w-4 shrink-0 ${isWhiteMode ? 'text-black' : 'text-white'}`} />
+                <a href="mailto:contact@lescasaniers.mg" className={`${isWhiteMode ? 'text-black hover:text-black/60' : 'text-white hover:text-white/60'} transition-colors truncate`}>
                   contact@lescasaniers.mg
                 </a>
               </div>
               <div className="flex items-center justify-center lg:justify-start gap-2 w-full">
-                <Phone className="h-4 w-4 shrink-0" />
-                <a href="tel:+261385157042" className="hover:text-foreground transition-colors break-all">
+                <Phone className={`h-4 w-4 shrink-0 ${isWhiteMode ? 'text-black' : 'text-white'}`} />
+                <a href="tel:+261385157042" className={`${isWhiteMode ? 'text-black hover:text-black/60' : 'text-white hover:text-white/60'} transition-colors break-all`}>
                   038 51 570 42 / 037 87 590 30
                 </a>
               </div>
@@ -132,25 +128,25 @@ export const Footer = () => {
                 href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center lg:justify-start gap-2 hover:text-foreground transition-colors w-full"
+                className={`flex items-center justify-center lg:justify-start gap-2 ${isWhiteMode ? 'text-black hover:text-black/60' : 'text-white hover:text-white/60'} transition-colors w-full`}
               >
-                <MapPin className="h-4 w-4 shrink-0" />
+                <MapPin className={`h-4 w-4 shrink-0 ${isWhiteMode ? 'text-black' : 'text-white'}`} />
                 <span className="truncate">Atelier - Antananarivo</span>
               </a>
             </div>
 
             {/* Réseaux sociaux */}
             <div className="flex justify-center lg:justify-start gap-2 mt-6 relative z-10 w-full">
-              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Facebook className="h-4 w-4" />
               </a>
-              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Instagram className="h-4 w-4" />
               </a>
-              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <TiktokIcon className="h-4 w-4" />
               </a>
-              <a href="#" className="h-9 w-9 rounded-full border border-foreground/20 flex items-center justify-center hover:bg-foreground hover:text-background transition-colors">
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Youtube className="h-4 w-4" />
               </a>
             </div>
@@ -160,13 +156,13 @@ export const Footer = () => {
           <div className="lg:col-span-4 lg:col-start-5 grid grid-cols-1 sm:grid-cols-2 gap-6 self-start text-center sm:text-left w-full">
             {cols.map((c) => (
               <div key={c.title} className="w-full">
-                <div className="italic font-display text-sm mb-4 text-foreground/60">
+                <div className={`italic font-display text-sm mb-4 ${isWhiteMode ? 'text-black/60' : 'text-white/60'}`}>
                   {c.title}.
                 </div>
                 <ul className="space-y-2.5">
                   {c.links.map((l) => (
                     <li key={l}>
-                      <a href="#" className="text-sm text-foreground/70 hover:text-foreground transition-colors">
+                      <a href="#" className={`text-sm ${isWhiteMode ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white'} transition-colors`}>
                         {l}
                       </a>
                     </li>
@@ -186,12 +182,12 @@ export const Footer = () => {
               />
             )}
 
-            <div className="italic font-display text-sm mb-4 text-foreground/60 text-center sm:text-left relative z-10">
+            <div className={`italic font-display text-sm mb-4 ${isWhiteMode ? 'text-black/60' : 'text-white/60'} text-center sm:text-left relative z-10`}>
               NOUS TROUVER.
             </div>
 
             <div
-              className="relative w-full overflow-hidden rounded-lg border border-foreground/15 z-10 box-border"
+              className={`relative w-full overflow-hidden rounded-lg border ${isWhiteMode ? 'border-black/15' : 'border-white/15'} z-10 box-border`}
               style={{ aspectRatio: "4/3" }}
             >
               {isMobile ? (
@@ -199,19 +195,19 @@ export const Footer = () => {
                   href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-foreground/5 hover:bg-foreground/10 transition-colors p-4"
+                  className={`absolute inset-0 flex flex-col items-center justify-center gap-2 ${isWhiteMode ? 'bg-black/5 hover:bg-black/10' : 'bg-white/5 hover:bg-white/10'} transition-colors p-4`}
                 >
-                  <MapPin className="h-6 w-6 text-foreground/60" />
-                  <span className="text-xs text-foreground/70 uppercase tracking-widest underline text-center">
+                  <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/60' : 'text-white/60'}`} />
+                  <span className={`text-xs ${isWhiteMode ? 'text-black/70' : 'text-white/70'} uppercase tracking-widest underline text-center`}>
                     Voir sur Google Maps
                   </span>
                 </a>
               ) : (
                 <>
                   {!mapLoaded && (
-                    <div className="absolute inset-0 bg-foreground/5 flex flex-col items-center justify-center gap-3">
-                      <MapPin className="h-6 w-6 text-foreground/30 animate-pulse" />
-                      <span className="text-xs text-foreground/30 uppercase tracking-widest">
+                    <div className={`absolute inset-0 ${isWhiteMode ? 'bg-black/5' : 'bg-white/5'} flex flex-col items-center justify-center gap-3`}>
+                      <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/30' : 'text-white/30'} animate-pulse`} />
+                      <span className={`text-xs ${isWhiteMode ? 'text-black/30' : 'text-white/30'} uppercase tracking-widest`}>
                         Chargement…
                       </span>
                     </div>
@@ -237,7 +233,7 @@ export const Footer = () => {
       </div>
 
       {/* ── Barre du bas ── */}
-      <div className="container-x border-t border-foreground/10 py-6 text-center text-xs text-foreground/60 relative w-full max-w-full box-border">
+      <div className={`container-x border-t ${isWhiteMode ? 'border-black/10' : 'border-white/10'} py-6 text-center text-xs ${isWhiteMode ? 'text-black/60' : 'text-white/60'} relative w-full max-w-full box-border`}>
         {!isMobile && (
           <img
             src={circuitIncone1}

@@ -131,8 +131,9 @@ const Importation = () => {
       <InfoBar />
     </div>
       <section className="py-16 lg:py-24">
-        <div className="container-x">
-          <div className="max-w-6xl mx-auto space-y-12 lg:space-y-16">
+        {/* Même largeur et mêmes marges horizontales que le conteneur du MiniHero. */}
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="space-y-12 lg:space-y-16">
             {sections.map((section) => (
               <div
                 key={section.id}
