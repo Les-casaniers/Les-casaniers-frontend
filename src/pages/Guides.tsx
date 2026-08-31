@@ -172,14 +172,14 @@ const GuidesAchatSection = ({ key }: { key: string }) => {
   const colorMap: Record<string, string> = { purple: "from-purple-500 to-indigo-500", blue: "from-blue-500 to-cyan-500", green: "from-green-500 to-emerald-500" };
 
   return (
-   <section id="guides-achat" className="w-full py-6 scroll-mt-10">
-  <div className="w-full max-w-[1700px] mx-auto px-6 md:px-8 xl:px-12">
+  <section id="guides-achat" className="relative left-1/2 w-screen -translate-x-1/2 py-6 scroll-mt-10">
+  <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
     <div className="flex items-center gap-2 mb-5">
       <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center">
         <Gamepad className="h-4 w-4 text-white" />
       </div>
       <div>
-        <h2 className="text-lg font-bold">Guides d'achat</h2>
+        <h2 className="text-lg font-bold">Guides d'acha</h2>
         <p className="text-[10px] text-muted-foreground">Choisissez la configuration idéale</p>
       </div>
     </div>

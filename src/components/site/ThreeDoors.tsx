@@ -51,15 +51,30 @@ const doors = [
 export const ThreeDoors = () => (
   <section className="bg-black px-8 py-4 text-white lg:py-6">
     <div className="mb-4">
-      <h2 className="flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[30px]">
-        <span className="border-b-2 border-white pb-2 pr-3">
-          Choisis ton
-        </span>
-        <span className="flex items-center border-b-2 border-dashed border-white pb-2 pl-3 font-light italic tracking-[0.04em]">
-          chemin.
-          <CornerRightDown className="ml-2 h-5 w-5 translate-y-1.5 stroke-[1.5]" />
-        </span>
-      </h2>
+ <h2 className="inline-flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[34px]">
+  {/* Ligne 1 : soulignement solide */}
+  <span className="border-b-2 border-white pb-1 pr-3 whitespace-nowrap">
+    Choisis ton
+  </span>
+
+ 
+  <span className="relative border-b-2 border-dashed border-white pb-1 pl-3 font-light italic tracking-[0.04em] whitespace-nowrap">
+    chemin.
+    
+    <svg
+      className="absolute -bottom-5 -right-5 h-5 w-5 text-white"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 3c7 0 13 4 13 13" />
+      <path d="M10 12l6 6 6-6" />
+    </svg>
+  </span>
+</h2>
     </div>
 
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">

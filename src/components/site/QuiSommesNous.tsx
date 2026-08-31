@@ -13,35 +13,59 @@ const team = [
 ];
 
 const QuiSommesNous = () => (
-  <SiteLayout>
+  <SiteLayout footerClassName="bg-white text-black">
     <main className="bg-black py-10 text-white sm:py-14">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
-      <header className="-ml-40">
-        <h1 className="inline-flex items-end text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
-          <span className="shrink-0 border-b-2 border-white pb-1 pr-3">
-            Qui sommes
-          </span>
-
-          <span className="inline-block border-b-2 border-dashed border-white pb-1 pl-3 font-light normal-case italic tracking-normal">
-            nous ?
-          </span>
-        </h1>
-      </header>
+        <header className="-ml-40">
+<h1 className="inline-flex items-end text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
+  <span className="shrink-0 border-b-2 border-white pb-1 pr-3">
+    Qui sommes
+  </span>
+  <span className="inline-flex items-end whitespace-nowrap font-light normal-case italic tracking-normal relative">
+    <span className="border-b-2 border-dashed border-white pb-1 pr-3 uppercase">nous ?</span>
+    <svg
+      className="ml-1.5 h-5 w-5 shrink-0 stroke-[3] translate-y-0.5 text-white"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+       style={{ marginBottom: '-13px' }}
+    >
+      <path d="M3 3c7 0 13 4 13 13" />
+      <path d="M10 12l6 6 6-6" />
+    </svg>
+  </span>
+</h1>
+        </header>
         <p className="mt-12 rounded-lg border border-white/45 px-5 py-4 text-base leading-relaxed text-white/80 sm:px-6 sm:text-lg">
-          Bienvenue dans l’atelier où tes ambitions prennent forme. Ici, on écoute tes besoins et on met nos savoir-faire en commun pour te conseiller l’outil qui te correspond vraiment. On teste chaque machine, on soigne la livraison et on t’accompagne dans son entretien, parce qu’on tient à rester ton partenaire durable de performance.
+          Bienvenue dans l’atelier où tes ambitions prennent forme. Ici, on écoute tes besoins et on met nos savoir-faire en commun pour te conseiller l'outil qui te correspond vraiment. On teste chaque machine, on soigne la livraison et on t'accompagne dans son entretien, parce qu'on tient à rester ton partenaire durable de performance.
         </p>
 
         <section className="mt-12 grid items-center gap-8 md:grid-cols-[250px_1fr]">
-          <div className="relative mx-auto w-56 overflow-hidden rounded-[2rem] bg-white">
-            <img src={misa} alt="Misa, la mascotte" className="h-60 w-full object-contain" />
-            <div className="rounded-xl bg-white px-3 py-2 text-center text-black shadow-lg">
-              <p className="text-sm font-black underline">LA MASCOTTE</p>
-              <p className="text-xl leading-none">Misa</p>
+          <div className="relative mx-auto flex flex-col items-center">
+            {/* Cercle avec focus uniquement sur le visage */}
+            <div className="flex h-44 w-44 sm:h-48 sm:w-48 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
+              <img 
+                src={misa} 
+                alt="Misa, la mascotte" 
+                className="h-full w-full object-cover object-top scale-[1.2] translate-y-1" 
+              />
+            </div>
+            {/* Étiquette collée en pied d'image */}
+            <div className="-mt-7 relative z-10 w-full max-w-[170px] rounded-xl bg-white px-3 py-1.5 text-center text-black shadow-xl border border-gray-100">
+              <p className="text-xs font-black tracking-wider underline sm:text-sm">
+                LA MASCOTTE
+              </p>
+              <p className="text-xl font-bold leading-none">
+                Misa
+              </p>
             </div>
           </div>
           <div className="space-y-6 text-base leading-relaxed text-white/80 sm:text-lg">
-            <p>Sur notre site, Misa t’aide à te repérer, à mieux comprendre nos univers et à avancer plus facilement dans ton parcours.</p>
-            <p>Son nom vient de Misaotra, “merci” en malgache : une façon de remercier nos clients pour leur confiance et pour faire vivre ce projet.</p>
+            <p>Sur notre site, Misa t'aide à te repérer, à mieux comprendre nos univers et à avancer plus facilement dans ton parcours.</p>
+            <p>Son nom vient de Misaotra, "merci" en malgache : une façon de remercier nos clients pour leur confiance et pour faire vivre ce projet.</p>
             <p>À travers la Boutique de Misa, il porte aussi une mission qui nous tient à cœur : contribuer à la préservation de la forêt malgache.</p>
           </div>
         </section>
