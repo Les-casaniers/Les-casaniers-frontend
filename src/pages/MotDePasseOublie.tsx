@@ -275,7 +275,7 @@ const MotDePasseOublie = () => {
                     <span>Mise à jour...</span>
                   </>
                 ) : (
-                  <span>Valider</span>
+                  <span>Je valide</span>
                 )}
               </button>
             </form>

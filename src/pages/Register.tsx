@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
@@ -196,17 +197,42 @@ const Register = () => {
 
   return (
     <SiteLayout>
-      <section className="relative min-h-[calc(100vh-200px)] flex items-center bg-black overflow-hidden">
-        <div className="relative z-10 w-full container-x py-16 md:py-24">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10">
+        <div className="relative z-10 w-full container-x py-4 md:py-6">
+          {/* Augmentation de l'espacement entre les deux sections : gap-12 lg:gap-20 */}
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
 
-            {/* Section Gauche */}
-            <div className="space-y-5 pl-1 lg:pl-4">
-              <h1 className="font-handwritten font-semibold text-5xl md:text-6xl text-white leading-[1.1] tracking-wide">
+            {/* Section Gauche - Design mis à jour selon le modèle */}
+            <div className="space-y-3 sm:space-y-4 pl-2 sm:pl-4 md:pl-8 lg:pl-0 -ml-1 sm:-ml-2 lg:-ml-4 pr-2 sm:pr-4 lg:pr-0">
+              <h1
+                className="whitespace-normal sm:whitespace-nowrap text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-[1.2] sm:leading-[69px]"
+                style={{
+                  fontStyle: 'italic',
+                  fontWeight: 'normal',
+                  fontFamily: '"Glacial Indifference", system-ui, sans-serif',
+                  color: '#FFFFFF',
+                  textAlign: 'left',
+                  letterSpacing: '2.04px',
+                }}
+              >
                 Rejoins la communauté.
               </h1>
-              <p className="font-sans text-white/60 text-[15px] leading-relaxed max-w-[300px]">
-                Créer ton compte pour accéder à tes commandes, suivre tes réparations et configurer ton PC sur-mesure.
+              
+              {/* MODIFICATION ICI : Largeur ajustée (max-w-[360px] et sm:max-w-[480px]) pour forcer exactement 2 lignes sans coupure supplémentaire */}
+              <p
+                className="text-sm sm:text-base md:text-[22px] leading-relaxed sm:leading-[37px] max-w-[360px] sm:max-w-[480px] lg:max-w-[558px]"
+                style={{
+                  fontStyle: 'normal',
+                  fontWeight: 'normal',
+                  fontFamily: '"Glacial Indifference", system-ui, sans-serif',
+                  color: '#FFFFFF',
+                  textAlign: 'left',
+                  letterSpacing: '0.81px',
+                  opacity: 1,
+                }}
+              >
+                Crée ton compte pour accéder à tes commandes, <br className="hidden sm:block" />
+                suivre tes réparations et configurer ton PC sur-mesure.
               </p>
             </div>
 
@@ -400,10 +426,11 @@ const Register = () => {
                   )}
                 </div>
 
+                {/* Bouton Je m'inscris - Style compact comme le modèle */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 bg-white text-black font-sans font-semibold text-sm rounded-full hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                  className="w-full py-2.5 bg-white text-black font-sans font-semibold text-sm rounded-full hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                 >
                   {isLoading ? (
                     <>
@@ -412,36 +439,22 @@ const Register = () => {
                     </>
                   ) : (
                     <>
-                      <span>S'inscrire</span>
-                      <UserPlus className="h-4 w-4" />
+                      <span>Je m'inscris</span>
                     </>
                   )}
                 </button>
               </form>
 
-              <div className="text-center mt-5 space-y-2">
+              {/* Section liens - Style du modèle */}
+              <div className="text-center mt-6 space-y-3">
                 <p className="text-[13px] font-handwritten italic text-white/50">ou</p>
                 <p className="text-[13px] font-handwritten italic text-white/50">Tu as déjà un compte ?</p>
                 <Link
                   to="/login"
-                  className="inline-block w-full py-2.5 mt-2 border border-white/30 text-white font-sans text-sm font-medium rounded-full hover:bg-white/10 transition-colors duration-200"
+                  className="inline-flex w-full items-center justify-center py-2.5 border border-white/30 text-white font-sans text-sm font-medium rounded-full hover:bg-white/10 hover:border-white/50 transition-all duration-200"
                 >
-                  Connecte-toi
+                  Je me connecte
                 </Link>
-              </div>
-
-              {/* Conditions */}
-              <div className="mt-5 text-center">
-                <p className="text-[10px] font-sans text-white/40">
-                  En créant un compte, tu acceptes nos{" "}
-                  <Link to="/conditions" className="underline hover:text-white/70 transition-colors duration-200">
-                    Conditions d'utilisation
-                  </Link>{" "}
-                  et notre{" "}
-                  <Link to="/confidentialite" className="underline hover:text-white/70 transition-colors duration-200">
-                    Politique de confidentialité
-                  </Link>
-                </p>
               </div>
             </div>
           </div>
