@@ -600,61 +600,47 @@ export const Header = () => {
         )}
       </div>
 
-      {/* Quick nav links — SEULE zone flexible/compressible de la ligne (flex-1 min-w-0).
-          Si le contenu (zoom, texte plus large) dépasse la place dispo, CETTE zone défile
-          horizontalement en interne (overflow-x-auto) au lieu de pousser ses voisins.
-          Résultat : CATEGORIE, la gouttière et Configurateur Pro ne bougent JAMAIS,
-          quel que soit le zoom navigateur ou le scaling d'affichage Windows. */}
-      <div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex items-center gap-5 ml-8 w-max">
-          {quickNavLinks.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className={`
-                relative group flex items-center border rounded-md gap-1.5 px-6 py-2.5 text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-                ${
-                  item.accent
-                    ? "text-white hover:text-white"
-                    : "text-zinc-200 hover:text-white"
-                }
-                ${isActive(item.href) ? "text-primary" : ""}
-                ${item.label === "Devis Express" ? "mr-4" : ""}
-                border-zinc-600 bg-black
-              `}
-            >
-              <span>{item.label}</span>
-              <span
-                className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
-                  isActive(item.href)
-                    ? "opacity-100"
-                    : "opacity-0 group-hover:opacity-40"
-                }`}
-              />
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Configurateur Pro — largeur/contenu fixes (shrink-0), jamais compressé.
-          Comme la zone des liens ci-dessus est flex-1 min-w-0, elle absorbe seule
-          tout manque de place ; ce bouton garde donc toujours sa position et son
-          bord droit reste exactement aligné sur le bord droit de Panier. */}
+      {/* Quick nav links */}
+<div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+  <div className="flex items-center gap-3 lg:gap-3 xl:gap-4 2xl:gap-5 ml-4 lg:ml-4 xl:ml-6 2xl:ml-8 w-max">
+    {quickNavLinks.map((item) => (
       <Link
-        to="/configurateur"
-        className="shrink-0 flex items-center gap-3 pl-10 pr-10 py-2
-        text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
-        text-white hover:from-orange-600 hover:to-orange-700 transition-all 
-        rounded-md shadow-md
-        hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+        key={item.label}
+        to={item.href}
+        className={`
+          relative group flex items-center border rounded-md gap-1.5
+          px-4 lg:px-4 xl:px-5 2xl:px-6 py-2.5
+          text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+          ${item.accent ? "text-white hover:text-white" : "text-zinc-200 hover:text-white"}
+          ${isActive(item.href) ? "text-primary" : ""}
+          ${item.label === "Devis Express" ? "mr-2 xl:mr-3 2xl:mr-4" : ""}
+          border-zinc-600 bg-black
+        `}
       >
-        <img
-          src={lightIncone}
-          alt=""
-          className="h-6 w-6 object-contain"
+        <span>{item.label}</span>
+        <span
+          className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
+            isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+          }`}
         />
-        <span className="text-sm">Configurateur Pro</span>
       </Link>
+    ))}
+  </div>
+</div>
+
+{/* Configurateur Pro */}
+<Link
+  to="/configurateur"
+  className="shrink-0 flex items-center gap-2 lg:gap-2 xl:gap-3
+  pl-5 pr-5 lg:pl-6 lg:pr-6 xl:pl-8 xl:pr-8 2xl:pl-10 2xl:pr-10 py-2
+  text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
+  text-white hover:from-orange-600 hover:to-orange-700 transition-all 
+  rounded-md shadow-md
+  hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+>
+  <img src={lightIncone} alt="" className="h-6 w-6 object-contain" />
+  <span className="text-sm">Configurateur Pro</span>
+</Link>
     </div>
   </div>
 </nav>
