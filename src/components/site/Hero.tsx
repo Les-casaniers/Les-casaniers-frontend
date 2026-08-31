@@ -26,8 +26,9 @@ export const Hero = () => {
   return (
     <>
       <div className="w-full bg-black px-3 sm:px-6 lg:px-8">
+        {/* Structure et dimensions conservées à l'identique */}
         <section className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-2xl bg-zinc-950 aspect-[20/8] sm:aspect-[20/7] lg:aspect-[25/8] min-h-[270px] max-h-[68vh]">
-          {/* Carrousel d'images — object-cover garde les proportions de la photo sans la déformer */}
+          {/* Carrousel d'images */}
           <div className="absolute inset-0">
             {slides.map((slide, index) => (
               <img
@@ -41,42 +42,42 @@ export const Hero = () => {
             ))}
           </div>
 
-          
           <div className="absolute inset-0 bg-black/55 pointer-events-none" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent pointer-events-none" />
 
-          
-          <div className="relative z-10 flex h-full w-full items-center px-5 py-8 sm:px-8 lg:px-12">
+          {/* Rembourrage adapté dynamiquement (vw/cqw) pour conserver les proportions internes */}
+          <div className="relative z-10 flex h-full w-full items-center px-[4vw] py-[3vw] lg:px-[3.5cqw] lg:py-[2.5cqw]">
             <div className="max-w-3xl text-white">
-              <h1 className="text-[clamp(1.5rem,2.5vw,2.25rem)] font-black uppercase leading-tight tracking-[0.035em]">
+              {/* Le clamp monte jusqu'à 3rem pour remplir l'espace à haute résolution */}
+              <h1 className="text-[clamp(1.4rem,2.8vw,3rem)] font-black uppercase leading-tight tracking-[0.035em]">
                 Construisons ton outil de réussite
               </h1>
 
-              <p className="mt-4 sm:mt-6 w-full text-[clamp(0.875rem,1.2vw,1.125rem)] font-medium italic leading-relaxed tracking-[0.06em] text-white/85">
+              <p className="mt-[2%] w-full text-[clamp(0.85rem,1.35vw,1.35rem)] font-medium italic leading-relaxed tracking-[0.06em] text-white/85">
                 &quot; Le meilleur pc n’est pas forcément le plus puissant du marché.
-                <span className="block pl-0 sm:pl-8">
+                <span className="block pl-0 sm:pl-[2vw]">
                   C’est celui adapté à tes besoins, pour jouer et évoluer sereinement. &quot;
                 </span>
               </p>
 
               <Link
                 to="/qui-sommes-nous"
-                className="mt-6 inline-flex items-center gap-3 rounded-md bg-white px-3.5 py-3 text-[11px] font-extrabold uppercase tracking-tight text-black transition hover:bg-zinc-200"
+                className="mt-[3%] inline-flex items-center gap-3 rounded-md bg-white px-[1.4vw] py-[0.8vw] min-px-[14px] min-py-[8px] text-[clamp(0.7rem,0.95vw,0.95rem)] font-extrabold uppercase tracking-tight text-black transition hover:bg-zinc-200"
               >
                 Découvrir l'équipe
                 <img
                   src={personIcone}
                   alt="Équipe"
-                  className="h-5 w-5 object-contain"
+                  className="h-[1.2em] w-[1.2em] object-contain"
                 />
               </Link>
             </div>
 
-            {/* Mascotte affichée uniquement à partir de md (déjà géré en CSS, aucun changement nécessaire) */}
+            {/* Mascotte mise à l'échelle automatique selon la hauteur du bloc */}
             <img
               src={mascot}
               alt="Mascotte Les Casaniers"
-              className="absolute bottom-6 right-5 hidden h-[35%] max-h-44 w-auto object-contain drop-shadow-2xl md:block lg:right-10"
+              className="absolute bottom-[8%] right-[4%] hidden h-[45%] w-auto object-contain drop-shadow-2xl md:block"
             />
           </div>
 
