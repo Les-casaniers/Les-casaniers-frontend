@@ -127,8 +127,9 @@ const quickNavLinks = [
 ];
 
 
-const HEADER_CONTAINER = "w-full max-w-[1920px] mx-auto px-6";
-const HEADER_TOP_ROW_HEIGHT = "h-28";
+const HEADER_CONTAINER = "w-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-6";
+// Hauteur du bloc du haut : auto (avec wrap) sur mobile, hauteur fixe à partir de md comme dans le design d'origine
+const HEADER_TOP_ROW_HEIGHT = "md:h-28";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -146,6 +147,8 @@ export const Header = () => {
   );
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userButtonRef = useRef<HTMLButtonElement>(null);
+  const proFreelanceRef = useRef<HTMLAnchorElement>(null);
+  const searchAlignRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const { favorites } = useShop();
   const { cartCount } = useCartApi();
@@ -180,6 +183,39 @@ export const Header = () => {
 
   const getSousCategoriesForCategory = (catId: number) =>
     sousCategories?.filter((sc) => sc.id_categorie === catId) ?? [];
+
+  useEffect(() => {
+    const alignSearchWithProFreelance = () => {
+      const wrapperEl = searchAlignRef.current;
+      const linkEl = proFreelanceRef.current;
+
+      // En dessous de md, la recherche est pleine largeur sur sa propre ligne : pas d'alignement à appliquer
+      if (!wrapperEl || window.innerWidth < 768) {
+        if (wrapperEl) wrapperEl.style.marginLeft = "0px";
+        return;
+      }
+
+      if (!linkEl) return;
+
+      // Réinitialise pour mesurer la position "naturelle" du wrapper avant d'appliquer une marge
+      wrapperEl.style.marginLeft = "0px";
+      const targetLeft = linkEl.getBoundingClientRect().left;
+      const naturalLeft = wrapperEl.getBoundingClientRect().left;
+      const margin = Math.max(0, Math.round(targetLeft - naturalLeft));
+      wrapperEl.style.marginLeft = `${margin}px`;
+    };
+
+    // Mesure après le premier rendu, puis à chaque resize / chargement des polices
+    alignSearchWithProFreelance();
+    const raf = requestAnimationFrame(alignSearchWithProFreelance);
+    window.addEventListener("resize", alignSearchWithProFreelance);
+    window.addEventListener("load", alignSearchWithProFreelance);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", alignSearchWithProFreelance);
+      window.removeEventListener("load", alignSearchWithProFreelance);
+    };
+  }, [categories, sousCategories]);
 
   const megaMenuRef = useRef<HTMLDivElement>(null);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -328,124 +364,167 @@ export const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-black text-white border-b border-white/20 theme-transition">
-      {/* Top row: logo + search + account/favorites/cart — hauteur fixe, tout est centré dedans */}
+      {/* Top row: logo + search + account/favorites/cart.
+          Mobile : wrap sur 2 lignes (logo+icônes puis recherche).
+          md+ : une seule ligne, hauteur fixe comme dans le design d'origine. */}
       <div className={HEADER_CONTAINER}>
-        <div className={`flex items-center gap-3 ${HEADER_TOP_ROW_HEIGHT}`}>
-         {/* Logo — taille fixe, non-responsive : n'est jamais recalculée selon l'écran */}
-<Link to="/" className="flex items-center shrink-0 group -ml-4">
-  <img
-    src={logo}
-    alt="Les Casaniers"
-    className="h-40 w-auto object-contain brightness-0 invert scale-110 transition-transform duration-300 group-hover:scale-115"
-  />
-</Link>
-          {/* Search — Center, largeur fixe non-responsive */}
-<form
-  onSubmit={handleSearchSubmit}
-  className="relative flex-1 max-w-[520px] mx-6 translate-y-9 -translate-x-6"
->
-  <div className="relative flex items-center">
-    <div className="relative flex-1">
-      <input
-        type="search"
-        value={searchNom}
-        onChange={(e) => setSearchNom(e.target.value)}
-        onFocus={() => setIsSearchFocused(true)}
-        onBlur={() => setIsSearchFocused(false)}
-        placeholder="Rechercher un produit, une référence..."
-        className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
-      />
-      <button
-        type="button"
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className={`hidden absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
-      >
-        <SlidersHorizontal className="h-3.5 w-3.5" />
-      </button>
-      <button
-        type="submit"
-        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
-      >
-        <img
-          src={searchIncone}
-          alt="Rechercher"
-          className="h-5 w-5 object-contain"
-        />
-      </button>
-    </div>
-    <div className="ml-4 shrink-0">
-      <img
-        src={sunIncone}
-        alt="Sun"
-        className="h-8 w-8 object-contain"
-      />
-    </div>
-  </div>
+        <div
+          className={`flex flex-wrap md:flex-nowrap items-center gap-y-2 gap-x-2 sm:gap-x-3 py-2 md:py-0 ${HEADER_TOP_ROW_HEIGHT}`}
+        >
+          {/* Logo — taille responsive, garde le rendu d'origine à partir de md/xl */}
+          <Link
+            to="/"
+            className="order-1 flex items-center shrink-0 group md:ml-2 lg:ml-4"
+          >
+            <img
+              src={logo}
+              alt="Les Casaniers"
+              className="h-10 sm:h-12 md:h-24 lg:h-28 xl:h-32 2xl:h-40 w-auto object-contain brightness-0 invert scale-110 transition-transform duration-300 group-hover:scale-115"
+            />
+          </Link>
 
-  {showAdvanced && (
-    <div
-      ref={advancedRef}
-      className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Référence
-          </label>
-          <input
-            type="text"
-            value={searchRef}
-            onChange={(e) => setSearchRef(e.target.value)}
-            placeholder="Ex: CPU-INTEL-12700K"
-            className="w-full h-10 px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none text-sm"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Catégorie
-          </label>
-          <div className="relative">
-            <select
-              value={searchCategory}
-              onChange={(e) => setSearchCategory(e.target.value)}
-              className="w-full h- px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
+          {/* Mobile icons — restent sur la 1ère ligne, à droite du logo */}
+          <div className="order-2 ml-auto flex items-center gap-1 md:hidden">
+            <Link to="/favoris" className="relative p-2">
+              <Heart className="h-5 w-5" />
+              {favorites?.length > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                  {favorites.length > 9 ? "9+" : favorites.length}
+                </span>
+              )}
+            </Link>
+            <Link to="/panier" className="relative p-2">
+              <ShoppingBag className="h-5 w-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(true)}
             >
-              <option value="">Toutes les catégories</option>
-              {categories?.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.nom}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
-        <button
-          type="button"
-          onClick={() => {
-            setSearchRef("");
-            setSearchCategory("");
-          }}
-          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Effacer
-        </button>
-        <button
-          type="submit"
-          onClick={handleSearchSubmit}
-          className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          Appliquer
-        </button>
-      </div>
-    </div>
-  )}
-</form>
 
-          {/* Compte / Favoris / Panier — collé au bord droit du conteneur fixe grâce à ml-auto (toujours actif dès md) */}
-<div className="hidden md:flex items-center gap-6 ml-auto shrink-0 translate-y-8">
+          {/* Search — pleine largeur et sans offset sur mobile, recentrée avec les mêmes translate qu'à l'origine à partir de md/lg */}
+          {/* Ce wrapper reçoit sa margin-left calculée dynamiquement (voir l'effet plus haut)
+              pour que la recherche démarre exactement à la même position que "Pro & Freelance",
+              quelle que soit la largeur d'écran. */}
+          <div
+            ref={searchAlignRef}
+            className="order-3 md:order-2 w-full md:w-[320px] lg:w-[420px] xl:w-[480px] 2xl:w-[520px] md:translate-y-5 lg:translate-y-9"
+          >
+          <form
+            onSubmit={handleSearchSubmit}
+            className="relative w-full"
+          >
+            <div className="relative flex items-center">
+              <div className="relative flex-1">
+                <input
+                  type="search"
+                  value={searchNom}
+                  onChange={(e) => setSearchNom(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  placeholder="Rechercher un produit, une référence..."
+                  className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className={`hidden absolute right-12 top-1/2 -translate-y-1/2 p-1.5 rounded-full transition-all ${showAdvanced || searchRef || searchCategory ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full text-zinc-500 hover:text-black transition-all flex items-center justify-center"
+                >
+                  <img
+                    src={searchIncone}
+                    alt="Rechercher"
+                    className="h-5 w-5 object-contain"
+                  />
+                </button>
+              </div>
+              <div className="ml-4 shrink-0 hidden sm:block">
+                <img
+                  src={sunIncone}
+                  alt="Sun"
+                  className="h-8 w-8 object-contain"
+                />
+              </div>
+            </div>
+
+            {showAdvanced && (
+              <div
+                ref={advancedRef}
+                className="absolute left-0 right-0 top-full mt-2 bg-popover border border-border rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Référence
+                    </label>
+                    <input
+                      type="text"
+                      value={searchRef}
+                      onChange={(e) => setSearchRef(e.target.value)}
+                      placeholder="Ex: CPU-INTEL-12700K"
+                      className="w-full h-10 px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Catégorie
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={searchCategory}
+                        onChange={(e) => setSearchCategory(e.target.value)}
+                        className="w-full h- px-3 rounded-lg bg-secondary border border-transparent focus:border-primary focus:outline-none appearance-none text-sm"
+                      >
+                        <option value="">Toutes les catégories</option>
+                        {categories?.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.nom}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchRef("");
+                      setSearchCategory("");
+                    }}
+                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Effacer
+                  </button>
+                  <button
+                    type="submit"
+                    onClick={handleSearchSubmit}
+                    className="px-4 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Appliquer
+                  </button>
+                </div>
+              </div>
+            )}
+          </form>
+          </div>
+
+          {/* Compte / Favoris / Panier — collé au bord droit, comme dans le design d'origine, à partir de md */}
+          <div className="order-4 hidden md:flex items-center gap-4 lg:gap-6 ml-auto shrink-0 md:translate-y-5 lg:translate-y-8">
             <div className="relative">
               {isAuthenticated ? (
                 <>
@@ -529,121 +608,97 @@ export const Header = () => {
               count={cartCount}
             />
           </div>
-
-          {/* Mobile icons */}
-          <div className="flex items-center gap-1 md:hidden">
-            <Link to="/favoris" className="relative p-2">
-              <Heart className="h-5 w-5" />
-              {favorites?.length > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                  {favorites.length > 9 ? "9+" : favorites.length}
-                </span>
-              )}
-            </Link>
-            <Link to="/panier" className="relative p-2">
-              <ShoppingBag className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                  {cartCount > 9 ? "9+" : cartCount}
-                </span>
-              )}
-            </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
         </div>
       </div>
 
-      {/* Desktop Navigation Bar — MÊME conteneur fixe que la ligne du haut (HEADER_CONTAINER) */}
-     <nav className="hidden sm:block bg-black relative z-[100]">
-  <div className={HEADER_CONTAINER}>
-    <div className="flex items-center gap-3 py-1.5">
-      
-      {/* "Nos Produits" mega trigger */}
-      <div
-        className="relative shrink-0"
-        onMouseEnter={openMegaMenu}
-        onMouseLeave={closeMegaMenu}
-      >
-        <button
-          className={`
-            flex items-center gap-2 px-3 py-2.5 font-bold text-xs transition-all
-            bg-white text-black rounded-md ml-4
-            hover:bg-zinc-200
-            ${megaMenuOpen ? "bg-zinc-200" : ""}
-          `}
-        >
-          <Menu className="h-4 w-4" />
-          <span>CATEGORIE </span>
-          <ChevronDown
-            className={`h-3.5 w-3.5 transition-transform duration-200 ${
-              megaMenuOpen ? "rotate-180" : ""
-            }`}
-          />
-        </button>
+      {/* Desktop Navigation Bar — visible à partir de md pour matcher le seuil du reste du header
+          (avant, elle apparaissait dès sm alors que le menu mobile ne se cachait qu'à md,
+          ce qui créait un intervalle sans hamburger ni nav complète) */}
+      <nav className="hidden md:block bg-black relative z-[100]">
+        <div className={HEADER_CONTAINER}>
+          <div className="flex items-center gap-2 lg:gap-3 py-1.5">
 
-        {/* Mega Menu Panel - z-[110] garanti au-dessus de tout */}
-        {megaMenuOpen && (
-          <div
-            ref={megaMenuRef}
-            onMouseEnter={keepMegaMenuOpen}
-            onMouseLeave={closeMegaMenu}
-            className="absolute left-0 top-full z-[110] animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
-          >
-            <CategoriesMegaMenu />
+            {/* "Nos Produits" mega trigger */}
+            <div
+              className="relative shrink-0"
+              onMouseEnter={openMegaMenu}
+              onMouseLeave={closeMegaMenu}
+            >
+              <button
+                className={`
+                  flex items-center gap-2 px-2.5 lg:px-3 py-2.5 font-bold text-xs transition-all
+                  bg-white text-black rounded-md ml-2 lg:ml-4
+                  hover:bg-zinc-200
+                  ${megaMenuOpen ? "bg-zinc-200" : ""}
+                `}
+              >
+                <Menu className="h-4 w-4" />
+                <span>CATEGORIE </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                    megaMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Mega Menu Panel - z-[110] garanti au-dessus de tout */}
+              {megaMenuOpen && (
+                <div
+                  ref={megaMenuRef}
+                  onMouseEnter={keepMegaMenuOpen}
+                  onMouseLeave={closeMegaMenu}
+                  className="absolute left-0 top-full z-[110] animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
+                >
+                  <CategoriesMegaMenu />
+                </div>
+              )}
+            </div>
+
+            {/* Quick nav links — scroll horizontal si ça ne rentre pas (md/lg) */}
+            <div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex items-center gap-2 lg:gap-3 xl:gap-4 2xl:gap-5 ml-2 lg:ml-4 xl:ml-6 2xl:ml-8 w-max">
+                {quickNavLinks.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    ref={item.label === "Pro & Freelance" ? proFreelanceRef : undefined}
+                    className={`
+                      relative group flex items-center border rounded-md gap-1.5
+                      px-3 lg:px-4 xl:px-5 2xl:px-6 py-2.5
+                      text-xs font-semibold tracking-wide transition-all whitespace-nowrap
+                      ${item.accent ? "text-white hover:text-white" : "text-zinc-200 hover:text-white"}
+                      ${isActive(item.href) ? "text-primary" : ""}
+                      ${item.label === "Devis Express" ? "mr-2 xl:mr-3 2xl:mr-4" : ""}
+                      border-zinc-600 bg-black
+                    `}
+                  >
+                    <span>{item.label}</span>
+                    <span
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
+                        isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"
+                      }`}
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Configurateur Pro */}
+            <Link
+              to="/configurateur"
+              className="shrink-0 flex items-center gap-2 lg:gap-2 xl:gap-3
+              pl-3 pr-3 lg:pl-6 lg:pr-6 xl:pl-8 xl:pr-8 2xl:pl-10 2xl:pr-10 py-2
+              text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600
+              text-white hover:from-orange-600 hover:to-orange-700 transition-all
+              rounded-md shadow-md
+              hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+            >
+              <img src={lightIncone} alt="" className="h-6 w-6 object-contain" />
+              <span className="hidden lg:inline text-sm">Configurateur Pro</span>
+            </Link>
           </div>
-        )}
-      </div>
-
-      {/* Quick nav links */}
-<div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-  <div className="flex items-center gap-3 lg:gap-3 xl:gap-4 2xl:gap-5 ml-4 lg:ml-4 xl:ml-6 2xl:ml-8 w-max">
-    {quickNavLinks.map((item) => (
-      <Link
-        key={item.label}
-        to={item.href}
-        className={`
-          relative group flex items-center border rounded-md gap-1.5
-          px-4 lg:px-4 xl:px-5 2xl:px-6 py-2.5
-          text-xs font-semibold tracking-wide transition-all whitespace-nowrap
-          ${item.accent ? "text-white hover:text-white" : "text-zinc-200 hover:text-white"}
-          ${isActive(item.href) ? "text-primary" : ""}
-          ${item.label === "Devis Express" ? "mr-2 xl:mr-3 2xl:mr-4" : ""}
-          border-zinc-600 bg-black
-        `}
-      >
-        <span>{item.label}</span>
-        <span
-          className={`absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full transition-all duration-200 ${
-            isActive(item.href) ? "opacity-100" : "opacity-0 group-hover:opacity-40"
-          }`}
-        />
-      </Link>
-    ))}
-  </div>
-</div>
-
-{/* Configurateur Pro */}
-<Link
-  to="/configurateur"
-  className="shrink-0 flex items-center gap-2 lg:gap-2 xl:gap-3
-  pl-5 pr-5 lg:pl-6 lg:pr-6 xl:pl-8 xl:pr-8 2xl:pl-10 2xl:pr-10 py-2
-  text-xs font-bold tracking-wide bg-gradient-to-r from-orange-500 to-orange-600 
-  text-white hover:from-orange-600 hover:to-orange-700 transition-all 
-  rounded-md shadow-md
-  hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
->
-  <img src={lightIncone} alt="" className="h-6 w-6 object-contain" />
-  <span className="text-sm">Configurateur Pro</span>
-</Link>
-    </div>
-  </div>
-</nav>
+        </div>
+      </nav>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
