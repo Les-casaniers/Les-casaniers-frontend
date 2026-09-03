@@ -230,9 +230,36 @@ const Importation = () => {
           </div>
 
           {/* Titre du formulaire, souligné en pointillés */}
-          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-8 inline-block border-b-2 border-dashed border-white/60 pb-1">
-            DECRIS NOUS TES BESOINS
-          </h2>
+<h2 className="relative inline-block pb-3 mb-8">
+  <span className="text-xl lg:text-2xl font-extrabold uppercase text-white tracking-wide">
+    DECRIS NOUS{" "}
+  </span>
+  <span className="text-xl lg:text-2xl font-semibold italic uppercase text-white/90 tracking-wide">
+    TES BESOINS
+  </span>
+
+  {/* ligne pleine sous "DECRIS NOUS" */}
+  <span className="absolute left-0 bottom-0 w-[58%] border-b-2 border-white" />
+
+  {/* ligne pointillée sous "TES BESOINS" */}
+  <span className="absolute left-[58%] right-0 bottom-0 border-b-2 border-dashed border-white/70" />
+
+  {/* flèche courbée en bout de ligne */}
+  <svg
+    className="absolute -bottom-4 -right-6 h-5 w-5 text-white"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 3c7 0 13 4 13 13" />
+    <path d="M10 12l6 6 6-6" />
+  </svg>
+</h2>
+
+
 
           {/* Formulaire dans une carte blanche, même largeur/alignement que le MiniHero */}
           <form
@@ -407,9 +434,34 @@ const Importation = () => {
           </div>
 
           {/* Titre du formulaire, souligné en pointillés */}
-          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-8 inline-block border-b-2 border-dashed border-white/60 pb-1">
-            DECRIS NOUS TES BESOINS
-          </h2>
+<h2 className="relative inline-block pb-3 mb-8">
+  <span className="text-xl lg:text-2xl font-extrabold uppercase text-white tracking-wide">
+    DECRIS NOUS{" "}
+  </span>
+  <span className="text-xl lg:text-2xl font-semibold italic uppercase text-white/90 tracking-wide">
+    TES BESOINS
+  </span>
+
+  {/* ligne pleine sous "DECRIS NOUS" */}
+  <span className="absolute left-0 bottom-0 w-[58%] border-b-2 border-white" />
+
+  {/* ligne pointillée sous "TES BESOINS" */}
+  <span className="absolute left-[58%] right-0 bottom-0 border-b-2 border-dashed border-white/70" />
+
+  {/* flèche courbée en bout de ligne */}
+  <svg
+    className="absolute -bottom-4 -right-6 h-5 w-5 text-white"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 3c7 0 13 4 13 13" />
+    <path d="M10 12l6 6 6-6" />
+  </svg>
+</h2>
 
           {/* Formulaire dans une carte blanche, même largeur/alignement que le MiniHero */}
           <form
