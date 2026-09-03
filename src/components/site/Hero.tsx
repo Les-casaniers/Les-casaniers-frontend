@@ -5,7 +5,6 @@ import t1 from "@/assets/t1.jpg";
 import t2 from "@/assets/t2.jpg";
 import t3 from "@/assets/t3.jpg";
 import mascot from "@/assets/Mascotte_Plan de travail 1.png";
-import { BandeauMarques } from "../layout/BandeauMarques";
 
 const slides = [t1, t2, t3];
 
@@ -112,7 +111,6 @@ export const Hero = () => {
           </div>
         </section>
       </div>
-      <BandeauMarques />
     </>
   );
 };
