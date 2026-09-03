@@ -21,7 +21,7 @@ const DevisExpress = () => {
   };
 
   return (
-    <SiteLayout footerClassName="bg-white text-black">
+    <SiteLayout>
       <style>{`
         .devis-page { font-family: 'Inter', sans-serif; background-color: #000; }
         
