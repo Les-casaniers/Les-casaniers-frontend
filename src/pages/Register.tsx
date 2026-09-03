@@ -1,4 +1,4 @@
-
+// Register.tsx
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Mail, Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
@@ -199,40 +199,38 @@ const Register = () => {
     <SiteLayout>
       <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10">
         <div className="relative z-10 w-full container-x py-4 md:py-6">
-          {/* Augmentation de l'espacement entre les deux sections : gap-12 lg:gap-20 */}
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
 
-            {/* Section Gauche - Design mis à jour selon le modèle */}
+            {/* Section Gauche */}
             <div className="space-y-3 sm:space-y-4 pl-2 sm:pl-4 md:pl-8 lg:pl-0 -ml-1 sm:-ml-2 lg:-ml-4 pr-2 sm:pr-4 lg:pr-0">
               <h1
-                className="whitespace-normal sm:whitespace-nowrap text-3xl sm:text-4xl md:text-5xl lg:text-[55px] leading-[1.2] sm:leading-[69px]"
+                className="whitespace-nowrap text-2xl sm:text-3xl md:text-4xl lg:text-[42px] leading-[1.2] sm:leading-[1.25] lg:leading-[52px]"
                 style={{
                   fontStyle: 'italic',
                   fontWeight: 'normal',
                   fontFamily: '"Glacial Indifference", system-ui, sans-serif',
                   color: '#FFFFFF',
                   textAlign: 'left',
-                  letterSpacing: '2.04px',
+                  letterSpacing: '0.04em',
                 }}
               >
                 Rejoins la communauté.
               </h1>
               
-              {/* MODIFICATION ICI : Largeur ajustée (max-w-[360px] et sm:max-w-[480px]) pour forcer exactement 2 lignes sans coupure supplémentaire */}
               <p
-                className="text-sm sm:text-base md:text-[22px] leading-relaxed sm:leading-[37px] max-w-[360px] sm:max-w-[480px] lg:max-w-[558px]"
+                className="text-sm sm:text-base lg:text-[16px] leading-relaxed lg:leading-[26px]"
                 style={{
                   fontStyle: 'normal',
                   fontWeight: 'normal',
                   fontFamily: '"Glacial Indifference", system-ui, sans-serif',
                   color: '#FFFFFF',
                   textAlign: 'left',
-                  letterSpacing: '0.81px',
-                  opacity: 1,
+                  letterSpacing: '0.02em',
+                  opacity: 0.7,
                 }}
               >
-                Crée ton compte pour accéder à tes commandes, <br className="hidden sm:block" />
-                suivre tes réparations et configurer ton PC sur-mesure.
+                <span className="block">Crée ton compte pour accéder à tes commandes,</span>
+                <span className="block sm:whitespace-nowrap">suivre tes réparations et configurer ton PC sur-mesure.</span>
               </p>
             </div>
 
@@ -426,35 +424,37 @@ const Register = () => {
                   )}
                 </div>
 
-                {/* Bouton Je m'inscris - Style compact comme le modèle */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 bg-white text-black font-sans font-semibold text-sm rounded-full hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                      <span>Création du compte...</span>
-                    </>
-                  ) : (
-                    <>
+                {/* Bouton Je m'inscris - Centré et compact comme sur la capture 090145 */}
+                <div className="flex justify-center mt-3 sm:mt-4">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-white text-black font-semibold text-xs sm:text-sm rounded-lg hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>Création du compte...</span>
+                      </>
+                    ) : (
                       <span>Je m'inscris</span>
-                    </>
-                  )}
-                </button>
+                    )}
+                  </button>
+                </div>
               </form>
 
-              {/* Section liens - Style du modèle */}
-              <div className="text-center mt-6 space-y-3">
-                <p className="text-[13px] font-handwritten italic text-white/50">ou</p>
-                <p className="text-[13px] font-handwritten italic text-white/50">Tu as déjà un compte ?</p>
-                <Link
-                  to="/login"
-                  className="inline-flex w-full items-center justify-center py-2.5 border border-white/30 text-white font-sans text-sm font-medium rounded-full hover:bg-white/10 hover:border-white/50 transition-all duration-200"
-                >
-                  Je me connecte
-                </Link>
+              {/* Section liens - Espacement resserré et bouton centré identique au modèle 090145 */}
+              <div className="mt-2.5 sm:mt-3 text-center space-y-1.5 sm:space-y-2">
+                <p className="text-[11px] sm:text-xs italic text-white/50">ou</p>
+                <p className="text-xs sm:text-sm italic text-white/60">Tu as déjà un compte ?</p>
+                <div className="flex justify-center pt-0.5">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center justify-center px-6 py-2 border border-white/30 text-white font-medium text-xs sm:text-sm rounded-lg hover:bg-white/5 hover:border-white/50 transition-all duration-200"
+                  >
+                    Je me connecte
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
