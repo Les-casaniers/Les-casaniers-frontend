@@ -128,8 +128,9 @@ const quickNavLinks = [
 
 
 const HEADER_CONTAINER = "w-full max-w-[1920px] mx-auto px-3 sm:px-4 md:px-6";
+const HEADER_SIDE_OFFSET = "md:ml-2 lg:ml-4";
 // Hauteur du bloc du haut : auto (avec wrap) sur mobile, hauteur fixe à partir de md comme dans le design d'origine
-const HEADER_TOP_ROW_HEIGHT = "md:h-28";
+const HEADER_TOP_ROW_HEIGHT = "md:h-36";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -201,7 +202,7 @@ export const Header = () => {
       wrapperEl.style.marginLeft = "0px";
       const targetLeft = linkEl.getBoundingClientRect().left;
       const naturalLeft = wrapperEl.getBoundingClientRect().left;
-      const margin = Math.max(0, Math.round(targetLeft - naturalLeft));
+      const margin = Math.round(targetLeft - naturalLeft);
       wrapperEl.style.marginLeft = `${margin}px`;
     };
 
@@ -374,7 +375,7 @@ export const Header = () => {
           {/* Logo — taille responsive, garde le rendu d'origine à partir de md/xl */}
           <Link
             to="/"
-            className="order-1 flex items-center shrink-0 group md:ml-2 lg:ml-4"
+            className={`order-1 flex items-center shrink-0 group ${HEADER_SIDE_OFFSET} md:-translate-x-9 lg:-translate-x-9`}
           >
             <img
               src={logo}
@@ -416,7 +417,7 @@ export const Header = () => {
               quelle que soit la largeur d'écran. */}
           <div
             ref={searchAlignRef}
-            className="order-3 md:order-2 w-full md:w-[320px] lg:w-[420px] xl:w-[480px] 2xl:w-[520px] md:translate-y-5 lg:translate-y-9"
+            className="order-3 md:order-2 w-full md:w-[320px] lg:w-[420px] xl:w-[480px] 2xl:w-[520px] md:translate-y-5 lg:translate-y-6"
           >
           <form
             onSubmit={handleSearchSubmit}
@@ -524,7 +525,7 @@ export const Header = () => {
           </div>
 
           {/* Compte / Favoris / Panier — collé au bord droit, comme dans le design d'origine, à partir de md */}
-          <div className="order-4 hidden md:flex items-center gap-4 lg:gap-6 ml-auto shrink-0 md:translate-y-5 lg:translate-y-8">
+          <div className="order-4 hidden md:flex items-center gap-4 lg:gap-6 ml-auto shrink-0 md:translate-y-5 lg:translate-y-5">
             <div className="relative">
               {isAuthenticated ? (
                 <>
@@ -620,14 +621,14 @@ export const Header = () => {
 
             {/* "Nos Produits" mega trigger */}
             <div
-              className="relative shrink-0"
+              className={`relative shrink-0 ${HEADER_SIDE_OFFSET}`}
               onMouseEnter={openMegaMenu}
               onMouseLeave={closeMegaMenu}
             >
               <button
                 className={`
                   flex items-center gap-2 px-2.5 lg:px-3 py-2.5 font-bold text-xs transition-all
-                  bg-white text-black rounded-md ml-2 lg:ml-4
+                  bg-white text-black rounded-md
                   hover:bg-zinc-200
                   ${megaMenuOpen ? "bg-zinc-200" : ""}
                 `}
