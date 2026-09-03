@@ -1,6 +1,3 @@
-
-
-
 // Login.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
@@ -249,43 +246,39 @@ const Login = () => {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 sm:py-3.5 bg-white text-black font-semibold text-sm rounded-full hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-5 sm:mt-6 shadow-lg shadow-white/10"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                      <span>Connexion en cours...</span>
-                    </>
-                  ) : (
-                    <>
+                {/* Bouton de connexion réduit et centré avec marge resserrée */}
+                <div className="flex justify-center mt-3 sm:mt-4">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="px-6 py-2 bg-white text-black font-semibold text-xs sm:text-sm rounded-lg hover:bg-white/90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {isLoading ? (
+                      <>
+                        <div className="h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>Connexion en cours...</span>
+                      </>
+                    ) : (
                       <span>Je me connecte</span>
-                    </>
-                  )}
-                </button>
+                    )}
+                  </button>
+                </div>
               </form>
 
               {!isAdmin && !isLivreur && (
-                <div className="mt-6 sm:mt-8">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs">
-                      <span className="px-4 bg-black text-white/50 italic">ou</span>
-                    </div>
-                  </div>
+                <div className="mt-2 sm:mt-2.5 text-center">
+                  <span className="text-[11px] sm:text-xs text-white/50 italic block">ou</span>
                   
-                  <div className="text-center mt-5 sm:mt-6 space-y-3">
-                    <p className="text-sm text-white/50 italic">Pas encore de compte ?</p>
-                    <Link
-                      to="/inscription"
-                      className="inline-flex w-full items-center justify-center py-2.5 sm:py-3 border border-white/30 text-white font-medium text-sm rounded-full hover:bg-white/5 hover:border-white/50 transition-all duration-200"
-                    >
-                      Créer ton compte
-                    </Link>
+                  <div className="mt-1.5 sm:mt-2 space-y-2">
+                    <p className="text-xs sm:text-sm text-white/60 italic">Pas encore de compte ?</p>
+                    <div className="flex justify-center">
+                      <Link
+                        to="/inscription"
+                        className="inline-flex items-center justify-center px-6 py-2 border border-white/30 text-white font-medium text-xs sm:text-sm rounded-lg hover:bg-white/5 hover:border-white/50 transition-all duration-200"
+                      >
+                        Je crée mon compte
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}
