@@ -1,15 +1,25 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Package, Truck, Clock, Shield, CheckCircle, Plus, Send, Plane, Ship } from "lucide-react";
-import { Link } from "react-router-dom";
+// import { Package, Truck, Clock, Shield, CheckCircle, Plus, Send, Plane, Ship } from "lucide-react";
+import { Truck, Send } from "lucide-react"; // Garde seulement ce qui est utilisé
+// import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
-import { InfoBar } from "@/components/site/InfoBar";
-import Mascote from "@/assets/3.png";
+// import { InfoBar } from "@/components/site/InfoBar";
+// import Mascote from "@/assets/3.png";
+
 const Importation = () => {
   const location = useLocation();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    categorie: "",
+    telephone: "",
+    societe: "",
+    nom: "",
+    email: "",
+    description: ""
+  });
 
   useEffect(() => {
     document.title = "Importation — Les Casaniers Madagascar";
@@ -26,6 +36,25 @@ const Importation = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    // Logique d'envoi du formulaire
+    console.log("Formulaire soumis:", formData);
+    setTimeout(() => setIsSubmitting(false), 2000);
+  };
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  /* ============================================
+     ANCIENNES SECTIONS COMMENTÉES
+     ============================================ */
+  /*
   const sections = [
     {
       id: "commande-pieces",
@@ -104,34 +133,178 @@ const Importation = () => {
       }
     }
   ];
+  */
 
   return (
     <SiteLayout>
-<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
-      {/* 1. Composant MiniHero */}
-      <MiniHero
-        title="Importation Chine - Madagascar."
-        description={
-          <div className="flex flex-col">
-            <p>Importation de pièces détachées et appareils électroniques depuis la Chine.</p>
-            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-              Tous vos équipements sur mesure, livrés à Tananarive.
+      {/* ==========================================
+          MINIHERO
+          ========================================== */}
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+        <MiniHero
+          title="Importation Europe - Madagascar."
+          description={
+            <div className="flex flex-col">
+              <p>Un produit introuvable dans le catalogue ?</p>
+              <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+                On le recherche pour vous 
+              </p>
+            </div>
+          }
+          bg="/Europe.png"
+          pill={{ 
+            icon: <Truck className="h-3.5 w-3.5" />, 
+            label: "Importation" 
+          }}
+        />
+
+        {/* INFO BAR COMMENTÉE */}
+        {/* <InfoBar /> */}
+      </div>
+
+      {/* ==========================================
+          FORMULAIRE D'IMPORTATION
+          ========================================== */}
+      <section className="py-8 lg:py-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Titre principal */}
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
+            IMPORTATION EUROPE-MADAGASCAR
+          </h1>
+          
+          {/* Sous-titre avec guillemets */}
+          <div className="text-lg lg:text-xl text-muted-foreground mb-4">
+            <p className="italic">"Un produit introuvable dans les catalogues ?</p>
+            <p className="italic pl-6 lg:pl-8">On le cherche pour toi !"</p>
+          </div>
+
+          {/* Description */}
+          <div className="text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
+            <p>
+              Tu as repéré un produit qui n'est pas disponible sur le site ? Donne-nous sa référence,
+              un lien ou une description de ton besoin. Notre équipe vérifie les possibilités d'approvisionnement,
+              le délai et le prix avant toute commande.
             </p>
           </div>
-        }
-        bg="/7.png" // Image depuis le dossier public/
-        mascot={Mascote}
-        pill={{ 
-          icon: <Truck className="h-3.5 w-3.5" />, 
-          label: "Importation" 
-        }}
-      />
 
-      {/* 2. InfoBar positionnée juste en dessous */}
-      <InfoBar />
-    </div>
+          {/* Titre du formulaire */}
+          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-6">
+            DÉCRIS NOUS TES BESOINS
+          </h2>
+
+          {/* Formulaire */}
+          <form onSubmit={handleSubmit} className="max-w-3xl">
+            {/* Ligne 1: Catégorie + Téléphone + Société */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Catégorie<span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="categorie"
+                  value={formData.categorie}
+                  onChange={handleChange}
+                  className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Téléphone<span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="telephone"
+                  value={formData.telephone}
+                  onChange={handleChange}
+                  className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Société
+                </label>
+                <input
+                  type="text"
+                  name="societe"
+                  value={formData.societe}
+                  onChange={handleChange}
+                  className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Ligne 2: Nom + Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Nom et prénom<span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="nom"
+                  value={formData.nom}
+                  onChange={handleChange}
+                  className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-muted-foreground mb-1">
+                  Email<span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-6">
+              <label className="block text-sm text-muted-foreground mb-1">
+                Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...<span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full bg-secondary/20 border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 resize-none"
+                required
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="text-sm text-muted-foreground mb-6 space-y-1">
+              <p className="text-green-500">✓ Réponse sous 24h avec devis d'importation</p>
+              <p className="text-red-500">* Ces champs doivent être obligatoirement remplis</p>
+            </div>
+
+            {/* Bouton d'envoi */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Envoi en cours..." : "Envoyer"}
+              <Send className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* ==========================================
+          ANCIEN CONTENU COMMENTÉ
+          ========================================== */}
+      {/*
       <section className="py-16 lg:py-24">
-        {/* Même largeur et mêmes marges horizontales que le conteneur du MiniHero. */}
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-12 lg:space-y-16">
             {sections.map((section) => (
@@ -140,7 +313,6 @@ const Importation = () => {
                 id={section.id}
                 className="group scroll-mt-20"
               >
-                {/* Header simplifié */}
                 <div className="flex items-center gap-3 mb-8">
                   <div className={`p-2 rounded-lg ${section.bgColor} ${section.color}`}>
                     {section.icon}
@@ -153,13 +325,10 @@ const Importation = () => {
                   </div>
                 </div>
 
-                {/* Carte principale */}
                 <div className={`bg-secondary/5 rounded-2xl border ${section.borderColor} border-opacity-30 overflow-hidden`}>
                   <div className="p-6 lg:p-8">
-                    {/* Intro */}
                     <p className="text-muted-foreground mb-6">{section.content.intro}</p>
 
-                    {/* Points clés - grille simple */}
                     <div className="grid sm:grid-cols-2 gap-3 mb-8">
                       {section.content.points.map((point, idx) => (
                         <div key={idx} className="flex items-start gap-2 text-sm">
@@ -169,7 +338,6 @@ const Importation = () => {
                       ))}
                     </div>
 
-                    {/* Process - pour commande */}
                     {section.content.process && (
                       <div className="border-t border-border pt-6">
                         <div className="grid grid-cols-5 gap-2">
@@ -186,7 +354,6 @@ const Importation = () => {
                       </div>
                     )}
 
-                    {/* Steps - pour suivi */}
                     {section.content.steps && (
                       <div className="border-t border-border pt-6">
                         <div className="flex items-center justify-between gap-1">
@@ -203,7 +370,6 @@ const Importation = () => {
                       </div>
                     )}
 
-                    {/* Transport modes - pour délais */}
                     {section.content.transportModes && (
                       <div className="border-t border-border pt-6">
                         <div className="grid sm:grid-cols-2 gap-4">
@@ -227,7 +393,6 @@ const Importation = () => {
                     )}
                   </div>
 
-                  {/* Footer avec CTA */}
                   <div className="border-t border-border bg-secondary/10 px-6 lg:px-8 py-4">
                     <Link
                       to="/devis-express"
@@ -243,6 +408,7 @@ const Importation = () => {
           </div>
         </div>
       </section>
+      */}
     </SiteLayout>
   );
 };

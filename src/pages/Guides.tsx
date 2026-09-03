@@ -12,9 +12,7 @@ import {
   useGuides, useGuidesByCategory, usePopularGuides, useRecentGuides,
   useSubscribeNewsletter, GuideDifficulty,
 } from "@/hooks/useGuides";
-import { InfoBar } from "@/components/site/InfoBar";
 import ServicesSection from "@/components/guide/ServicesSection";
-import mascote from "@/assets/3.png";
 type TabId = "guides-achat" | "actualites-tech" | "tutos-maintenance" | "services";
 
 // Configuration des onglets
@@ -459,25 +457,28 @@ const Guides = () => {
 <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
       {/* 1. Composant MiniHero */}
       <MiniHero
-        title="Guides, Services & Actualités."
+        title="Besoins de conseils ? ."
         description={
           <div className="flex flex-col">
-            <p>Des conseils concrets pour choisir, importer, monter</p>
+            <p>Nos meilleurs conseils pour faire le bon choix</p>
             <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-              et entretenir votre matériel à Madagascar, avec un accompagnement sur mesure.
+              selon tes besoins et ton  budget 
             </p>
           </div>
         }
-        bg="/6.png" // Image provenant du dossier public/
-        mascot={mascote}
+        bg="/guide.png" // Image provenant du dossier public/
+      
         pill={{ 
           icon: <BookOpen className="h-3.5 w-3.5" />, 
           label: "Guides & Services" 
         }}
       />
 
-      {/* 2. InfoBar positionnée juste en dessous */}
-      <InfoBar />
+ 
+ 
+
+   
+   
     </div>
       {isSectionedView && (
         <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">

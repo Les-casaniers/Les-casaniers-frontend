@@ -19,7 +19,7 @@ const Gaming = () => {
   <MiniHero
     title={
       <>
-        Ton univers gaming commence ici {" "}
+        une perfomence a la hauteur de tes ambitions {" "}
         
       </>
     }
