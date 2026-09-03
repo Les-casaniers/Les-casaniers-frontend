@@ -1,480 +1,198 @@
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import {
-  Send,
-  Phone,
-  Mail,
-  User,
   FileText,
   MessageCircle,
-  CheckCircle,
-  AlertCircle,
-  Building,
-  Calendar,
-  Building2,
-  Wallet,
-  Clock,
-  Sparkles,
-  Shield,
-  Zap,
 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
-import { Button } from "@/components/ui/button";
-import { MiniHero } from "@/components/layout/MiniHero";
-import { InfoBar } from "@/components/site/InfoBar";
-import Mascote from "@/assets/3.png";
+
 const DevisExpress = () => {
   const location = useLocation();
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    nom: "",
-    email: "",
-    telephone: "",
-    entreprise: "",
-    besoin: "",
-    budget: "",
-    dateSouhaitee: "",
-    message: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.title = "Devis Express — Les Casaniers Madagascar";
-    const meta =
-      document.querySelector('meta[name="description"]') ??
-      document.head.appendChild(
-        Object.assign(document.createElement("meta"), { name: "description" }),
-      );
-    meta.setAttribute(
-      "content",
-      "Devis express pour professionnels. Besoin d'un PC sur-mesure ou d'un service spécifique ? Contactez-nous directement.",
-    );
-  }, []);
-
-  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [location.pathname]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-  //   setTimeout(() => {
-  //     setFormSubmitted(true);
-  //     setIsSubmitting(false);
-  //   }, 1000);
-  // };
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Formulaire soumis !"); 
-    setIsSubmitting(true);
-
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
-    console.log("URL appelée:", `${API_URL}/devis-express`); 
-
-    try {
-      const response = await fetch(`${API_URL}/devis-express`, {
-        method: "POST", 
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          nom: formData.nom,
-          email: formData.email,
-          telephone: formData.telephone,
-          entreprise: formData.entreprise || null,
-          besoin: formData.besoin,
-          budget: formData.budget || null,
-          date_souhaitee: formData.dateSouhaitee || null,
-          message: formData.message || null,
-        }),
-      });
-
-      console.log("Réponse status:", response.status); // ← Ajoutez ceci
-      const data = await response.json();
-      console.log("Données réponse:", data); // ← Ajoutez ceci
-
-      if (response.ok && data.success) {
-        setFormSubmitted(true);
-      } else {
-        if (data.errors) {
-          const errorMessages = Object.values(data.errors).flat().join("\n");
-          alert(`Erreurs de validation:\n${errorMessages}`);
-        } else {
-          alert(data.message || "Une erreur est survenue");
-        }
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-      alert("Erreur de connexion au serveur");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const whatsappNumber = "261329356242";
-
-  const generateWhatsAppMessage = () => {
-    const message = `Bonjour Les Casaniers !%0A%0A*Demande de devis express*%0A%0A*Nom:* ${formData.nom || "Non renseigné"}%0A*Email:* ${formData.email || "Non renseigné"}%0A*Téléphone:* ${formData.telephone || "Non renseigné"}%0A*Entreprise:* ${formData.entreprise || "Non renseigné"}%0A%0A*Besoin:* ${formData.besoin || "Non renseigné"}%0A*Budget:* ${formData.budget || "Non renseigné"}%0A*Date souhaitée:* ${formData.dateSouhaitee || "Non renseignée"}%0A%0A*Message:* ${formData.message || "Non renseigné"}`;
-    return `https://wa.me/${whatsappNumber}?text=${message}`;
+  const scrollToBesoins = () => {
+    document.getElementById("besoins-section")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
-    <SiteLayout>
-     <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
-      {/* 1. Composant MiniHero */}
-      <MiniHero
-        title="Besoin d'un devis rapide ?"
-        description={
-          <div className="flex flex-col">
-            <p>Pour les professionnels pressés ou les demandes spécifiques, contactez-nous directement.</p>
-            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-              Réponse sous 24h ouvrées.
+    <SiteLayout footerClassName="bg-white text-black">
+      <style>{`
+        .devis-page { font-family: 'Inter', sans-serif; background-color: #000; }
+        
+        .hero-banner {
+          background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/7.png');
+          background-size: cover;
+          background-position: center;
+          border-radius: 15px;
+          padding: 60px;
+          min-height: 350px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          position: relative;
+          border: 1px solid #333;
+        }
+
+        .dashed-underline {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+        }
+        .u-solid { height: 2px; width: 140px; background: white; }
+        .u-dash { height: 2px; width: 20px; background: white; }
+
+        .white-card {
+          background: white;
+          color: black;
+          border-radius: 5px;
+          padding: 60px;
+          margin-top: 40px;
+        }
+        .form-input {
+          border: none;
+          border-bottom: 1px solid #ccc;
+          width: 100%;
+          padding: 10px 0;
+          font-size: 14px;
+          outline: none;
+          background: transparent;
+        }
+        .form-input::placeholder { color: #555; font-style: italic; font-size: 13px; }
+        .form-input:focus { border-bottom: 1px solid black; }
+
+        .btn-orange {
+          background-color: #FF5C28;
+          color: white;
+          border-radius: 50px;
+          padding: 12px 35px;
+          font-weight: bold;
+          border: none;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        .btn-whatsapp {
+          background-color: #25D366;
+          color: white;
+          border-radius: 50px;
+          padding: 10px 25px;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 14px;
+        }
+      `}</style>
+
+      <div className="devis-page text-white pb-20">
+        <div className="max-w-[1400px] mx-auto px-6">
+          
+          <div className="mt-10 hero-banner">
+            <h1 className="text-5xl font-bold uppercase leading-tight max-w-4xl">
+              Besoin d'un équipement à la hauteur de tes projets ?
+            </h1>
+            <p className="text-xl italic mt-8 text-gray-200 max-w-3xl">
+              " Explique-nous ton besoin, et notre équipe te prépare <br />
+              <span className="ml-24">une recommandation et un devis sur mesure "</span>
+            </p>
+            <button onClick={scrollToBesoins} className="btn-orange absolute bottom-12 right-12">
+              Demander un devis
+            </button>
+          </div>
+
+          <div className="grid grid-cols-4 gap-4 mt-12 py-10 border-b border-gray-800 text-center uppercase">
+            <div><h4 className="font-bold text-sm">Importation UE</h4><p className="text-[11px] text-gray-500 lowercase mt-1">Produits sourcés d'Europe</p></div>
+            <div><h4 className="font-bold text-sm">Garantie 24 Mois</h4><p className="text-[11px] text-gray-500 lowercase mt-1">SAV local réactif</p></div>
+            <div><h4 className="font-bold text-sm">Showroom Antananarivo</h4><p className="text-[11px] text-gray-500 lowercase mt-1">Conseils & démonstration</p></div>
+            <div><h4 className="font-bold text-sm">Livraison Madagascar</h4><p className="text-[11px] text-gray-500 lowercase mt-1">Expédition sécurisée</p></div>
+          </div>
+
+          <div className="mt-16 max-w-5xl">
+            <h3 className="text-lg font-bold mb-6">Pourquoi demander un devis express ?</h3>
+            <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+              Parce que certains projets demandent plus qu'un simple produit.
+            </p>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Notre équipe prend en charge ta demande sous 24 h ouvrées, analyse ton besoin et prépare une proposition adaptée à ton activité, ton budget et tes contraintes.
             </p>
           </div>
-        }
-        bg="/7.png" 
-        mascot={Mascote}
-        pill={{ 
-          icon: <Zap className="h-3.5 w-3.5" />, 
-          label: "Devis Express" 
-        }}
-      />
 
-      {/* 2. InfoBar positionnée juste en dessous */}
-      <InfoBar />
-    </div>
-      <section className="py-8">
-        {/* Même largeur et mêmes marges horizontales que le conteneur du MiniHero. */}
-        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Formulaire */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold">Formulaire de devis</h2>
-                  <p className="text-[10px] text-muted-foreground">
-                    Remplissez et nous vous recontactons sous 24h
-                  </p>
-                </div>
+          <div className="mt-16" id="besoins-section">
+            <h2 className="text-2xl font-bold uppercase tracking-widest">Décris nous tes besoins</h2>
+            <div className="flex items-center gap-6 mt-4">
+              <div className="dashed-underline">
+                <div className="u-solid"></div>
+                <div className="u-dash"></div><div className="u-dash"></div><div className="u-dash"></div><div className="u-dash"></div><div className="u-dash"></div>
               </div>
-
-              {formSubmitted ? (
-                <div className="rounded-lg bg-green-500/10 border border-green-500/30 p-5 text-center">
-                  <div className="inline-flex h-12 w-12 rounded-full bg-green-500/20 items-center justify-center mb-3">
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                  </div>
-                  <h3 className="text-base font-bold text-green-600 dark:text-green-400 mb-1">
-                    Demande envoyée !
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Merci pour votre confiance. Réponse sous 24h ouvrées.
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <a
-                      href={generateWhatsAppMessage()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs rounded-lg hover:bg-green-700 transition"
-                    >
-                      <MessageCircle className="h-3 w-3" /> WhatsApp
-                    </a>
-                    <button
-                      onClick={() => setFormSubmitted(false)}
-                      className="px-3 py-1.5 border border-border text-xs rounded-lg hover:bg-secondary transition"
-                    >
-                      Nouvelle demande
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <User className="h-3 w-3" /> Nom complet *
-                      </label>
-                      <input
-                        type="text"
-                        name="nom"
-                        required
-                        value={formData.nom}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                        placeholder="Jean Rakoto"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> Email *
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        required
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                        placeholder="contact@email.mg"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> Téléphone *
-                      </label>
-                      <input
-                        type="tel"
-                        name="telephone"
-                        required
-                        value={formData.telephone}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                        placeholder="034 12 345 67"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <Building2 className="h-3 w-3" /> Entreprise
-                      </label>
-                      <input
-                        type="text"
-                        name="entreprise"
-                        value={formData.entreprise}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                        placeholder="Nom société"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> Besoin spécifique *
-                    </label>
-                    <select
-                      name="besoin"
-                      required
-                      value={formData.besoin}
-                      onChange={handleChange}
-                      className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                    >
-                      <option value="">Sélectionnez votre besoin</option>
-                      <option value="PC Gaming sur-mesure">
-                        PC Gaming sur-mesure
-                      </option>
-                      <option value="Workstation professionnelle">
-                        Workstation professionnelle
-                      </option>
-                      <option value="Serveur / NAS">Serveur / NAS</option>
-                      <option value="Watercooling custom">
-                        Watercooling custom
-                      </option>
-                      <option value="Upgrade composants">
-                        Upgrade de composants
-                      </option>
-                      <option value="Parc informatique entreprise">
-                        Parc informatique entreprise
-                      </option>
-                      <option value="Autre service">Autre service</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <Wallet className="h-3 w-3" /> Budget estimé
-                      </label>
-                      <select
-                        name="budget"
-                        value={formData.budget}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                      >
-                        <option value="">Sélectionnez un budget</option>
-                        <option value="Moins de 2 000 000 Ar">
-                          Moins de 2M Ar
-                        </option>
-                        <option value="2 000 000 - 3 500 000 Ar">
-                          2M - 3.5M Ar
-                        </option>
-                        <option value="3 500 000 - 5 000 000 Ar">
-                          3.5M - 5M Ar
-                        </option>
-                        <option value="5 000 000 - 8 000 000 Ar">
-                          5M - 8M Ar
-                        </option>
-                        <option value="Plus de 8 000 000 Ar">
-                          Plus de 8M Ar
-                        </option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-medium mb-1 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" /> Date souhaitée
-                      </label>
-                      <input
-                        type="date"
-                        name="dateSouhaitee"
-                        value={formData.dateSouhaitee}
-                        onChange={handleChange}
-                        className="w-full h-9 px-3 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium mb-1">
-                      Message complémentaire
-                    </label>
-                    <textarea
-                      name="message"
-                      rows={3}
-                      value={formData.message}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:border-primary focus:outline-none bg-background resize-none"
-                      placeholder="Décrivez votre projet..."
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Button
-                      type="submit"
-                      className="h-9 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-medium hover:from-amber-600 hover:to-orange-600"
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      {isSubmitting ? "Envoi..." : "Envoyer ma demande"}
-                    </Button>
-                    <a
-                      href={`https://wa.me/${whatsappNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-green-500/50 text-green-600 text-xs rounded-lg hover:bg-green-500/10 transition"
-                    >
-                      <MessageCircle className="h-3 w-3" /> WhatsApp
-                    </a>
-                  </div>
-
-                  <p className="text-[9px] text-muted-foreground">
-                    * Champs obligatoires. Vos informations sont
-                    confidentielles.
-                  </p>
-                </form>
-              )}
+              <img 
+                src={curvedArrow} 
+                alt="Flèche" 
+                className="w-8 h-8 object-contain translate-y-5" 
+              />
             </div>
+          </div>
 
-            {/* Section information compacte */}
-            <div className="space-y-4">
-              {/* WhatsApp direct */}
-              <div className="rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                    <MessageCircle className="h-4 w-4 text-white" />
-                  </div>
-                  <h3 className="text-sm font-bold">Contact direct WhatsApp</h3>
+          <div className="white-card shadow-2xl">
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-x-24 gap-y-12">
+              <div className="space-y-12">
+                <input type="text" placeholder="Nom et prénom(*)" className="form-input" />
+                <input type="email" placeholder="Email(*)" className="form-input" />
+                <input type="text" placeholder="Budget estimé" className="form-input" />
+                <div>
+                  <textarea placeholder="Besoin spécifique(*)" className="form-input h-20 resize-none" />
+                  <p className="text-[10px] text-gray-400 italic mt-3">ex : équiper huit collaborateurs avec un PC Portable. Nos logiciels..., nos contraintes...(*)</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground mb-3">
-                  Une question ? Un besoin urgent ? Contactez-nous directement.
-                </p>
-                <a
-                  href={`https://wa.me/${whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition w-full justify-center"
-                >
-                  <MessageCircle className="h-3.5 w-3.5" /> Écrire sur WhatsApp
-                </a>
-                <p className="text-[8px] text-muted-foreground mt-2 text-center">
-                  Réponse sous 30 min (horaire ouvré)
-                </p>
-              </div>
-
-              {/* Pourquoi choisir le devis express */}
-              <div className="rounded-lg border border-border/50 bg-secondary/20 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  </div>
-                  <h3 className="text-sm font-bold">
-                    Pourquoi Devis Express ?
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    "Réponse sous 24h ouvrées",
-                    "Devis personnalisé",
-                    "Demandes spécifiques",
-                    "Solutions professionnelles",
-                    "Accompagnement personnalisé",
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-1.5">
-                      <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
-                      <span className="text-[10px] text-muted-foreground">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
+                <div className="pt-6">
+                  <input type="file" ref={fileInputRef} className="hidden" />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="bg-black text-white px-5 py-2 rounded flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                    J'ajoute un fichier <FileText size={14} />
+                  </button>
                 </div>
               </div>
 
-              {/* Horaires de contact */}
-              <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Clock className="h-3.5 w-3.5 text-amber-500" />
-                  <h3 className="text-sm font-bold">Horaires de réponse</h3>
+              <div className="space-y-12 flex flex-col">
+                <input type="tel" placeholder="Téléphone(*)" className="form-input" />
+                <input type="text" placeholder="Entreprise(*)" className="form-input" />
+                <input type="text" placeholder="Date jj/mm/aaaa" className="form-input" />
+                
+                <div className="flex items-start gap-2 pt-4">
+                  <input type="checkbox" id="c" className="mt-1 accent-black" />
+                  <label htmlFor="c" className="text-[11px] font-medium text-gray-600">J'accepte d'être contacter pour traiter ma demande.</label>
                 </div>
-                <div className="space-y-1 text-[10px]">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      Lundi - Vendredi :
-                    </span>
-                    <span className="font-medium">9h00 - 18h00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Samedi :</span>
-                    <span className="font-medium">9h00 - 17h00</span>
-                  </div>
-                  <p className="text-[9px] text-muted-foreground mt-2">
-                    Hors horaires, laissez un message, réponse dès l'ouverture.
-                  </p>
-                </div>
-              </div>
 
-              {/* Garanties */}
-              <div className="rounded-lg border border-border/50 bg-card p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="h-3.5 w-3.5 text-primary" />
-                  <h3 className="text-sm font-bold">Nos garanties</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">
-                    Confidentialité
-                  </span>
-                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">
-                    Sans engagement
-                  </span>
-                  <span className="px-2 py-0.5 bg-primary/10 text-[9px] font-medium rounded-full">
-                    Réponse garantie
-                  </span>
+                <div className="mt-auto pt-10 flex flex-col items-center">
+                  <button type="submit" className="btn-orange w-full max-w-[280px] mb-8 uppercase tracking-wide">
+                    J'envoie ma demande
+                  </button>
+                  <div className="flex items-center w-full gap-5 mb-8">
+                    <div className="h-[1px] bg-gray-200 flex-1"></div>
+                    <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest whitespace-nowrap">ou contacte nous sur</span>
+                    <div className="h-[1px] bg-gray-200 flex-1"></div>
+                  </div>
+                  <a href="#" className="btn-whatsapp">
+                    WhatsApp <MessageCircle size={18} />
+                  </a>
                 </div>
               </div>
+            </form>
+          </div>
+
+          <div className="mt-10 text-[12px] text-gray-400 italic space-y-1">
+            <p>" Réponse sous 24h avec devis d'importation "</p>
+            <p>*: ces champs doivent être obligatoirement remplis</p>
+            <div className="pt-6 font-bold text-white not-italic">
+              <p className="mb-1 text-sm">Horaires:</p>
+              <p>Lundi - Vendredi : 8h - 17h</p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+
     </SiteLayout>
   );
 };
