@@ -46,33 +46,31 @@ export const Hero = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-transparent pointer-events-none" />
 
           {/* Conteneur de contenu */}
-          <div className="relative z-10 flex h-full w-full items-center 
+          <div className="absolute inset-0 z-10 flex w-full items-center 
             px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 
             py-6 sm:py-10 md:py-14 lg:py-18 xl:py-24"
           >
-            <div className="max-w-sm sm:max-w-xl lg:max-w-2xl xl:max-w-3xl text-white">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl 
-                font-black uppercase leading-tight tracking-wide">
+            <div className="max-w-sm sm:max-w-xl lg:max-w-none text-white">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl
+                font-black uppercase tracking-wide md:whitespace-nowrap">
                 Construisons ton outil de réussite
               </h1>
 
-              <p className="mt-2 sm:mt-3 md:mt-4 w-full text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 
+              <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 
                 font-medium italic leading-relaxed text-white/90">
-                &quot; Le meilleur pc n'est pas forcément le plus puissant du marché.
-                <span className="block sm:inline sm:pl-2">
-                  C'est celui adapté à tes besoins, pour jouer et évoluer sereinement. &quot;
-                </span>
+                <span>&quot; Le meilleur pc n'est pas forcément le plus puissant du marché.</span>
+                <span className="block pl-6 sm:pl-10 mt-1">C'est celui adapté à tes besoins, pour jouer et évoluer sereinement &quot;</span>
               </p>
 
               <Link
                 to="/qui-sommes-nous"
-                className="mt-4 sm:mt-5 md:mt-6 inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 
+                className="mt-6 sm:mt-7 md:mt-8 inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 
                   rounded-md bg-white 
                   px-3.5 sm:px-5 md:px-6 lg:px-8 
                   py-2 sm:py-2.5 md:py-3 lg:py-3.5 
                   text-xs sm:text-sm md:text-base lg:text-lg 
                   font-extrabold uppercase tracking-tight text-black 
-                  transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95"
+                  transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95 shadow-lg"
               >
                 Découvrir l'équipe
                 <img
