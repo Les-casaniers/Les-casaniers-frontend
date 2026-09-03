@@ -21,7 +21,7 @@ const DevisExpress = () => {
   };
 
   return (
-    <SiteLayout footerClassName="bg-white text-black">
+    <SiteLayout>
       <style>{`
         .devis-page { font-family: 'Inter', sans-serif; background-color: #000; }
         
@@ -105,7 +105,7 @@ const DevisExpress = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-4 gap-4 mt-12 py-10 border-b border-gray-800 text-center uppercase">
+          <div className="grid grid-cols-4 gap-4 mt-4 py-4 border-b border-gray-800 text-center uppercase">
             <div><h4 className="font-bold text-sm">Importation UE</h4><p className="text-[11px] text-gray-500 lowercase mt-1">Produits sourcés d'Europe</p></div>
             <div><h4 className="font-bold text-sm">Garantie 24 Mois</h4><p className="text-[11px] text-gray-500 lowercase mt-1">SAV local réactif</p></div>
             <div><h4 className="font-bold text-sm">Showroom Antananarivo</h4><p className="text-[11px] text-gray-500 lowercase mt-1">Conseils & démonstration</p></div>

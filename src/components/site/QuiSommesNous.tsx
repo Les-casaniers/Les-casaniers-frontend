@@ -13,7 +13,7 @@ const team = [
 ];
 
 const QuiSommesNous = () => (
-  <SiteLayout footerClassName="bg-white text-black">
+  <SiteLayout>
     <main className="bg-black py-10 text-white sm:py-14">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <header className="-ml-40">
