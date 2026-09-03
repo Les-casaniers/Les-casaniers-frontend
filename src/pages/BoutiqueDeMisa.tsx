@@ -26,7 +26,8 @@ import { useBoutiqueMisa } from "@/hooks/useBoutiqueMisa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartApi } from "@/hooks/useCartApi";
 import mascote from "@/assets/3.png";
-import {InfoBar} from "@/components/site/InfoBar"
+import { InfoBar } from "@/components/site/InfoBar";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -75,14 +76,14 @@ const FILTER_COLORS: Record<string, string> = {
 // Helper pour l'URL des images
 const getFullImageUrl = (imageUrl: string | null): string => {
   if (!imageUrl) {
-    return '/images/placeholder.jpg';
+    return "/images/placeholder.jpg";
   }
-  
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
     return imageUrl;
   }
-  
-  const baseUrl = import.meta.env.VITE_APP_URL || 'http://localhost:8000';
+
+  const baseUrl = import.meta.env.VITE_APP_URL || "http://localhost:8000";
   return `${baseUrl}${imageUrl}`;
 };
 
@@ -119,12 +120,21 @@ const BoutiqueDeMisa = () => {
     return apiData.data.map((item: any) => {
       let type: "vetement" | "papeterie" | "accessoire" | "limited" = "accessoire";
       let categorie = "Accessoire";
-      
+
       const nomLower = item.nom.toLowerCase();
-      if (nomLower.includes('t-shirt') || nomLower.includes('hoodie') || nomLower.includes('sweat') || nomLower.includes('chemise')) {
+      if (
+        nomLower.includes("t-shirt") ||
+        nomLower.includes("hoodie") ||
+        nomLower.includes("sweat") ||
+        nomLower.includes("chemise")
+      ) {
         type = "vetement";
         categorie = "Vêtement";
-      } else if (nomLower.includes('stylo') || nomLower.includes('carnet') || nomLower.includes('papier')) {
+      } else if (
+        nomLower.includes("stylo") ||
+        nomLower.includes("carnet") ||
+        nomLower.includes("papier")
+      ) {
         type = "papeterie";
         categorie = "Papeterie";
       }
@@ -132,22 +142,24 @@ const BoutiqueDeMisa = () => {
       const tags: string[] = [];
       if (item.description) {
         const descLower = item.description.toLowerCase();
-        if (descLower.includes('coton')) tags.push('Coton');
-        if (descLower.includes('bio')) tags.push('Bio');
-        if (descLower.includes('recyclé')) tags.push('Recyclé');
-        if (descLower.includes('artisan')) tags.push('Artisanal');
-        if (descLower.includes('local')) tags.push('Local');
+        if (descLower.includes("coton")) tags.push("Coton");
+        if (descLower.includes("bio")) tags.push("Bio");
+        if (descLower.includes("recyclé")) tags.push("Recyclé");
+        if (descLower.includes("artisan")) tags.push("Artisanal");
+        if (descLower.includes("local")) tags.push("Local");
       }
-      if (tags.length === 0) tags.push('Qualité');
+      if (tags.length === 0) tags.push("Qualité");
 
       return {
         id: item.id,
-        reference: `FOSA-${String(item.id).padStart(3, '0')}`,
+        reference: `FOSA-${String(item.id).padStart(3, "0")}`,
         nom: item.nom,
         categorie: categorie,
         type: type,
-        description_courte: item.description ? item.description.substring(0, 100) : 'Description non disponible',
-        description: item.description || 'Description non disponible',
+        description_courte: item.description
+          ? item.description.substring(0, 100)
+          : "Description non disponible",
+        description: item.description || "Description non disponible",
         prix: parseFloat(item.prix),
         note: 4.5 + Math.random() * 0.5,
         badge: item.stock < 10 ? "limited" : null,
@@ -292,7 +304,9 @@ const BoutiqueDeMisa = () => {
   }, [products, selectedFilter, q, budget, sort]);
 
   const speakAboutProduct = (p: MerchProduct) => {
-    const msg = `${p.nom}. ${p.description_courte} Référence ${p.reference}. Prix : ${formatAr(p.prix)}. ${p.stock} en stock.`;
+    const msg = `${p.nom}. ${p.description_courte} Référence ${p.reference}. Prix : ${formatAr(
+      p.prix
+    )}. ${p.stock} en stock.`;
     setCurrentMessage(msg);
     speakText(msg);
   };
@@ -352,10 +366,7 @@ const BoutiqueDeMisa = () => {
         />
         <div className="container-x py-20 text-center">
           <p className="text-red-500">Une erreur est survenue lors du chargement des produits.</p>
-          <Button 
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
+          <Button className="mt-4" onClick={() => window.location.reload()}>
             Réessayer
           </Button>
         </div>
@@ -365,30 +376,59 @@ const BoutiqueDeMisa = () => {
 
   return (
     <SiteLayout>
-      {/* Hero */}
-     <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
-      {/* 1. Composant MiniHero */}
-      <MiniHero
-        title="Portez la fierté de Madagascar."
-        description={
-          <div className="flex flex-col">
-            <p>Collection Misa — vêtements, papeterie et accessoires</p>
-            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-              à l'image du fosa, carnivore endémique et symbole sauvage de l'île.
+      {/* Section Hero & Présentation */}
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+        
+        {/* 1. Bannière Principale conforme à la capture 533 avec flou sur l'image */}
+        <div className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden min-h-[160px] sm:min-h-[190px] md:min-h-[220px] bg-zinc-900 border border-white/10 flex items-center shadow-2xl">
+          {/* Image de fond avec overlay et flou (blur) */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-45 mix-blend-luminosity filter blur-[2px] sm:blur-[3px] scale-105"
+            style={{ backgroundImage: `url('/4.jpg')` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/85 to-black/60" />
+
+          {/* Filigrane cursif "Shop now" */}
+          <div
+            className="absolute left-1/4 sm:left-1/3 top-1/2 -translate-y-1/2 pointer-events-none select-none text-white/20 font-serif italic text-6xl sm:text-7xl md:text-8xl lg:text-9xl whitespace-nowrap -rotate-2"
+            style={{ fontFamily: "'Brush Script MT', 'Dancing Script', cursive, sans-serif" }}
+          >
+            Shop now
+          </div>
+
+          {/* Textes de la bannière (Typographie exacte capture 533) */}
+          <div className="relative z-10 px-6 sm:px-10 md:px-14 py-6">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[40px] font-extrabold text-white tracking-wide leading-tight mb-2 sm:mb-3">
+              Bienvenue dans la boutique de Misa !
+            </h1>
+            <p className="text-xs sm:text-sm md:text-[15px] text-white/95 italic font-normal tracking-wide">
+              " Chaque achat que tu fais ici permettra de financer une action de reboisement "
             </p>
           </div>
-        }
-        bg="/4.jpg" // Image provenant du dossier public/
-        mascot={mascote}
-        pill={{
-          icon: <Leaf className="h-3.5 w-3.5" />,
-          label: "Boutique de Misa · Endemika Madagascar",
-        }}
-      />
+        </div>
 
-      {/* 2. InfoBar positionnée juste en dessous */}
-      <InfoBar />
-    </div>
+        {/* 2. Message d'introduction de Misa (strictement en 3 lignes, police fidèle à la 533) */}
+        <div className="space-y-2 pt-1 sm:pt-2 text-white">
+          <h2 className="text-sm sm:text-[15px] font-bold tracking-normal text-white">
+            Mbola tsara, cher compatriote !
+          </h2>
+          <div className="text-[12px] sm:text-[13px] md:text-[13.5px] leading-relaxed text-white/90 italic space-y-1 w-full">
+            <p className="whitespace-normal xl:whitespace-nowrap">
+              Je m'appelle Misa. Mon habitat naturel recule chaque année. En tant que fossa — le plus grand félin de Madagascar — je veux aider à protéger ce milieu et ceux qui y vivent.
+            </p>
+            <p className="whitespace-normal xl:whitespace-nowrap">
+              C'est là que j'ai besoin de toi : lorsque tu achètes un goodie dans ma boutique, Les Casaniers reverse 60% des bénéfices aux actions de reboisement à Madagascar.
+            </p>
+            <p className="whitespace-normal xl:whitespace-nowrap">
+              Alors, si quelque chose te plaît, fais-toi plaisir : tu soutiendras aussi une forêt qui a besoin de nous. Merci, ou comme on dit chez nous : misaotra !
+            </p>
+          </div>
+        </div>
+
+        {/* 3. InfoBar conservée */}
+        <InfoBar />
+      </div>
+
       {/* Barre de filtres */}
       <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container-x py-3">
@@ -528,7 +568,7 @@ const BoutiqueDeMisa = () => {
             {filtered.map((p, i) => {
               const fav = favorites.includes(p.id);
               const imageUrl = getFullImageUrl(p.image_url);
-              
+
               return (
                 <article
                   key={p.id}
@@ -544,7 +584,7 @@ const BoutiqueDeMisa = () => {
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/placeholder.jpg';
+                        (e.target as HTMLImageElement).src = "/images/placeholder.jpg";
                       }}
                     />
 
