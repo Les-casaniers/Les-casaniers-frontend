@@ -17,7 +17,6 @@ import {
   HelpCircle,
   Gift,
   Truck,
-  Sun,
   Moon,
   Laptop,
   Briefcase,
@@ -51,7 +50,6 @@ import profileIncone from "@/assets/Profile.png";
 import lightIncone from "@/assets/Light.png"
 import panierIncone from "@/assets/Basket.png";
 import searchIncone from "@/assets/Search.png"
-import sunIncone from "@/assets/Sun.png"
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -451,13 +449,6 @@ export const Header = () => {
                     className="h-5 w-5 object-contain"
                   />
                 </button>
-              </div>
-              <div className="ml-4 shrink-0 hidden sm:block">
-                <img
-                  src={sunIncone}
-                  alt="Sun"
-                  className="h-8 w-8 object-contain"
-                />
               </div>
             </div>
 
