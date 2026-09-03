@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import { Package, Truck, Clock, Shield, CheckCircle, Plus, Send, Plane, Ship } from "lucide-react";
-import { Truck, Send } from "lucide-react"; // Garde seulement ce qui est utilisé
+import { Truck, Send, Paperclip } from "lucide-react"; // Garde seulement ce qui est utilisé
 // import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
@@ -10,7 +10,7 @@ import { MiniHero } from "@/components/layout/MiniHero";
 
 const Importation = () => {
   const location = useLocation();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     categorie: "",
@@ -18,8 +18,20 @@ const Importation = () => {
     societe: "",
     nom: "",
     email: "",
-    description: ""
+    description: "",
   });
+  const [fichier, setFichier] = useState(null);
+
+  const [isSubmittingChine, setIsSubmittingChine] = useState(false);
+  const [formDataChine, setFormDataChine] = useState({
+    categorie: "",
+    telephone: "",
+    entreprise: "",
+    nom: "",
+    email: "",
+    description: "",
+  });
+  const [fichierChine, setFichierChine] = useState(null);
 
   useEffect(() => {
     document.title = "Importation — Les Casaniers Madagascar";
@@ -40,19 +52,46 @@ const Importation = () => {
     e.preventDefault();
     setIsSubmitting(true);
     // Logique d'envoi du formulaire
-    console.log("Formulaire soumis:", formData);
+    console.log("Formulaire soumis:", formData, fichier);
     setTimeout(() => setIsSubmitting(false), 2000);
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setFichier(file);
+  };
+
+  const handleSubmitChine = (e) => {
+    e.preventDefault();
+    setIsSubmittingChine(true);
+    // Logique d'envoi du formulaire Chine-Madagascar
+    console.log("Formulaire Chine soumis:", formDataChine, fichierChine);
+    setTimeout(() => setIsSubmittingChine(false), 2000);
+  };
+
+  const handleChangeChine = (e) => {
+    setFormDataChine({
+      ...formDataChine,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleFileChangeChine = (e) => {
+    const file = e.target.files?.[0] ?? null;
+    setFichierChine(file);
+  };
+
   /* ============================================
-     ANCIENNES SECTIONS COMMENTÉES
+     ANCIENNES SECTIONS COMMENTÉES (contenu détaillé
+     commande pièces / suivi / délais) — inchangé,
+     conservé au cas où on veuille le réutiliser
      ============================================ */
   /*
   const sections = [
@@ -147,14 +186,14 @@ const Importation = () => {
             <div className="flex flex-col">
               <p>Un produit introuvable dans le catalogue ?</p>
               <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-                On le recherche pour vous 
+                On le recherche pour vous
               </p>
             </div>
           }
           bg="/Europe.png"
-          pill={{ 
-            icon: <Truck className="h-3.5 w-3.5" />, 
-            label: "Importation" 
+          pill={{
+            icon: <Truck className="h-3.5 w-3.5" />,
+            label: "Importation",
           }}
         />
 
@@ -163,7 +202,10 @@ const Importation = () => {
       </div>
 
       {/* ==========================================
-          FORMULAIRE D'IMPORTATION
+          FORMULAIRE D'IMPORTATION (nouveau design,
+          conforme à la capture d'écran : champs
+          "underline" sans fond, 2 colonnes, bouton
+          d'ajout de fichier, bouton d'envoi orange)
           ========================================== */}
       <section className="py-8 lg:py-12">
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -171,11 +213,11 @@ const Importation = () => {
           <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
             IMPORTATION EUROPE-MADAGASCAR
           </h1>
-          
+
           {/* Sous-titre avec guillemets */}
-          <div className="text-lg lg:text-xl text-muted-foreground mb-4">
-            <p className="italic">"Un produit introuvable dans les catalogues ?</p>
-            <p className="italic pl-6 lg:pl-8">On le cherche pour toi !"</p>
+          <div className="text-lg lg:text-xl text-muted-foreground mb-4 italic">
+            <p>" Un produit introuvable dans les catalogues ?</p>
+            <p className="pl-6 lg:pl-8">On le cherche pour toi "</p>
           </div>
 
           {/* Description */}
@@ -187,14 +229,336 @@ const Importation = () => {
             </p>
           </div>
 
-          {/* Titre du formulaire */}
-          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-6">
-            DÉCRIS NOUS TES BESOINS
+          {/* Titre du formulaire, souligné en pointillés */}
+          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-8 inline-block border-b-2 border-dashed border-white/60 pb-1">
+            DECRIS NOUS TES BESOINS
           </h2>
 
-          {/* Formulaire */}
+          {/* Formulaire dans une carte blanche, même largeur/alignement que le MiniHero */}
+          <form
+            onSubmit={handleSubmit}
+            className="w-full mx-auto bg-white rounded-2xl px-5 py-6 sm:px-8 lg:px-10 lg:py-7"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
+              {/* Colonne gauche */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Catégorie(*)
+                  </label>
+                  <input
+                    type="text"
+                    name="categorie"
+                    value={formData.categorie}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Nom et prénom(*)
+                  </label>
+                  <input
+                    type="text"
+                    name="nom"
+                    value={formData.nom}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Email(*)
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Colonne droite */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Téléphone(*)
+                  </label>
+                  <input
+                    type="tel"
+                    name="telephone"
+                    value={formData.telephone}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Société
+                  </label>
+                  <input
+                    type="text"
+                    name="societe"
+                    value={formData.societe}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="fichier-import"
+                    className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
+                  >
+                    J'ajoute un fichier
+                    <Paperclip className="h-4 w-4" />
+                  </label>
+                  <input
+                    id="fichier-import"
+                    type="file"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  {fichier && (
+                    <p className="text-xs text-gray-500 mt-2 truncate">
+                      {fichier.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Description, pleine largeur */}
+              <div className="md:col-span-2">
+                <label className="block text-sm italic text-gray-500 mb-1">
+                  Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...(*)
+                </label>
+                <input
+                  type="text"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="text-sm mt-5 mb-4 space-y-1">
+              <p className="text-black italic">" Réponse sous 24h avec devis d'importation "</p>
+              <p className="text-red-500 italic">*: ces champs doivent être obligatoirement remplis</p>
+            </div>
+
+            {/* Bouton d'envoi */}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Envoi en cours..." : "J'envoie ma demande"}
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* ==========================================
+          MINIHERO — IMPORTATION CHINE-MADAGASCAR
+          (avant le footer)
+          ========================================== */}
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+        <MiniHero
+          title="Importation Chine-Madagascar"
+          description={
+            <div className="flex flex-col">
+              <p>" Pour réparer, il faut parfois chercher plus loin "</p>
+            </div>
+          }
+          bg="/Afrique.png" // Image provenant du dossier public/
+          pill={{
+            icon: <Truck className="h-3.5 w-3.5" />,
+            label: "Importation",
+          }}
+        />
+      </div>
+
+      {/* ==========================================
+          FORMULAIRE D'IMPORTATION CHINE-MADAGASCAR
+          ========================================== */}
+      <section className="py-8 lg:py-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Description */}
+          <div className="text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
+            <p>
+              Certaines pièces de rechange pour PC portables, notamment les cartes mères, sont difficiles a trouver en Europe,
+              ainsi, on effectue un sourcing cible en Chine afin de trouver la pièce compatible nécessaire a la réparation de ton ordinateur portable.
+            </p>
+          </div>
+
+          {/* Titre du formulaire, souligné en pointillés */}
+          <h2 className="text-xl lg:text-2xl font-semibold text-white mb-8 inline-block border-b-2 border-dashed border-white/60 pb-1">
+            DECRIS NOUS TES BESOINS
+          </h2>
+
+          {/* Formulaire dans une carte blanche, même largeur/alignement que le MiniHero */}
+          <form
+            onSubmit={handleSubmitChine}
+            className="w-full mx-auto bg-white rounded-2xl px-5 py-6 sm:px-8 lg:px-10 lg:py-7"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-4">
+              {/* Colonne gauche */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Catégorie(*)
+                  </label>
+                  <input
+                    type="text"
+                    name="categorie"
+                    value={formDataChine.categorie}
+                    onChange={handleChangeChine}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Nom et prénom(*)
+                  </label>
+                  <input
+                    type="text"
+                    name="nom"
+                    value={formDataChine.nom}
+                    onChange={handleChangeChine}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Email(*)
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formDataChine.email}
+                    onChange={handleChangeChine}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Colonne droite */}
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Téléphone(*)
+                  </label>
+                  <input
+                    type="tel"
+                    name="telephone"
+                    value={formDataChine.telephone}
+                    onChange={handleChangeChine}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm italic text-gray-500 mb-1">
+                    Entreprise
+                  </label>
+                  <input
+                    type="text"
+                    name="entreprise"
+                    value={formDataChine.entreprise}
+                    onChange={handleChangeChine}
+                    className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="fichier-import-chine"
+                    className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
+                  >
+                    J'ajoute un fichier
+                    <Paperclip className="h-4 w-4" />
+                  </label>
+                  <input
+                    id="fichier-import-chine"
+                    type="file"
+                    onChange={handleFileChangeChine}
+                    className="hidden"
+                  />
+                  {fichierChine && (
+                    <p className="text-xs text-gray-500 mt-2 truncate">
+                      {fichierChine.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Description, pleine largeur */}
+              <div className="md:col-span-2">
+                <label className="block text-sm italic text-gray-500 mb-1">
+                  Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...(*)
+                </label>
+                <input
+                  type="text"
+                  name="description"
+                  value={formDataChine.description}
+                  onChange={handleChangeChine}
+                  className="w-full bg-transparent border-0 border-b border-gray-300 px-0 py-2 text-black focus:outline-none focus:border-orange-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="text-sm mt-5 mb-4 space-y-1">
+              <p className="text-black italic">" Réponse sous 24h avec devis d'importation "</p>
+              <p className="text-red-500 italic">*: ces champs doivent être obligatoirement remplis</p>
+            </div>
+
+            {/* Bouton d'envoi */}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isSubmittingChine}
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingChine ? "Envoi en cours..." : "J'envoie ma demande"}
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* ==========================================
+          ANCIEN FORMULAIRE (boîtes avec fond,
+          bordures, 3/2 colonnes, bouton bleu) —
+          remplacé par le nouveau design ci-dessus,
+          conservé en commentaire pour référence
+          ==========================================
+      <section className="py-8 lg:py-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           <form onSubmit={handleSubmit} className="max-w-3xl">
-            {/* Ligne 1: Catégorie + Téléphone + Société */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
@@ -236,7 +600,6 @@ const Importation = () => {
               </div>
             </div>
 
-            {/* Ligne 2: Nom + Email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm text-muted-foreground mb-1">
@@ -266,7 +629,6 @@ const Importation = () => {
               </div>
             </div>
 
-            {/* Description */}
             <div className="mb-6">
               <label className="block text-sm text-muted-foreground mb-1">
                 Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...<span className="text-red-500">*</span>
@@ -281,13 +643,11 @@ const Importation = () => {
               />
             </div>
 
-            {/* Notes */}
             <div className="text-sm text-muted-foreground mb-6 space-y-1">
               <p className="text-green-500">✓ Réponse sous 24h avec devis d'importation</p>
               <p className="text-red-500">* Ces champs doivent être obligatoirement remplis</p>
             </div>
 
-            {/* Bouton d'envoi */}
             <button
               type="submit"
               disabled={isSubmitting}
@@ -299,9 +659,12 @@ const Importation = () => {
           </form>
         </div>
       </section>
+      */}
 
       {/* ==========================================
-          ANCIEN CONTENU COMMENTÉ
+          ANCIEN CONTENU DÉTAILLÉ (sections avec
+          process / suivi / modes de transport) —
+          déjà commenté dans la version d'origine
           ========================================== */}
       {/*
       <section className="py-16 lg:py-24">
