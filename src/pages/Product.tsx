@@ -165,7 +165,7 @@ const ProductPage = () => {
   if (!product || error) return <Navigate to="/catalogue" replace />;
   if (!product.est_dispo || product.quantite_stock <= 0 || !product.actif) return <Navigate to="/catalogue" replace />;
 
-  const fav = favorites.includes(product.id.toString());
+  const fav = favorites.includes(product.id);
   const related = allProducts?.filter((p: any) => p.id !== product.id && p.categorie_id === product.categorie_id && p.est_dispo && p.quantite_stock > 0 && p.actif).slice(0, 3) || [];
 
   const specs: any = {
@@ -223,18 +223,30 @@ const ProductPage = () => {
         {/* Infos */}
         <div className="space-y-6">
           <div>
-            <div className="text-xs font-mono uppercase tracking-wider text-accent mb-2">{product.categorie?.nom}</div>
+            <div className="text-xs font-mono uppercase tracking-wider text-white mb-2">{product.categorie?.nom}</div>
             <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">{product.nom}</h1>
             <p className="text-lg text-muted-foreground italic mt-2">"{product.description_courte || product.tagline || 'Une puissance inegalee.'}"</p>
           </div>
 
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={`h-4 w-4 ${i < Math.round(product.note || 5) ? "fill-accent text-accent" : "text-muted"}`} />
-              ))}
-              <span className="font-semibold ml-1">{product.note || 5.0}</span>
-            </div>
+                {Array.from({ length: 5 }).map((_, i) => {
+                  const note = product.note || 5;
+                  const fillPercent = Math.max(0, Math.min(1, note - i)) * 100;
+
+                  return (
+                    <div key={i} className="relative h-4 w-4">
+                      {/* Base star: always outline/empty */}
+                      <Star className="absolute inset-0 h-4 w-4 fill-transparent text-muted" />
+                      {/* Gold star, clipped to the exact fraction of this star that's "earned" */}
+                      <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      </div>
+                    </div>
+                  );
+                })}
+                <span className="font-semibold ml-1">{product.note || 5.0}</span>
+              </div>
             <span className="h-4 w-px bg-border" />
             <span className={`text-xs font-medium ${product.quantite_stock > 5 ? "text-tech" : "text-accent"}`}>
               {product.quantite_stock > 5 ? `En stock (${product.quantite_stock})` : `Plus que ${product.quantite_stock} en stock !`}
@@ -306,7 +318,7 @@ const ProductPage = () => {
             <div className="flex items-center bg-secondary rounded-full">
               <button 
                 onClick={decreaseQty}
-                className="h-12 w-12 flex items-center justify-center hover:text-accent transition-colors"
+                className="h-12 w-12 flex items-center justify-center hover:text-orange-500 transition-colors"
                 disabled={qty <= 1}
               >
                 <Minus className="h-4 w-4" />
@@ -314,7 +326,7 @@ const ProductPage = () => {
               <span className="w-10 text-center font-semibold tabular-nums">{qty}</span>
               <button 
                 onClick={increaseQty}
-                className="h-12 w-12 flex items-center justify-center hover:text-accent transition-colors"
+                className="h-12 w-12 flex items-center justify-center hover:text-orange-500 transition-colors"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -336,8 +348,8 @@ const ProductPage = () => {
               {cartItemId ? "Mettre à jour" : "Ajouter au panier"}
             </Button>
 
-            <Button variant="soft" size="icon" className="h-12 w-12" onClick={() => toggleFavorite(product.id.toString())}>
-              <Heart className={fav ? "fill-accent text-accent" : ""} />
+            <Button variant="soft" size="icon" className="h-12 w-12 hover:text-red-400" onClick={(e) => toggleFavorite(product.id, e)}>
+              <Heart className={fav ? "fill-red-500" : ""} />
             </Button>
           </div>
 
@@ -350,13 +362,13 @@ const ProductPage = () => {
 
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div className="card-soft p-3 flex flex-col items-center text-center gap-1">
-              <Shield className="h-5 w-5 text-accent" /><span className="font-semibold">Garantie 24 mois</span>
+              <Shield className="h-5 w-5 text-white-500" /><span className="font-semibold">Garantie 24 mois</span>
             </div>
             <div className="card-soft p-3 flex flex-col items-center text-center gap-1">
-              <Truck className="h-5 w-5 text-accent" /><span className="font-semibold">Livraison Tana</span>
+              <Truck className="h-5 w-5 text-white-500" /><span className="font-semibold">Livraison Tana</span>
             </div>
             <div className="card-soft p-3 flex flex-col items-center text-center gap-1">
-              <Wrench className="h-5 w-5 text-accent" /><span className="font-semibold">SAV à vie</span>
+              <Wrench className="h-5 w-5 text-white-500" /><span className="font-semibold">SAV à vie</span>
             </div>
           </div>
 

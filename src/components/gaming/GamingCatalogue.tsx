@@ -4,6 +4,7 @@ import {
   Droplet,
   Eye,
   ShoppingCart,
+  EyeClosed,
   X,
   Loader2,
   Settings,
@@ -634,18 +635,40 @@ export const GamingCatalogue = () => {
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {filteredProducts.map((product, index) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      index={index}
-                      addingToCart={addingToCart}
-                      onOpenModal={() => openModal(product)}
-                      onAddToCart={() => addToCart(product, 1)}
-                    />
-                  ))}
-                </div>
+                /* Wrapped grid: chunk into rows of 4, last row centered */
+                (() => {
+                  const itemsPerRow = 4;
+                  const rows: ClassifiedProduct[][] = [];
+                  for (let i = 0; i < filteredProducts.length; i += itemsPerRow) {
+                    rows.push(filteredProducts.slice(i, i + itemsPerRow));
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center gap-3 w-full">
+                      {rows.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex justify-center gap-3 w-full flex-wrap">
+                          {row.map((product, i) => {
+                            const index = rowIndex * itemsPerRow + i;
+                            return (
+                              <div
+                                key={product.id}
+                                className="w-full sm:w-[calc(33.333%-0.75rem)] lg:w-[calc(25%-0.75rem)]"
+                              >
+                                <ProductCard
+                                  product={product}
+                                  index={index}
+                                  addingToCart={addingToCart}
+                                  onOpenModal={() => openModal(product)}
+                                  onAddToCart={() => addToCart(product, 1)}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
               )}
             </div>
           </div>
@@ -985,6 +1008,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, index, addingToCart, onOpenModal, onAddToCart }: ProductCardProps) => {
   const meta = GROUP_META[product.group];
   const imageUrl = getImageUrl(product);
+  const [isPreviewHovered, setIsPreviewHovered] = useState(false);
 
   return (
     <div
@@ -1023,9 +1047,16 @@ const ProductCard = ({ product, index, addingToCart, onOpenModal, onAddToCart }:
 
         <button
           onClick={onOpenModal}
-          className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-purple-600"
+          onMouseEnter={() => setIsPreviewHovered(true)}
+          onMouseLeave={() => setIsPreviewHovered(false)}
+          title="Aperçu rapide"
+          className="absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center transition-colors duration-200 hover:bg-purple-600"
         >
-          <Eye className="h-3 w-3 text-white" />
+          {isPreviewHovered ? (
+            <Eye className="h-3 w-3 text-white" />
+          ) : (
+            <EyeClosed className="h-3 w-3 text-white" />
+          )}
         </button>
       </div>
 

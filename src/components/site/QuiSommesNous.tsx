@@ -19,24 +19,35 @@ const QuiSommesNous = () => (
         <header className="-ml-40">
 <h1 className="inline-flex items-end text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
   <span className="shrink-0 border-b-2 border-white pb-1 pr-3">
-    Qui sommes
+    Qui Som
+  </span>
+  <span className="-ml-[12px] mb-[2px] shrink-0 pb-1 pr-3">
+    mes
   </span>
   <span className="inline-flex items-end whitespace-nowrap font-light normal-case italic tracking-normal relative">
-    <span className="border-b-2 border-dashed border-white pb-1 pr-3 uppercase">nous ?</span>
-    <svg
-      className="ml-1.5 h-5 w-5 shrink-0 stroke-[3] translate-y-0.5 text-white"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-       style={{ marginBottom: '-13px' }}
-    >
-      <path d="M3 3c7 0 13 4 13 13" />
-      <path d="M10 12l6 6 6-6" />
-    </svg>
+    <span className="mb-[2px] pb-1 pr-3 uppercase">nous ?</span>
   </span>
+  <div 
+        className="-ml-[210px] -mb-[0.09rem] w-64 h-1 bg-repeat-x"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='24%2c 8'/%3e%3c/svg%3e")`
+        }}
+      />
+      
+      <svg
+        className="ml-[6px] -mb-[17px] h-5 w-5 text-white"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M2 2 C10 2 17 6 17 14" />
+        <path d="M6 3 C7 8 6 12 6 14" />
+        <path d="M1 14 L11 23 L21 14" />
+      </svg>
 </h1>
         </header>
         <p className="mt-12 rounded-lg border border-white/45 px-5 py-4 text-base leading-relaxed text-white/80 sm:px-6 sm:text-lg">

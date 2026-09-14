@@ -897,8 +897,31 @@ const Cart = () => {
             <h1 className="font-sans text-2xl md:text-3xl font-extrabold tracking-widest text-white mb-1">
               {pageTitle}
             </h1>
-            <div className="w-24 h-[3px] bg-white mx-auto mb-1" />
-            <div className="w-24 h-px bg-white/30 mx-auto border-t border-dashed" />
+            <div className="-mt-4 flex items-center gap-2 w-fit mx-auto">
+              <div className="ml-8 w-24 h-[3px] bg-white" />
+          
+              <div 
+                className="w-24 h-1 bg-repeat-x"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='24%2c 12'/%3e%3c/svg%3e")`
+                }}
+              />
+
+              <svg
+                className="mt-[15px] h-5 w-5 text-white"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M2 2 C10 2 17 6 17 14" />
+                <path d="M6 3 C7 8 6 12 6 14" />
+                <path d="M1 14 L11 23 L21 14" />
+              </svg>
+            </div>
 
             <div className="max-w-2xl mx-auto mt-8 border border-white/15 rounded-2xl px-8 py-6">
               <div className="flex items-center">
@@ -963,7 +986,7 @@ const Cart = () => {
                         </div>
 
                         <div className="col-span-3 flex justify-center">
-                          <div className="flex items-center bg-white text-black rounded-full h-8">
+                          <div className="flex items-center bg-white text-black rounded-lg h-8">
                             <button
                               onClick={() => handleSetQty(item.id, item.qty - 1)}
                               className="h-8 w-8 flex items-center justify-center hover:opacity-70 transition-opacity rounded-full"

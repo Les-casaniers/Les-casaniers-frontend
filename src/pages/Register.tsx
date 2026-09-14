@@ -235,7 +235,7 @@ const Register = () => {
             </div>
 
             {/* Section Droite - Formulaire */}
-            <div className="border border-white/20 rounded-2xl p-8 md:p-10">
+            <div className="border-2 border-white/30 rounded-2xl p-8 md:p-10">
               <h2 className="text-center text-[15px] font-sans font-bold tracking-wide text-white mb-6">
                 Inscription
               </h2>
@@ -437,7 +437,7 @@ const Register = () => {
                         <span>Création du compte...</span>
                       </>
                     ) : (
-                      <span>Je m'inscris</span>
+                      <b>Je m'inscris</b>
                     )}
                   </button>
                 </div>

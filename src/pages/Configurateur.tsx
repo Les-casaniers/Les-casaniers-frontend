@@ -232,12 +232,8 @@ const Configurateur = () => {
   const total = useMemo(() => {
     return Object.values(selections).reduce((sum, product) => {
       if (!product) return sum;
-      const priceStr = String(product.prix);
-      const numbers = priceStr.match(/\d+/g);
-      if (!numbers) return sum;
-      const numericPrice = parseInt(numbers.join(""), 10);
-      if (isNaN(numericPrice)) return sum;
-      return sum + numericPrice;
+      const numericPrice = Number(product.prix);
+      return isNaN(numericPrice) ? sum : sum + numericPrice;
     }, 0);
   }, [selections]);
 

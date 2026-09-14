@@ -30,6 +30,7 @@ import {
 import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
+import { useShop } from "@/store/shop";
 
 // Interface pour les templates
 interface TemplateCaracteristique {
@@ -151,7 +152,7 @@ const Catalog = () => {
   const searchRef = searchParams.get("ref") || "";
 
   // États pour les filtres
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const { favorites, toggleFavorite } = useShop();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"pop" | "asc" | "desc">("pop");
   const [allProducts, setAllProducts] = useState<ProductWithCaracts[]>([]);
@@ -284,65 +285,6 @@ const Catalog = () => {
       ...prev,
       [productId]: !prev[productId]
     }));
-  };
-
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const fetchFavorites = async () => {
-    try {
-      const response = await api.get("/favoris");
-      let favorisData = [];
-      if (response.data.data)
-        favorisData = Array.isArray(response.data.data) ? response.data.data : [];
-      else if (Array.isArray(response.data)) favorisData = response.data;
-      else if (response.data.favoris) favorisData = response.data.favoris;
-      const favoriteIds = favorisData.map((f: any) => f.produit_id);
-      setFavorites(favoriteIds);
-    } catch (error: any) {
-      if (error.response?.status !== 401)
-        console.error("Erreur chargement favoris:", error);
-    }
-  };
-
-  const toggleFavorite = async (produitId: number, e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    try {
-      const isCurrentlyFavorite = favorites.includes(produitId);
-      if (isCurrentlyFavorite) {
-        await api.delete("/favoris", { data: { produit_id: produitId } });
-        setFavorites(favorites.filter((id) => id !== produitId));
-        toast({
-          title: "Retiré des favoris",
-          description: "Produit retiré de votre liste",
-        });
-      } else {
-        await api.post("/favoris", { produit_id: produitId });
-        setFavorites([...favorites, produitId]);
-        toast({
-          title: "Ajouté aux favoris",
-          description: "Produit ajouté à votre liste",
-        });
-      }
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        toast({
-          title: "Connexion requise",
-          description: "Veuillez vous connecter pour ajouter aux favoris",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erreur",
-          description: "Une erreur est survenue",
-          variant: "destructive",
-        });
-      }
-    }
   };
 
   const getProductImageUrl = (product: any) => {
@@ -786,10 +728,10 @@ const Catalog = () => {
                           )}
                           <button
                             onClick={(e) => toggleFavorite(p.id, e)}
-                            className={`absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${fav ? "bg-primary text-white" : "bg-black/50 text-white/80 hover:bg-primary/80"}`}
+                            className={`absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${fav ? "bg-primary text-white" : "bg-black/50 text-white/80 hover:text-red-400"}`}
                           >
                             <Heart
-                              className={`h-3 w-3 ${fav ? "fill-current" : ""}`}
+                              className={`h-3 w-3 ${fav ? "fill-red-500" : ""}`}
                             />
                           </button>
                         </Link>

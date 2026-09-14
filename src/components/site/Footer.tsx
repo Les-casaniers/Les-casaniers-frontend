@@ -56,13 +56,13 @@ export const Footer = ({ className }: { className?: string }) => {
   return (
     <footer className={className || "bg-black text-white"}>
       {/* ── Bandeau newsletter ── */}
-      <div className={`border-b ${isWhiteMode ? 'border-black/10' : 'border-white/10'} w-full`}>
+      <div className={`border-b ${isWhiteMode ? 'border-black/10 bg-black' : 'border-white/10 bg-white'} w-full`}>
         <div className="container-x py-8 md:py-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 w-full max-w-full box-border">
-          <h3 className={`font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left ${isWhiteMode ? 'text-black' : 'text-white'}`}>
+          <h3 className={`font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left ${isWhiteMode ? 'text-white' : 'text-black'}`}>
             <span className="align-top text-2xl lg:text-4xl mr-1">"</span>
-            Recois <span className="font-black">nos news</span>
+            <span className="font-extralight">Reçois </span><b className="font-black">nos news</b>
             <br />
-            <span className="inline-block pl-20 sm:pl-28 lg:pl-44">
+            <span className="inline-block pl-20 sm:pl-28 lg:pl-44 font-extralight">
               avant tout le monde.
             </span>
             <span className="align-top text-2xl lg:text-4xl ml-1">"</span>
@@ -78,9 +78,9 @@ export const Footer = ({ className }: { className?: string }) => {
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               required
-              className={`h-11 w-full sm:w-64 px-4 placeholder:italic rounded-full border ${isWhiteMode ? 'border-black/20 text-black placeholder:text-black/40' : 'border-white/20 text-white placeholder:text-white/40'} bg-transparent focus:border-${isWhiteMode ? 'black' : 'white'} focus:outline-none text-sm box-border`}
+              className={`h-11 w-full sm:w-64 px-4 placeholder:italic rounded-lg border ${isWhiteMode ? 'border-white/20 text-white placeholder:text-white/40' : 'border-black/50 text-black placeholder:text-black/50'} bg-transparent focus:border-${isWhiteMode ? 'white' : 'black'} focus:outline-none text-sm box-border`}
             />
-            <button className={`h-11 w-full sm:w-auto px-6 rounded-full ${isWhiteMode ? 'bg-black text-white hover:bg-black/80' : 'bg-white text-black hover:bg-white/80'} font-bold text-xs whitespace-nowrap transition-colors`}>
+            <button className={`h-11 w-full sm:w-auto px-6 rounded-lg ${isWhiteMode ? 'bg-white text-black hover:bg-white/80' : 'bg-black text-white hover:bg-black/80'} font-bold text-xs whitespace-nowrap transition-colors`}>
               Je m'inscris
             </button>
           </form>
@@ -137,16 +137,16 @@ export const Footer = ({ className }: { className?: string }) => {
 
             {/* Réseaux sociaux */}
             <div className="flex justify-center lg:justify-start gap-2 mt-6 relative z-10 w-full">
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Facebook className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Instagram className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <TiktokIcon className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/20 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Youtube className="h-4 w-4" />
               </a>
             </div>

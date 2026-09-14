@@ -138,7 +138,7 @@ const MotDePasseOublie = () => {
     <SiteLayout>
       <section className="relative min-h-[calc(100vh-200px)] flex items-center justify-center bg-black py-16">
         <div className="w-full container-x">
-          <div className="max-w-md mx-auto border border-white/20 rounded-2xl p-8 md:p-10">
+          <div className="max-w-md mx-auto border-2 border-white/30 rounded-2xl p-8 md:p-10">
             <h1 className="text-center text-xl font-sans font-bold text-white mb-6">
               Retrouve ton mot de passe
             </h1>
@@ -267,11 +267,11 @@ const MotDePasseOublie = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3 bg-white text-black font-sans font-semibold text-sm rounded-full hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+                className="ml-[134px] px-5 py-1 bg-white text-black font-sans font-semibold text-sm rounded-lg hover:bg-white/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
               >
                 {isLoading ? (
                   <>
-                    <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-lg animate-spin" />
                     <span>Mise à jour...</span>
                   </>
                 ) : (
