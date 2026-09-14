@@ -4,6 +4,7 @@ import pcPro from "@/assets/t2.jpg";
 import pcGaming from "@/assets/t3.jpg";
 import pcConfig from "@/assets/t5.jpg";
 import devis from "@/assets/pexels-tara-winstead-7111548.jpg";
+import arrow from "@/assets/Curved Arrow Downward.png";
 
 const doors = [
   {
@@ -49,15 +50,15 @@ const doors = [
 ];
 
 export const ThreeDoors = () => (
-  <section className="bg-black max-w-[1470px] mx-auto px-8 py-4 text-white lg:py-6">
-    <div className="mb-4">
-    <h2 className="inline-flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[34px]">
-    {/* Ligne 1 : soulignement solide */}
-      <span className="border-b-2 border-white pb-1 pr-3 whitespace-nowrap">
-          Choisis
-      </span>
-      <span className="mb-[0.35rem] ml-2 whitespace-nowrap">ton</span>
-      
+  <section className="mt-12 bg-black max-w-[1470px] mx-auto px-8 py-12 text-white lg:py-14">
+    <div className="mb-12">
+      <h2 className="inline-flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[34px]">
+      {/* Ligne 1 : soulignement solide */}
+        <span className="border-b-2 border-white pb-1 pr-3 whitespace-nowrap">
+            Choisis
+        </span>
+        <span className="mb-[0.35rem] ml-2 whitespace-nowrap">ton</span>
+        
         <span className="mb-[0.1rem] relative pb-1 pl-3 font-light italic tracking-[0.04em] whitespace-nowrap">chemin.</span>
 
         <div 
@@ -66,23 +67,14 @@ export const ThreeDoors = () => (
             backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='12%2c 8'/%3e%3c/svg%3e")`
           }}
         />
-        
-        <svg
-          className="ml-[2px] -mb-[17px] h-5 w-5 text-white"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M2 2 C10 2 17 6 17 14" />
-          <path d="M6 3 C7 8 6 12 6 14" />
-          <path d="M1 14 L11 23 L21 14" />
-        </svg>
-  </h2>
-      </div>
+
+        <img 
+          src={arrow}
+          alt="Flèche vers le bas"
+          className="ml-1 -mb-[30px] h-8 w-8 text-white"
+        />
+      </h2>
+    </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
         {doors.map((door) => (

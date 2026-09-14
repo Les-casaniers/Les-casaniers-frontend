@@ -65,15 +65,15 @@ export const Hero = () => {
               </p>
 
               <Link
-                to="/qui-sommes-nous"
-                className="mt-6 sm:mt-7 md:mt-8 inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 
-                  rounded-md bg-white 
-                  px-3.5 sm:px-5 md:px-6 lg:px-8 
-                  py-2 sm:py-2.5 md:py-3 lg:py-3.5 
-                  text-xs sm:text-sm md:text-base lg:text-lg 
-                  font-extrabold uppercase tracking-tight text-black 
-                  transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95 shadow-lg"
-              >
+              to="/qui-sommes-nous"
+              className="mt-8 sm:mt-9 md:mt-10 inline-flex items-center gap-1.5 sm:gap-2 
+                rounded-md bg-white 
+                px-2.5 sm:px-3.5 md:px-4 
+                py-1.5 sm:py-2 md:py-2.5 
+                text-xs sm:text-xs md:text-sm 
+                font-extrabold uppercase tracking-tight text-black 
+                transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95 shadow-lg"
+            >
                 Découvrir l'équipe
                 <img
                   src={personIcone}
