@@ -25,9 +25,9 @@ const Gaming = () => {
     }
     description={
       <div className="flex flex-col">
-        <p>« Optimise ton flux de travail avec du</p>
+        <p>« Equipe-toi sans compromis du meilleur</p>
         <p className="pl-[10.5rem] sm:pl-[12.5rem] md:pl-[14rem]">
-          matériel configuré pour la productivité »
+          de la performance, du style et du confort »
         </p>
       </div>
     }
