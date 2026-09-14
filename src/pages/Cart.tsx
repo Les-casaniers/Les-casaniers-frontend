@@ -1,6 +1,7 @@
 ﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import arrow from "@/assets/Curved Arrow Downward.png";
 import {
   Minus,
   Plus,
@@ -906,21 +907,11 @@ const Cart = () => {
                   backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='24%2c 12'/%3e%3c/svg%3e")`
                 }}
               />
-
-              <svg
-                className="mt-[15px] h-5 w-5 text-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M2 2 C10 2 17 6 17 14" />
-                <path d="M6 3 C7 8 6 12 6 14" />
-                <path d="M1 14 L11 23 L21 14" />
-              </svg>
+              <img 
+                src={arrow}
+                alt="Flèche vers le bas"
+                className="mt-[20px] ml-1 -mb-[12px] h-8 w-8 text-white"
+              />
             </div>
 
             <div className="max-w-2xl mx-auto mt-8 border border-white/15 rounded-2xl px-8 py-6">

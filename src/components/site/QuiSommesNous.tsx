@@ -1,5 +1,6 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
 import misa from "@/assets/Mascotte_Plan de travail 1.png";
+import arrow from "@/assets/Curved Arrow Downward.png";
 
 const team = [
   { role: "CEO", name: "Valérie", title: "Vision, stratégie et sourcing :", text: "Ma mission : te donner accès à ce qui se fait de mieux en tech pour que ton PC ne soit jamais un frein à tes projets, que ce soit au travail ou en jeu." },
@@ -28,26 +29,17 @@ const QuiSommesNous = () => (
     <span className="mb-[2px] pb-1 pr-3 uppercase">nous ?</span>
   </span>
   <div 
-        className="-ml-[210px] -mb-[0.09rem] w-64 h-1 bg-repeat-x"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='24%2c 8'/%3e%3c/svg%3e")`
-        }}
-      />
-      
-      <svg
-        className="ml-[6px] -mb-[17px] h-5 w-5 text-white"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M2 2 C10 2 17 6 17 14" />
-        <path d="M6 3 C7 8 6 12 6 14" />
-        <path d="M1 14 L11 23 L21 14" />
-      </svg>
+    className="-ml-[210px] -mb-[0.09rem] w-64 h-1 bg-repeat-x"
+    style={{
+      backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='24%2c 8'/%3e%3c/svg%3e")`
+    }}
+  />
+  <img 
+    src={arrow}
+    alt="Flèche vers le bas"
+    className="ml-1 -mb-[31px] h-8 w-8 text-white"
+  />
+
 </h1>
         </header>
         <p className="mt-12 rounded-lg border border-white/45 px-5 py-4 text-base leading-relaxed text-white/80 sm:px-6 sm:text-lg">
