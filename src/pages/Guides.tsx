@@ -457,12 +457,12 @@ const Guides = () => {
 <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
       {/* 1. Composant MiniHero */}
       <MiniHero
-        title="Besoins de conseils ? ."
+        title="Besoins de conseils ?"
         description={
           <div className="flex flex-col">
-            <p>Nos meilleurs conseils pour faire le bon choix</p>
+            <p>«Nos meilleurs conseils pour faire le bon choix</p>
             <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-              selon tes besoins et ton  budget 
+              selon tes besoins et ton  budget» 
             </p>
           </div>
         }

@@ -184,9 +184,9 @@ const Importation = () => {
           title="Importation Europe - Madagascar."
           description={
             <div className="flex flex-col">
-              <p>Un produit introuvable dans le catalogue ?</p>
+              <p>"Un produit introuvable dans le catalogue ?</p>
               <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-                On le recherche pour vous
+                On le recherche pour vous"
               </p>
             </div>
           }
@@ -209,17 +209,6 @@ const Importation = () => {
           ========================================== */}
       <section className="py-8 lg:py-12">
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Titre principal */}
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
-            IMPORTATION EUROPE-MADAGASCAR
-          </h1>
-
-          {/* Sous-titre avec guillemets */}
-          <div className="text-lg lg:text-xl text-muted-foreground mb-4 italic">
-            <p>" Un produit introuvable dans les catalogues ?</p>
-            <p className="pl-6 lg:pl-8">On le cherche pour toi "</p>
-          </div>
-
           {/* Description */}
           <div className="text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
             <p>

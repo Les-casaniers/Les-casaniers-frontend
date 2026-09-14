@@ -1,24 +1,42 @@
-
-
 import { useLocation } from "react-router-dom";
 
 const PAGE_ITEMS = {
   "/gaming": [
     {
       title: "CONSEILS PERSONNALISÉS",
-      description: "On t'aide à choisir la configuration adapteé" ,
+      description: (
+        <>
+          On t'aide à choisir la<br />
+          configuration adaptée
+        </>
+      ),
     },
     {
-      title: "LIVRAISON A MADAGASCAR",
-      description: "On monte, teste et installe ton pc ",
+      title: "LIVRAISON À MADAGASCAR",
+      description: (
+        <>
+          On monte, teste<br />
+          et installe ton pc
+        </>
+      ),
     },
     {
       title: "GARANTIE 24 MOIS",
-      description: "Joue l'esprit tranquille, ta machine et couverte",
+      description: (
+        <>
+          Joue l'esprit tranquille,<br />
+          ta machine est couverte
+        </>
+      ),
     },
     {
       title: "SAV ET ENTRETIEN LOCAL",
-      description: "On reste à tes côtés pour l'entretien durable",
+      description: (
+        <>
+          On reste à tes côtés pour<br />
+          l'entretien durable
+        </>
+      ),
     },
   ],
   "/bureautique": [
@@ -75,17 +93,23 @@ export const InfoBar = () => {
           const isLast = i === items.length - 1;
 
           const alignClass = isFirst
-            ? "text-left items-start"
+            ? "items-start"
             : isLast
-            ? "text-right items-end"
-            : "text-center items-center";
+            ? "items-end"
+            : "items-center";
+
+          const textAlignClass = isFirst
+            ? "text-left"
+            : isLast
+            ? "text-right"
+            : "text-center";
 
           return (
-            <div key={i} className={`flex flex-col ${alignClass} flex-1`}>
-              <p className="text-xs sm:text-sm font-extrabold tracking-wide uppercase text-white">
+            <div key={i} className={`flex flex-1 flex-col ${alignClass}`}>
+              <p className={`text-xs sm:text-sm font-extrabold tracking-wide uppercase text-white whitespace-nowrap ${textAlignClass}`}>
                 {item.title}
               </p>
-              <p className="text-[11px] sm:text-xs text-zinc-400 mt-1 max-w-[200px] leading-tight">
+              <p className={`mt-1 max-w-[220px] text-[11px] sm:text-xs text-zinc-400 leading-tight ${textAlignClass}`}>
                 {item.description}
               </p>
             </div>
