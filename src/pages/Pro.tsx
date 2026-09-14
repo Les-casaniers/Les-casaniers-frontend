@@ -260,9 +260,9 @@ const Profreelance = () => {
           title="Des outils a la hauteur de tes ambitions"
           description={
             <div className="flex flex-col">
-              <p>« Optimise et améliore tes performances</p>
+              <p>« Optimise ton flux de travail avec du</p>
               <p className="pl-[8.5rem] sm:pl-[11rem] md:pl-[13rem]">
-                et domine chaque partie »
+                matériel configuré pour la productivité »
               </p>
             </div>
           }
