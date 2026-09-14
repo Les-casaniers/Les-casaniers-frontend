@@ -232,7 +232,7 @@ const EmptyFavorites = () => {
 
 // Composant principal des favoris
 export const Favorites = () => {
-  const { addToCart: addToLocalCart } = useShop();
+  const { addToCart: addToLocalCart, removeFavoriteLocal } = useShop();
   const { isAuthenticated, user } = useAuth();
   const [favoris, setFavoris] = useState<Favori[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -347,6 +347,7 @@ export const Favorites = () => {
           newSet.delete(productId);
           return newSet;
         });
+        removeFavoriteLocal(productId);
         toast.success("Produit retiré des favoris");
       }
     } catch (error) {
@@ -403,6 +404,7 @@ export const Favorites = () => {
       if (favori) {
         try {
           await api.delete(`/favoris/${productId}`);
+          removeFavoriteLocal(productId);
         } catch (error) {
           console.error("Erreur suppression:", error);
         }

@@ -217,8 +217,8 @@ const DashboardAdresses = () => {
       ville: "",
       region: "",
       pays: "Madagascar",
-      par_defaut_expedition: adresses.length === 0,
-      par_defaut_facturation: adresses.length === 0,
+      par_defaut_expedition: !adresses.some((a) => a.par_defaut_expedition),
+      par_defaut_facturation: !adresses.some((a) => a.par_defaut_expedition),
       image_adress: null,
       latitude: null,
       longitude: null,
@@ -388,19 +388,26 @@ const DashboardAdresses = () => {
       )}
 
       {/* Vide */}
-      {adresses.length === 0 && (
-        <>
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-sm font-semibold italic text-white/75">Adresse de livraison :</h2>
-            <p className="mt-2 text-xs italic text-white/60">Par défaut</p>
+      <div className="space-y-6">
+        {/* Reste visible tant qu'aucune adresse par défaut n'existe */}
+        <div>
+          <h2 className="text-sm font-semibold italic text-white/75">Adresse de livraison :</h2>
+          <p className="mt-2 text-xs italic text-white/60">Par défaut</p>
+          {!adresses.some((a) => a.par_defaut_expedition) && (
             <button onClick={handleOpenAdd} className="mt-1 inline-flex items-center gap-2 rounded-md border border-white/45 px-5 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10"><Plus className="h-4 w-4" /> Ajouter une adresse</button>
-          </div>
+          )}
+        </div>
+        {/* Reste visible tant qu'aucune adresse optionnelle n'existe, même si l'adresse
+            par défaut a déjà été ajoutée : avant, ce bouton disparaissait dès qu'il y avait
+            au moins une adresse, empêchant d'ajouter la deuxième. */}
+        {!adresses.some((a) => !a.par_defaut_expedition) && (
           <div>
             <p className="text-xs italic text-white/60">Optionnelle</p>
             <button onClick={handleOpenAdd} className="mt-1 inline-flex items-center gap-2 rounded-md border border-white/45 px-5 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10"><Plus className="h-4 w-4" /> Ajouter une nouvelle adresse</button>
           </div>
-        </div>
+        )}
+      </div>
+      {adresses.length === 0 && (
         <div className="hidden">
           <div className="w-20 h-20 mx-auto mb-4 bg-secondary/40 rounded-2xl flex items-center justify-center">
             <MapPin className="h-10 w-10 text-muted-foreground/30" />
@@ -414,7 +421,6 @@ const DashboardAdresses = () => {
             <Plus className="h-4 w-4" /> Ajouter une adresse
           </button>
         </div>
-        </>
       )}
 
       {/* Grille adresses */}
@@ -693,7 +699,6 @@ const DashboardAdresses = () => {
                   longitude={typeof form.longitude === "string" ? parseFloat(form.longitude) : form.longitude || null}
                   onLocationSelect={handleLocationSelect}
                   address={`${form.adresse_ligne1 || ""} ${form.ville || ""}`}
-                  disabled={isSaving}
                 />
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div>

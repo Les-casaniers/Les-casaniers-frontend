@@ -22,7 +22,7 @@ export const Hero = () => {
   return (
     <>
       <div className="w-full bg-black px-3 sm:px-6 lg:px-8">
-        <section className="relative mx-auto w-full max-w-7xl overflow-hidden rounded-2xl bg-zinc-950 
+        <section className="relative mx-auto w-full max-w-[1410px] overflow-hidden rounded-xl bg-zinc-950 
           min-h-[280px] sm:min-h-[350px] md:min-h-[400px] lg:min-h-[450px] xl:min-h-[500px] 2xl:min-h-[550px]
           max-h-[75vh]"
         >
@@ -33,8 +33,10 @@ export const Hero = () => {
                 key={index}
                 src={slide}
                 alt="Espace de travail Les Casaniers"
-                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-700 ${
-                  index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+                className={`absolute inset-0 h-full w-full object-cover object-center transition-all duration-1000 ease-in-out ${
+                  index === currentSlide
+                    ? "opacity-100 scale-100 z-10"
+                    : "opacity-0 scale-105 z-0 pointer-events-none"
                 }`}
               />
             ))}
@@ -45,32 +47,33 @@ export const Hero = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-transparent pointer-events-none" />
 
           {/* Conteneur de contenu */}
-          <div className="absolute inset-0 z-10 flex w-full items-center 
-            px-4 sm:px-8 md:px-12 lg:px-16 xl:px-20 
+          <div className="absolute inset-0 z-10 flex w-full items-center
+            pl-0 sm:pl-0 md:pl-2 lg:pl-3 xl:pl-4
+            pr-4 sm:pr-8 md:pr-12 lg:pr-16 xl:pr-20
             py-6 sm:py-10 md:py-14 lg:py-18 xl:py-24"
           >
-            <div className="max-w-sm sm:max-w-xl lg:max-w-none text-white">
+            <div className=" -mt-4 max-w-sm sm:max-w-xl lg:max-w-none text-white">
               <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl
                 font-black uppercase tracking-wide md:whitespace-nowrap">
                 Construisons ton outil de réussite
               </h1>
 
-              <p className="mt-4 sm:mt-5 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 
+              <p className="mt-14 sm:mt-16 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 
                 font-medium italic leading-relaxed text-white/90">
                 <span>&quot; Le meilleur pc n'est pas forcément le plus puissant du marché.</span>
                 <span className="block pl-6 sm:pl-10 mt-1">C'est celui adapté à tes besoins, pour jouer et évoluer sereinement &quot;</span>
               </p>
 
               <Link
-                to="/qui-sommes-nous"
-                className="mt-6 sm:mt-7 md:mt-8 inline-flex items-center gap-2 sm:gap-2.5 md:gap-3 
-                  rounded-md bg-white 
-                  px-3.5 sm:px-5 md:px-6 lg:px-8 
-                  py-2 sm:py-2.5 md:py-3 lg:py-3.5 
-                  text-xs sm:text-sm md:text-base lg:text-lg 
-                  font-extrabold uppercase tracking-tight text-black 
-                  transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95 shadow-lg"
-              >
+              to="/qui-sommes-nous"
+              className="mt-8 sm:mt-9 md:mt-10 inline-flex items-center gap-1.5 sm:gap-2 
+                rounded-md bg-white 
+                px-2.5 sm:px-3.5 md:px-4 
+                py-1.5 sm:py-2 md:py-2.5 
+                text-xs sm:text-xs md:text-sm 
+                font-extrabold uppercase tracking-tight text-black 
+                transition hover:bg-zinc-200 hover:scale-[1.02] active:scale-95 shadow-lg"
+            >
                 Découvrir l'équipe
                 <img
                   src={personIcone}
@@ -85,9 +88,9 @@ export const Hero = () => {
             <img
               src={mascot}
               alt="Mascotte Les Casaniers"
-              className="absolute bottom-3 right-4 sm:right-8 md:right-12 lg:right-16 
+              className="absolute bottom-10 -right-12 -sm:right-16 -md:right-20 -lg:right-24 
                 hidden md:block 
-                h-[40%] sm:h-[45%] md:h-[50%] lg:h-[60%] xl:h-[65%] 
+                h-[30%] sm:h-[35%] md:h-[40%] lg:h-[45%] xl:h-[50%] 
                 max-h-[200px] sm:max-h-[250px] md:max-h-[300px] lg:max-h-[380px] xl:max-h-[450px] 2xl:max-h-[500px] 
                 w-auto object-contain drop-shadow-2xl pointer-events-none"
             />
@@ -101,7 +104,7 @@ export const Hero = () => {
                 type="button"
                 aria-label={`Afficher la photo ${index + 1}`}
                 onClick={() => setCurrentSlide(index)}
-                className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                className={`h-1.5 sm:h-2 rounded-full transition-all duration-500 ease-out ${
                   index === currentSlide 
                     ? "bg-white w-3 sm:w-4" 
                     : "bg-white/50 hover:bg-white/70 w-1.5 sm:w-2"

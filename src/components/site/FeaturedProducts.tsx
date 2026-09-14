@@ -27,7 +27,7 @@ const defaultProducts: Product[] = [
   {
     src: keyboardImg,
     alt: "Clavier mécanique RGB",
-    className: "left-[3%] bottom-[8%] w-[22%] max-w-[270px]",
+    className: "left-[4%] bottom-[28%] w-[22%] max-w-[270px]",
   },
   {
     src: phoneImg,
@@ -37,17 +37,17 @@ const defaultProducts: Product[] = [
   {
     src: monitorImg,
     alt: "Écran OLED gaming MSI",
-    className: "left-[45%] top-[12%] w-[21%] max-w-[260px]",
+    className: "left-[42%] top-[12%] w-[21%] max-w-[260px]",
   },
   {
     src: headsetImg,
     alt: "Casque gaming RGB",
-    className: "right-[24%] bottom-[8%] w-[13%] max-w-[165px]",
+    className: "right-[28%] bottom-[8%] w-[13%] max-w-[165px]",
   },
   {
     src: laptopImg,
     alt: "PC portable gaming ROG",
-    className: "right-[3%] top-[10%] w-[22%] max-w-[280px]",
+    className: "right-[0%] top-[10%] w-[22%] max-w-[280px]",
   },
 ];
 
@@ -84,16 +84,16 @@ const PromoBanner: FC<PromoBannerProps> = ({
         />
 
         {/* 2. Titre à gauche de l'écran sur une ligne */}
-        <div className="absolute top-[14%] left-[4%] sm:left-[5%] z-20 flex flex-col gap-1 max-w-[340px] sm:max-w-[400px]">
+        <div className="absolute top-[7%] left-[1%] sm:left-[2%] z-20 flex flex-col gap-3 max-w-[340px] sm:max-w-[400px]">
           {eyebrow && (
             <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
               {eyebrow}
             </span>
           )}
-          <h2 className="font-sans text-sm sm:text-base md:text-lg lg:text-xl font-extrabold leading-none text-white drop-shadow-md whitespace-nowrap">
+          <h2 className="font-sans text-sm sm:text-base md:text-lg lg:text-2xl font-extrabold leading-none text-white drop-shadow-md whitespace-nowrap tracking-wide">
             {title}
           </h2>
-          <p className="font-serif text-xs sm:text-sm md:text-base italic text-white/90 drop-shadow whitespace-nowrap">
+          <p className="font-serif text-xs sm:text-sm md:text-base italic text-white/90 drop-shadow whitespace-nowrap tracking-wide">
             {subtitle}
           </p>
         </div>

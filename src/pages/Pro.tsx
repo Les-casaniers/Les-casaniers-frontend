@@ -16,8 +16,9 @@ import { Product, productSpec, useCategories } from "@/hooks/useProducts";
 import { MiniHero } from "@/components/layout/MiniHero";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
+import { useShop } from "@/store/shop";
 
-// Colors for dynamic category filters
+// Couleurs pour les filtres de catégorie dynamique
 const getFilterColorClass = (index: number) => {
   const colors = [
     "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
@@ -38,7 +39,7 @@ const Profreelance = () => {
   const searchRef = searchParams.get("ref") || "";
   const searchCategory = searchParams.get("categorie") || "";
 
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const { favorites, toggleFavorite } = useShop();
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"pop" | "asc" | "desc">("pop");
   const [budget, setBudget] = useState(15000000);
@@ -140,72 +141,6 @@ const Profreelance = () => {
     }
   };
 
-  useEffect(() => { 
-    fetchFavorites(); 
-  }, []);
-
-  const fetchFavorites = async () => {
-    try {
-      const response = await api.get('/favoris');
-      let favorisData = [];
-      if (response?.data?.data) {
-        favorisData = Array.isArray(response.data.data) ? response.data.data : [];
-      } else if (Array.isArray(response?.data)) {
-        favorisData = response.data;
-      } else if (response?.data?.favoris) {
-        favorisData = response.data.favoris;
-      }
-      const favoriteIds = favorisData.map((f: any) => f.produit_id).filter(Boolean);
-      setFavorites(favoriteIds);
-    } catch (error: any) {
-      if (error.response?.status !== 401) {
-        console.error("Erreur chargement favoris:", error);
-      }
-    }
-  };
-
-  const toggleFavorite = async (produitId: number, e?: React.MouseEvent) => {
-    if (e) { 
-      e.preventDefault(); 
-      e.stopPropagation(); 
-    }
-    
-    if (!produitId) return;
-    
-    try {
-      const isCurrentlyFavorite = favorites.includes(produitId);
-      if (isCurrentlyFavorite) {
-        await api.delete('/favoris', { data: { produit_id: produitId } });
-        setFavorites(favorites.filter(id => id !== produitId));
-        toast({ 
-          title: "Retiré des favoris", 
-          description: "Produit retiré de votre liste" 
-        });
-      } else {
-        await api.post('/favoris', { produit_id: produitId });
-        setFavorites([...favorites, produitId]);
-        toast({ 
-          title: "Ajouté aux favoris", 
-          description: "Produit ajouté à votre liste" 
-        });
-      }
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        toast({ 
-          title: "Connexion requise", 
-          description: "Veuillez vous connecter pour ajouter aux favoris", 
-          variant: "destructive" 
-        });
-      } else {
-        toast({ 
-          title: "Erreur", 
-          description: "Une erreur est survenue", 
-          variant: "destructive" 
-        });
-      }
-    }
-  };
-
   const getProductImageUrl = (product: any) => {
     if (!product) return "/placeholder-pc.jpg";
     
@@ -285,7 +220,7 @@ const Profreelance = () => {
       list = [...list].sort((a, b) => (a?.prix || 0) - (b?.prix || 0));
     }
     if (sort === "desc") {
-      list = [...list].sort((a, b) => (b?.prix || 0) - (a?.prix || 0));
+      list = [...list].sort((b, a) => (b?.prix || 0) - (a?.prix || 0));
     }
     
     return list;
@@ -318,87 +253,29 @@ const Profreelance = () => {
 
   return (
     <SiteLayout>
-<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
-  
-  {/* 1. MiniHero */}
-  <MiniHero
-    title="Des outils a la hauteur de tes ambitions"
-    description={
-      <div className="flex flex-col">
-        <p>« Optimise et améliore tes performances</p>
-        <p className="pl-[8.5rem] sm:pl-[11rem] md:pl-[13rem]">
-          et domine chaque partie »
-        </p>
+      <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+        
+        {/* 1. MiniHero */}
+        <MiniHero
+          title="Des outils a la hauteur de tes ambitions"
+          description={
+            <div className="flex flex-col">
+              <p>« Optimise et améliore tes performances</p>
+              <p className="pl-[8.5rem] sm:pl-[11rem] md:pl-[13rem]">
+                et domine chaque partie »
+              </p>
+            </div>
+          }
+          bg={fond}
+          mascot={gorile}
+        />
+
+        {/* 2. InfoBar */}
+        <InfoBar />
+
       </div>
-    }
-    bg={fond}
-    mascot={gorile}
-  />
 
-  {/* 2. InfoBar */}
-  <InfoBar />
-
-</div>
-
-      {/* Barre de navigation 
-      <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="container-x py-3">
-          <div className="hidden sm:flex items-center gap-2 overflow-x-auto scrollbar-none">
-            <Filter className="h-4 w-4 text-[#c8a96e] shrink-0 mr-1" />
-            <span className="text-xs font-semibold text-primary px-2 py-1 rounded-full bg-primary/10">
-              {proCategoryName}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:hidden">
-            <span className="text-xs font-semibold text-primary px-2 py-2 rounded-full bg-primary/10 text-center">
-              {proCategoryName}
-            </span>
-          </div>
-        </div>
-      </nav>
-*/}
-      {/* Barre de recherche et tri */}
-      {/*
-      <section className="border-b border-border bg-background/50">
-        <div className="container-x py-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                value={q} 
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Rechercher dans la gamme Pro..."
-                className="w-full h-8 pl-8 pr-3 rounded-full bg-secondary/50 text-xs border border-transparent focus:border-primary/30 focus:outline-none transition-all"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="h-3 w-3 text-muted-foreground hidden sm:block" />
-              <input
-                type="range" 
-                min={1500000} 
-                max={15000000} 
-                step={500000} 
-                value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
-                className="accent-primary w-28 h-1"
-              />
-              <span className="text-[10px] font-mono text-muted-foreground">{formatAr(budget)}</span>
-            </div>
-            <select 
-              value={sort} 
-              onChange={(e) => setSort(e.target.value as "pop" | "asc" | "desc")}
-              className="h-8 rounded-full bg-secondary/50 px-3 text-xs border border-transparent focus:border-primary/30 focus:outline-none"
-            >
-              <option value="pop">Populaire</option>
-              <option value="asc">Prix ↑</option>
-              <option value="desc">Prix ↓</option>
-            </select>
-            {isLoadingProducts && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-          </div>
-        </div>
-      </section>
-     */ }
-      {/* Active Search Filters Indicator */}
+      {/* Indicateur des filtres de recherche actifs */}
       {(searchNom || searchRef || searchSousCategory) && (
         <div className="container-x pt-4">
           <div className="flex flex-wrap items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-lg">
@@ -535,111 +412,138 @@ const Profreelance = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map((p: Product, i: number) => {
-              const fav = favorites.includes(p.id);
-              return (
-                <article
-                  key={p.id || i}
-                  className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-                  style={{ animationDelay: `${i * 30}ms` }}
-                >
-                  <Link to={`/produit/${p.id}`} className="block relative aspect-square overflow-hidden bg-secondary/30">
-                    <img
-                      src={getProductImageUrl(p)}
-                      alt={p.nom || 'Produit'}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => { 
-                        (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; 
-                      }}
-                    />
-                    {p.badge && (
-                      <span className="absolute top-1.5 left-1.5 text-[8px] font-semibold bg-gradient-to-r from-primary to-accent text-white px-1.5 py-0.5 rounded-full">
-                        {p.badge}
-                      </span>
-                    )}
-                    <span className="absolute top-1.5 right-1.5 text-[8px] font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
-                      Pro
-                    </span>
-                    <button
-                      onClick={(e) => toggleFavorite(p.id, e)}
-                      className={`absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center backdrop-blur-sm transition-all ${
-                        fav ? "bg-primary text-white" : "bg-black/50 text-white/80 hover:bg-primary/80"
-                      }`}
-                      aria-label={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
-                    >
-                      <Heart className={`h-3 w-3 ${fav ? "fill-current" : ""}`} />
-                    </button>
-                  </Link>
-                  <div className="p-2.5 space-y-1.5">
-                    <div className="flex items-start justify-between gap-1">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[8px] font-mono uppercase text-primary/70">
-                          {p.reference?.split('-')[0] || p.categorie?.nom || 'Pro'}
-                        </div>
-                        <h3 className="font-semibold text-xs leading-tight truncate">
-                          {p.nom || 'Produit sans nom'}
-                        </h3>
-                      </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <Star className="h-2.5 w-2.5 fill-primary text-primary" />
-                        <span className="text-[9px] font-medium">{p.note || 5.0}</span>
-                      </div>
-                    </div>
-                    <p className="text-[9px] text-muted-foreground line-clamp-2 leading-relaxed">
-                      {p.description_courte || p.tagline || 'Produit professionnel'}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {productSpec(p, "processeur") && (
-                        <span className="text-[8px] bg-secondary px-1.5 py-0.5 rounded-full">
-                          {productSpec(p, "processeur")?.slice(0, 12)}
-                        </span>
-                      )}
-                      {productSpec(p, "carte_graphique") && (
-                        <span className="text-[8px] bg-secondary px-1.5 py-0.5 rounded-full">
-                          {productSpec(p, "carte_graphique")?.slice(0, 12)}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Prix et boutons d'action */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] text-muted-foreground">à partir de</span>
-                          <div className="font-bold text-xs">{formatAr(p.prix || 0)}</div>
-                        </div>
-                    
-                      </div>
+          /* Dynamique wrapped-grid */
+          (() => {
+            const total = filtered.length;
+            const itemsPerRow = 4;
+            
+            // Separer les tableau en plusieurs tableau de 4 elements max
+            const rows: Product[][] = [];
+            for (let i = 0; i < total; i += itemsPerRow) {
+              rows.push(filtered.slice(i, i + itemsPerRow));
+            }
 
-                      {/* Boutons WhatsApp et Super Configurateur */}
-                      <div className="flex gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 h-6 px-1.5 text-[8px] border-green-500/50 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950/30"
-                          onClick={(e) => openWhatsApp(p, e)}
+            return (
+              <div className="flex flex-col items-center gap-3 w-full">
+                {rows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex justify-center gap-8 w-full flex-wrap">
+                    {row.map((p: Product, i: number) => {
+                      const globalIndex = rowIndex * itemsPerRow + i;
+                      const fav = favorites.includes(p.id);
+
+                      return (
+                        <div 
+                          key={p.id || globalIndex} 
+                          className="w-full sm:w-[calc(50%-0.75rem)] md:w-[calc(25%-0.75rem)] max-w-[280px]"
                         >
-                          <MessageCircle className="h-3 w-3 mr-0.5" />
-                          WhatsApp
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 h-6 px-1.5 text-[8px] border-amber-500/50 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/30"
-                          onClick={(e) => openSuperConfigurateur(p, e)}
-                        >
-                          <Settings className="h-3 w-3 mr-0.5" />
-                          Super Config
-                        </Button>
-                      </div>
-                    </div>
+                          <article
+                            className="group bg-card border border-border/50 rounded-xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer h-full"
+                            style={{ animationDelay: `${globalIndex * 30}ms` }}
+                          >
+                            <Link to={`/produit/${p.id}`} className="block relative aspect-square overflow-hidden bg-secondary/30">
+                              <img
+                                src={getProductImageUrl(p)}
+                                alt={p.nom || 'Produit'}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                onError={(e) => { 
+                                  (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; 
+                                }}
+                              />
+                              {p.badge && (
+                                <span className="absolute top-1.5 left-1.5 text-[8px] font-semibold bg-gradient-to-r from-primary to-accent text-white px-1.5 py-0.5 rounded-full">
+                                  {p.badge}
+                                </span>
+                              )}
+                              <span className="absolute top-1.5 right-1.5 text-[8px] font-semibold bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
+                                Pro
+                              </span>
+                              <button
+                                onClick={(e) => toggleFavorite(p.id, e)}
+                                title="Ajouter aux favoris"
+                                className={`absolute bottom-1.5 right-1.5 h-6 w-6 rounded-full flex items-center justify-center backdrop-blur-sm bg-black/50 transition-colors ${
+                                  fav ? "text-red-500 bg-primary" : "text-white/80 hover:text-red-400"
+                                }`}
+                                aria-label={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
+                              >
+                                <Heart className={`h-3 w-3 transition-colors ${fav ? "fill-red-500" : ""}`} />
+                              </button>
+                            </Link>
+
+                            <div className="p-2.5 space-y-1.5">
+                              <div className="flex items-start justify-between gap-1">
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-[8px] font-mono uppercase text-primary/70">
+                                    {p.reference?.split('-')[0] || p.categorie?.nom || 'Pro'}
+                                  </div>
+                                  <h3 className="font-semibold text-xs leading-tight truncate">
+                                    {p.nom || 'Produit sans nom'}
+                                  </h3>
+                                </div>
+                                <div className="flex items-center gap-0.5 shrink-0">
+                                  <Star className="h-2.5 w-2.5 fill-primary text-primary" />
+                                  <span className="text-[9px] font-medium">{p.note || 5.0}</span>
+                                </div>
+                              </div>
+
+                              <p className="text-[9px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                {p.description_courte || p.tagline || 'Produit professionnel'}
+                              </p>
+
+                              <div className="flex flex-wrap gap-1">
+                                {productSpec(p, "processeur") && (
+                                  <span className="text-[8px] bg-secondary px-1.5 py-0.5 rounded-full">
+                                    {productSpec(p, "processeur")?.slice(0, 12)}
+                                  </span>
+                                )}
+                                {productSpec(p, "carte_graphique") && (
+                                  <span className="text-[8px] bg-secondary px-1.5 py-0.5 rounded-full">
+                                    {productSpec(p, "carte_graphique")?.slice(0, 12)}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              {/* Prix et boutons d'action */}
+                              <div className="space-y-1.5 pt-1">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <span className="text-[9px] text-muted-foreground">à partir de</span>
+                                    <div className="font-bold text-xs">{formatAr(p.prix || 0)}</div>
+                                  </div>
+                                </div>
+
+                                {/* Boutons WhatsApp et Super Configurateur */}
+                                <div className="flex gap-1.5">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 h-6 px-1.5 text-[8px] border-green-500/50 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950/30"
+                                    onClick={(e) => openWhatsApp(p, e)}
+                                  >
+                                    <MessageCircle className="h-3 w-3 mr-0.5" />
+                                    WhatsApp
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex-1 h-6 px-1.5 text-[8px] border-amber-500/50 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/30"
+                                    onClick={(e) => openSuperConfigurateur(p, e)}
+                                  >
+                                    <Settings className="h-3 w-3 mr-0.5" />
+                                    Super Config
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </article>
+                        </div>
+                      );
+                    })}
                   </div>
-                </article>
-              );
-            })}
-          </div>
+                ))}
+              </div>
+            );
+          })()
         )}
 
       </section>
@@ -660,4 +564,4 @@ const Profreelance = () => {
   );
 };
 
-export default Profreelance;  
+export default Profreelance;
