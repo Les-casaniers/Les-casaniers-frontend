@@ -427,10 +427,9 @@ const BoutiqueDeMisa = () => {
 
         {/* 3. InfoBar conservée */}
         <InfoBar />
-      </div>
-
+        
       {/* Barre de filtres */}
-      <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+        <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container-x py-3">
           {/* Mobile */}
           <div className="grid grid-cols-2 sm:hidden gap-2">
@@ -769,6 +768,7 @@ const BoutiqueDeMisa = () => {
         }
         .animate-slide-up { animation: slide-up 0.3s ease-out both; }
       `}</style>
+      </div>
     </SiteLayout>
   );
 };
