@@ -94,7 +94,7 @@ const Login = () => {
   return (
     <SiteLayout>
       {/* min-h adapté pour ne pas casser le header/footer sur mobile */}
-      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10">
+      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10 pb-10">        
         <div className="relative z-10 w-full container-x py-4 md:py-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
@@ -140,8 +140,8 @@ const Login = () => {
 
             {/* Section Droite - Formulaire */}
             <div
-              className="border-2 border-white/30 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 bg-black/40 backdrop-blur-sm mx-auto lg:ml-auto lg:mr-0"
-              style={{ width: '600px', height: '500px' }}
+              className="border-2 border-white/30 rounded-2xl sm:rounded-2xl p-5 sm:p-8 md:p-10 bg-black/40 backdrop-blur-sm w-full max-w-[530px] lg:mr-auto"
+              style={{ minHeight: '400px' }}
             >
               <h2 className="text-center text-white text-base sm:text-lg font-semibold mb-6 sm:mb-8 tracking-wide">
                 Connexion
