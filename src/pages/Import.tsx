@@ -208,15 +208,17 @@ const Importation = () => {
           "underline" sans fond, 2 colonnes, bouton
           d'ajout de fichier, bouton d'envoi orange)
           ========================================== */}
-      <section className="py-8 lg:py-12">
+      <section className="py-6 lg:py-6 border-b border-white mb-8">
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Description */}
-          <div className="text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
-            <p>
+          <div className="-mt-10 text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
+            <p className="mb-4">
               Tu as repéré un produit qui n'est pas disponible sur le site ? Donne-nous sa référence,
-              un lien ou une description de ton besoin. Notre équipe vérifie les possibilités d'approvisionnement,
-              le délai et le prix avant toute commande.
             </p>
+            <p className="mb-4">
+              un lien ou une description de ton besoin. Notre équipe vérifie les possibilités d'approvisionnement,</p>
+            <p className="mb-4">
+              le délai et le prix avant toute commande.</p>
           </div>
 
           {/* Titre du formulaire, souligné en pointillés */}
@@ -248,7 +250,7 @@ const Importation = () => {
               {/* Colonne gauche */}
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Catégorie(*)
                   </label>
                   <input
@@ -262,7 +264,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Nom et prénom(*)
                   </label>
                   <input
@@ -276,7 +278,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Email(*)
                   </label>
                   <input
@@ -293,7 +295,7 @@ const Importation = () => {
               {/* Colonne droite */}
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Téléphone(*)
                   </label>
                   <input
@@ -307,7 +309,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Société
                   </label>
                   <input
@@ -319,7 +321,7 @@ const Importation = () => {
                   />
                 </div>
 
-                <div>
+                <div className="mt-5">
                   <label
                     htmlFor="fichier-import"
                     className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
@@ -342,7 +344,7 @@ const Importation = () => {
               </div>
 
               {/* Description, pleine largeur */}
-              <div className="md:col-span-2">
+              <div className="md:col-span-1">
                 <label className="block text-sm italic text-gray-500 mb-1">
                   Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...(*)
                 </label>
@@ -357,24 +359,23 @@ const Importation = () => {
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="text-sm mt-5 mb-4 space-y-1">
-              <p className="text-black italic">" Réponse sous 24h avec devis d'importation "</p>
-              <p className="text-red-500 italic">*: ces champs doivent être obligatoirement remplis</p>
-            </div>
-
             {/* Bouton d'envoi */}
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Envoi en cours..." : "J'envoie ma demande"}
                 <Send className="h-4 w-4" />
               </button>
             </div>
           </form>
+        {/* Notes */}
+            <div className="text-sm mt-3 mb-4 space-y-1">
+              <p className="text-white italic">" Réponse sous 24h avec devis d'importation "</p>
+              <p className="text-white-500 italic">*: ces champs doivent être obligatoirement remplis</p>
+            </div>
         </div>
       </section>
 
@@ -437,7 +438,7 @@ const Importation = () => {
               {/* Colonne gauche */}
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Catégorie(*)
                   </label>
                   <input
@@ -451,7 +452,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Nom et prénom(*)
                   </label>
                   <input
@@ -465,7 +466,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Email(*)
                   </label>
                   <input
@@ -482,7 +483,7 @@ const Importation = () => {
               {/* Colonne droite */}
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Téléphone(*)
                   </label>
                   <input
@@ -496,7 +497,7 @@ const Importation = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm italic text-gray-500 mb-1">
+                  <label className="block text-sm italic text-gray-500 -mb-2">
                     Entreprise
                   </label>
                   <input
@@ -508,7 +509,7 @@ const Importation = () => {
                   />
                 </div>
 
-                <div>
+                <div className="mt-5">
                   <label
                     htmlFor="fichier-import-chine"
                     className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
@@ -531,8 +532,8 @@ const Importation = () => {
               </div>
 
               {/* Description, pleine largeur */}
-              <div className="md:col-span-2">
-                <label className="block text-sm italic text-gray-500 mb-1">
+              <div className="md:col-span-1">
+                <label className="block text-sm italic text-gray-500 -mb-2">
                   Description des besoins: Marque du portable, Modèle, Pièce recherchée (Batterie, Ecran, Clavier)...(*)
                 </label>
                 <input
@@ -546,24 +547,24 @@ const Importation = () => {
               </div>
             </div>
 
-            {/* Notes */}
-            <div className="text-sm mt-5 mb-4 space-y-1">
-              <p className="text-black italic">" Réponse sous 24h avec devis d'importation "</p>
-              <p className="text-red-500 italic">*: ces champs doivent être obligatoirement remplis</p>
-            </div>
-
             {/* Bouton d'envoi */}
             <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={isSubmittingChine}
-                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-1 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmittingChine ? "Envoi en cours..." : "J'envoie ma demande"}
                 <Send className="h-4 w-4" />
               </button>
             </div>
           </form>
+          
+            {/* Notes */}
+            <div className="text-sm mt-5 mb-4 space-y-1">
+              <p className="text-white italic">" Réponse sous 24h avec devis d'importation "</p>
+              <p className="text-white-500 italic">*: ces champs doivent être obligatoirement remplis</p>
+            </div>
         </div>
       </section>
 

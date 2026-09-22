@@ -9,6 +9,7 @@ import Index from "./pages/Index.tsx";
 import Catalog from "./pages/Catalog.tsx";
 import BoutiqueDeMisa from "./pages/BoutiqueDeMisa.tsx";
 import Product from "./pages/Product.tsx";
+import { SuperConfig } from "./pages/SuperConfig.tsx";
 import Config from "@/pages/Config";
 import Configurateur from "./pages/Configurateur.tsx";
 import Cart from "./pages/Cart.tsx";
@@ -98,7 +99,7 @@ const App = () => (
               <Route path="/boutique-de-misa" element={<BoutiqueDeMisa />} />
               <Route path="/produit/:id" element={<Product />} />
               <Route path="/config" element={<Config />} />
-              <Route path="/configurateur" element={<Configurateur />} />
+              <Route path="/configurateur" element={<SuperConfig />} />
               <Route path="/panier" element={<Cart />} />
               <Route path="/compte" element={<Account />} />
               <Route path="/nous-trouver" element={<NousTrouver />} />

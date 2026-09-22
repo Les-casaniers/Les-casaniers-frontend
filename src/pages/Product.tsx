@@ -5,7 +5,7 @@ import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag, Star, Shield, Truck, Wrench, Minus, Plus, ChevronRight, Cpu, MonitorCog, MemoryStick, HardDrive, Zap, Snowflake, CircuitBoard, Box, Loader2 } from "lucide-react";
+import { ShoppingBag, Star, Shield, Truck, Wrench, Minus, Plus, ChevronRight, Cpu, MonitorCog, MemoryStick, HardDrive, Zap, Snowflake, CircuitBoard, Box, Loader2 } from "lucide-react";
 import { useShop } from "@/store/shop";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
@@ -13,6 +13,9 @@ import { Product, productImage, productSpec, useProduct, useProducts } from "@/h
 import api from "@/service/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCartApi } from "@/hooks/useCartApi";
+import panierIncone from "@/assets/Basket.png";
+import favoriteIcon from "@/assets/Favorite.png";
+import { Plane, Sailboat } from "lucide-react";
 
 const specIcons = { 
   processeur: Cpu, 
@@ -208,6 +211,27 @@ const ProductPage = () => {
             {product.badge && (
               <span className="absolute top-6 left-6 pill bg-gradient-accent text-accent-foreground border-0">⚡ {product.badge}</span>
             )}
+            <div className="absolute top-6 right-6 flex items-center gap-2">
+              <button
+                onClick={(e) => toggleFavorite(product.id, e)}
+                className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-red-400 hover:scale-105 transition-transform ${fav ? "bg-red-500" : "bg-black/90"}`}
+                aria-label="Ajouter aux favoris"
+              >
+                <img src={favoriteIcon} alt="" className={`h-5 w-5 object-contain ${fav ? "brightness-0 invert" : ""}`} />
+              </button>
+              <button
+                disabled={isAddingToCart}
+                className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-60 ${cartItemId ? "bg-orange-500" : "bg-black/90"}`}
+                aria-label="Ajouter au panier"
+              >
+                <img src={panierIncone} alt="" className={`h-5 w-5 object-contain ${cartItemId ? "brightness-0 invert" : ""}`} />
+              </button>
+            </div>
+            {product.images && product.images.length > 1 && (
+              <div className="absolute top-1/2 left-6 -translate-y-1/2 h-24 w-24 sm:h-32 sm:w-32 rounded-2xl overflow-hidden border-2 border-white shadow-xl">
+                <img src={product.images[1].url} alt="" className="w-full h-full object-cover" />
+              </div>
+            )}
           </div>
           {product.images && product.images.length > 0 && (
             <div className="grid grid-cols-4 gap-3 mt-4">
@@ -223,8 +247,7 @@ const ProductPage = () => {
         {/* Infos */}
         <div className="space-y-6">
           <div>
-            <div className="text-xs font-mono uppercase tracking-wider text-white mb-2">{product.categorie?.nom}</div>
-            <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight">{product.nom}</h1>
+            <h1 className="font-display text-2xl lg:text-3xl font-bold tracking-tight">{product.nom}</h1>
             <p className="text-lg text-muted-foreground italic mt-2">"{product.description_courte || product.tagline || 'Une puissance inegalee.'}"</p>
           </div>
 
@@ -245,18 +268,68 @@ const ProductPage = () => {
                     </div>
                   );
                 })}
-                <span className="font-semibold ml-1">{product.note || 5.0}</span>
+                <span className="ml-1">{product.note || 5.0}/10</span>
               </div>
             <span className="h-4 w-px bg-border" />
             <span className={`text-xs font-medium ${product.quantite_stock > 5 ? "text-tech" : "text-accent"}`}>
               {product.quantite_stock > 5 ? `En stock (${product.quantite_stock})` : `Plus que ${product.quantite_stock} en stock !`}
             </span>
           </div>
+          <div className="mt-5 border-b border-white py-4">   
+            <span className="text-[14px]">Ref: {product.reference} | EAN: </span>
+          </div>
+          <div>
+            <div className="flex text-[14px]">
+                <span>Expedition sous 02 a 03 semaines par</span>
+                <span className="px-1 font-bold">Avion</span><Plane className="h-4 w-4 mt-1 fill-white" />
+            </div>
+          </div>
+          <div>
+            <div className="flex text-[14px] -mt-6">
+                <span>Expedition sous 02 a 03 semaines par</span>
+                <span className="px-1 font-bold">Bateau</span><Sailboat className="h-4 w-4 mt-1 fill-white" />
+            </div>
+          </div>
+          <div className="flex items-center bg-secondary rounded-xl bg-white mr-[450px]">
+              <button 
+                onClick={decreaseQty}
+                className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-r"
+                disabled={qty <= 1}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-10 text-center text-black font-semibold tabular-nums">{qty}</span>
+              <button 
+                onClick={increaseQty}
+                className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-l"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+          </div>
 
-          <div className="card-soft p-6 bg-gradient-to-br from-card to-secondary/30">
-            <div className="text-xs text-muted-foreground uppercase tracking-wider">Prix tout compris</div>
-            <div className="font-display font-bold text-4xl mt-1">{formatAr(displayedPrice)}</div>
-            <div className="text-xs text-muted-foreground mt-1">ou 3× {formatAr(Math.round(displayedPrice / 3))} sans frais</div>
+          <div className="flex item-center p-6 bg-gradient-to-br to-secondary/30">
+            <div className="font-display font-bold text-3xl -mt-8 -ml-6">{formatAr(displayedPrice)}</div>
+            {/* ✅ Bouton Ajouter / Mettre à jour */}
+                <Button 
+                  variant="hero" 
+                  size="sm" 
+                  className="bg-[#F2551A] hover:bg-[#F2551A]/90 text-white rounded-full -mt-8 ml-12"
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                >
+                  {isAddingToCart ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ShoppingBag className="h-4 w-4" />
+                  )}
+                  {cartItemId ? "Mettre à jour" : "Ajouter dans mon panier"}
+                </Button>
+                {/* ✅ Affichage du statut du panier */}
+              {cartItemId && (
+                <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center -mt-8 ml-8">
+                  ✅ Déjà dans votre panier (quantité: {qty})
+                </div>
+              )}
           </div>
 
           {/* Selector variants/configurations */}
@@ -310,53 +383,6 @@ const ProductPage = () => {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* ✅ Contrôle de quantité avec mise à jour en temps réel */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center bg-secondary rounded-full">
-              <button 
-                onClick={decreaseQty}
-                className="h-12 w-12 flex items-center justify-center hover:text-orange-500 transition-colors"
-                disabled={qty <= 1}
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="w-10 text-center font-semibold tabular-nums">{qty}</span>
-              <button 
-                onClick={increaseQty}
-                className="h-12 w-12 flex items-center justify-center hover:text-orange-500 transition-colors"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* ✅ Bouton Ajouter / Mettre à jour */}
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="flex-1"
-              onClick={handleAddToCart}
-              disabled={isAddingToCart}
-            >
-              {isAddingToCart ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShoppingBag className="h-4 w-4" />
-              )}
-              {cartItemId ? "Mettre à jour" : "Ajouter au panier"}
-            </Button>
-
-            <Button variant="soft" size="icon" className="h-12 w-12 hover:text-red-400" onClick={(e) => toggleFavorite(product.id, e)}>
-              <Heart className={fav ? "fill-red-500" : ""} />
-            </Button>
-          </div>
-
-          {/* ✅ Affichage du statut du panier */}
-          {cartItemId && (
-            <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center">
-              ✅ Déjà dans votre panier (quantité: {qty})
             </div>
           )}
 

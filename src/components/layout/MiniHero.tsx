@@ -23,7 +23,7 @@ export const MiniHero = ({ title, description, bg, mascot }: MiniHeroProps) => {
   const mascotUrl = getImageUrl(mascot);
 
   return (
-    <section className="relative w-full min-h-[28vh] sm:min-h-[32vh] md:min-h-[36vh] flex items-center border border-zinc-800 rounded-2xl overflow-hidden bg-zinc-900 max-w-[1700px] mx-auto">
+    <section className="relative w-full min-h-[20vh] sm:min-h-[24vh] md:min-h-[28vh] flex items-center border border-zinc-800 rounded-2xl overflow-hidden bg-zinc-900 max-w-[1700px] mx-auto">
       {/* 1. Image de fond */}
       {bgUrl && (
         <div
@@ -53,24 +53,18 @@ export const MiniHero = ({ title, description, bg, mascot }: MiniHeroProps) => {
 
       {/* 3. Conteneur de texte adaptatif */}
       <div className="relative z-20 w-full px-5 sm:px-10 lg:px-12 py-6 sm:py-8 md:py-10 flex items-center justify-between">
-        <div className="flex flex-col items-start gap-3 max-w-full lg:max-w-4xl min-w-0 pr-20 sm:pr-32 md:pr-40 lg:pr-44">
+        <div className="flex flex-col -ml-8 items-start gap-3 max-w-full lg:max-w-4xl min-w-0 pr-20 sm:pr-32 md:pr-40 lg:pr-44">
           {/* Titre sur une seule ligne avec réduction automatique de la taille si besoin */}
-          <h1 className="animate-fade-up text-xs sm:text-base md:text-xl lg:text-2xl font-extrabold tracking-tight text-white uppercase drop-shadow-md leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+          <h1 className="animate-fade-up text-xs sm:text-base md:text-3xl lg:text-5xl font-extrabold tracking-normal text-white uppercase drop-shadow-md leading-none whitespace-nowrap overflow-hidden text-ellipsis">
             {title}
           </h1>
 
           {/* Description */}
           {description && (
-            <div className="animate-fade-up delay-1 text-white text-[11px] sm:text-sm md:text-base font-normal italic leading-relaxed drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+            <div className="animate-fade-up delay-1 text-white text-[11px] sm:text-sm md:text-base font-normal italic tracking-[0.15em] leading-relaxed drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
               {description}
             </div>
           )}
-
-          {/* Ligne décorative */}
-          <div className="animate-fade-up delay-2 flex items-center gap-3 mt-1">
-            <div className="h-px w-16 sm:w-20 bg-gradient-to-r from-[#c8a96e] to-transparent" />
-            <div className="h-1.5 w-1.5 rounded-full bg-[#c8a96e] animate-pulse" />
-          </div>
         </div>
       </div>
 

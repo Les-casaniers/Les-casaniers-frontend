@@ -20,26 +20,26 @@ const TABS: { id: TabId; label: string; color: string; activeColor: string }[] =
   {
     id: "guides-achat",
     label: "Guides d'achat",
-    color: "text-purple-500 border-purple-500/30 hover:bg-purple-500/10",
-    activeColor: "bg-purple-500/10 border-purple-500/60",
+    color: "text-white-500 border-gray-500/30 hover:bg-gray-500/10",
+    activeColor: "bg-gray-500/10 border-gray-500/60",
   },
   {
     id: "actualites-tech",
     label: "Actualités Tech",
-    color: "text-blue-500 border-blue-500/30 hover:bg-blue-500/10",
-    activeColor: "bg-blue-500/10 border-blue-500/60",
+    color: "text-white-500 border-gray-500/30 hover:bg-gray-500/10",
+    activeColor: "bg-gray-500/10 border-gray-500/60",
   },
   {
     id: "tutos-maintenance",
     label: "Tutos Maintenance",
-    color: "text-green-500 border-green-500/30 hover:bg-green-500/10",
-    activeColor: "bg-green-500/10 border-green-500/60",
+    color: "text-white-500 border-gray-500/30 hover:bg-gray-500/10",
+    activeColor: "bg-gray-500/10 border-gray-500/60",
   },
   {
     id: "services",
     label: "Services",
-    color: "text-amber-500 border-amber-500/30 hover:bg-amber-500/10",
-    activeColor: "bg-amber-500/10 border-amber-500/60",
+    color: "text-white-500 border-gray-500/30 hover:bg-gray-500/10",
+    activeColor: "bg-gray-500/10 border-gray-500/60",
   },
 ];
 
@@ -454,14 +454,14 @@ const Guides = () => {
 
   return (
     <SiteLayout>
-<div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
+  <div className="w-full max-w-[1470px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
       {/* 1. Composant MiniHero */}
       <MiniHero
         title="Besoins de conseils ?"
         description={
           <div className="flex flex-col">
             <p>«Nos meilleurs conseils pour faire le bon choix</p>
-            <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
+            <p className="pl-[11rem] sm:pl-[11rem] md:pl-[11rem]">
               selon tes besoins et ton  budget» 
             </p>
           </div>
@@ -473,16 +473,9 @@ const Guides = () => {
           label: "Guides & Services" 
         }}
       />
-
- 
- 
-
-   
-   
-    </div>
       {isSectionedView && (
-        <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-          <div className="container-x py-3">
+        <nav className="sticky top-4 z-30 bg-background/80 backdrop-blur-md">
+          <div>
             <div className="flex flex-wrap items-center gap-2">
               {TABS.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -490,7 +483,7 @@ const Guides = () => {
                   <button
                     key={tab.id}
                     onClick={() => switchTab(tab.id)}
-                    className={`text-xs font-semibold px-2 py-2 rounded-full border transition-all text-center ${
+                    className={`text-xs font-semibold px-2 py-2 rounded-xl border transition-all text-center ${
                       isActive ? `${tab.color} ${tab.activeColor}` : `${tab.color} opacity-60 hover:opacity-100`
                     }`}
                   >
@@ -503,7 +496,7 @@ const Guides = () => {
         </nav>
       )}
 
-      <main className="container-x py-6">
+      <main>
         {/* Search + Filters Bar compact (masqué dans la vue services car non pertinent) */}
         {activeTab !== "services" && (
           <div className="mb-6 flex flex-wrap gap-2 items-center">
@@ -579,6 +572,7 @@ const Guides = () => {
         
         {isSectionedView && (activeTab === "guides-achat" || activeTab === "services") && <NewsletterSection />}
       </main>
+    </div>
     </SiteLayout>
   );
 };
