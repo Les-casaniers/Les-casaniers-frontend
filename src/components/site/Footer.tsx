@@ -125,8 +125,7 @@ export const Footer = ({ className }: { className?: string }) => {
                   038 51 570 42 / 037 87 590 30
                 </a>
               </div>
-              
-              {/* ✅ CORRECTION 1 : Ajout de la balise <a> ouvrante */}
+
               <a
                 href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
                 target="_blank"
@@ -194,7 +193,6 @@ export const Footer = ({ className }: { className?: string }) => {
               style={{ aspectRatio: "4/3" }}
             >
               {isMobile ? (
-                // ✅ CORRECTION 2 : Ajout de la balise <a> ouvrante
                 <a
                   href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
                   target="_blank"
@@ -245,12 +243,15 @@ export const Footer = ({ className }: { className?: string }) => {
       </div>
 
       {/* ── Barre du bas ── */}
-      <div className={`container-x border-t ${isWhiteMode ? 'border-black/10' : 'border-white/10'} mt-[3cm] py-2 text-center text-xs ${isWhiteMode ? 'text-black/60' : 'text-white/60'} relative w-full max-w-full box-border`}>
+      {/* overflow-hidden : si l'image circuit ci-dessous est déplacée trop loin, elle se fait couper/perdre au lieu d'agrandir le bloc */}
+      <div className={`container-x border-t ${isWhiteMode ? 'border-black/10' : 'border-white/30'} mt-[3cm] py-2 text-center text-xs ${isWhiteMode ? 'text-black/60' : 'text-white/60'} relative overflow-hidden w-full max-w-full box-border`}>
+        {/* Image circuit : bloc unique, position 100% libre via translateX/translateY (même logique que la mascotte ci-dessus). */}
         {!isMobile && (
           <img
             src={circuitIncone1}
             alt=""
-            className="absolute left-12 bottom-4 h-10 w-auto pointer-events-none opacity-40 z-20 object-contain rotate-180"
+            className="absolute h-10 w-auto pointer-events-none opacity-40 z-50 object-contain"
+            style={{ top: 0, left: 0, transform: 'translateX(66px) translateY(4px) rotate(180deg)' }}
           />
         )}
 

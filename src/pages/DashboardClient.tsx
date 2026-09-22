@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/site/Header";
 import { TopBar } from "@/components/site/TopBar";
 import logo from "@/assets/casaniers-logo.png";
+import { Footer } from "@/components/site/Footer";
 
 const DashboardClientLayout = () => {
   const location = useLocation();
@@ -17,7 +18,7 @@ const DashboardClientLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Aperçu", path: "/DashboardClient" },
+    { icon: LayoutDashboard, label: "Mon aperçu", path: "/DashboardClient" },
     { icon: Package, label: "Mes commandes", path: "/DashboardClient/commandes" },
     { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
     { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
@@ -228,6 +229,9 @@ const DashboardClientLayout = () => {
         }
         .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
       `}</style>
+      <footer>
+          <Footer />
+        </footer>
     </div>
   );
 };
