@@ -1,4 +1,5 @@
 import logoImg from "@/assets/casaniers-logo.jpg";
+import mascotImg from "@/assets/10.png";
 import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -124,6 +125,7 @@ export const Footer = ({ className }: { className?: string }) => {
                   038 51 570 42 / 037 87 590 30
                 </a>
               </div>
+
               <a
                 href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
                 target="_blank"
@@ -137,16 +139,16 @@ export const Footer = ({ className }: { className?: string }) => {
 
             {/* Réseaux sociaux */}
             <div className="flex justify-center lg:justify-start gap-2 mt-6 relative z-10 w-full">
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-lg border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Facebook className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-lg border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Instagram className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-lg border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <TiktokIcon className="h-4 w-4" />
               </a>
-              <a href="#" className={`h-9 w-9 rounded-full border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
+              <a href="#" className={`h-9 w-9 rounded-lg border ${isWhiteMode ? 'border-black/20 hover:bg-black hover:text-white' : 'border-white/50 hover:bg-white hover:text-black'} flex items-center justify-center transition-colors`}>
                 <Youtube className="h-4 w-4" />
               </a>
             </div>
@@ -230,15 +232,26 @@ export const Footer = ({ className }: { className?: string }) => {
             </div>
           </div>
         </div>
+
+        {/* — Mascotte : bloc unique, position libre, n'affecte aucun autre élément — */}
+        <img
+          src={mascotImg}
+          alt="Mascotte Les Casaniers"
+          className="absolute h-24 w-auto object-contain z-50 pointer-events-none"
+          style={{ top: 0, left: 0, transform: 'translateX(+100px) translateY(+384px)' }}
+        />
       </div>
 
       {/* ── Barre du bas ── */}
-      <div className={`container-x border-t ${isWhiteMode ? 'border-black/10' : 'border-white/10'} py-6 text-center text-xs ${isWhiteMode ? 'text-black/60' : 'text-white/60'} relative w-full max-w-full box-border`}>
+      {/* overflow-hidden : si l'image circuit ci-dessous est déplacée trop loin, elle se fait couper/perdre au lieu d'agrandir le bloc */}
+      <div className={`container-x border-t ${isWhiteMode ? 'border-black/10' : 'border-white/30'} mt-[3cm] py-2 text-center text-xs ${isWhiteMode ? 'text-black/60' : 'text-white/60'} relative overflow-hidden w-full max-w-full box-border`}>
+        {/* Image circuit : bloc unique, position 100% libre via translateX/translateY (même logique que la mascotte ci-dessus). */}
         {!isMobile && (
           <img
             src={circuitIncone1}
             alt=""
-            className="absolute left-0 bottom-0 h-16 w-auto pointer-events-none opacity-40 z-0 object-contain"
+            className="absolute h-10 w-auto pointer-events-none opacity-40 z-50 object-contain"
+            style={{ top: 0, left: 0, transform: 'translateX(66px) translateY(4px) rotate(180deg)' }}
           />
         )}
 

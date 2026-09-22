@@ -396,139 +396,33 @@ const DashboardAdresses = () => {
           {!adresses.some((a) => a.par_defaut_expedition) && (
             <button onClick={handleOpenAdd} className="mt-1 inline-flex items-center gap-2 rounded-md border border-white/45 px-5 py-2.5 text-sm font-medium text-white transition hover:border-white hover:bg-white/10"><Plus className="h-4 w-4" /> Ajouter une adresse</button>
           )}
-          {/* Grille adresses */}
+          {/* Grille adresses — bloc simple et sobre, fidèle à la maquette */}
           {adresses.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-              {adresses.map((adresse) => (
-                <div
-                  key={adresse.id}
-                  className={`relative bg-card border rounded-2xl p-5 transition-all duration-200 hover:shadow-md ${
-                    adresse.par_defaut_expedition
-                      ? "border-primary/40 ring-1 ring-primary/15 hover:border-primary/60"
-                      : "border-border/50 hover:border-primary/20"
-                  }`}
-                >
-                  {/* Badge par défaut */}
-                  {adresse.par_defaut_expedition && (
-                    <div className="absolute -top-2.5 left-4">
-                      <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md shadow-primary/20">
-                        <Star className="h-2.5 w-2.5 fill-current" />
-                        PAR DÉFAUT
-                      </span>
-                    </div>
-                  )}
+            <div className="flex flex-col items-start gap-4 mt-4">
+              {adresses.map((adresse) => {
+                const ligneAdresse = [
+                  adresse.nom_complet,
+                  adresse.adresse_ligne1,
+                  adresse.adresse_ligne2,
+                  adresse.ville,
+                ]
+                  .filter(Boolean)
+                  .join(", ");
 
-                  <div className="flex gap-4">
-                    {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      {/* Type + coordonnées */}
-                      <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/50 border border-border/40 text-xs font-medium text-muted-foreground">
-                          <span className="text-primary">{getTypeIcon(adresse.etiquette)}</span>
-                          {adresse.etiquette || "Adresse"}
-                        </div>
-                        {adresse.latitude && adresse.longitude && (
-                          <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1 font-mono">
-                            <Navigation className="h-3 w-3" />
-                            {formatCoordinate(adresse.latitude)}, {formatCoordinate(adresse.longitude)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Nom + téléphone */}
-                      <div className="space-y-1 mb-3">
-                        <p className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-                          {adresse.nom_complet}
-                        </p>
-                        {adresse.telephone && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                            <Phone className="h-3.5 w-3.5 shrink-0" />
-                            {adresse.telephone}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Adresse */}
-                      <div className="text-xs text-muted-foreground leading-relaxed space-y-0.5">
-                        <p className="text-foreground/80">{adresse.adresse_ligne1}</p>
-                        {adresse.adresse_ligne2 && <p>{adresse.adresse_ligne2}</p>}
-                        <p>
-                          {adresse.code_postal && `${adresse.code_postal} `}{adresse.ville}
-                        </p>
-                        <p>
-                          {adresse.region && `${adresse.region}, `}{adresse.pays}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Image */}
-                    <div className="shrink-0">
-                      {adresse.image_adress ? (
-                        <div className="relative w-28 h-28 rounded-xl overflow-hidden border border-border/40 group">
-                          <img
-                            src={getImageUrl(adresse.image_adress)}
-                            alt="Photo du lieu"
-                            className="w-full h-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-image.jpg"; }}
-                          />
-                          <button
-                            onClick={() => window.open(getImageUrl(adresse.image_adress), "_blank")}
-                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                          >
-                            <Eye className="h-5 w-5 text-white" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="w-28 h-28 rounded-xl border border-dashed border-border/40 bg-secondary/10 flex flex-col items-center justify-center gap-1.5">
-                          <ImageIcon className="h-7 w-7 text-muted-foreground/25" />
-                          <span className="text-[10px] text-muted-foreground/40">Aucune photo</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
-                    <div>
-                      {adresse.latitude && adresse.longitude && (
-                        <button
-                          onClick={() => window.open(`https://www.google.com/maps?q=${adresse.latitude},${adresse.longitude}`, "_blank")}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg transition-all duration-200"
-                        >
-                          <Map className="h-3.5 w-3.5" />
-                          Google Maps
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {!adresse.par_defaut_expedition && (
-                        <button
-                          onClick={() => handleSetDefault(adresse.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 rounded-lg transition-all duration-200"
-                        >
-                          <Star className="h-3.5 w-3.5" />
-                          Par défaut
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleOpenEdit(adresse)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
-                        title="Modifier"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => { setSelectedAdresse(adresse); setShowDeleteAlert(true); }}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                return (
+                  <button
+                    key={adresse.id}
+                    onClick={() => handleOpenEdit(adresse)}
+                    className="text-left w-fit max-w-2xl rounded-md border border-white/45 px-5 py-4 text-sm text-white/90 leading-relaxed transition hover:border-white hover:bg-white/5"
+                  >
+                    <p>
+                      {ligneAdresse}
+                      {adresse.code_postal && `, BP ${adresse.code_postal}`}
+                    </p>
+                    {adresse.telephone && <p className="mt-0.5">{adresse.telephone}</p>}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

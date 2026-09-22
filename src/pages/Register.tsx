@@ -197,14 +197,14 @@ const Register = () => {
 
   return (
     <SiteLayout>
-      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10">
+      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10 pb-10">
         <div className="relative z-10 w-full container-x py-4 md:py-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
 
             {/* Section Gauche */}
             <div className="space-y-3 sm:space-y-4 pl-2 sm:pl-4 md:pl-8 lg:pl-0 -ml-1 sm:-ml-2 lg:-ml-4 pr-2 sm:pr-4 lg:pr-0">
               <h1
-                className="whitespace-nowrap text-2xl sm:text-3xl md:text-4xl lg:text-[42px] leading-[1.2] sm:leading-[1.25] lg:leading-[52px]"
+                className="whitespace-nowrap text-2xl sm:text-3xl md:text-4xl lg:text-[40px] leading-[1.2] sm:leading-[1.25] lg:leading-[52px]"
                 style={{
                   fontStyle: 'italic',
                   fontWeight: 'normal',
@@ -212,6 +212,7 @@ const Register = () => {
                   color: '#FFFFFF',
                   textAlign: 'left',
                   letterSpacing: '0.04em',
+                  transform: 'translateY(-10px) translateX(+90px)',
                 }}
               >
                 Rejoins la communauté.
@@ -227,6 +228,7 @@ const Register = () => {
                   textAlign: 'left',
                   letterSpacing: '0.02em',
                   opacity: 0.7,
+                  transform: 'translateX(+90px)',
                 }}
               >
                 <span className="block">Crée ton compte pour accéder à tes commandes,</span>

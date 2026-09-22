@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { LogIn, Mail, Lock, AlertCircle, Eye, EyeOff, Shield, User } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import misaSleeping from "@/assets/13.png";
 
 const Login = () => {
   const { login, isAdmin, isLivreur } = useAuth();
@@ -93,14 +94,14 @@ const Login = () => {
   return (
     <SiteLayout>
       {/* min-h adapté pour ne pas casser le header/footer sur mobile */}
-      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10">
+      <section className="relative min-h-[calc(100vh-160px)] sm:min-h-[calc(100vh-200px)] flex items-start bg-black overflow-hidden pt-6 sm:pt-10 pb-10">        
         <div className="relative z-10 w-full container-x py-4 md:py-6">
           <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
             {/* Section Gauche */}
             <div className="space-y-3 sm:space-y-4 pl-2 sm:pl-4 md:pl-8 lg:pl-0 -ml-1 sm:-ml-2 lg:-ml-4 pr-2 sm:pr-4 lg:pr-0">
               <h1
-                className="whitespace-nowrap text-2xl sm:text-3xl md:text-4xl lg:text-[42px] leading-[1.2] sm:leading-[1.25] lg:leading-[52px]"
+                className="whitespace-nowrap text-2xl sm:text-3xl md:text-4xl lg:text-[40px] leading-[1.2] sm:leading-[1.25] lg:leading-[52px]"
                 style={{
                   fontStyle: 'italic',
                   fontWeight: 'normal',
@@ -108,6 +109,7 @@ const Login = () => {
                   color: '#FFFFFF',
                   textAlign: 'left',
                   letterSpacing: '0.04em',
+                  transform: 'translateX(+66px) translateY(-14px)'
                 }}
               >
                 Bienvenue dans ton espace.
@@ -122,15 +124,25 @@ const Login = () => {
                   textAlign: 'left',
                   letterSpacing: '0.02em',
                   opacity: 0.7,
+                  transform: 'translateX(+66px) translateY(-2px)'
                 }}
               >
                 Gère tes commandes, suis tes réparations et accède <br className="hidden sm:block" />
                 facilement à tes données.
               </p>
+              <img
+                src={misaSleeping}
+                alt=""
+                className="w-64 sm:w-80 lg:w-[300px] h-auto mx-auto lg:mx-0 mt-4"
+                style={{ top: 0, left: 0, transform: 'translateX(+150px) translateY(+10px)' }}
+              />
             </div>
 
             {/* Section Droite - Formulaire */}
-            <div className="border-2 border-white/30 rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 bg-black/40 backdrop-blur-sm">
+            <div
+              className="border-2 border-white/30 rounded-2xl sm:rounded-2xl p-5 sm:p-8 md:p-10 bg-black/40 backdrop-blur-sm w-full max-w-[530px] lg:mr-auto"
+              style={{ minHeight: '400px' }}
+            >
               <h2 className="text-center text-white text-base sm:text-lg font-semibold mb-6 sm:mb-8 tracking-wide">
                 Connexion
               </h2>
