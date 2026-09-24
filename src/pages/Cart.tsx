@@ -1218,74 +1218,111 @@ const Cart = () => {
 
           {/* ── ÉTAPE REGLEMENT ──────────────────────────────────────────────── */}
           {checkoutStep === "reglement" && (
-            <div className="grid lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-8 space-y-8">
-                <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-slate-950/95 p-8 shadow-[0_40px_80px_rgba(0,0,0,0.45)] relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.12),_transparent_35%)] pointer-events-none" />
-                  <div className="relative grid gap-8 lg:grid-cols-[1.6fr_1fr] items-center">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.35em] text-orange-300 mb-3">
-                        REGLEMENT
-                      </p>
-                      <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight">
-                        GG pour ta commande !
-                      </h2>
-                      <p className="mt-4 text-sm leading-7 text-slate-300 max-w-xl">
-                        Notre équipe vérifie tout ça et te contactera sous 24h ouvré pour la suite. Tu pourras payer soit par virement bancaire, par mobile money (MVola ou Orange Money) ou même par espèces.
-                      </p>
-                      <button
-                        onClick={handleValidateDevis}
-                        disabled={isSubmitting || devisValide}
-                        className="mt-8 inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 hover:bg-orange-600 transition disabled:opacity-50"
-                      >
-                        {isSubmitting && !devisValide ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          "J'accepte les conditions"
-                        )}
-                      </button>
-                    </div>
-                    <div className="rounded-[28px] border border-white/10 bg-slate-950/90 p-4 flex items-center justify-center">
-                      <img
-                        src={fosa}
-                        alt="Mascotte"
-                        className="h-44 w-44 rounded-3xl object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = fosa;
-                        }}
-                      />
-                    </div>
+            <>
+              {/* ✨ NOUVEAU (conforme à la maquette) : mascotte + bulle, schéma de livraison, bouton */}
+              <div className="mb-10">
+                {/* Mascotte + bulle de dialogue */}
+                <div className="flex flex-wrap items-start justify-center">
+                  <div className="relative min-w-[256px] rounded-[22px] bg-white px-6 py-3 text-center text-[13px] italic leading-[1.45] text-black font-sans whitespace-nowrap">
+                    <p>GG pour ta commande !</p>
+                    <p>
+                      Notre équipe vérifie tout ça et
+                      <br />
+                      te contactera sous 24h
+                      <br />
+                      ouvré pour la suite.
+                    </p>
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-4 bottom-1 h-3.5 w-6 bg-white"
+                      style={{ clipPath: "polygon(0 0, 100% 100%, 0 100%)" }}
+                    />
                   </div>
+                  <img
+                    src={fosa}
+                    alt="Mascotte"
+                    className="ml-5 mt-[77px] h-56 w-auto object-contain"
+                  />
                 </div>
 
-                <div className="grid gap-4">
-                  <InfoBox
-                    title="COMMENT SE DEROULE LE REGLEMENT ?"
-                    description="Une fois que notre équipe aura vérifié les délais d’approvisionnement et les tarifs, nous t’enverrons une confirmation de commande avec le récapitulatif. Tu seras rappelé pour finaliser le règlement. Tu pourras payer soit par virement bancaire, par mobile money (MVola ou Orange Money) ou même par espèces."
-                  />
-                  <InfoBox
-                    title="COMMENT JE PEUX CHANGER MON ADRESSE ?"
-                    description="Tu peux modifier ton adresse à tout moment depuis ton espace, dans la section Mes adresses."
-                  />
-                  <InfoBox
-                    title="QUAND EST-CE QUE MA COMMANDE ARRIVERA ?"
-                    description="Après validation du devis, nous te confirmerons le délai de livraison et les conditions de retrait."
-                  />
+                {/* Schéma du parcours de la commande */}
+                <div className="mt-3 overflow-x-auto bg-white">
+                  <ReglementRouteDiagram />
+                </div>
+
+                {/* Bouton d'acceptation des conditions */}
+                <div className="mt-12 flex justify-center">
+                  <button
+                    onClick={handleValidateDevis}
+                    disabled={isSubmitting || devisValide}
+                    className="flex h-[42px] w-[256px] items-center justify-center rounded-[6px] bg-[#F2551A] text-base font-bold text-white font-sans transition-colors hover:bg-[#d94812] disabled:opacity-50"
+                  >
+                    {isSubmitting && !devisValide ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "J'accepte les conditions"
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <RecapSidebar
-                ctaLabel="Confirmer la commande"
-                onCta={handleCommander}
-                ctaDisabled={isSubmitting || !devisId}
-                ctaLoading={isSubmitting}
-                showLivraisonLine
-                secondaryCta={{
-                  label: "Retour à l'adresse",
-                  onClick: () => setCheckoutStep("adresse"),
-                }}
-              />
-            </div>
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8 space-y-8">
+                  {/*
+                  ANCIEN BLOC (remplacé par la mascotte, le schéma et le bouton ci-dessus) :
+                  <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-slate-950/95 p-8 shadow-[0_40px_80px_rgba(0,0,0,0.45)] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.12),_transparent_35%)] pointer-events-none" />
+                    <div className="relative grid gap-8 lg:grid-cols-[1.6fr_1fr] items-center">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.35em] text-orange-300 mb-3">
+                          REGLEMENT
+                        </p>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-white leading-tight">
+                          GG pour ta commande !
+                        </h2>
+                        <p className="mt-4 text-sm leading-7 text-slate-300 max-w-xl">
+                          Notre équipe vérifie tout ça et te contactera sous 24h ouvré pour la suite. Tu pourras payer soit par virement bancaire, par mobile money (MVola ou Orange Money) ou même par espèces.
+                        </p>
+                        <button onClick={handleValidateDevis} disabled={isSubmitting || devisValide} ...>
+                          J'accepte les conditions
+                        </button>
+                      </div>
+                      <div className="rounded-[28px] border border-white/10 bg-slate-950/90 p-4 flex items-center justify-center">
+                        <img src={fosa} alt="Mascotte" className="h-44 w-44 rounded-3xl object-cover" />
+                      </div>
+                    </div>
+                  </div>
+                  */}
+
+                  <div className="grid gap-4">
+                    <InfoBox
+                      title="COMMENT SE DEROULE LE REGLEMENT ?"
+                      description="Une fois que notre équipe aura vérifié les délais d’approvisionnement et les tarifs, nous t’enverrons une confirmation de commande avec le récapitulatif. Tu seras rappelé pour finaliser le règlement. Tu pourras payer soit par virement bancaire, par mobile money (MVola ou Orange Money) ou même par espèces."
+                    />
+                    <InfoBox
+                      title="COMMENT JE PEUX CHANGER MON ADRESSE ?"
+                      description="Tu peux modifier ton adresse à tout moment depuis ton espace, dans la section Mes adresses."
+                    />
+                    <InfoBox
+                      title="QUAND EST-CE QUE MA COMMANDE ARRIVERA ?"
+                      description="Après validation du devis, nous te confirmerons le délai de livraison et les conditions de retrait."
+                    />
+                  </div>
+                </div>
+
+                <RecapSidebar
+                  ctaLabel="Confirmer la commande"
+                  onCta={handleCommander}
+                  ctaDisabled={isSubmitting || !devisId}
+                  ctaLoading={isSubmitting}
+                  showLivraisonLine
+                  secondaryCta={{
+                    label: "Retour à l'adresse",
+                    onClick: () => setCheckoutStep("adresse"),
+                  }}
+                />
+              </div>
+            </>
           )}
 
           {/* Bandeau garanties bas de page */}
@@ -1502,6 +1539,147 @@ const InfoBox = ({
       {description}
     </p>
   </div>
+);
+
+// ─── Schéma du parcours de la commande (étape Règlement) ───────────────────
+
+const ReglementRouteDiagram = () => (
+  <svg
+        viewBox="0 4 1332 686"
+        className="block h-auto w-full min-w-[760px] font-sans"
+        role="img"
+        aria-label="Parcours de ta commande, de l'entrepôt jusqu'à chez toi"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <rect x="0" y="4" width="1332" height="686" fill="#ffffff" />
+
+        {/* Parcours en pointillés */}
+        <path
+          d="M362 101 C500 103 640 138 760 185 C850 220 896 262 888 312 C880 362 800 385 640 385 L420 383 C350 384 312 420 302 462 C298 520 400 590 560 620 C690 642 860 620 1045 580"
+          fill="none"
+          stroke="#000000"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray="34 26"
+        />
+
+        {/* Points d'étape */}
+        <circle cx="362" cy="101" r="11" fill="#000000" />
+        <circle cx="888" cy="312" r="11" fill="#000000" />
+        <circle cx="302" cy="462" r="11" fill="#000000" />
+        <circle cx="1045" cy="580" r="11" fill="#000000" />
+
+        {/* Entrepôt */}
+        <g transform="translate(275 62)">
+          <path d="M0 20 L31.5 0 L63 20 V61 H0 Z" fill="#000000" />
+          <rect x="9" y="26" width="45" height="31" fill="#ffffff" />
+          <path d="M9 33 H54 M9 40 H54" stroke="#000000" strokeWidth="2.5" />
+          <rect x="26" y="49" width="11" height="8" fill="#000000" />
+        </g>
+
+        {/* Chariot 1 (incliné, suit la courbe) */}
+        <g transform="translate(692 118) rotate(18) translate(-29 -27)">
+          <path d="M0 3 H11 L14 12" fill="none" stroke="#000000" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10 10 H58 L52 34 H17 Z" fill="#000000" />
+          <path d="M13 18 H56 M15 26 H53" stroke="#ffffff" strokeWidth="2.2" />
+          <rect x="17" y="38" width="36" height="4.5" rx="2" fill="#000000" />
+          <circle cx="24" cy="50" r="4.5" fill="#000000" />
+          <circle cx="46" cy="50" r="4.5" fill="#000000" />
+        </g>
+
+        {/* Avion */}
+        <g transform="translate(945 272) rotate(-28) translate(-28 -20)">
+          <path d="M4 20 Q4 16 10 16 H46 Q56 16 56 20 Q56 24 46 24 H10 Q4 24 4 20 Z" fill="#000000" />
+          <path d="M22 18 L34 2 H40 L34 18 Z" fill="#000000" />
+          <path d="M22 22 L34 38 H40 L34 22 Z" fill="#000000" />
+          <path d="M6 17 L4 8 H9 L14 17 Z" fill="#000000" />
+          <path d="M6 23 L4 32 H9 L14 23 Z" fill="#000000" />
+        </g>
+
+        {/* Bateau */}
+        <g transform="translate(922 308)">
+          <path d="M0 22 H52 L44 38 H10 Z" fill="#000000" />
+          <path d="M14 12 H36 V22 H14 Z" fill="#000000" />
+          <path d="M20 3 H30 V12 H20 Z" fill="#000000" />
+          <path d="M36 16 H44 V22 H36 Z" fill="#000000" />
+        </g>
+
+        {/* Chariot 2 */}
+        <g transform="translate(546 325)">
+          <path d="M0 3 H11 L14 12" fill="none" stroke="#000000" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10 10 H58 L52 34 H17 Z" fill="#000000" />
+          <path d="M13 18 H56 M15 26 H53" stroke="#ffffff" strokeWidth="2.2" />
+          <rect x="17" y="38" width="36" height="4.5" rx="2" fill="#000000" />
+          <circle cx="24" cy="50" r="4.5" fill="#000000" />
+          <circle cx="46" cy="50" r="4.5" fill="#000000" />
+        </g>
+
+        {/* Madagascar */}
+        <g transform="translate(205 408)">
+          <path
+            d="M40 0 C46 4 50 16 49 30 C48 46 46 60 40 74 C34 88 24 100 12 103 C3 105 -2 97 1 86 C4 74 3 64 6 52 C9 40 12 32 18 24 C24 14 32 6 40 0 Z"
+            fill="#000000"
+          />
+        </g>
+
+        {/* Chariot 3 */}
+        <g transform="translate(691 571)">
+          <path d="M0 3 H11 L14 12" fill="none" stroke="#000000" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M10 10 H58 L52 34 H17 Z" fill="#000000" />
+          <path d="M13 18 H56 M15 26 H53" stroke="#ffffff" strokeWidth="2.2" />
+          <rect x="17" y="38" width="36" height="4.5" rx="2" fill="#000000" />
+          <circle cx="24" cy="50" r="4.5" fill="#000000" />
+          <circle cx="46" cy="50" r="4.5" fill="#000000" />
+        </g>
+
+        {/* Maison */}
+        <g transform="translate(1065 540)">
+          <path d="M0 32 L35 4 L70 32 L64 38 L35 15 L6 38 Z" fill="#000000" />
+          <rect x="52" y="2" width="9" height="14" fill="#000000" />
+          <path d="M11 36 L35 17 L59 36 V62 H11 Z" fill="#000000" />
+          <rect x="28" y="42" width="14" height="20" fill="#ffffff" />
+        </g>
+
+        {/* Texte : entrepôt */}
+        <text x="52" y="68" fontSize="18" fontStyle="italic" fill="#000000">
+          <tspan x="52" dy="0">Une fois ta commande</tspan>
+          <tspan x="52" dy="21.5">vérifiée et aprouvée,</tspan>
+          <tspan x="52" dy="21.5">elle est préparée pour</tspan>
+          <tspan x="52" dy="21.5">l'envoi.</tspan>
+        </text>
+
+        {/* Texte : Europe */}
+        <text x="1109" y="232" fontSize="18" fontWeight="700" textAnchor="middle" fill="#000000">
+          Depuis l'Europe:
+        </text>
+        <line x1="1031" y1="241" x2="1189" y2="241" stroke="#555555" strokeWidth="1.5" />
+        <text x="1109" y="269" fontSize="18" fontStyle="italic" textAnchor="middle" fill="#000000">
+          <tspan x="1109" dy="0">Expédition sous 02 à 03</tspan>
+          <tspan x="1109" dy="24">
+            semaines par <tspan fontStyle="normal" fontWeight="700">Avion.</tspan>
+          </tspan>
+        </text>
+        <text x="1109" y="328" fontSize="18" fontStyle="italic" textAnchor="middle" fill="#000000">
+          <tspan x="1109" dy="0">Expédition sous 02 à 03</tspan>
+          <tspan x="1109" dy="24">
+            mois par <tspan fontStyle="normal" fontWeight="700">Bateaux.</tspan>
+          </tspan>
+        </text>
+
+        {/* Texte : dédouanement */}
+        <text x="86" y="446" fontSize="18" fontStyle="italic" textAnchor="middle" fill="#000000">
+          <tspan x="86" dy="0">On fait les</tspan>
+          <tspan x="86" dy="23.5">démarches</tspan>
+          <tspan x="86" dy="23.5">de dédouanement.</tspan>
+        </text>
+
+        {/* Texte : arrivée */}
+        <text x="1221" y="553" fontSize="18" fontStyle="italic" textAnchor="middle" fill="#000000">
+          <tspan x="1221" dy="0">Félicitation !</tspan>
+          <tspan x="1221" dy="21.5">Ta livraison arrive</tspan>
+          <tspan x="1221" dy="21.5">chez toi sous peu.</tspan>
+        </text>
+      </svg>
 );
 
 export default Cart;
