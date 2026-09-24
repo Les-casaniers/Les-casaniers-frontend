@@ -17,6 +17,8 @@ import panierIncone from "@/assets/Basket.png";
 import favoriteIcon from "@/assets/Favorite.png";
 import { Plane, Sailboat } from "lucide-react";
 import  curvedArrow  from "@/assets/Curved Arrow Downward.png"
+import chat from"@/assets/Chat.png"
+import fille from "@/assets/fille.png"
 const specIcons = {
   processeur: Cpu,
   carte_graphique: MonitorCog,
@@ -330,8 +332,6 @@ const ProductPage = () => {
               </button>
             </div>
 
-            {/* ✅ La "petite image" : un encart incrusté dans la grande image.
-                Cliquer dessus la fait passer au premier plan (permutation avec la grande image). */}
             {galleryImages.length > 1 && (
               <button
                 onClick={() => setSelectedImageIndex(insetImageIndex)}
@@ -342,8 +342,6 @@ const ProductPage = () => {
               </button>
             )}
           </div>
-
-          {/* ✅ Miniatures : cliquer sur une miniature change l'image principale ci-dessus */}
           {galleryImages.length > 1 && (
             <div className="grid grid-cols-4 gap-3 mt-4">
               {galleryImages.map((img, i) => (
@@ -363,8 +361,6 @@ const ProductPage = () => {
             </div>
           )}
         </div>
-
-        {/* Infos */}
         <div className="space-y-6">
           <div>
             <h1 className="font-display text-2xl lg:text-3xl font-bold tracking-tight">{product.nom}</h1>
@@ -636,19 +632,23 @@ const ProductPage = () => {
           Bandeau bulle mascotte — juste en dessous du produit,
           au-dessus de Description / Caractéristiques / Commentaires
           ========================================================= */}
-      <section className="container-x pb-4">
-        <div className="relative flex items-start gap-4 max-w-5xl">
-          <div className="flex-1 rounded-2xl border-2 border-dashed border-foreground/25 bg-black/40 p-5 text-sm leading-relaxed text-foreground/90 italic">
-            "{messageMascotte}"
-          </div>
-          <img
-            src={fosa}
-            alt="Mascotte Les Casaniers"
-            className="hidden sm:block h-24 w-24 lg:h-32 lg:w-32 shrink-0 animate-float"
-          />
-        </div>
-      </section>
+<section className="container-x pb-4">
+  <div className="relative flex items-center max-w-5xl my-6">
+    {/* Bulle de dialogue sombre avec bordure dorée brillante */}
+    <div className="flex-1 rounded-2xl border-2 border-amber-500/70 bg-zinc-950 p-6 pr-20 text-sm leading-relaxed text-zinc-100 italic shadow-[0_0_20px_rgba(245,158,11,0.25)]">
+      "{messageMascotte}"
+    </div>
 
+    {/* Mascotte intégrée et chevauchant le côté droit du rectangle */}
+    <div className="absolute right-[-1.5rem] shrink-0 z-20 flex items-center">
+      <img
+        src={chat}
+        alt="Mascotte Les Casaniers"
+        className="h-36 w-auto lg:h-48 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] animate-float"
+      />
+    </div>
+  </div>
+</section>
       {/* =========================================================
           Description / Caractéristiques / Commentaires — dynamique,
           alimenté par `product` (avec repli si le champ n'existe pas encore côté back)
@@ -768,31 +768,44 @@ const ProductPage = () => {
   )}
 </div>
         {/* ---- Conseil de compatibilité : toujours affiché, juste sous le tableau ---- */}
-        <div className="relative mb-16 max-w-5xl">
-          <div className="rounded-2xl border border-border bg-black/50 p-6 pr-32">
-            <h4 className="font-bold uppercase tracking-wider text-xs mb-3">
-              Conseil de compatibilités :
-            </h4>
-            <p className="text-sm italic text-muted-foreground mb-3">"{conseilCompatibilite}"</p>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" size="sm" className="rounded-full">
-                Découvre notre guide
-              </Button>
-              <Button
-                size="sm"
-                className="rounded-full bg-[#F2551A] hover:bg-[#F2551A]/90 text-white"
-              >
-                {conseilCtaLabel}
-              </Button>
-            </div>
-          </div>
+<div className="relative mb-16 max-w-5xl mx-auto px-4 md:px-8">
+  {/* Boîte principale */}
+  <div className="relative overflow-visible rounded-2xl border border-amber-500/40 bg-[#121212] p-6 pr-6 md:pr-44 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+    {/* Titre souligné */}
+    <h4 className="font-bold uppercase tracking-wider text-xs text-zinc-100 underline decoration-1 underline-offset-4 mb-4">
+      Conseil de compatibilités :
+    </h4>
+    
+    {/* Contenu du message */}
+    <p className="text-sm italic text-zinc-300 leading-relaxed whitespace-pre-line">
+      "{conseilCompatibilite}"
+    </p>
 
-          <img
-            src={fosa}
-            alt=""
-            className="hidden md:block absolute right-2 top-1/2 -translate-y-1/2 h-32 w-32 animate-float"
-          />
-        </div>
+    {/* Mascotte décorative */}
+    <img
+      src={fille}
+      alt=""
+      aria-hidden="true"
+      className="hidden md:block absolute -right-6 -top-6 -bottom-6 h-[calc(100%+3rem)] w-auto object-contain z-10 animate-float drop-shadow-xl pointer-events-none"
+    />
+  </div>
+
+  {/* Boutons d'action */}
+  <div className="flex flex-wrap justify-center items-center gap-4 mt-6">
+    <Button 
+      variant="outline" 
+      className="rounded-full bg-white text-black hover:bg-zinc-200 border-none font-medium px-6 py-2 h-auto"
+    >
+      Découvre notre guide
+    </Button>
+
+    <Button
+      className="rounded-full bg-[#F2551A] hover:bg-[#F2551A]/90 text-white font-medium px-6 py-2 h-auto shadow-md"
+    >
+      {conseilCtaLabel}
+    </Button>
+  </div>
+</div>
 
         {/* ---- Commentaires ---- */}
         <div id="commentaires" className="mb-4 max-w-5xl">
