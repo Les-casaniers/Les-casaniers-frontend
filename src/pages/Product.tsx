@@ -17,7 +17,7 @@ import panierIncone from "@/assets/Basket.png";
 import favoriteIcon from "@/assets/Favorite.png";
 import { Plane, Sailboat } from "lucide-react";
 import  curvedArrow  from "@/assets/Curved Arrow Downward.png"
-import chat from"@/assets/Chat.png"
+import chat from "@/assets/chat.png";
 import fille from "@/assets/fille.png"
 const specIcons = {
   processeur: Cpu,
