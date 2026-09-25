@@ -1,5 +1,3 @@
-// src/pages/BoutiqueDeMisa.tsx
-
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 /*
@@ -180,9 +178,7 @@ const BoutiqueDeMisa = () => {
     document.title = "Boutique de Misa — Les Casaniers Madagascar";
   }, []);
 
-  // 🔌 Vérification directe du backend (indépendante du hook) :
-  // si le serveur ne répond pas, on affiche le message d'erreur rapidement,
-  // y compris après un refresh de la page.
+
   const [backendStatus, setBackendStatus] = useState<"checking" | "up" | "down">("checking");
 
   useEffect(() => {
@@ -346,12 +342,6 @@ const BoutiqueDeMisa = () => {
   // };
   */
 
-  // ---------------------------------------------------------------------------
-  // [CORRECTION] Les écrans "Chargement de la boutique..." et "Erreur" sont
-  // désactivés : la page (bannière + message de Misa) s'affiche toujours,
-  // même sans backend. Seule la liste des produits affiche
-  // "Aucun produit pour le moment" quand il n'y a rien à montrer.
-  // ---------------------------------------------------------------------------
   // if (isLoading) {
   //   return (
   //     <SiteLayout>
@@ -409,13 +399,7 @@ const BoutiqueDeMisa = () => {
         }
       `}</style>
       <div className="misa-page w-full max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 lg:gap-8">
-        
-        {/* ================================================================= */}
-        {/* 1. BANNIÈRE PRINCIPALE CONFORME ADOBE XD (Noeuds 68, 69, 70, 71)  */}
-        {/* Dimensions maquette : 1779 x 255 px avec fond baobabs sunset      */}
-        {/* ================================================================= */}
         <div className="relative w-full rounded-[15px] overflow-hidden min-h-[120px] sm:min-h-[140px] md:min-h-[160px] bg-[#221008] border border-white/10 flex items-center shadow-2xl">
-          {/* Image de fond baobabs au coucher de soleil */}
           {bannerImage && (
             <div
               className="absolute inset-0 bg-cover bg-center opacity-85 transition-transform duration-700 hover:scale-105"
@@ -437,24 +421,21 @@ const BoutiqueDeMisa = () => {
 
           {/* Textes de la bannière conformes à la maquette Adobe XD - Positionnés à gauche avec marge resserrée */}
           <div className="relative z-10 pl-4 sm:pl-6 md:pl-8 pr-4 sm:pr-6 md:pr-8 py-5 sm:py-6 text-left flex flex-col items-start justify-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-bold text-white tracking-wide leading-tight mb-2 drop-shadow-md text-left">
+            {/* Ce texte reste toujours blanc, quel que soit le mode (demande explicite) */}
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-bold !text-white tracking-wide leading-tight mb-2 drop-shadow-md text-left">
               Bienvenue dans la boutique de Misa !
             </h1>
-            <p className="text-xs sm:text-sm md:text-base lg:text-[20px] text-white/95 italic font-normal tracking-wide drop-shadow text-left">
+            <p className="text-xs sm:text-sm md:text-base lg:text-[20px] !text-white/95 italic font-normal tracking-wide drop-shadow text-left">
               “ Chaque achat que tu fais ici permettra de financer une action de reboisement ”
             </p>
           </div>
         </div>
 
-        {/* ================================================================= */}
-        {/* 2. MESSAGE OFFICIEL DE MISA EN BLANC CONFORME ADOBE XD (Noeud 72)  */}
-        {/* Toujours strictement sur 3 lignes quel que soit le zoom            */}
-        {/* ================================================================= */}
-        <div className="space-y-2 pt-1 text-white text-left">
-          <h2 className="text-sm sm:text-base font-bold tracking-normal text-white">
+        <div className="space-y-2 pt-1 text-black dark:text-white text-left">
+          <h2 className="text-sm sm:text-base font-bold tracking-normal text-black dark:text-white">
             Mbola tsara, cher compatriote !
           </h2>
-          <div className="text-[clamp(10px,1.05vw,14px)] leading-relaxed text-white/95 italic space-y-1.5 w-full overflow-x-auto scrollbar-none">
+          <div className="text-[clamp(10px,1.05vw,14px)] leading-relaxed text-black/90 dark:text-white/95 italic space-y-1.5 w-full overflow-x-auto scrollbar-none">
             <p className="whitespace-nowrap">
               Je m'appelle Misa. Mon habitat naturel recule chaque année. En tant que fossa — le plus grand félin de Madagascar — je veux aider à protéger ce milieu et ceux qui y vivent.
             </p>
@@ -462,38 +443,11 @@ const BoutiqueDeMisa = () => {
               C'est là que j'ai besoin de toi : lorsque tu achètes un goodie dans ma boutique, <strong>Les Casaniers reverse 60% des bénéfices aux actions de reboisement à Madagascar</strong>.
             </p>
             <p className="whitespace-nowrap">
-              Alors, si quelque chose te plaît, fais-toi plaisir : tu soutiendras aussi une forêt qui a besoin de nous. Merci, ou comme on dit chez nous : <span className="text-white font-bold not-italic">misaotra !</span>
+              Alors, si quelque chose te plaît, fais-toi plaisir : tu soutiendras aussi une forêt qui a besoin de nous. Merci, ou comme on dit chez nous : <span className="text-black dark:text-white font-bold not-italic">misaotra !</span>
             </p>
           </div>
         </div>
-
-        {/*
-        // [NON CONFORME MAQUETTE ADOBE XD - INFOBAR COMMENTÉE]
-        // <InfoBar />
-        */}
-
-        {/*
-        // [NON CONFORME MAQUETTE ADOBE XD - BARRE DE FILTRES NAV COMMENTÉE]
-        // <nav className="sticky top-16 z-30 border-b border-border bg-background/80 backdrop-blur-md">
-        // ...
-        // </nav>
-        */}
-
-        {/*
-        // [NON CONFORME MAQUETTE ADOBE XD - BARRE DE RECHERCHE ET BUDGET SLIDER COMMENTÉE]
-        // <section className="border-b border-border bg-background/50">
-        // ...
-        // </section>
-        */}
-
-        {/* ================================================================= */}
-        {/* 3. SECTION PRODUITS OU ÉTAT VIDE SELON LA BASE DE DONNÉES         */}
-        {/* - Backend injoignable (error ou ping en échec) : message d'erreur   */}
-        {/* - Vérification en cours : animation du texte "Boutique de Misa"  */}
-        {/* - Backend OK mais aucun produit : "Aucun produit pour le moment"  */}
-        {/* Aucun textile ou accessoire par défaut n'est affiché.             */}
-        {/* ================================================================= */}
-        {error || (backendStatus === "down" && !apiData && products.length === 0) ? (
+          {error || (backendStatus === "down" && !apiData && products.length === 0) ? (
           // ❌ Backend injoignable / non démarré : message d'erreur distinct
           <div className="w-full py-20 px-6 text-center border border-red-500/30 rounded-[15px] bg-red-500/[0.04] shadow-xl flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
@@ -502,7 +456,8 @@ const BoutiqueDeMisa = () => {
             <p className="text-red-400 font-bold text-base sm:text-lg mb-2">
               Impossible de charger les produits
             </p>
-            <p className="text-white/70 text-sm mb-5 max-w-md">
+            {/* Couleur du texte adaptée au mode clair/sombre : noir en mode clair, blanc en mode sombre */}
+            <p className="text-black/70 dark:text-white/70 text-sm mb-5 max-w-md">
               Le serveur ne répond pas. Vérifiez que le backend est démarré, puis réessayez.
             </p>
             <Button className="bg-[#F2551A] hover:bg-[#d94812] text-white" onClick={() => window.location.reload()}>
@@ -527,13 +482,15 @@ const BoutiqueDeMisa = () => {
                 50%      { opacity: 0.55; }
               }
             `}</style>
+            {/* Couleur du texte adaptée au mode clair/sombre : noir en mode clair, blanc en mode sombre */}
             <h2
-              className="flex flex-wrap justify-center text-white font-bold tracking-wider text-2xl sm:text-3xl md:text-4xl select-none"
+              className="flex flex-wrap justify-center !text-black dark:!text-white font-bold tracking-wider text-2xl sm:text-3xl md:text-4xl select-none"
               style={{ animation: "misaGlow 2s ease-in-out 1.6s infinite" }}
             >
               {"Boutique de Misa".split("").map((ch, i) => (
                 <span
                   key={i}
+                  className="!text-black dark:!text-white"
                   style={{
                     display: "inline-block",
                     opacity: 0,
@@ -550,7 +507,8 @@ const BoutiqueDeMisa = () => {
             <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-4">
               <ShoppingBag className="w-7 h-7 text-stone-400 stroke-[1.5]" />
             </div>
-            <p className="text-white font-bold text-base sm:text-lg">
+            {/* Couleur du texte adaptée au mode clair/sombre : noir en mode clair, blanc en mode sombre */}
+            <p className="text-black dark:text-white font-bold text-base sm:text-lg">
               Aucun produit pour le moment
             </p>
           </div>
