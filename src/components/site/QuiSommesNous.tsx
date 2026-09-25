@@ -17,7 +17,7 @@ const QuiSommesNous = () => (
   <SiteLayout>
     <main className="bg-black py-10 text-white sm:py-14">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
-        <header className="-ml-40">
+        <header className="-ml-24">
 <h1 className="inline-flex items-end text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
   <span className="shrink-0 border-b-2 border-white pb-1 pr-3">
     Qui Som
