@@ -1,6 +1,6 @@
-﻿import type { FC } from "react";
+import type { FC } from "react";
 import { useNavigate } from "react-router-dom";
-import bannerBg from "../../assets/t11.jpg";
+import bannerBg from "../../assets/zero water.png";
 import keyboardImg from "../../assets/clavs.png";
 import phoneImg from "../../assets/phone1.png";
 import monitorImg from "../../assets/pc.png";
@@ -80,7 +80,7 @@ const PromoBanner: FC<PromoBannerProps> = ({
           src={bannerBg}
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 h-full w-full object-cover z-0"
+          className="absolute inset-0 h-full w-full object-cover scale-105 z-0"
         />
 
         {/* 2. Titre à gauche de l'écran sur une ligne */}
