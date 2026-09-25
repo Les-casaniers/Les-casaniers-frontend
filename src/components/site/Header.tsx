@@ -118,7 +118,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 const quickNavLinks = [
   { label: "Pro & Freelance", href: "/pro" },
   { label: "Gamer", href: "/gaming", accent: true },
-  { label: "Guides", href: "/guides" },
+  { label: "Guide", href: "/guides" },
   { label: "Importation", href: "/importation" },
   { label: "Boutique de MISA", href: "/boutique-de-misa" },
   { label: "Devis Express", href: "/devis-express" },
@@ -373,7 +373,7 @@ export const Header = () => {
   const getDashboardUrl = () =>
     isAdminUser ? "/DashboardAdmin" : "/DashboardClient";
   const getDashboardLabel = () =>
-    isAdminUser ? "Admin Dashboard" : "Mon compte";
+    isAdminUser ? "Admin Dashboard" : "Mon profil";
 
   const isActive = (href: string) => {
     const p = location.pathname,
@@ -399,7 +399,7 @@ export const Header = () => {
       {/* Top row: logo + search + account/favorites/cart.
           Mobile : wrap sur 2 lignes (logo+icônes puis recherche).
           md+ : une seule ligne, hauteur fixe comme dans le design d'origine. */}
-      <div className={HEADER_CONTAINER}>
+      <div className={`${HEADER_CONTAINER} relative z-[105]`}>
         <div
           className={`flex flex-wrap md:flex-nowrap items-center gap-y-2 gap-x-2 sm:gap-x-3 py-2 md:py-0 ${HEADER_TOP_ROW_HEIGHT}`}
         >
@@ -572,38 +572,28 @@ export const Header = () => {
                   {showUserMenu && (
                     <div
                       ref={userMenuRef}
-                      className="absolute right-0 top-full mt-2 w-64 bg-popover border border-border rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                      className="absolute w-[160px] bg-white border border-border rounded-xl shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
                     >
-                      <div className="px-4 py-3 border-b border-border">
-                        <p className="text-sm font-semibold">
-                          {user?.prenom} {user?.nom}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {user?.email}
-                        </p>
-                      </div>
                       <Link
                         to={getDashboardUrl()}
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
                       >
-                        <LayoutDashboard className="h-4 w-4" />
                         {getDashboardLabel()}
                       </Link>
                       <Link
                         to="/DashboardClient/commandes"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary transition-colors"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
                       >
-                        <Package className="h-4 w-4" />
                         Mes commandes
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors border-t border-border mt-2 pt-2"
+                        className="w-full flex items-center gap-1 px-4 py-2.5 text-sm text-black hover:bg-secondary dark:hover:bg-black-10 hover:text-red-500 transition-colors border-t border-border mt-2 pt-2"
                       >
+                        <span>Se déconnecter</span>
                         <LogOut className="h-4 w-4" />
-                        Déconnexion
                       </button>
                     </div>
                   )}
