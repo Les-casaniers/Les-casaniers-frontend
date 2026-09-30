@@ -212,8 +212,23 @@ export const Header = () => {
     const raf = requestAnimationFrame(alignSearchWithProFreelance);
     window.addEventListener("resize", alignSearchWithProFreelance);
     window.addEventListener("load", alignSearchWithProFreelance);
+
+    // Les liens rapides étant centrés, la position de "Pro & Freelance" change dès que la largeur
+    // de CATEGORIE, de Configurateur Pro ou des liens change (chargement des images/polices, etc.).
+    // On remesure donc à chaque changement de taille pour rester parfaitement aligné.
+    const proLinkEl = proFreelanceRef.current;
+    const observer = new ResizeObserver(alignSearchWithProFreelance);
+    if (proLinkEl?.parentElement) {
+      observer.observe(proLinkEl.parentElement);
+      if (proLinkEl.parentElement.parentElement) {
+        observer.observe(proLinkEl.parentElement.parentElement);
+      }
+    }
+    document.fonts?.ready.then(alignSearchWithProFreelance);
+
     return () => {
       cancelAnimationFrame(raf);
+      observer.disconnect();
       window.removeEventListener("resize", alignSearchWithProFreelance);
       window.removeEventListener("load", alignSearchWithProFreelance);
     };
@@ -632,7 +647,7 @@ export const Header = () => {
           ce qui créait un intervalle sans hamburger ni nav complète) */}
       <nav className="hidden md:block bg-black relative z-[100]">
         <div className={HEADER_CONTAINER}>
-          <div className="flex items-center gap-2 lg:gap-3 py-1.5">
+          <div className="flex items-center gap-3 py-1.5">
 
             {/* "Nos Produits" mega trigger */}
             <div
@@ -671,9 +686,11 @@ export const Header = () => {
               )}
             </div>
 
-            {/* Quick nav links — scroll horizontal si ça ne rentre pas (md/lg) */}
+            {/* Quick nav links — centrés dans l'espace disponible pour avoir le même espace
+                des deux côtés (CATEGORIE ↔ 1er lien, dernier lien ↔ Configurateur Pro).
+                Scroll horizontal si ça ne rentre pas (md/lg). */}
             <div className="flex-1 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex items-center gap-2 lg:gap-3 xl:gap-4 2xl:gap-5 ml-2 lg:ml-4 xl:ml-6 2xl:ml-8 w-max">
+              <div className="flex items-center gap-3 px-5 w-max mx-auto">
                 {quickNavLinks.map((item) => (
                   <Link
                     key={item.label}
@@ -685,7 +702,6 @@ export const Header = () => {
                       text-xs font-semibold tracking-wide transition-all whitespace-nowrap
                       ${item.accent ? "text-white hover:text-white" : "text-zinc-200 hover:text-white"}
                       ${isActive(item.href) ? "text-primary" : ""}
-                      ${item.label === "Devis Express" ? "mr-2 xl:mr-3 2xl:mr-4" : ""}
                       border-zinc-600 bg-black
                     `}
                   >

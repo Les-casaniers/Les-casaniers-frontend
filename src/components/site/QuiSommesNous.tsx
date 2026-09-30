@@ -1,5 +1,5 @@
 import { SiteLayout } from "@/components/site/SiteLayout";
-import misa from "@/assets/Mascotte_Plan de travail 1.png";
+import offices from "@/assets/Offices.png";
 import arrow from "@/assets/Curved Arrow Downward.png";
 
 const team = [
@@ -50,10 +50,10 @@ const QuiSommesNous = () => (
           <div className="relative mx-auto flex flex-col items-center">
             {/* Cercle avec focus uniquement sur le visage */}
             <div className="flex h-44 w-44 sm:h-48 sm:w-48 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-white shadow-xl">
-              <img 
-                src={misa} 
-                alt="Misa, la mascotte" 
-                className="h-full w-full object-cover object-top scale-[1.2] translate-y-1" 
+              <img
+                src={offices}
+                alt="Les bureaux des Casaniers"
+                className="h-full w-full object-cover object-top scale-[1.2] translate-y-1"
               />
             </div>
             {/* Étiquette collée en pied d'image */}
