@@ -3,6 +3,23 @@
 /* Police de la maquette Adobe XD. Elle est employée si elle est installée sur le poste.
    Pour la fournir à tous les visiteurs, ajoutez les fichiers .woff2 dans public/fonts
    puis remplacez `local(...)` par l'URL de ces fichiers. */
+
+   @font-face {
+  font-family: "Referenz Grotesk";
+  src: url("/fonts/ReferenzGrotesk-ExtraBold.woff2") format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Santhor Slant";
+  src: url("/fonts/Santhor-ExtraLightSlant.woff2") format("woff2");
+  font-weight: 200;
+  font-style: italic; /* avant : normal */
+  font-display: swap;
+}
+
 @font-face {
   font-family: "Glacial Indifference";
   src: local("Glacial Indifference"), local("GlacialIndifference-Regular");
@@ -10,6 +27,7 @@
   font-weight: 400;
   font-display: swap;
 }
+
 
 @font-face {
   font-family: "Glacial Indifference";

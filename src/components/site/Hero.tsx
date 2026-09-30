@@ -53,13 +53,13 @@ export const Hero = () => {
             py-6 sm:py-10 md:py-14 lg:py-18 xl:py-24"
           >
             <div className=" -mt-4 max-w-sm sm:max-w-xl lg:max-w-none text-white">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl
-                font-black uppercase tracking-wide md:whitespace-nowrap">
+              <h1 className="font-['Referenz_Grotesk',sans-serif] text-lg sm:text-2xl md:text-3xl lg:text-4xl
+                font-extrabold uppercase tracking-wide md:whitespace-nowrap">
                 Construisons ton outil de réussite
               </h1>
 
-              <p className="mt-14 sm:mt-16 text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl 
-                font-medium italic leading-relaxed text-white/90">
+              <p className="font-mono mt-14 sm:mt-16 text-[14px] 
+                font-medium italic leading-relaxed text-white [-webkit-text-stroke:0.3px_currentColor]">
                 <span>&quot; Le meilleur pc n'est pas forcément le plus puissant du marché.</span>
                 <span className="block pl-6 sm:pl-10 mt-1">C'est celui adapté à tes besoins, pour jouer et évoluer sereinement &quot;</span>
               </p>
