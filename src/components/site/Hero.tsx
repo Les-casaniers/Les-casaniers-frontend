@@ -59,7 +59,7 @@ export const Hero = () => {
               </h1>
 
               <p className="font-mono mt-14 sm:mt-16 text-[14px] 
-                font-medium italic leading-relaxed text-white [-webkit-text-stroke:0.3px_currentColor]">
+                font-light italic leading-relaxed text-white">
                 <span>&quot; Le meilleur pc n'est pas forcément le plus puissant du marché.</span>
                 <span className="block pl-6 sm:pl-10 mt-1">C'est celui adapté à tes besoins, pour jouer et évoluer sereinement &quot;</span>
               </p>
