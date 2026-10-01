@@ -50,6 +50,7 @@ import profileIncone from "@/assets/Profile.png";
 import lightIncone from "@/assets/Light.png"
 import panierIncone from "@/assets/Basket.png";
 import searchIncone from "@/assets/Search.png"
+import searchMascot from "@/assets/ConfigPro/5.png";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -480,9 +481,17 @@ export const Header = () => {
                   onChange={(e) => setSearchNom(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setIsSearchFocused(false)}
-                  placeholder="Rechercher un produit, une référence..."
+                  placeholder={isSearchFocused || searchNom ? "Rechercher un produit, une référence..." : ""}
                   className="w-full h-9 pl-5 pr-12 rounded-full bg-white border-2 border-white text-black placeholder:text-zinc-400 focus:border-white focus:outline-none text-sm italic transition-all"
                 />
+                {!isSearchFocused && !searchNom && (
+                  <img
+                    src={searchMascot}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute right-9 top-1/2 h-8 w-28 -translate-y-1/2 object-contain sm:w-32"
+                  />
+                )}
                 <button
                   type="button"
                   onClick={() => setShowAdvanced(!showAdvanced)}
