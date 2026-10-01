@@ -694,7 +694,7 @@ export const Header = () => {
                   onMouseLeave={closeMegaMenu}
                   className="absolute left-0 top-full z-[110] animate-in fade-in slide-in-from-top-1 duration-150 pt-2"
                 >
-                  <CategoriesMegaMenu />
+                  <CategoriesMegaMenu onNavigate={() => setMegaMenuOpen(false)} />
                 </div>
               )}
             </div>
