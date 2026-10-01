@@ -26,6 +26,7 @@ type ProduitForm = {
   prix: string;
   devise: string;
   quantite_stock: string;
+  est_dispo: boolean;
   actif: boolean;
 };
 
@@ -37,7 +38,7 @@ type CategoryForm = {
 };
 
 const initialForm: ProduitForm = {
-  categorie_id: "", id_sous_categorie: "", reference: "", nom: "", description_courte: "", description: "", atout: "", prix: "", devise: "MGA", quantite_stock: "", actif: true,
+  categorie_id: "", id_sous_categorie: "", reference: "", nom: "", description_courte: "", description: "", atout: "", prix: "", devise: "MGA", quantite_stock: "", est_dispo: true, actif: true,
 };
 
 const initialCategoryForm: CategoryForm = { nom: "", type: "", parent_id: "", ordre_tri: "0" };
@@ -92,7 +93,7 @@ const INPUT = "w-full px-4 py-2.5 text-sm border border-border/60 rounded-xl bg-
 const MODAL_PANEL = "bg-card border border-border/60 rounded-2xl w-full shadow-2xl shadow-black/30 flex flex-col";
 
 const ProductForm = ({
-  value, setValue, categories, sousCategories, selectedPrefix, setSelectedPrefix, generatedReference, generateReference, isEditMode = false, onCaracteristiquesChange, templatesDisponibles = [], caracteristiques = {}, setCaracteristiques, loadTemplates, onDeleteTemplate, onEditTemplate,
+  value, setValue, categories, sousCategories, selectedPrefix, setSelectedPrefix, generatedReference, generateReference, isEditMode = false, templatesDisponibles = [], caracteristiques = {}, setCaracteristiques, loadTemplates, onDeleteTemplate, onEditTemplate,
 }: {
   value: ProduitForm;
   setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
@@ -103,7 +104,6 @@ const ProductForm = ({
   generatedReference: string;
   generateReference: (prefixKey: string) => Promise<void>;
   isEditMode?: boolean;
-  onCaracteristiquesChange?: (caracts: Record<string, string>) => void;
   templatesDisponibles?: TemplateCaracteristique[];
   caracteristiques?: Record<string, string>;
   setCaracteristiques?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
@@ -119,12 +119,6 @@ const ProductForm = ({
   const [editingCaract, setEditingCaract] = useState<string | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState<number | null>(null);
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
-
-  useEffect(() => {
-    if (onCaracteristiquesChange && caracteristiques) {
-      onCaracteristiquesChange(caracteristiques);
-    }
-  }, [caracteristiques, onCaracteristiquesChange]);
 
   const handleAddCaracteristique = () => {
     if (!newCaractNom.trim() || !newCaractValeur.trim()) return;
@@ -225,28 +219,67 @@ const ProductForm = ({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><FolderTree className="h-3.5 w-3.5" /> Catégorie</label>
-          <select className={INPUT} value={value.categorie_id} onChange={(e) => setValue((p) => ({ ...p, categorie_id: e.target.value, id_sous_categorie: "" }))}>
+          <select
+            className={INPUT}
+            value={value.categorie_id}
+            onChange={(e) => {
+              setValue((p) => ({ ...p, categorie_id: e.target.value, id_sous_categorie: "" }));
+              if (!isEditMode && loadTemplates) loadTemplates("");
+            }}
+          >
             <option value="">— Catégorie —</option>
             {categories.map((c: any) => (<option key={c.id} value={c.id}>{c.nom}</option>))}
           </select>
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Layers className="h-3.5 w-3.5" /> Sous-catégorie</label>
-          <select className={INPUT} value={value.id_sous_categorie} onChange={(e) => { const newValue = e.target.value; setValue((p) => ({ ...p, id_sous_categorie: newValue })); if (!isEditMode && loadTemplates && newValue) { loadTemplates(newValue); } }} disabled={!value.categorie_id}>
+          <select
+            className={INPUT}
+            value={value.id_sous_categorie}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setValue((p) => ({ ...p, id_sous_categorie: newValue }));
+              if (!isEditMode && loadTemplates) loadTemplates(newValue);
+            }}
+            disabled={!value.categorie_id}
+          >
             <option value="">— Sous-catégorie —</option>
             {sousCategories.filter((sc: any) => String(sc.id_categorie) === String(value.categorie_id)).map((sc: any) => (<option key={sc.id} value={sc.id}>{sc.nom}</option>))}
           </select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Prix (MGA)</label>
-          <input className={INPUT} placeholder="0" value={value.prix} onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} />
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><DollarSign className="h-3.5 w-3.5" /> Prix</label>
+          <input className={INPUT} inputMode="decimal" placeholder="0" value={value.prix} onChange={(e) => setValue((p) => ({ ...p, prix: e.target.value }))} />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Tag className="h-3.5 w-3.5" /> Devise</label>
+          <select className={INPUT} value={value.devise} onChange={(e) => setValue((p) => ({ ...p, devise: e.target.value }))}>
+            <option value="MGA">MGA</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+          </select>
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Warehouse className="h-3.5 w-3.5" /> Stock</label>
-          <input className={INPUT} placeholder="0" value={value.quantite_stock} onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} />
+          <input className={INPUT} inputMode="numeric" placeholder="0" value={value.quantite_stock} onChange={(e) => setValue((p) => ({ ...p, quantite_stock: e.target.value }))} />
         </div>
+      </div>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <FileText className="h-3.5 w-3.5" /> Description courte
+          </label>
+          <span className="text-[10px] text-muted-foreground">{value.description_courte.length}/1000</span>
+        </div>
+        <input
+          className={INPUT}
+          maxLength={1000}
+          placeholder="Phrase d'accroche affichée sous le titre du produit"
+          value={value.description_courte}
+          onChange={(e) => setValue((p) => ({ ...p, description_courte: e.target.value }))}
+        />
       </div>
       <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Description</label>
@@ -256,6 +289,25 @@ const ProductForm = ({
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Award className="h-3.5 w-3.5" /> Point fort</label>
         <input className={INPUT} placeholder="Ex: Garantie 2 ans, Livraison gratuite..." value={value.atout} onChange={(e) => setValue((p) => ({ ...p, atout: e.target.value }))} />
       </div>
+
+      {/* ✅ Disponible / Actif */}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-secondary/10 cursor-pointer hover:border-primary/40 transition-colors">
+          <input type="checkbox" checked={value.est_dispo} onChange={(e) => setValue((p) => ({ ...p, est_dispo: e.target.checked }))} className="h-4 w-4 rounded border-border/60 text-primary focus:ring-primary/20" />
+          <div>
+            <div className="text-sm font-medium text-foreground">Disponible</div>
+            <div className="text-[10px] text-muted-foreground">Peut être commandé</div>
+          </div>
+        </label>
+        <label className="flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-secondary/10 cursor-pointer hover:border-primary/40 transition-colors">
+          <input type="checkbox" checked={value.actif} onChange={(e) => setValue((p) => ({ ...p, actif: e.target.checked }))} className="h-4 w-4 rounded border-border/60 text-primary focus:ring-primary/20" />
+          <div>
+            <div className="text-sm font-medium text-foreground">Actif</div>
+            <div className="text-[10px] text-muted-foreground">Visible sur le site</div>
+          </div>
+        </label>
+      </div>
+
       <div className="space-y-3 border-t border-border/50 pt-4">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Award className="h-3.5 w-3.5" /> Caractéristiques</label>
@@ -419,8 +471,8 @@ const ExistingImagesManager = ({ selectedProduit, existingImages, setExistingIma
         <div className="grid grid-cols-2 gap-2.5 max-h-60 overflow-y-auto custom-scrollbar pr-1">
           {existingImages.slice().sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999)).map((img) => (
             <div key={img.id} className="border border-border/40 rounded-xl overflow-hidden bg-secondary/10 hover:bg-secondary/20 transition-all">
-              {/* ✅ UTILISATION DE LA FONCTION CENTRALISÉE */}
-              <img src={getProductImageUrl({ images: existingImages } as any)} alt={img.alt || "image produit"} className="h-24 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; }} />
+              {/* ✅ Une image à la fois (corrigé) */}
+              <img src={getProductImageUrl({ images: [img] } as any)} alt={img.alt || "image produit"} className="h-24 w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; }} />
               <div className="p-2 space-y-1.5">
                 <span className="text-[10px] text-muted-foreground block">Ordre: {img.ordre ?? "-"}</span>
                 <div className="flex gap-1">
@@ -442,7 +494,6 @@ const ProductMobileCard = ({ product, onEdit, onDelete, onView, expanded, onTogg
     <div className="bg-card border border-border/50 rounded-xl p-4 space-y-3 hover:border-primary/30 transition-all duration-200 hover:shadow-md">
       <div className="flex gap-3">
         <div className="shrink-0">
-          {/* ✅ UTILISATION DE LA FONCTION CENTRALISÉE */}
           {product.images && product.images.length > 0 ? (
             <img src={getProductImageUrl(product)} alt={product.images[0].alt || product.nom} className="h-16 w-16 object-cover rounded-lg border border-border/50" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; }} />
           ) : (
@@ -474,7 +525,7 @@ const ProductMobileCard = ({ product, onEdit, onDelete, onView, expanded, onTogg
           {Object.entries(caracteristiques).map(([nom, valeur]) => (
             <div key={nom} className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground font-medium">{nom}:</span>
-              <span className="text-foreground">{valeur}</span>
+              <span className="text-foreground">{valeur as string}</span>
             </div>
           ))}
         </div>
@@ -507,6 +558,9 @@ const ModalFooter = ({ onCancel, onConfirm, confirmLabel = "Enregistrer", confir
     </button>
   </div>
 );
+
+const toBool = (v: any, fallback = true) =>
+  v === undefined || v === null ? fallback : v === true || v === 1 || v === "1";
 
 const AdminProduits = () => {
   const [activeTab, setActiveTab] = useState<"produits" | "categories" | "sous-categories">("produits");
@@ -548,7 +602,7 @@ const AdminProduits = () => {
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
   const [produitsWithCaracts, setProduitsWithCaracts] = useState<Produit[]>([]);
   const [showDeleteCaractModal, setShowDeleteCaractModal] = useState(false);
-  const [caractToDelete, setCaractToDelete] = useState<{id: number, nom_champ: string, isTemplate: boolean} | null>(null);
+  const [caractToDelete, setCaractToDelete] = useState<{ id: number, nom_champ: string, isTemplate: boolean } | null>(null);
   const [isDeletingCaract, setIsDeletingCaract] = useState(false);
 
   const { toast } = useToast();
@@ -615,7 +669,7 @@ const AdminProduits = () => {
 
   const normalizedCategories = categories ?? [];
   const normalizedSousCategories = sousCategoriesData ?? [];
-  
+
   const filteredProduits = useMemo(() => {
     let result = produitsWithCaracts;
     if (filterCategorieId) result = result.filter(p => String(p.categorie_id) === filterCategorieId);
@@ -736,13 +790,14 @@ const AdminProduits = () => {
     fd.append("categorie_id", data.categorie_id);
     if (data.id_sous_categorie) fd.append("id_sous_categorie", data.id_sous_categorie);
     fd.append("reference", data.reference);
-    fd.append("nom", data.nom);
+    fd.append("nom", data.nom.trim());
     fd.append("description_courte", data.description_courte);
     fd.append("description", data.description);
     fd.append("atout", data.atout);
-    fd.append("prix", data.prix);
+    fd.append("prix", data.prix.replace(/\s/g, "").replace(",", "."));
     fd.append("devise", data.devise);
-    fd.append("quantite_stock", data.quantite_stock);
+    fd.append("quantite_stock", data.quantite_stock.replace(/\s/g, ""));
+    fd.append("est_dispo", data.est_dispo ? "1" : "0");
     fd.append("actif", data.actif ? "1" : "0");
     return fd;
   };
@@ -757,6 +812,11 @@ const AdminProduits = () => {
 
   const handleCreate = async () => {
     if (!form.reference) { toast({ title: "Erreur", description: "Veuillez sélectionner un type de référence", variant: "destructive" }); return; }
+    if (!form.nom.trim()) { toast({ title: "Erreur", description: "Le nom du produit est obligatoire", variant: "destructive" }); return; }
+    if (!form.categorie_id) { toast({ title: "Erreur", description: "Veuillez choisir une catégorie", variant: "destructive" }); return; }
+    if (form.prix && Number.isNaN(Number(form.prix.replace(/\s/g, "").replace(",", ".")))) {
+      toast({ title: "Erreur", description: "Le prix doit être un nombre", variant: "destructive" }); return;
+    }
     setIsCreating(true);
     try {
       const created = await createProductMutation.mutateAsync(buildFormData(form));
@@ -778,7 +838,7 @@ const AdminProduits = () => {
     let existingPrefix = "";
     for (const prefix of REFERENCE_PREFIXES) { if (p.reference?.startsWith(prefix.label)) { existingPrefix = prefix.key; break; } }
     setSelectedPrefix(existingPrefix);
-    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), actif: p.actif ?? true });
+    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), est_dispo: toBool(p.est_dispo), actif: toBool(p.actif) });
     setEditImageFiles([]);
     try {
       const templatesResponse = await api.get(`/sous-categories/${p.id_sous_categorie}/templates`);
@@ -939,7 +999,7 @@ const AdminProduits = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border/50 bg-secondary/20">
-                      {["Image","Référence","Nom","Catégorie","Prix","Stock","Disponibilité","Caractéristiques","Actions"].map((h) => (
+                      {["Image", "Référence", "Nom", "Catégorie", "Prix", "Stock", "Disponibilité", "Caractéristiques", "Actions"].map((h) => (
                         <th key={h} className={`p-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider ${h === "Actions" ? "text-right" : "text-left"}`}>{h}</th>
                       ))}
                     </tr>
@@ -950,7 +1010,6 @@ const AdminProduits = () => {
                       return (
                         <tr key={p.id} className="border-b border-border/30 hover:bg-secondary/10 transition-colors last:border-0">
                           <td className="p-4">
-                            {/* ✅ UTILISATION DE LA FONCTION CENTRALISÉE */}
                             {p.images && p.images.length > 0 ? (
                               <img src={getProductImageUrl(p)} alt={p.images[0].alt || p.nom} className="h-11 w-11 object-cover rounded-lg border border-border/40" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; }} />
                             ) : (
@@ -980,7 +1039,7 @@ const AdminProduits = () => {
                                 {Object.entries(p.caracteristiques || {}).map(([nom, valeur]) => (
                                   <div key={nom} className="flex justify-between gap-4">
                                     <span className="text-muted-foreground">{nom}:</span>
-                                    <span className="text-foreground">{valeur}</span>
+                                    <span className="text-foreground">{valeur as string}</span>
                                   </div>
                                 ))}
                               </div>
@@ -1016,7 +1075,6 @@ const AdminProduits = () => {
                 return (
                   <div key={p.id} className="bg-card border border-border/50 rounded-2xl overflow-hidden hover:border-primary/30 transition-all duration-200 hover:shadow-lg hover:shadow-black/10">
                     <div className="relative">
-                      {/* ✅ UTILISATION DE LA FONCTION CENTRALISÉE */}
                       {p.images && p.images.length > 0 ? (
                         <img src={getProductImageUrl(p)} alt={p.images[0].alt || p.nom} className="w-full h-40 object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "/placeholder-pc.jpg"; }} />
                       ) : (
@@ -1047,7 +1105,7 @@ const AdminProduits = () => {
                               {Object.entries(p.caracteristiques || {}).map(([nom, valeur]) => (
                                 <div key={nom} className="flex justify-between gap-4">
                                   <span className="text-muted-foreground">{nom}:</span>
-                                  <span className="text-foreground">{valeur}</span>
+                                  <span className="text-foreground">{valeur as string}</span>
                                 </div>
                               ))}
                             </div>
@@ -1178,7 +1236,7 @@ const AdminProduits = () => {
           <div className={`${MODAL_PANEL} max-w-2xl max-h-[88vh]`}>
             <ModalHeader icon={Package} title="Ajouter un produit" onClose={closeCreateModal} accent />
             <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
-              <ProductForm value={form} setValue={setForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={false} onCaracteristiquesChange={setCreateCaracteristiques} templatesDisponibles={createTemplates} caracteristiques={createCaracteristiques} setCaracteristiques={setCreateCaracteristiques} loadTemplates={loadTemplatesForSousCategorie} />
+              <ProductForm value={form} setValue={setForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={false} templatesDisponibles={createTemplates} caracteristiques={createCaracteristiques} setCaracteristiques={setCreateCaracteristiques} loadTemplates={loadTemplatesForSousCategorie} />
               <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
             </div>
             <ModalFooter onCancel={closeCreateModal} onConfirm={handleCreate} confirmLabel="Créer le produit" isLoading={isCreating} />
@@ -1191,7 +1249,7 @@ const AdminProduits = () => {
           <div className={`${MODAL_PANEL} max-w-2xl max-h-[88vh]`}>
             <ModalHeader icon={Pencil} title="Modifier le produit" onClose={closeEditModal} accent />
             <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
-              <ProductForm value={editForm} setValue={setEditForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={true} onCaracteristiquesChange={setEditCaracteristiques} templatesDisponibles={editTemplates} caracteristiques={editCaracteristiques} setCaracteristiques={setEditCaracteristiques} onDeleteTemplate={(templateId, nomChamp) => { setCaractToDelete({ id: templateId, nom_champ: nomChamp, isTemplate: true }); setShowDeleteCaractModal(true); }} onEditTemplate={editTemplate} />
+              <ProductForm value={editForm} setValue={setEditForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={true} templatesDisponibles={editTemplates} caracteristiques={editCaracteristiques} setCaracteristiques={setEditCaracteristiques} onDeleteTemplate={(templateId, nomChamp) => { setCaractToDelete({ id: templateId, nom_champ: nomChamp, isTemplate: true }); setShowDeleteCaractModal(true); }} onEditTemplate={editTemplate} />
               <ExistingImagesManager selectedProduit={selectedProduit} existingImages={existingImages} setExistingImages={setExistingImages} setMainImage={setMainImage} deleteImage={deleteImage} handleApiError={handleApiError} toast={toast} />
               <ImageUploadField files={editImageFiles} setFiles={setEditImageFiles} label="Ajouter de nouvelles images" />
             </div>
