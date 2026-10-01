@@ -55,7 +55,15 @@ export interface Product {
   badge?: string | null;
   tagline?: string | null;
   note?: number | null;
+  // Champs de la ligne produit du catalogue (colonnes de la table produits)
+  ean?: string | null;
+  usages?: string | null;
   processeur?: string | null;
+  ssd?: string | null;
+  os?: string | null;
+  gpu?: string | null;
+  resolution?: string | null;
+  taille?: string | null;
   carte_graphique?: string | null;
   ram?: string | null;
   disque_dur?: string | null;
