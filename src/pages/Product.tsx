@@ -1,4 +1,4 @@
-﻿import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -88,32 +88,23 @@ const SectionTitle = ({
   level?: 2 | 3;
 }) => {
   const Tag = level === 2 ? "h2" : "h3";
-  const size = level === 2 ? "text-2xl lg:text-3xl" : "text-xl lg:text-2xl";
   return (
-    // inline-block : la largeur du bloc = la largeur du titre
-    <div className="mb-6 inline-block min-w-[11rem] align-top">
-      <Tag className={`font-display ${size} font-bold leading-tight`}>{children}</Tag>
-
-      {/* Ligne décorative : même largeur que le titre */}
-      <div className="flex items-center w-full mt-1">
-        {/* Trait plein */}
-        <span className="h-0.5 w-16 shrink-0 rounded-full bg-foreground" />
-
-        {/* Tirets : remplissent tout l'espace restant */}
+    <div className="mb-6 inline-block min-w-[8rem] align-top">
+      <Tag className="font-display text-base sm:text-lg font-medium leading-tight tracking-wide">{children}</Tag>
+      <div className="flex items-center w-full mt-1.5">
+        <span className="h-px w-12 shrink-0 bg-foreground" />
         <span
-          className="h-0.5 flex-1 ml-2"
+          className="h-px flex-1 ml-2"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(to right, hsl(var(--foreground)) 0 14px, transparent 14px 22px)",
+              "repeating-linear-gradient(to right, hsl(var(--foreground)) 0 8px, transparent 8px 14px)",
           }}
         />
-
-        {/* Flèche : termine la ligne, légèrement plus bas */}
         <img
           src={curvedArrow}
           alt=""
           aria-hidden="true"
-          className="w-5 h-5 shrink-0 object-contain ml-1 translate-y-3"
+          className="w-5 h-5 shrink-0 object-contain ml-1 translate-y-0.5"
         />
       </div>
     </div>
@@ -829,29 +820,18 @@ const [caracExpanded, setCaracExpanded] = useState(true);
              <SectionTitle level={3}>Caractéristiques</SectionTitle>
 
 <div className="mt-8 mx-auto w-full max-w-4xl">
-  <div className="relative px-3">
-    {/* ===== Coins du haut ===== */}
-    <span className="hidden sm:block absolute -top-2 left-0 h-6 w-16 border-t-2 border-l-2 border-foreground rounded-tl-md pointer-events-none" />
-    <span className="hidden sm:block absolute -top-2 right-0 h-6 w-16 border-t-2 border-r-2 border-foreground rounded-tr-md pointer-events-none" />
-    <span className="hidden sm:block absolute -top-2 left-2 h-1.5 w-8 border-t-2 border-dashed border-foreground/60 pointer-events-none translate-x-14" />
-    <span className="hidden sm:block absolute -top-2 right-2 h-1.5 w-8 border-t-2 border-dashed border-foreground/60 pointer-events-none -translate-x-14" />
+  <div className="relative rounded-md border-2 border-white bg-black text-white">
     <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none">💡</span>
-
-    {/* ===== Coins du bas (miroir du haut) ===== */}
-    <span className="hidden sm:block absolute -bottom-2 left-0 h-6 w-16 border-b-2 border-l-2 border-foreground rounded-bl-md pointer-events-none" />
-    <span className="hidden sm:block absolute -bottom-2 right-0 h-6 w-16 border-b-2 border-r-2 border-foreground rounded-br-md pointer-events-none" />
-    <span className="hidden sm:block absolute -bottom-2 left-2 h-1.5 w-8 border-b-2 border-dashed border-foreground/60 pointer-events-none translate-x-14" />
-    <span className="hidden sm:block absolute -bottom-2 right-2 h-1.5 w-8 border-b-2 border-dashed border-foreground/60 pointer-events-none -translate-x-14" />
     <span className="hidden sm:block absolute -bottom-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none rotate-180">💡</span>
 
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
+    <div className="overflow-x-auto rounded-md">
+      <table className="w-full text-sm border-collapse text-white">
         <thead>
           <tr>
-            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-foreground/30 border-r border-r-foreground/30">
+            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-white/50 border-r border-r-white/70">
               Caractéristiques <span className="text-[10px] align-middle">✎</span>
             </th>
-            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-foreground/30">
+            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-white/50">
               Valeurs <span className="text-[10px] align-middle">🏷</span>
             </th>
           </tr>
@@ -859,10 +839,10 @@ const [caracExpanded, setCaracExpanded] = useState(true);
         <tbody>
           {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
             <tr key={i}>
-              <td className="px-4 py-2 text-center text-xs text-muted-foreground border-b border-foreground/30 border-r border-r-foreground/30">
+              <td className="px-4 py-2 text-center text-xs text-white border-b border-white/40 border-r border-r-white/70">
                 {c.label}
               </td>
-              <td className="px-4 py-2 text-center text-xs font-medium border-b border-foreground/30">
+              <td className="px-4 py-2 text-center text-xs font-medium text-white border-b border-white/40">
                 {c.valeur}
               </td>
             </tr>
