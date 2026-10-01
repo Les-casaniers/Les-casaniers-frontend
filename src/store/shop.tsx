@@ -128,8 +128,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
         });
       } else {
         toast({
-          title: "Erreur",
-          description: "Une erreur est survenue",
+          title: error.response?.status === 403 ? "Accès refusé" : "Erreur",
+          description: error.response?.data?.message || "Une erreur est survenue",
           variant: "destructive",
         });
       }

@@ -18,6 +18,14 @@ import { Product, useCategories, useSousCategories } from "@/hooks/useProducts";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
 import { useShop } from "@/store/shop";
+import { getProductImageUrl } from "@/lib/utils";
+import {
+  CATALOG_SPEC_FIELDS,
+  USAGE_OPTIONS,
+  isCatalogColumnName,
+  normalizeText,
+  parseUsages,
+} from "@/lib/catalogFields";
 import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import favoriteIcon from "@/assets/Favorite.png";
 import panierIcone from "@/assets/Basket.png";
@@ -40,9 +48,6 @@ interface ProductWithCaracts extends Product {
 
 const PRODUCTS_PER_PAGE = 10;
 
-// Filtres rapides "usage" de la maquette (recherche par mot-clé dans le produit)
-const USAGE_FILTERS = ["Gamer", "Bureautique", "Multimédia", "Créateur"];
-
 const SORT_OPTIONS = [
   { value: "pop", label: "Pertinence" },
   { value: "asc", label: "Prix croissant" },
@@ -50,20 +55,18 @@ const SORT_OPTIONS = [
 ] as const;
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
-// Specs affichées par défaut quand le produit n'a pas de caractéristiques (maquette PC)
-const DEFAULT_SPECS: { label: string; field?: keyof Product }[] = [
-  { label: "Processeur", field: "processeur" },
-  { label: "SSD", field: "disque_dur" },
-  { label: "OS" },
-  { label: "GPU", field: "carte_graphique" },
-  { label: "Résolution" },
-  { label: "", field: undefined },
-  { label: "RAM", field: "ram" },
-  { label: "Taille" },
-];
+// Grille 3 colonnes de la maquette : Processeur SSD OS / GPU Résolution — / RAM Taille
+const SPEC_GRID_BLANK_AFTER = "Résolution";
+const MAX_EXTRA_SPECS = 3;
 
-const normalize = (s: string) =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+// Les filtres sur une colonne produit (processeur, ram…) sont préfixés pour les distinguer des templates
+const SPEC_FILTER_PREFIX = "col:";
+const specColumnOf = (filterId: string) =>
+  filterId.startsWith(SPEC_FILTER_PREFIX)
+    ? CATALOG_SPEC_FIELDS.find((f) => f.key === filterId.slice(SPEC_FILTER_PREFIX.length))?.key
+    : undefined;
+
+type FilterGroup = { id: string; label: string; valeurs: string[] };
 
 // ─── Titre : trait plein + tirets + flèche (comme sur la maquette) ─────────────
 const CatalogTitle = ({ children }: { children: React.ReactNode }) => (
@@ -361,7 +364,10 @@ const Catalog = () => {
     setIsLoadingTemplates(true);
     try {
       const templatesResponse = await api.get(`/sous-categories/${sousCategorieId}/templates`);
-      const templates = templatesResponse?.data?.data || [];
+      // EAN / Usage / specs sont des colonnes du produit, leurs filtres sont calculés à part
+      const templates = ((templatesResponse?.data?.data || []) as TemplateCaracteristique[]).filter(
+        (t) => !isCatalogColumnName(t.nom_champ),
+      );
       setTemplatesBySousCategorie(templates);
 
       const valeursMap: Record<string, string[]> = {};
@@ -392,16 +398,6 @@ const Catalog = () => {
     });
   };
 
-  const getProductImageUrl = (product: any) => {
-    if (!product) return "/placeholder-pc.jpg";
-    const images = product.images || [];
-    if (images.length === 0) return product.image_principale || "/placeholder-pc.jpg";
-    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
-    if (!mainImage?.url) return "/placeholder-pc.jpg";
-    if (mainImage.url.startsWith("/storage")) return `http://127.0.0.1:8000${mainImage.url}`;
-    return mainImage.url;
-  };
-
   // Produits du rayon courant (catégorie / sous-catégorie / recherche) — sert aussi aux bornes de prix
   const scoped = useMemo(() => {
     let list = [...allProducts];
@@ -419,6 +415,23 @@ const Catalog = () => {
     }
     return list;
   }, [allProducts, searchNom, searchRef, selectedCategory, selectedSousCategory]);
+
+  // Filtres de la colonne de gauche : specs (colonnes produit, valeurs du rayon) + templates de la sous-catégorie
+  const filterGroups = useMemo<FilterGroup[]>(() => {
+    const specGroups = CATALOG_SPEC_FIELDS.map(({ key, label }) => ({
+      id: `${SPEC_FILTER_PREFIX}${key}`,
+      label,
+      valeurs: [...new Set(scoped.map((p) => (p[key] ?? "").trim()).filter(Boolean))].sort(),
+    })).filter((g) => g.valeurs.length > 0);
+
+    const templateGroups = templatesBySousCategorie.map((t) => ({
+      id: t.nom_champ,
+      label: t.nom_champ,
+      valeurs: valeursByTemplate[t.nom_champ] || [],
+    }));
+
+    return [...specGroups, ...templateGroups];
+  }, [scoped, templatesBySousCategorie, valeursByTemplate]);
 
   // Bornes du slider : de 0 au prix le plus élevé du rayon, arrondi au palier supérieur
   const priceBounds = useMemo<[number, number]>(() => {
@@ -443,20 +456,25 @@ const Catalog = () => {
     }
 
     if (usage) {
-      const term = normalize(usage);
-      list = list.filter((p) =>
-        normalize(
-          [p.nom, p.description_courte, p.description, p.type_produit, ...Object.values(p.caracteristiques || {})]
+      // Usage renseigné dans l'admin en priorité, sinon recherche du mot dans le produit
+      const term = normalizeText(usage);
+      list = list.filter((p) => {
+        const usages = parseUsages(p.usages);
+        if (usages.length > 0) return usages.some((u) => normalizeText(u) === term);
+        return normalizeText(
+          [p.nom, p.description_courte, p.description, ...Object.values(p.caracteristiques || {})]
             .filter(Boolean)
             .join(" "),
-        ).includes(term),
-      );
+        ).includes(term);
+      });
     }
 
-    Object.entries(filterCaracteristiques).forEach(([nomChamp, valeurs]) => {
+    Object.entries(filterCaracteristiques).forEach(([filterId, valeurs]) => {
       if (valeurs.length > 0) {
         list = list.filter((p) => {
-          const valeurProduit = (p.caracteristiques || {})[nomChamp] || "";
+          const column = specColumnOf(filterId);
+          if (column) return valeurs.includes(String(p[column] ?? ""));
+          const valeurProduit = (p.caracteristiques || {})[filterId] || "";
           return valeurs.some((v) => valeurProduit.includes(v));
         });
       }
@@ -488,19 +506,21 @@ const Catalog = () => {
     document.title = `${title} — Les Casaniers Madagascar`;
   }, [title]);
 
+  // Specs de la maquette (saisies dans l'admin), puis quelques caractéristiques libres en plus
   const getSpecs = (p: ProductWithCaracts) => {
-    const entries = Object.entries(p.caracteristiques || {}).filter(
-      ([nom]) => normalize(nom) !== "ean",
-    );
-    if (entries.length > 0) return entries.slice(0, 9).map(([label, value]) => ({ label, value }));
-    return DEFAULT_SPECS.map(({ label, field }) => ({
-      label,
-      value: field ? String(p[field] ?? "") : "",
-    }));
+    const specs: { label: string; value: string }[] = [];
+    CATALOG_SPEC_FIELDS.forEach(({ key, label }) => {
+      specs.push({ label, value: p[key] ?? "" });
+      if (label === SPEC_GRID_BLANK_AFTER) specs.push({ label: "", value: "" });
+    });
+    Object.entries(p.caracteristiques || {})
+      .filter(([nom, valeur]) => valeur && !isCatalogColumnName(nom))
+      .slice(0, MAX_EXTRA_SPECS)
+      .forEach(([label, value]) => specs.push({ label, value }));
+    return specs;
   };
 
-  const getEan = (p: ProductWithCaracts) =>
-    Object.entries(p.caracteristiques || {}).find(([nom]) => normalize(nom) === "ean")?.[1] ?? "";
+  const getEan = (p: ProductWithCaracts) => p.ean ?? "";
 
   // ─── Colonne de gauche : pilules dynamiques selon le niveau ───────────────────
   const renderLeftFilters = () => {
@@ -513,21 +533,21 @@ const Catalog = () => {
           </div>
         );
       }
-      if (templatesBySousCategorie.length === 0) {
+      if (filterGroups.length === 0) {
         return <p className="text-xs italic text-white/50 py-2">Aucun filtre pour ce rayon.</p>;
       }
-      return templatesBySousCategorie.map((template) => {
-        const valeurs = valeursByTemplate[template.nom_champ] || [];
-        const selected = filterCaracteristiques[template.nom_champ] || [];
-        const isOpen = openFilter === template.nom_champ;
+      return filterGroups.map((group) => {
+        const valeurs = group.valeurs;
+        const selected = filterCaracteristiques[group.id] || [];
+        const isOpen = openFilter === group.id;
         return (
-          <div key={template.id}>
+          <div key={group.id}>
             <FilterPill
-              label={template.nom_champ}
+              label={group.label}
               open={isOpen}
               active={selected.length > 0}
               count={selected.length}
-              onClick={() => setOpenFilter(isOpen ? null : template.nom_champ)}
+              onClick={() => setOpenFilter(isOpen ? null : group.id)}
             />
             {isOpen && (
               <div className="mt-2 mb-1 pl-3 space-y-1.5">
@@ -543,7 +563,7 @@ const Catalog = () => {
                         type="checkbox"
                         checked={selected.includes(valeur)}
                         onChange={(e) =>
-                          handleCaracteristiqueFilterChange(template.nom_champ, valeur, e.target.checked)
+                          handleCaracteristiqueFilterChange(group.id, valeur, e.target.checked)
                         }
                         className="h-3.5 w-3.5 accent-orange-500"
                       />
@@ -626,7 +646,7 @@ const Catalog = () => {
 
                 <div className="flex flex-wrap items-center gap-3 lg:gap-4">
                   <div className="flex items-center text-sm text-white/90">
-                    {USAGE_FILTERS.map((u, i) => (
+                    {USAGE_OPTIONS.map((u, i) => (
                       <span key={u} className="flex items-center">
                         <button
                           onClick={() => {
@@ -639,7 +659,7 @@ const Catalog = () => {
                         >
                           {u}
                         </button>
-                        {i < USAGE_FILTERS.length - 1 && <span className="mx-1.5 text-white/60">|</span>}
+                        {i < USAGE_OPTIONS.length - 1 && <span className="mx-1.5 text-white/60">|</span>}
                       </span>
                     ))}
                   </div>

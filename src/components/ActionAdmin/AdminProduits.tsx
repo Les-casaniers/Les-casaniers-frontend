@@ -12,6 +12,9 @@ import api from "@/service/api";
 import { useToast } from "@/hooks/use-toast";
 // ✅ IMPORT DE LA FONCTION CENTRALISÉE QUI MARCHE DÉJÀ
 import { getProductImageUrl } from "@/lib/utils";
+import {
+  CATALOG_SPEC_FIELDS, USAGE_OPTIONS, isCatalogColumnName, parseUsages, type CatalogSpecKey,
+} from "@/lib/catalogFields";
 
 const CATEGORY_TYPES = ["pro", "gaming", "composants", "peripheriques", "services", "guides"] as const;
 
@@ -28,7 +31,12 @@ type ProduitForm = {
   quantite_stock: string;
   est_dispo: boolean;
   actif: boolean;
-};
+  // Champs de la ligne produit du catalogue (colonnes de la table produits)
+  ean: string;
+  usages: string;
+} & Record<CatalogSpecKey, string>;
+
+const emptyCatalogSpecs = Object.fromEntries(CATALOG_SPEC_FIELDS.map((f) => [f.key, ""])) as Record<CatalogSpecKey, string>;
 
 type CategoryForm = {
   nom: string;
@@ -39,6 +47,7 @@ type CategoryForm = {
 
 const initialForm: ProduitForm = {
   categorie_id: "", id_sous_categorie: "", reference: "", nom: "", description_courte: "", description: "", atout: "", prix: "", devise: "MGA", quantite_stock: "", est_dispo: true, actif: true,
+  ean: "", usages: "", ...emptyCatalogSpecs,
 };
 
 const initialCategoryForm: CategoryForm = { nom: "", type: "", parent_id: "", ordre_tri: "0" };
@@ -91,6 +100,93 @@ const ModalPortal = ({ children, onClose }: { children: React.ReactNode; onClose
 
 const INPUT = "w-full px-4 py-2.5 text-sm border border-border/60 rounded-xl bg-background/60 text-foreground placeholder:text-muted-foreground/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 transition-all duration-200 outline-none";
 const MODAL_PANEL = "bg-card border border-border/60 rounded-2xl w-full shadow-2xl shadow-black/30 flex flex-col";
+
+// ─── Section "Affichage catalogue" : EAN, usages et specs (colonnes de la table produits) ───
+const CatalogDisplaySection = ({
+  value,
+  setValue,
+}: {
+  value: ProduitForm;
+  setValue: React.Dispatch<React.SetStateAction<ProduitForm>>;
+}) => {
+  const usages = parseUsages(value.usages);
+  const toggleUsage = (u: string) => {
+    const next = usages.includes(u) ? usages.filter((x) => x !== u) : [...usages, u];
+    setValue((p) => ({ ...p, usages: USAGE_OPTIONS.filter((o) => next.includes(o)).join(", ") }));
+  };
+
+  const stock = Number(value.quantite_stock || 0);
+  const availability =
+    stock > 0
+      ? { label: "En stock", tone: "text-emerald-600" }
+      : value.est_dispo
+        ? { label: "Disponible chez notre fournisseur (+ délais Avion / Bateaux)", tone: "text-emerald-600" }
+        : { label: "Indisponible", tone: "text-red-600" };
+
+  return (
+    <div className="space-y-3 border-t border-border/50 pt-4">
+      <div className="flex items-center justify-between gap-2">
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+          <Eye className="h-3.5 w-3.5" /> Affichage catalogue
+        </label>
+        <span className={`text-[10px] font-medium ${availability.tone}`}>{availability.label}</span>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">Code EAN</label>
+        <input
+          className={INPUT}
+          inputMode="numeric"
+          maxLength={32}
+          placeholder="Ex: 4711387123456"
+          value={value.ean}
+          onChange={(e) => setValue((p) => ({ ...p, ean: e.target.value }))}
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">Usage (filtres rapides du catalogue)</label>
+        <div className="flex flex-wrap gap-2">
+          {USAGE_OPTIONS.map((u) => {
+            const checked = usages.includes(u);
+            return (
+              <button
+                key={u}
+                type="button"
+                onClick={() => toggleUsage(u)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                  checked
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                }`}
+              >
+                {checked && <CheckCircle className="inline h-3 w-3 mr-1 -mt-0.5" />}
+                {u}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">Specs affichées sur la ligne produit</label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {CATALOG_SPEC_FIELDS.map((f) => (
+            <div key={f.key} className="space-y-1">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{f.label}</span>
+              <input
+                className="w-full px-3 py-1.5 text-sm border border-border/40 rounded-lg bg-background/60 focus:border-primary/60 focus:ring-2 focus:ring-primary/15 outline-none transition-all"
+                placeholder={f.placeholder}
+                value={value[f.key]}
+                onChange={(e) => setValue((p) => ({ ...p, [f.key]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ProductForm = ({
   value, setValue, categories, sousCategories, selectedPrefix, setSelectedPrefix, generatedReference, generateReference, isEditMode = false, templatesDisponibles = [], caracteristiques = {}, setCaracteristiques, loadTemplates, onDeleteTemplate, onEditTemplate,
@@ -308,12 +404,14 @@ const ProductForm = ({
         </label>
       </div>
 
+      <CatalogDisplaySection value={value} setValue={setValue} />
+
       <div className="space-y-3 border-t border-border/50 pt-4">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><Award className="h-3.5 w-3.5" /> Caractéristiques</label>
           <span className="text-[10px] text-muted-foreground">{Object.keys(caracteristiques || {}).length} caractéristique(s)</span>
         </div>
-        {templatesDisponibles.map((template) => {
+        {templatesDisponibles.filter((t) => !isCatalogColumnName(t.nom_champ)).map((template) => {
           const isEditing = isEditMode && editingTemplateId === template.id;
           if (isEditing) {
             return (
@@ -357,7 +455,7 @@ const ProductForm = ({
             </div>
           );
         })}
-        {Object.entries(caracteristiques || {}).filter(([key]) => !templatesDisponibles.some((t) => t.nom_champ === key)).map(([nomChamp, valeur]) => {
+        {Object.entries(caracteristiques || {}).filter(([key]) => !templatesDisponibles.some((t) => t.nom_champ === key) && !isCatalogColumnName(key)).map(([nomChamp, valeur]) => {
           const isEditing = editingCaract === nomChamp && !isEditingTemplate;
           if (isEditing) {
             return (
@@ -436,7 +534,12 @@ const ProductForm = ({
   );
 };
 
-const ImageUploadField = ({ files, setFiles, label = "Images du produit" }: { files: File[]; setFiles: React.Dispatch<React.SetStateAction<File[]>>; label?: string }) => (
+const ImageUploadField = ({ files, setFiles, label = "Images du produit" }: { files: File[]; setFiles: React.Dispatch<React.SetStateAction<File[]>>; label?: string }) => {
+  // Aperçus locaux des fichiers sélectionnés (libérés quand la liste change)
+  const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
+  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
+
+  return (
   <div className="space-y-2">
     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><ImageIcon className="h-3.5 w-3.5" /> {label}</label>
     <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border/50 rounded-xl cursor-pointer bg-secondary/10 hover:bg-secondary/20 hover:border-primary/40 transition-all duration-200 group">
@@ -448,17 +551,22 @@ const ImageUploadField = ({ files, setFiles, label = "Images du produit" }: { fi
       <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => { const selected = Array.from(e.target.files ?? []); setFiles((prev) => [...prev, ...selected]); e.currentTarget.value = ""; }} />
     </label>
     {files.length > 0 && (
-      <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-56 overflow-y-auto custom-scrollbar pr-1">
         {files.map((file, index) => (
-          <div key={`${file.name}-${index}`} className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-1.5 bg-secondary/20 text-xs">
-            <span className="truncate pr-2 font-medium text-foreground/80">{file.name}</span>
-            <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"><X className="h-3 w-3" /></button>
+          <div key={`${file.name}-${index}`} className="relative rounded-lg border border-border/40 overflow-hidden bg-secondary/20">
+            <img src={previews[index]} alt={file.name} className="h-20 w-full object-cover" />
+            {index === 0 && (
+              <span className="absolute top-1 left-1 text-[9px] font-semibold bg-primary text-primary-foreground px-1.5 py-0.5 rounded">Principale</span>
+            )}
+            <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))} className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-destructive transition-colors" title="Retirer"><X className="h-3 w-3" /></button>
+            <div className="px-1.5 py-1 text-[10px] truncate text-foreground/80">{file.name}</div>
           </div>
         ))}
       </div>
     )}
   </div>
-);
+  );
+};
 
 const ExistingImagesManager = ({ selectedProduit, existingImages, setExistingImages, setMainImage, deleteImage, handleApiError, toast }: { selectedProduit: Produit | null; existingImages: { id: number; url: string; alt: string; ordre?: number }[]; setExistingImages: React.Dispatch<React.SetStateAction<{ id: number; url: string; alt: string; ordre?: number }[]>>; setMainImage: any; deleteImage: any; handleApiError: (error: any, fallback: string) => void; toast: any }) => {
   if (!selectedProduit) return null;
@@ -716,7 +824,7 @@ const AdminProduits = () => {
   const loadTemplatesAndValues = async (sousCategorieId: string) => {
     try {
       const templatesResponse = await api.get(`/sous-categories/${sousCategorieId}/templates`);
-      const templates = templatesResponse?.data?.data || [];
+      const templates = ((templatesResponse?.data?.data || []) as TemplateCaracteristique[]).filter((t) => !isCatalogColumnName(t.nom_champ));
       setTemplatesBySousCategorie(templates);
       const valeursMap: Record<string, string[]> = {};
       for (const template of templates) {
@@ -799,6 +907,10 @@ const AdminProduits = () => {
     fd.append("quantite_stock", data.quantite_stock.replace(/\s/g, ""));
     fd.append("est_dispo", data.est_dispo ? "1" : "0");
     fd.append("actif", data.actif ? "1" : "0");
+    // Champs du catalogue : une chaîne vide est convertie en NULL côté Laravel
+    fd.append("ean", data.ean.trim());
+    fd.append("usages", data.usages);
+    CATALOG_SPEC_FIELDS.forEach((f) => fd.append(f.key, data[f.key].trim()));
     return fd;
   };
 
@@ -838,7 +950,10 @@ const AdminProduits = () => {
     let existingPrefix = "";
     for (const prefix of REFERENCE_PREFIXES) { if (p.reference?.startsWith(prefix.label)) { existingPrefix = prefix.key; break; } }
     setSelectedPrefix(existingPrefix);
-    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), est_dispo: toBool(p.est_dispo), actif: toBool(p.actif) });
+    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), est_dispo: toBool(p.est_dispo), actif: toBool(p.actif),
+      ean: p.ean ?? "", usages: p.usages ?? "",
+      ...(Object.fromEntries(CATALOG_SPEC_FIELDS.map((f) => [f.key, p[f.key] ?? ""])) as Record<CatalogSpecKey, string>),
+    });
     setEditImageFiles([]);
     try {
       const templatesResponse = await api.get(`/sous-categories/${p.id_sous_categorie}/templates`);
