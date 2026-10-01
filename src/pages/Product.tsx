@@ -1,6 +1,4 @@
-﻿
-
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -16,9 +14,12 @@ import { useCartApi } from "@/hooks/useCartApi";
 import panierIncone from "@/assets/Basket.png";
 import favoriteIcon from "@/assets/Favorite.png";
 import { Plane, Sailboat } from "lucide-react";
-import  curvedArrow  from "@/assets/Curved Arrow Downward.png"
+import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import chat from "@/assets/chat.png";
-import fille from "@/assets/fille.png"
+import fille from "@/assets/fille.png";
+// ✅ Même fonction que dans l'admin pour construire l'URL des images
+import { getProductImageUrl } from "@/lib/utils";
+
 const specIcons = {
   processeur: Cpu,
   carte_graphique: MonitorCog,
@@ -41,6 +42,29 @@ const specLabels = {
   boitier: "Boîtier"
 } as const;
 
+const PLACEHOLDER_IMG = "/placeholder-pc.jpg";
+
+// ✅ Image robuste : essaie chaque source dans l'ordre, puis le placeholder
+const SafeImg = ({ sources, alt = "", className = "" }: { sources: string[]; alt?: string; className?: string }) => {
+  const list = [...sources.filter(Boolean), PLACEHOLDER_IMG];
+  const key = list.join("|");
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    setIdx(0);
+  }, [key]);
+  return (
+    <img
+      src={list[Math.min(idx, list.length - 1)]}
+      alt={alt}
+      className={className}
+      onError={(e) => {
+        console.warn("Image KO :", (e.target as HTMLImageElement).src);
+        setIdx((i) => (i < list.length - 1 ? i + 1 : i));
+      }}
+    />
+  );
+};
+
 // Types "souples" pour les champs que le backend n'expose pas forcément encore.
 // ⚠️ À remplacer par les vrais types dès que l'API renvoie ces champs.
 type AvisClient = {
@@ -55,17 +79,42 @@ type CaracteristiqueLigne = {
   valeur: string;
 };
 
-// Petit composant de titre avec la ligne décorative vue sur la maquette :
-// un trait plein court suivi d'une ligne en pointillés, sous le texte (pas collée dessus).
-const SectionTitle = ({ children, level = 2 }: { children: React.ReactNode; level?: 2 | 3 }) => {
+// ✅ Titre de section : trait plein + tirets séparés + flèche juste après (comme sur la maquette)
+const SectionTitle = ({
+  children,
+  level = 2,
+}: {
+  children: React.ReactNode;
+  level?: 2 | 3;
+}) => {
   const Tag = level === 2 ? "h2" : "h3";
   const size = level === 2 ? "text-2xl lg:text-3xl" : "text-xl lg:text-2xl";
   return (
-    <div className="mb-6 inline-block">
-      <Tag className={`font-display ${size} font-bold`}>{children}</Tag>
-      <div className="flex items-center gap-1.5 mt-2.5">
-        <span className="h-0.5 w-7 bg-foreground/70 rounded-full" />
-        <span className="h-0 w-20 border-t-2 border-dashed border-foreground/40" />
+    // inline-block : la largeur du bloc = la largeur du titre
+    <div className="mb-6 inline-block min-w-[11rem] align-top">
+      <Tag className={`font-display ${size} font-bold leading-tight`}>{children}</Tag>
+
+      {/* Ligne décorative : même largeur que le titre */}
+      <div className="flex items-center w-full mt-1">
+        {/* Trait plein */}
+        <span className="h-0.5 w-16 shrink-0 rounded-full bg-foreground" />
+
+        {/* Tirets : remplissent tout l'espace restant */}
+        <span
+          className="h-0.5 flex-1 ml-2"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(to right, hsl(var(--foreground)) 0 14px, transparent 14px 22px)",
+          }}
+        />
+
+        {/* Flèche : termine la ligne, légèrement plus bas */}
+        <img
+          src={curvedArrow}
+          alt=""
+          aria-hidden="true"
+          className="w-5 h-5 shrink-0 object-contain ml-1 translate-y-3"
+        />
       </div>
     </div>
   );
@@ -87,9 +136,11 @@ const ProductPage = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
   const [cartItemId, setCartItemId] = useState<number | null>(null);
-  // ✅ Index de l'image principale affichée, piloté par les miniatures ET par l'encart incrusté
+  // ✅ Index de l'image principale affichée (dans la liste triée)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-
+  // ✅ Images chargées directement depuis /produits/{id} (useProduct ne les renvoie pas)
+  const [detailImages, setDetailImages] = useState<any[]>([]);
+const [caracExpanded, setCaracExpanded] = useState(true);
   useEffect(() => {
     if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
   }, [product]);
@@ -97,6 +148,25 @@ const ProductPage = () => {
   // ✅ Revenir à la première image quand on change de produit
   useEffect(() => {
     setSelectedImageIndex(0);
+    setDetailImages([]);
+  }, [product?.id]);
+
+  // ✅ Charger les images depuis /produits/{id}, comme le fait l'admin
+  useEffect(() => {
+    if (!product?.id) return;
+    let cancelled = false;
+    api
+      .get(`/produits/${product.id}`)
+      .then((res) => {
+        if (cancelled) return;
+        const imgs = res?.data?.data?.images ?? [];
+        console.log("IMAGES via /produits/id :", imgs);
+        setDetailImages(Array.isArray(imgs) ? imgs : []);
+      })
+      .catch((e) => console.error("Erreur chargement images produit:", e));
+    return () => {
+      cancelled = true;
+    };
   }, [product?.id]);
 
   // ✅ Vérifier si le produit est déjà dans le panier
@@ -219,16 +289,48 @@ const ProductPage = () => {
     boitier: productSpec(product, "boitier")
   };
 
-  // ✅ Galerie d'images : si le produit n'a pas d'images additionnelles,
-  // on retombe sur l'image principale pour toujours avoir au moins 1 entrée.
-  const galleryImages: Array<{ url: string }> =
-    product.images && product.images.length > 0
-      ? product.images
-      : [{ url: productImage(product) }];
+  // =========================================================
+  // ✅ Galerie d'images
+  // - triée par "ordre" (comme dans l'admin : la 1re = image principale)
+  // - URL construites avec getProductImageUrl (même logique que l'admin)
+  // - repli sur productImage(product) s'il n'y a aucune image
+  // =========================================================
+  const rawImages: any[] =
+    Array.isArray((product as any).images) && (product as any).images.length > 0
+      ? (product as any).images
+      : detailImages;
 
-  const mainImageUrl = galleryImages[selectedImageIndex]?.url || productImage(product);
-  // ✅ Index de la "petite image" incrustée dans la grande image (l'image suivante de la galerie)
-  const insetImageIndex = (selectedImageIndex + 1) % galleryImages.length;
+  const sortedImages = [...rawImages].sort(
+    (a: any, b: any) => (a.ordre ?? 999) - (b.ordre ?? 999)
+  );
+
+  // Chaque image a plusieurs sources possibles, essayées dans l'ordre :
+  // 1) img.url tel que renvoyé par l'API (ce qui marchait avant)
+  // 2) l'URL construite par getProductImageUrl (comme dans l'admin)
+  const galleryItems: Array<{ sources: string[] }> =
+    sortedImages.length > 0
+      ? sortedImages.map((img: any) => {
+          let resolved = "";
+          try {
+            resolved = getProductImageUrl({ images: [img] } as any);
+          } catch {
+            resolved = "";
+          }
+          return {
+            sources: Array.from(new Set([img?.url, resolved].filter(Boolean))) as string[],
+          };
+        })
+      : [{ sources: [getProductImageUrl(product)].filter(Boolean) as string[] }];
+
+  // Évite un index hors limites si le nombre d'images change
+  const safeIndex = Math.min(selectedImageIndex, galleryItems.length - 1);
+
+  const mainItem = galleryItems[safeIndex];
+
+  // Toutes les images sauf celle affichée en grand → colonne "Photos variantes"
+  const otherImages = galleryItems
+    .map((item, i) => ({ item, i }))
+    .filter(({ i }) => i !== safeIndex);
 
   // =========================================================
   // Données dynamiques pour la section Description / Caractéristiques / Commentaires
@@ -306,61 +408,66 @@ const ProductPage = () => {
       </div>
 
       <section className="container-x py-8 grid lg:grid-cols-2 gap-12">
-        {/* Image */}
+        {/* ===================== Images ===================== */}
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-glow rounded-[2rem] blur-2xl" />
-          <div className="relative card-soft overflow-hidden p-2">
-            <img src={mainImageUrl} alt={product.nom} className="w-full aspect-square object-cover rounded-2xl" />
-            {product.badge && (
-              <span className="absolute top-6 left-6 pill bg-gradient-accent text-accent-foreground border-0">⚡ {product.badge}</span>
-            )}
-            <div className="absolute top-6 right-6 flex items-center gap-2">
-              <button
-                onClick={(e) => toggleFavorite(product.id, e)}
-                className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-red-400 hover:scale-105 transition-transform ${fav ? "bg-red-500" : "bg-black/90"}`}
-                aria-label="Ajouter aux favoris"
-              >
-                <img src={favoriteIcon} alt="" className={`h-5 w-5 object-contain ${fav ? "brightness-0 invert" : ""}`} />
-              </button>
-              <button
-                disabled={isAddingToCart}
-                onClick={handleAddToCart}
-                className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-60 ${cartItemId ? "bg-orange-500" : "bg-black/90"}`}
-                aria-label="Ajouter au panier"
-              >
-                <img src={panierIncone} alt="" className={`h-5 w-5 object-contain ${cartItemId ? "brightness-0 invert" : ""}`} />
-              </button>
+
+          <div className="relative card-soft overflow-hidden p-2 flex items-center gap-3">
+            {/* Colonne gauche : rectangle(s) "Photos variantes" */}
+            <div className="flex flex-col justify-center gap-3 shrink-0 w-20 sm:w-24 self-stretch">
+              {otherImages.length > 0 ? (
+                otherImages.map(({ item, i }) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImageIndex(i)}
+                    aria-label={`Voir l'image ${i + 1}`}
+                    className="w-full aspect-[3/7] bg-white border border-black/70 overflow-hidden hover:border-accent hover:scale-105 transition-all"
+                  >
+                    <SafeImg sources={item.sources} className="w-full h-full object-contain p-1" />
+                  </button>
+                ))
+              ) : (
+                <div className="w-full aspect-[3/7] bg-white border border-black/70 flex items-center justify-center text-center text-[11px] text-black px-1">
+                  Photos variantes
+                </div>
+              )}
             </div>
 
-            {galleryImages.length > 1 && (
-              <button
-                onClick={() => setSelectedImageIndex(insetImageIndex)}
-                aria-label="Voir l'image suivante"
-                className="absolute top-1/2 left-6 -translate-y-1/2 h-24 w-24 sm:h-32 sm:w-32 rounded-2xl overflow-hidden border-2 border-white shadow-xl hover:scale-105 transition-transform"
-              >
-                <img src={galleryImages[insetImageIndex].url} alt="" className="w-full h-full object-cover" />
-              </button>
-            )}
-          </div>
-          {galleryImages.length > 1 && (
-            <div className="grid grid-cols-4 gap-3 mt-4">
-              {galleryImages.map((img, i) => (
+            {/* Image principale */}
+            <div className="relative flex-1 min-w-0 aspect-square">
+              <SafeImg
+                sources={mainItem.sources}
+                alt={product.nom}
+                className="absolute inset-0 w-full h-full object-contain rounded-2xl"
+              />
+
+              {product.badge && (
+                <span className="absolute top-3 left-3 pill bg-gradient-accent text-accent-foreground border-0">
+                  ⚡ {product.badge}
+                </span>
+              )}
+
+              <div className="absolute top-3 right-3 flex items-center gap-2">
                 <button
-                  key={i}
-                  onClick={() => setSelectedImageIndex(i)}
-                  aria-label={`Voir l'image ${i + 1}`}
-                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-colors ${
-                    selectedImageIndex === i
-                      ? "border-accent ring-2 ring-accent/40"
-                      : "border-border hover:border-accent"
-                  }`}
+                  onClick={(e) => toggleFavorite(product.id, e)}
+                  className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:bg-red-400 hover:scale-105 transition-transform ${fav ? "bg-red-500" : "bg-black/90"}`}
+                  aria-label="Ajouter aux favoris"
                 >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  <img src={favoriteIcon} alt="" className={`h-5 w-5 object-contain ${fav ? "brightness-0 invert" : ""}`} />
                 </button>
-              ))}
+                <button
+                  disabled={isAddingToCart}
+                  onClick={handleAddToCart}
+                  className={`h-10 w-10 rounded-full backdrop-blur-sm shadow-md flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-60 ${cartItemId ? "bg-orange-500" : "bg-black/90"}`}
+                  aria-label="Ajouter au panier"
+                >
+                  <img src={panierIncone} alt="" className={`h-5 w-5 object-contain ${cartItemId ? "brightness-0 invert" : ""}`} />
+                </button>
+              </div>
             </div>
-          )}
+          </div>
         </div>
+
         <div className="space-y-6">
           <div>
             <h1 className="font-display text-2xl lg:text-3xl font-bold tracking-tight">{product.nom}</h1>
@@ -369,23 +476,23 @@ const ProductPage = () => {
 
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }).map((_, i) => {
-                  const note = product.note || 5;
-                  const fillPercent = Math.max(0, Math.min(1, note - i)) * 100;
+              {Array.from({ length: 5 }).map((_, i) => {
+                const note = product.note || 5;
+                const fillPercent = Math.max(0, Math.min(1, note - i)) * 100;
 
-                  return (
-                    <div key={i} className="relative h-4 w-4">
-                      {/* Base star: always outline/empty */}
-                      <Star className="absolute inset-0 h-4 w-4 fill-transparent text-muted" />
-                      {/* Gold star, clipped to the exact fraction of this star that's "earned" */}
-                      <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      </div>
+                return (
+                  <div key={i} className="relative h-4 w-4">
+                    {/* Base star: always outline/empty */}
+                    <Star className="absolute inset-0 h-4 w-4 fill-transparent text-muted" />
+                    {/* Gold star, clipped to the exact fraction of this star that's "earned" */}
+                    <div className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                     </div>
-                  );
-                })}
-                <span className="ml-1">{product.note || 5.0}/10</span>
-              </div>
+                  </div>
+                );
+              })}
+              <span className="ml-1">{product.note || 5.0}/10</span>
+            </div>
             <span className="h-4 w-px bg-border" />
             <span className={`text-xs font-medium ${product.quantite_stock > 5 ? "text-tech" : "text-accent"}`}>
               {product.quantite_stock > 5 ? `En stock (${product.quantite_stock})` : `Plus que ${product.quantite_stock} en stock !`}
@@ -396,56 +503,56 @@ const ProductPage = () => {
           </div>
           <div>
             <div className="flex text-[14px]">
-                <span>Expedition sous 02 a 03 semaines par</span>
-                <span className="px-1 font-bold">Avion</span><Plane className="h-4 w-4 mt-1 fill-white" />
+              <span>Expedition sous 02 a 03 semaines par</span>
+              <span className="px-1 font-bold">Avion</span><Plane className="h-4 w-4 mt-1 fill-white" />
             </div>
           </div>
           <div>
             <div className="flex text-[14px] -mt-6">
-                <span>Expedition sous 02 a 03 semaines par</span>
-                <span className="px-1 font-bold">Bateau</span><Sailboat className="h-4 w-4 mt-1 fill-white" />
+              <span>Expedition sous 02 a 03 semaines par</span>
+              <span className="px-1 font-bold">Bateau</span><Sailboat className="h-4 w-4 mt-1 fill-white" />
             </div>
           </div>
           <div className="flex items-center bg-secondary rounded-xl bg-white mr-[450px]">
-              <button
-                onClick={decreaseQty}
-                className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-r"
-                disabled={qty <= 1}
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="w-10 text-center text-black font-semibold tabular-nums">{qty}</span>
-              <button
-                onClick={increaseQty}
-                className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-l"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+            <button
+              onClick={decreaseQty}
+              className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-r"
+              disabled={qty <= 1}
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <span className="w-10 text-center text-black font-semibold tabular-nums">{qty}</span>
+            <button
+              onClick={increaseQty}
+              className="h-4 w-12 flex items-center text-black justify-center hover:text-orange-500 transition-colors border-l"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
 
           <div className="flex item-center p-6 bg-gradient-to-br to-secondary/30">
             <div className="font-display font-bold text-3xl -mt-8 -ml-6">{formatAr(displayedPrice)}</div>
             {/* ✅ Bouton Ajouter / Mettre à jour */}
-                <Button
-                  variant="hero"
-                  size="sm"
-                  className="bg-[#F2551A] hover:bg-[#F2551A]/90 text-white rounded-full -mt-8 ml-12"
-                  onClick={handleAddToCart}
-                  disabled={isAddingToCart}
-                >
-                  {isAddingToCart ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ShoppingBag className="h-4 w-4" />
-                  )}
-                  {cartItemId ? "Mettre à jour" : "Ajouter dans mon panier"}
-                </Button>
-                {/* ✅ Affichage du statut du panier */}
-              {cartItemId && (
-                <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center -mt-8 ml-8">
-                  ✅ Déjà dans votre panier (quantité: {qty})
-                </div>
+            <Button
+              variant="hero"
+              size="sm"
+              className="bg-[#F2551A] hover:bg-[#F2551A]/90 text-white rounded-full -mt-8 ml-12"
+              onClick={handleAddToCart}
+              disabled={isAddingToCart}
+            >
+              {isAddingToCart ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingBag className="h-4 w-4" />
               )}
+              {cartItemId ? "Mettre à jour" : "Ajouter dans mon panier"}
+            </Button>
+            {/* ✅ Affichage du statut du panier */}
+            {cartItemId && (
+              <div className="text-xs text-green-600 bg-green-50 dark:bg-green-900/20 p-2 rounded-lg text-center -mt-8 ml-8">
+                ✅ Déjà dans votre panier (quantité: {qty})
+              </div>
+            )}
           </div>
 
           {/* Selector variants/configurations */}
@@ -632,23 +739,24 @@ const ProductPage = () => {
           Bandeau bulle mascotte — juste en dessous du produit,
           au-dessus de Description / Caractéristiques / Commentaires
           ========================================================= */}
-<section className="container-x pb-4">
-  <div className="relative flex items-center max-w-5xl my-6">
-    {/* Bulle de dialogue sombre avec bordure dorée brillante */}
-    <div className="flex-1 rounded-2xl border-2 border-amber-500/70 bg-zinc-950 p-6 pr-20 text-sm leading-relaxed text-zinc-100 italic shadow-[0_0_20px_rgba(245,158,11,0.25)]">
-      "{messageMascotte}"
-    </div>
+      <section className="container-x pb-4">
+        <div className="relative flex items-center max-w-5xl my-6">
+          {/* Bulle de dialogue sombre avec bordure dorée brillante */}
+          <div className="flex-1 rounded-2xl border-2 border-amber-500/70 bg-zinc-950 p-6 pr-20 text-sm leading-relaxed text-zinc-100 italic shadow-[0_0_20px_rgba(245,158,11,0.25)]">
+            "{messageMascotte}"
+          </div>
 
-    {/* Mascotte intégrée et chevauchant le côté droit du rectangle */}
-    <div className="absolute right-[-1.5rem] shrink-0 z-20 flex items-center">
-      <img
-        src={chat}
-        alt="Mascotte Les Casaniers"
-        className="h-36 w-auto lg:h-48 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] animate-float"
-      />
-    </div>
-  </div>
-</section>
+          {/* Mascotte intégrée et chevauchant le côté droit du rectangle */}
+          <div className="absolute right-[-1.5rem] shrink-0 z-20 flex items-center">
+            <img
+              src={chat}
+              alt="Mascotte Les Casaniers"
+              className="h-36 w-auto lg:h-48 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)] animate-float"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* =========================================================
           Description / Caractéristiques / Commentaires — dynamique,
           alimenté par `product` (avec repli si le champ n'existe pas encore côté back)
@@ -701,111 +809,125 @@ const ProductPage = () => {
           </div>
         </div>
 
-{/* ---- Caractéristiques ---- */}
-<div id="caracteristiques" className="mb-16 max-w-5xl">
-  <SectionTitle>Caractéristiques principales</SectionTitle>
+        {/* ---- Caractéristiques ---- */}
+        <div id="caracteristiques" className="mb-16 max-w-5xl">
+       <SectionTitle>Caractéristiques principales</SectionTitle>
 
-  {caracteristiquesPrincipales.length > 0 && (
-    <ul className="space-y-1 text-sm mb-10">
-      {caracteristiquesPrincipales.map((c, i) => (
-        <li key={i}>
-          <span className="text-muted-foreground">{c.label} :</span>{" "}
-          <span className="font-medium">{c.valeur}</span>
-        </li>
-      ))}
-    </ul>
-  )}
+          {caracteristiquesPrincipales.length > 0 && (
+            <ul className="space-y-1 text-sm mb-10">
+              {caracteristiquesPrincipales.map((c, i) => (
+                <li key={i}>
+                  <span className="text-muted-foreground">{c.label} :</span>{" "}
+                  <span className="font-medium">{c.valeur}</span>
+                </li>
+              ))}
+            </ul>
+          )}
 
-  {caracteristiquesTableau.length > 0 && (
-    <div className="mt-12">
-      <div className="flex items-center gap-6 -mt-4">
-        <SectionTitle level={3}>Caractéristiques</SectionTitle>
-        <img
-          src={curvedArrow}
-          alt="Flèche"
-          className="w-8 h-8 object-contain translate-y-5"
-        />
-      </div>
+          {caracteristiquesTableau.length > 0 && (
+            <div className="mt-12">
+             <SectionTitle level={3}>Caractéristiques</SectionTitle>
 
-      <div className="relative mt-4 overflow-x-auto mx-auto w-full max-w-4xl">
-        {/* Coins pointillés */}
-        <span className="hidden sm:block absolute -top-2 -left-2 h-5 w-5 border-t-2 border-l-2 border-dashed border-foreground/50 pointer-events-none" />
-        <span className="hidden sm:block absolute -top-2 -right-2 h-5 w-5 border-t-2 border-r-2 border-dashed border-foreground/50 pointer-events-none" />
-        <span className="hidden sm:block absolute -bottom-2 -left-2 h-5 w-5 border-b-2 border-l-2 border-dashed border-foreground/50 pointer-events-none" />
-        <span className="hidden sm:block absolute -bottom-2 -right-2 h-5 w-5 border-b-2 border-r-2 border-dashed border-foreground/50 pointer-events-none" />
+<div className="mt-8 mx-auto w-full max-w-4xl">
+  <div className="relative px-3">
+    {/* ===== Coins du haut ===== */}
+    <span className="hidden sm:block absolute -top-2 left-0 h-6 w-16 border-t-2 border-l-2 border-foreground rounded-tl-md pointer-events-none" />
+    <span className="hidden sm:block absolute -top-2 right-0 h-6 w-16 border-t-2 border-r-2 border-foreground rounded-tr-md pointer-events-none" />
+    <span className="hidden sm:block absolute -top-2 left-2 h-1.5 w-8 border-t-2 border-dashed border-foreground/60 pointer-events-none translate-x-14" />
+    <span className="hidden sm:block absolute -top-2 right-2 h-1.5 w-8 border-t-2 border-dashed border-foreground/60 pointer-events-none -translate-x-14" />
+    <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none">💡</span>
 
-        {/* Lunes + ampoule décoratives */}
-        <span className="hidden sm:block absolute -top-3 -left-4 text-foreground/50 text-sm select-none pointer-events-none">⌒</span>
-        <span className="hidden sm:block absolute -top-3 -right-4 text-foreground/50 text-sm select-none pointer-events-none rotate-180 inline-block">⌒</span>
-        <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none">💡</span>
+    {/* ===== Coins du bas (miroir du haut) ===== */}
+    <span className="hidden sm:block absolute -bottom-2 left-0 h-6 w-16 border-b-2 border-l-2 border-foreground rounded-bl-md pointer-events-none" />
+    <span className="hidden sm:block absolute -bottom-2 right-0 h-6 w-16 border-b-2 border-r-2 border-foreground rounded-br-md pointer-events-none" />
+    <span className="hidden sm:block absolute -bottom-2 left-2 h-1.5 w-8 border-b-2 border-dashed border-foreground/60 pointer-events-none translate-x-14" />
+    <span className="hidden sm:block absolute -bottom-2 right-2 h-1.5 w-8 border-b-2 border-dashed border-foreground/60 pointer-events-none -translate-x-14" />
+    <span className="hidden sm:block absolute -bottom-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none rotate-180">💡</span>
 
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr>
-              <th className="text-center px-4 py-3 font-bold uppercase tracking-wider text-xs border-b-2 border-dashed border-foreground/60 border-r-2 border-r-dashed border-r-foreground/60">
-                Caractéristiques <span className="text-[10px] align-middle">✎</span>
-              </th>
-              <th className="text-center px-4 py-3 font-bold uppercase tracking-wider text-xs border-b-2 border-dashed border-foreground/60">
-                Valeurs <span className="text-[10px] align-middle">🏷</span>
-              </th>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead>
+          <tr>
+            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-foreground/30 border-r border-r-foreground/30">
+              Caractéristiques <span className="text-[10px] align-middle">✎</span>
+            </th>
+            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-foreground/30">
+              Valeurs <span className="text-[10px] align-middle">🏷</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2 text-center text-xs text-muted-foreground border-b border-foreground/30 border-r border-r-foreground/30">
+                {c.label}
+              </td>
+              <td className="px-4 py-2 text-center text-xs font-medium border-b border-foreground/30">
+                {c.valeur}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {caracteristiquesTableau.map((c, i) => (
-              <tr key={i}>
-                <td className="px-4 py-4 text-center text-muted-foreground border-b border-dashed border-foreground/30 border-r-2 border-r-dashed border-r-foreground/40">
-                  {c.label}
-                </td>
-                <td className="px-4 py-4 text-center font-medium border-b border-dashed border-foreground/30">
-                  {c.valeur}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {/* ===== Bouton Afficher moins / plus ===== */}
+  {caracteristiquesTableau.length > 5 && (
+    <div className="text-center mt-8">
+      <button
+        onClick={() => setCaracExpanded((v) => !v)}
+        className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+      >
+        {caracExpanded ? "Afficher moins" : "Afficher plus"}
+        <ChevronRight className={`h-4 w-4 ${caracExpanded ? "rotate-[-90deg]" : "rotate-90"}`} />
+      </button>
     </div>
   )}
 </div>
+            </div>
+          )}
+        </div>
+
         {/* ---- Conseil de compatibilité : toujours affiché, juste sous le tableau ---- */}
-<div className="relative mb-16 max-w-5xl mx-auto px-4 md:px-8">
-  {/* Boîte principale */}
-  <div className="relative overflow-visible rounded-2xl border border-amber-500/40 bg-[#121212] p-6 pr-6 md:pr-44 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-    {/* Titre souligné */}
-    <h4 className="font-bold uppercase tracking-wider text-xs text-zinc-100 underline decoration-1 underline-offset-4 mb-4">
-      Conseil de compatibilités :
-    </h4>
-    
-    {/* Contenu du message */}
-    <p className="text-sm italic text-zinc-300 leading-relaxed whitespace-pre-line">
-      "{conseilCompatibilite}"
-    </p>
+        <div className="relative mb-16 max-w-5xl mx-auto px-4 md:px-8">
+          {/* Boîte principale */}
+          <div className="relative overflow-visible rounded-2xl border border-amber-500/40 bg-[#121212] p-6 pr-6 md:pr-44 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+            {/* Titre souligné */}
+            <h4 className="font-bold uppercase tracking-wider text-xs text-zinc-100 underline decoration-1 underline-offset-4 mb-4">
+              Conseil de compatibilités :
+            </h4>
 
-    {/* Mascotte décorative */}
-    <img
-      src={fille}
-      alt=""
-      aria-hidden="true"
-      className="hidden md:block absolute -right-6 -top-6 -bottom-6 h-[calc(100%+3rem)] w-auto object-contain z-10 animate-float drop-shadow-xl pointer-events-none"
-    />
-  </div>
+            {/* Contenu du message */}
+            <p className="text-sm italic text-zinc-300 leading-relaxed whitespace-pre-line">
+              "{conseilCompatibilite}"
+            </p>
 
-  {/* Boutons d'action */}
-  <div className="flex flex-wrap justify-center items-center gap-4 mt-6">
-    <Button 
-      variant="outline" 
-      className="rounded-full bg-white text-black hover:bg-zinc-200 border-none font-medium px-6 py-2 h-auto"
-    >
-      Découvre notre guide
-    </Button>
+            {/* Mascotte décorative */}
+            <img
+              src={fille}
+              alt=""
+              aria-hidden="true"
+              className="hidden md:block absolute -right-6 -top-6 -bottom-6 h-[calc(100%+3rem)] w-auto object-contain z-10 animate-float drop-shadow-xl pointer-events-none"
+            />
+          </div>
 
-    <Button
-      className="rounded-full bg-[#F2551A] hover:bg-[#F2551A]/90 text-white font-medium px-6 py-2 h-auto shadow-md"
-    >
-      {conseilCtaLabel}
-    </Button>
-  </div>
-</div>
+          {/* Boutons d'action */}
+          <div className="flex flex-wrap justify-center items-center gap-4 mt-6">
+            <Button
+              variant="outline"
+              className="rounded-full bg-white text-black hover:bg-zinc-200 border-none font-medium px-6 py-2 h-auto"
+            >
+              Découvre notre guide
+            </Button>
+
+            <Button
+              className="rounded-full bg-[#F2551A] hover:bg-[#F2551A]/90 text-white font-medium px-6 py-2 h-auto shadow-md"
+            >
+              {conseilCtaLabel}
+            </Button>
+          </div>
+        </div>
 
         {/* ---- Commentaires ---- */}
         <div id="commentaires" className="mb-4 max-w-5xl">

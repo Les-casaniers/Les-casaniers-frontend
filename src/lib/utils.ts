@@ -53,6 +53,7 @@ interface ProduitImageLike {
 
 interface ProduitLike {
   images?: ProduitImageLike[] | null;
+  image_principale?: string | null;
   image?: string | null;
   image_url?: string | null;
   photo?: string | null;
@@ -69,6 +70,7 @@ export function getProductImageUrl(produit?: ProduitLike | null): string {
     raw = mainImage?.url ?? mainImage?.path ?? mainImage?.filename;
   }
 
+  if (!raw) raw = produit.image_principale;
   if (!raw) raw = produit.image;
   if (!raw) raw = produit.image_url;
   if (!raw) raw = produit.photo;
