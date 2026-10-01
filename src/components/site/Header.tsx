@@ -56,6 +56,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useShop } from "@/store/shop";
 import { useAuth } from "@/contexts/AuthContext";
+import { getProfilePhotoUrl } from "@/lib/utils";
 import api from "@/service/api";
 import { useCartApi } from "@/hooks/useCartApi";
 import {
@@ -137,6 +138,7 @@ export const Header = () => {
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const { user, isAuthenticated, logout } = useAuth();
+  const profilePhoto = getProfilePhotoUrl(user?.photo);
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -585,7 +587,9 @@ export const Header = () => {
                   >
                     <div className="relative">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-semibold text-xs">
-                        {getUserName().charAt(0).toUpperCase()}
+                        {profilePhoto ? (
+                          <img src={profilePhoto} alt="" className="h-full w-full rounded-full object-cover" />
+                        ) : getUserName().charAt(0).toUpperCase()}
                       </div>
                       <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
                     </div>
@@ -775,7 +779,9 @@ export const Header = () => {
               {isAuthenticated ? (
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg">
-                    {getUserName().charAt(0).toUpperCase()}
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt="" className="h-full w-full rounded-full object-cover" />
+                    ) : getUserName().charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <p className="font-semibold">

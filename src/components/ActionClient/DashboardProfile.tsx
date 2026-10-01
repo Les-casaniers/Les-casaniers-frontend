@@ -14,6 +14,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getProfilePhotoUrl } from '@/lib/utils';
 
 const DashboardProfile = () => {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -26,6 +27,7 @@ const DashboardProfile = () => {
   }, [authLoading, isAuthenticated, navigate]);
 
   const fullName = `${user?.prenom || ''} ${user?.nom || ''}`.trim() || 'Client';
+  const profilePhoto = getProfilePhotoUrl(user?.photo);
   const initials = fullName
     .split(' ')
     .filter(Boolean)
@@ -71,7 +73,7 @@ const DashboardProfile = () => {
           </div>
           <div className="flex items-center gap-4 rounded-3xl border border-white/10 bg-gradient-to-br from-primary/10 to-foreground/5 p-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white text-2xl font-bold">
-              {initials}
+              {profilePhoto ? <img src={profilePhoto} alt="" className="h-full w-full rounded-3xl object-cover" /> : initials}
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Statut</p>
@@ -156,7 +158,7 @@ const DashboardProfile = () => {
           <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-5">
               <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-gradient-to-br from-primary to-primary/80 text-xl font-bold text-white">
-                {initials}
+                {profilePhoto ? <img src={profilePhoto} alt="" className="h-full w-full rounded-3xl object-cover" /> : initials}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Profil</p>

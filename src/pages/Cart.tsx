@@ -117,7 +117,7 @@ const ModalPortal = ({ children, onClose }: { children: React.ReactNode; onClose
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ margin: 0 }}>
-      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full flex items-center justify-center">{children}</div>
     </div>,
     document.body,
@@ -125,7 +125,7 @@ const ModalPortal = ({ children, onClose }: { children: React.ReactNode; onClose
 };
 
 const ModalPanel = ({ children }: { children: React.ReactNode }) => (
-  <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+  <div className="bg-white border-1.5 border-black/55 rounded-md shadow-2xl w-full max-w-[calc(32rem+2cm)] overflow-hidden">
     {children}
   </div>
 );
@@ -1170,6 +1170,11 @@ const Cart = () => {
                     {addAddressMode !== "none" && (
                       <ModalPortal onClose={() => setAddAddressMode("none")}>
                         <ModalPanel>
+                          <div className="px-6 py-4 border-b border-black/40 bg-white">
+                            <h2 className="text-center text-3xl font-sans font-bold tracking-wide text-black">Ajoute ton adresse</h2>
+                          </div>
+                          <div className="px-6 py-5 space-y-4">
+                            <AddAddressForm form={newAddressForm} setForm={setNewAddressForm} onCancel={() => setAddAddressMode("none")} onSave={handleSaveNewAddress} isSaving={isSavingAddress} />
                           <ModalHeader
                             title={addAddressMode === "defaut" ? "Adresse par défaut" : "Adresse optionnelle"}
                             subtitle="Ajoutez une adresse pour la livraison."
@@ -1365,6 +1370,38 @@ const AddressCard = ({
   </label>
 );
 
+const AddAddressForm = ({ form, setForm, onCancel, onSave, isSaving }: { form: NewAddressForm; setForm: React.Dispatch<React.SetStateAction<NewAddressForm>>; onCancel: () => void; onSave: () => void; isSaving: boolean }) => (
+  <div className="space-y-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold text-slate-700">Nom</label>
+        <input value={form.nom} onChange={(e) => setForm((prev) => ({ ...prev, nom: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+      </div>
+      <div className="space-y-2">
+        <label className="block text-xs font-semibold text-slate-700">Prénom</label>
+        <input value={form.prenom} onChange={(e) => setForm((prev) => ({ ...prev, prenom: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-slate-700">Adresse</label>
+      <input value={form.adresse_ligne1} onChange={(e) => setForm((prev) => ({ ...prev, adresse_ligne1: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+    </div>
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-slate-700">Ville</label>
+      <input value={form.ville} onChange={(e) => setForm((prev) => ({ ...prev, ville: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+    </div>
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-slate-700">Code Postal</label>
+      <input value={form.code_postal} onChange={(e) => setForm((prev) => ({ ...prev, code_postal: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+    </div>
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-slate-700">Téléphone</label>
+      <input value={form.telephone} onChange={(e) => setForm((prev) => ({ ...prev, telephone: e.target.value }))} placeholder="Obligatoire" className="w-full px-4 py-3 text-sm font-sans italic text-slate-900 bg-white border border-black/70 rounded-xl focus:outline-none focus:border-black placeholder:text-slate-500" />
+    </div>
+    <div className="flex items-center justify-end gap-3 pt-2">
+      <button onClick={onCancel} className="px-8 h-[calc(3rem-0.1cm)] rounded-xl bg-black text-white text-base font-sans font-bold hover:bg-slate-900 transition">J'annule</button>
+      <button onClick={onSave} disabled={isSaving} className="px-8 h-[calc(3rem-0.1cm)] rounded-xl bg-orange-600 text-white text-base font-sans font-bold hover:bg-orange-700 disabled:opacity-50 transition">
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "J'enregistre"}
 // ─── Formulaire d'ajout d'adresse ──────────────────────────────────────────
 
 const AddAddressForm = ({

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, Calendar, Shield, LogOut, Settings, Heart, ShoppingBag } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { getProfilePhotoUrl } from "@/lib/utils";
 
 const Compte = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -40,6 +41,7 @@ const Compte = () => {
   }
 
   const fullName = user ? `${user.prenom || ""} ${user.nom || ""}`.trim() : "Utilisateur";
+  const profilePhoto = getProfilePhotoUrl(user?.photo);
 
   return (
     <SiteLayout>
@@ -60,9 +62,13 @@ const Compte = () => {
               <div className="space-y-4">
                 <div className="bg-secondary/30 border border-border rounded-xl p-5 text-center">
                   <div className="h-16 w-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-2xl font-bold text-white">
-                      {(user.prenom || user.email || "U").charAt(0).toUpperCase()}
-                    </span>
+                    {profilePhoto ? (
+                      <img src={profilePhoto} alt="Photo de profil" className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                      <span className="text-2xl font-bold text-white">
+                        {(user.prenom || user.email || "U").charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <h3 className="font-bold">{fullName || "Utilisateur"}</h3>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
