@@ -1276,8 +1276,13 @@ const AdminProduits = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Parent ID</label>
-                  <input className={INPUT} placeholder="Optionnel" value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))} />
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie parente</label>
+                  <select className={INPUT} value={categoryForm.parent_id} onChange={(e) => setCategoryForm((p) => ({ ...p, parent_id: e.target.value }))}>
+                    <option value="">Aucune (catégorie principale)</option>
+                    {normalizedCategories.filter((category: any) => category.id !== selectedCategory?.id).map((category: any) => (
+                      <option key={category.id} value={category.id}>{category.nom}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ordre de tri</label>
