@@ -10,6 +10,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isLivreur: boolean;
   login: (email: string, password: string) => Promise<any>;
+  updateUser: (updatedUser: Record<string, unknown>) => void;
   logout: () => void;
   loading: boolean;
 }
@@ -71,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setUserState(userData);
+        setUser(userData);
         setIsAuthenticated(true);
         setIsAdmin(isAdminUser);
         setIsLivreur(isLivreurUser);
@@ -219,6 +221,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUser = (updatedUser: Record<string, unknown>) => {
+    const nextUser = { ...user, ...updatedUser };
+    setUserState(nextUser);
+    setUser(nextUser);
+  };
+
   const logout = () => {
     clearAuthStorage();
     delete api.defaults.headers.common['Authorization'];
@@ -242,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isAdmin,
       isLivreur,
       login, 
+      updateUser,
       logout,
       loading 
     }}>

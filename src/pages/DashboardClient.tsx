@@ -10,12 +10,18 @@ import { Header } from "@/components/site/Header";
 import { TopBar } from "@/components/site/TopBar";
 import logo from "@/assets/casaniers-logo.png";
 import { Footer } from "@/components/site/Footer";
+import EditProfileModal from "@/components/ActionClient/EditProfileModal";
+import { getProfilePhotoUrl } from "@/lib/utils";
 
 const DashboardClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const displayPrenom = user?.prenom;
+  const displayNom = user?.nom;
+  const displayPhoto = getProfilePhotoUrl(user?.photo);
 
   const menuItems = [
     { icon: LayoutDashboard, label: "Mon aperçu", path: "/DashboardClient" },
@@ -71,21 +77,25 @@ const DashboardClientLayout = () => {
 
         {/* Profil court en haut de la sidebar */}
         <div className="px-3 py-3">
-          <Link
-            to=""
-            onClick={onNavClick}
-            className="flex items-center gap-3 p-3 rounded-lg border border-white/7 hover:bg-muted/50 transition-colors"
+          <button
+            type="button"
+            onClick={() => { setShowProfileModal(true); onNavClick?.(); }}
+            className="w-full text-left flex items-center gap-3 p-3 rounded-lg border border-white/7 hover:bg-muted/50 transition-colors"
           >
-            <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold">
-              {user?.prenom || user?.nom
-                ? (user.prenom || user.nom)?.charAt(0).toUpperCase()
-                : "U"}
+            <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold">
+              {displayPhoto ? (
+                <img src={displayPhoto} alt="Photo de profil" className="w-full h-full object-cover" />
+              ) : displayPrenom || displayNom ? (
+                (displayPrenom || displayNom)?.charAt(0).toUpperCase()
+              ) : (
+                "U"
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground line-clamp-1">
-                {user?.prenom && user?.nom
-                  ? `${user.prenom} ${user.nom}`
-                  : user?.prenom || user?.nom || "Client"}
+                {displayPrenom && displayNom
+                  ? `${displayPrenom} ${displayNom}`
+                  : displayPrenom || displayNom || "Client"}
               </p>
               <p className="text-xs text-muted-foreground flex items-center gap-2">
                 <span
@@ -98,7 +108,7 @@ const DashboardClientLayout = () => {
               </p>
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -232,6 +242,14 @@ const DashboardClientLayout = () => {
       <footer>
           <Footer />
         </footer>
+
+      {showProfileModal && (
+        <EditProfileModal
+          initialNom={displayNom}
+          initialPrenom={displayPrenom}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
     </div>
   );
 };

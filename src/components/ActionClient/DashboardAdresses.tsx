@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import api from "@/service/api";
 import MapPicker from "@/components/MapPicker";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Adresse = {
@@ -29,14 +30,6 @@ type Adresse = {
   image_adress: string | null;
   latitude: number | string | null;
   longitude: number | string | null;
-};
-
-type User = {
-  id: number;
-  nom: string;
-  prenom: string;
-  email: string;
-  telephone?: string;
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -128,10 +121,10 @@ const FormSection = ({ title, children }: { title: string; children: React.React
 // COMPOSANT PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
 const DashboardAdresses = () => {
+  const { user, updateUser } = useAuth();
   const [adresses, setAdresses] = useState<Adresse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [selectedAdresse, setSelectedAdresse] = useState<Adresse | null>(null);
@@ -165,7 +158,7 @@ const DashboardAdresses = () => {
       setError(null);
       const userRes = await api.get("/utilisateurs/profile");
       const currentUser = userRes.data?.data ?? userRes.data;
-      setUser(currentUser);
+      updateUser(currentUser);
 
       const adressesRes = await api.get("/adresses");
       const d = adressesRes.data;

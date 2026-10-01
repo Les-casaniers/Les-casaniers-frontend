@@ -12,6 +12,14 @@ function getApiOrigin(): string {
   return raw.replace(/\/api\/?$/, "").replace(/\/+$/, "");
 }
 
+export function getProfilePhotoUrl(photo?: string | null): string | null {
+  if (!photo || typeof photo !== "string" || photo.trim() === "") return null;
+  const path = photo.trim();
+  if (/^(https?:|data:|blob:)/i.test(path)) return path;
+  if (path.startsWith("/")) return `${getApiOrigin()}${path}`;
+  return `${getApiOrigin()}/storage/${path.replace(/^storage\//, "")}`;
+}
+
 export function resolveImageUrl(rawUrl?: string | null): string {
   if (!rawUrl || typeof rawUrl !== "string" || rawUrl.trim() === "") {
     return PLACEHOLDER_IMAGE;
