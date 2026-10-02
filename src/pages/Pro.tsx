@@ -257,12 +257,22 @@ const Profreelance = () => {
         
         {/* 1. MiniHero */}
         <MiniHero
-          title="Des outils a la hauteur de tes ambitions"
+          title={
+            <span
+              className="text-base sm:text-xl md:text-2xl lg:text-[32px] font-bold tracking-[0.03em]"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              Des outils a la hauteur de tes ambitions
+            </span>
+          }
           description={
-            <div className="flex flex-col">
-              <p>« Optimise ton flux de travail avec du</p>
-              <p className="pl-[8.5rem] sm:pl-[11rem] md:pl-[13rem]">
-                matériel configuré pour la productivité »
+            <div
+              className="flex flex-col text-xs sm:text-sm md:text-base lg:text-lg tracking-[0.05em] leading-snug"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              <p>" Optimise ton flux de travail avec du</p>
+              <p className="pl-[7em] sm:pl-[11em] md:pl-[14em]">
+                matériel configuré pour la productivité "
               </p>
             </div>
           }

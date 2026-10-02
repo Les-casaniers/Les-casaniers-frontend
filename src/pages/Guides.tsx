@@ -457,12 +457,22 @@ const Guides = () => {
   <div className="w-full max-w-[1470px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
       {/* 1. Composant MiniHero */}
       <MiniHero
-        title="Besoins de conseils ?"
+        title={
+          <span
+            className="text-base sm:text-xl md:text-2xl lg:text-[32px] font-bold tracking-[0.03em]"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
+            Besoins de conseils ?
+          </span>
+        }
         description={
-          <div className="flex flex-col">
-            <p>«Nos meilleurs conseils pour faire le bon choix</p>
-            <p className="pl-[11rem] sm:pl-[11rem] md:pl-[11rem]">
-              selon tes besoins et ton  budget» 
+          <div
+            className="flex flex-col text-xs sm:text-sm md:text-base lg:text-lg tracking-[0.05em] leading-snug"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
+            <p>" Nos meilleurs conseils pour faire le bon choix</p>
+            <p className="pl-[8em] sm:pl-[14em] md:pl-[18.5em]">
+              selon tes besoins et ton budget "
             </p>
           </div>
         }
