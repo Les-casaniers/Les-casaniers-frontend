@@ -22,7 +22,8 @@
 
 @font-face {
   font-family: "Glacial Indifference";
-  src: local("Glacial Indifference"), local("GlacialIndifference-Regular");
+  src: local("Glacial Indifference"), local("GlacialIndifference-Regular"),
+    url("/fonts/glacial-indifference/GlacialIndifference-Regular.ttf") format("truetype");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -31,7 +32,8 @@
 
 @font-face {
   font-family: "Glacial Indifference";
-  src: local("Glacial Indifference Bold"), local("GlacialIndifference-Bold");
+  src: local("Glacial Indifference Bold"), local("GlacialIndifference-Bold"),
+    url("/fonts/glacial-indifference/GlacialIndifference-Bold.ttf") format("truetype");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -39,7 +41,8 @@
 
 @font-face {
   font-family: "Glacial Indifference";
-  src: local("Glacial Indifference Italic"), local("GlacialIndifference-Italic");
+  src: local("Glacial Indifference Italic"), local("GlacialIndifference-Italic"),
+    url("/fonts/glacial-indifference/GlacialIndifference-Italic.otf") format("opentype");
   font-style: italic;
   font-weight: 400;
   font-display: swap;

@@ -391,29 +391,41 @@ const BoutiqueDeMisa = () => {
           <div className="absolute inset-0 bg-black/45" />
 
           <div className="relative z-10 pl-4 sm:pl-6 md:pl-8 pr-4 sm:pr-6 md:pr-8 py-5 sm:py-6 text-left flex flex-col items-start justify-center">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-bold !text-white tracking-wide leading-tight mb-2 drop-shadow-md text-left">
+            <h1
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-[46px] font-bold !text-white tracking-[0.04em] leading-tight mb-2 drop-shadow-md text-left"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
               Bienvenue dans la boutique de Misa !
             </h1>
-            <p className="text-xs sm:text-sm md:text-base lg:text-[20px] !text-white/95 italic font-normal tracking-wide drop-shadow text-left">
-              “ Chaque achat que tu fais ici permettra de financer une action de reboisement ”
+            <p
+              className="mt-1 text-xs sm:text-sm md:text-base lg:text-[20px] !text-white/95 italic font-normal tracking-[0.07em] leading-snug drop-shadow text-left md:whitespace-nowrap"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              " Chaque achat que tu fais ici permettra de financer une action de reboisement "
             </p>
           </div>
         </div>
 
         {/* Texte de présentation */}
-        <div className="space-y-2 pt-1 text-black dark:text-white text-left">
-          <h2 className="text-sm sm:text-base font-bold tracking-normal text-black dark:text-white">
+        <div
+          className="space-y-3 pt-1 text-black dark:text-white text-left"
+          style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+        >
+          <h2
+            className="text-sm sm:text-base font-bold tracking-[0.03em] text-black dark:text-white"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
             Mbola tsara, cher compatriote !
           </h2>
-          <div className="text-[clamp(10px,1.05vw,14px)] leading-relaxed text-black/90 dark:text-white/95 italic space-y-1.5 w-full overflow-x-auto scrollbar-none">
+          <div className="text-[clamp(10px,1.05vw,14px)] leading-relaxed tracking-[0.05em] text-black/90 dark:text-white/95 italic font-normal space-y-3 w-full overflow-x-auto scrollbar-none">
             <p className="whitespace-nowrap">
               Je m'appelle Misa. Mon habitat naturel recule chaque année. En tant que fossa — le plus grand félin de Madagascar — je veux aider à protéger ce milieu et ceux qui y vivent.
             </p>
             <p className="whitespace-nowrap">
-              C'est là que j'ai besoin de toi : lorsque tu achètes un goodie dans ma boutique, <strong>Les Casaniers reverse 60% des bénéfices aux actions de reboisement à Madagascar</strong>.
+              C'est là que j'ai besoin de toi : lorsque tu achètes un goodie dans ma boutique, Les Casaniers reverse 60% des bénéfices aux actions de reboisement à Madagascar.
             </p>
             <p className="whitespace-nowrap">
-              Alors, si quelque chose te plaît, fais-toi plaisir : tu soutiendras aussi une forêt qui a besoin de nous. Merci, ou comme on dit chez nous : <span className="text-black dark:text-white font-bold not-italic">misaotra !</span>
+              Alors, si quelque chose te plaît, fais-toi plaisir : tu soutiendras aussi une forêt qui a besoin de nous. Merci, ou comme on dit chez nous : misaotra <span className="not-italic">!</span>
             </p>
           </div>
         </div>
