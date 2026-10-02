@@ -1,13 +1,42 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import { Package, Truck, Clock, Shield, CheckCircle, Plus, Send, Plane, Ship } from "lucide-react";
-import { Truck, Send, Paperclip } from "lucide-react"; // Garde seulement ce qui est utilisé
+import { Truck, Send, FileUp } from "lucide-react"; // Garde seulement ce qui est utilisé
 // import { Link } from "react-router-dom";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MiniHero } from "@/components/layout/MiniHero";
 // import { InfoBar } from "@/components/site/InfoBar";
 // import Mascote from "@/assets/3.png";
 import arrow from "@/assets/Curved Arrow Downward.png";
+
+const UNDERLINE_SOLID = "linear-gradient(#fff, #fff)";
+const UNDERLINE_DASHED = "repeating-linear-gradient(to right, #fff 0 12px, transparent 12px 20px)";
+
+const underlineStyle = (image: string) => ({
+  backgroundImage: image,
+  backgroundSize: "100% 2px",
+  backgroundPosition: "left bottom",
+  backgroundRepeat: "no-repeat",
+});
+
+// Titre "DECRIS NOUS TES BESOINS" : trait plein + tirets alignés, flèche courbée au bout
+const FormTitle = () => (
+  <h2
+    className="relative inline-flex items-end gap-[0.45em] mb-10 text-xl lg:text-2xl font-bold uppercase text-white tracking-[0.03em] leading-none"
+    style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+  >
+    <span className="pb-3" style={underlineStyle(UNDERLINE_SOLID)}>DECRIS NOUS</span>
+    <span className="pb-3" style={underlineStyle(UNDERLINE_DASHED)}>TES BESOINS</span>
+
+    {/* flèche courbée en bout de ligne */}
+    <img
+      src={arrow}
+      alt=""
+      aria-hidden="true"
+      className="absolute left-full top-[calc(100%-6px)] ml-2 h-6 w-6"
+    />
+  </h2>
+);
 
 const Importation = () => {
   const location = useLocation();
@@ -182,12 +211,22 @@ const Importation = () => {
           ========================================== */}
       <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
         <MiniHero
-          title="Importation Europe - Madagascar."
+          title={
+            <span
+              className="text-base sm:text-xl md:text-2xl lg:text-[32px] font-bold tracking-[0.03em]"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              Importation Europe-Madagascar
+            </span>
+          }
           description={
-            <div className="flex flex-col">
-              <p>"Un produit introuvable dans le catalogue ?</p>
-              <p className="pl-[2.5rem] sm:pl-[4.5rem] md:pl-[6rem]">
-                On le recherche pour vous"
+            <div
+              className="flex flex-col text-xs sm:text-sm md:text-base lg:text-lg tracking-[0.05em] leading-snug"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              <p>" Un produit introuvable dans les catalogues ?</p>
+              <p className="pl-[8em] sm:pl-[16em] md:pl-[20em]">
+                On le cherche pour toi "
               </p>
             </div>
           }
@@ -211,7 +250,13 @@ const Importation = () => {
       <section className="py-6 lg:py-6 border-b border-white mb-8">
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Description */}
-          <div className="-mt-10 text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
+          <div
+            className="-mt-10 text-sm lg:text-base italic text-white/85 max-w-3xl mb-8"
+            style={{
+              fontFamily: '"Glacial Indifference", system-ui, sans-serif',
+              letterSpacing: "0.7px",
+            }}
+          >
             <p className="mb-4">
               Tu as repéré un produit qui n'est pas disponible sur le site ? Donne-nous sa référence,
             </p>
@@ -221,23 +266,8 @@ const Importation = () => {
               le délai et le prix avant toute commande.</p>
           </div>
 
-          {/* Titre du formulaire, souligné en pointillés */}
-<h2 className="relative inline-block pb-3 mb-8">
-  <span className="text-xl lg:text-2xl font-extrabold uppercase text-white tracking-wide border-b-2 border-white">
-    DECRIS NOUS{" "}
-  </span>
-  <span className="text-xl lg:text-2xl font-semibold italic uppercase text-white/90 tracking-wide border-b-2 border-dashed border-white/70">
-    TES BESOINS
-  </span>
-
-  {/* flèche courbée en bout de ligne */}
-  
-  <img 
-    src={arrow}
-    alt="Flèche vers le bas"
-    className="ml-[320px] -mb-[30px] h-8 w-8 text-white"
-  />
-</h2>
+          {/* Titre du formulaire */}
+          <FormTitle />
 
 
 
@@ -327,7 +357,7 @@ const Importation = () => {
                     className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
                   >
                     J'ajoute un fichier
-                    <Paperclip className="h-4 w-4" />
+                    <FileUp className="h-4 w-4" fill="white" stroke="black" strokeWidth={2.25} />
                   </label>
                   <input
                     id="fichier-import"
@@ -385,9 +415,19 @@ const Importation = () => {
           ========================================== */}
       <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-6">
         <MiniHero
-          title="Importation Chine-Madagascar"
+          title={
+            <span
+              className="text-base sm:text-xl md:text-2xl lg:text-[32px] font-bold tracking-[0.03em]"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              Importation Chine-Madagascar
+            </span>
+          }
           description={
-            <div className="flex flex-col">
+            <div
+              className="flex flex-col text-xs sm:text-sm md:text-base lg:text-lg tracking-[0.05em] leading-snug"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
               <p>" Pour réparer, il faut parfois chercher plus loin "</p>
             </div>
           }
@@ -405,29 +445,23 @@ const Importation = () => {
       <section className="py-8 lg:py-12">
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Description */}
-          <div className="text-sm lg:text-base text-muted-foreground max-w-3xl mb-8">
-            <p>
+          <div
+            className="text-sm lg:text-base italic text-white/85 mb-8"
+            style={{
+              fontFamily: '"Glacial Indifference", system-ui, sans-serif',
+              letterSpacing: "0.7px",
+            }}
+          >
+            <p className="mb-4">
               Certaines pièces de rechange pour PC portables, notamment les cartes mères, sont difficiles a trouver en Europe,
+            </p>
+            <p className="mb-4">
               ainsi, on effectue un sourcing cible en Chine afin de trouver la pièce compatible nécessaire a la réparation de ton ordinateur portable.
             </p>
           </div>
 
-          {/* Titre du formulaire, souligné en pointillés */}
-<h2 className="relative inline-block pb-3 mb-8">
-  <span className="text-xl lg:text-2xl font-extrabold uppercase text-white tracking-wide border-b-2 border-white">
-    DECRIS NOUS{" "}
-  </span>
-  <span className="text-xl lg:text-2xl font-semibold italic uppercase text-white/90 tracking-wide border-b-2 border-dashed border-white/70">
-    TES BESOINS
-  </span>
-
-  {/* flèche courbée en bout de ligne */}
-  <img 
-    src={arrow}
-    alt="Flèche vers le bas"
-    className="ml-[320px] -mb-[30px] h-8 w-8 text-white"
-  />
-</h2>
+          {/* Titre du formulaire */}
+          <FormTitle />
 
           {/* Formulaire dans une carte blanche, même largeur/alignement que le MiniHero */}
           <form
@@ -515,7 +549,7 @@ const Importation = () => {
                     className="inline-flex items-center gap-2 bg-black text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer hover:bg-black/80 transition-colors"
                   >
                     J'ajoute un fichier
-                    <Paperclip className="h-4 w-4" />
+                    <FileUp className="h-4 w-4" fill="white" stroke="black" strokeWidth={2.25} />
                   </label>
                   <input
                     id="fichier-import-chine"
