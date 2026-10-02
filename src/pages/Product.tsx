@@ -1,9 +1,9 @@
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useParams, Link, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Star, Shield, Truck, Wrench, Minus, Plus, ChevronRight, Cpu, MonitorCog, MemoryStick, HardDrive, Zap, Snowflake, CircuitBoard, Box, Loader2, BadgeCheck } from "lucide-react";
+import { ShoppingBag, Star, Shield, Truck, Wrench, Minus, Plus, ChevronRight, Cpu, MonitorCog, MemoryStick, HardDrive, Zap, Snowflake, CircuitBoard, Box, Loader2, BadgeCheck, ScrollText, Tag } from "lucide-react";
 import { useShop } from "@/store/shop";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
@@ -111,6 +111,73 @@ const SectionTitle = ({
   );
 };
 
+// =========================================================
+// ✅ Décor du cadre du tableau "Caractéristiques"
+//   - FrameCorner : coin épais + biseaux (+ croissant de lune pour le haut)
+//   - FrameOrnament : ornement central (haut / bas)
+// La ligne fine du cadre se trouve à 28px du bord du SVG (haut) ;
+// pour le bas, le SVG est retourné pour que sa ligne tombe pile sur le bord du tableau.
+// =========================================================
+const FrameCorner = ({
+  position,
+  moon = false,
+}: {
+  position: "tl" | "tr" | "bl" | "br";
+  moon?: boolean;
+}) => {
+  const isTop = position[0] === "t";
+  const isLeft = position[1] === "l";
+
+  const transform = [
+    isTop ? "" : "translateY(28px) scaleY(-1)",
+    isLeft ? "" : "scaleX(-1)",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <svg
+      aria-hidden="true"
+      width="120"
+      height="104"
+      viewBox="0 0 120 104"
+      fill="currentColor"
+      className={`pointer-events-none absolute z-10 overflow-visible text-white ${isTop ? "top-0" : "bottom-0"} ${isLeft ? "left-0" : "right-0"}`}
+      style={{ transform: transform || undefined }}
+    >
+      {/* Trait horizontal épais (bord haut) */}
+      <rect x="0" y="26.5" width="40" height="3" />
+      {/* Biseaux "/ / /" qui prolongent le bord haut */}
+      <polygon points="46,33 49,33 55,23 52,23" />
+      <polygon points="58,33 61,33 67,23 64,23" />
+      <polygon points="70,33 73,33 79,23 76,23" />
+
+      {/* Trait vertical épais (bord gauche, descend dans le tableau) */}
+      <rect x="0" y="26.5" width="3" height="44" />
+      {/* Biseaux "/" qui prolongent le bord gauche */}
+      <polygon points="-3,85 0,85 6,76 3,76" />
+      <polygon points="-3,99 0,99 6,90 3,90" />
+
+      {/* Croissant de lune (coins du haut uniquement) */}
+      {moon && (
+        <path d="M-6 8 A8 8 0 0 0 -6 24 A10.5 10.5 0 0 1 -6 8 Z" />
+      )}
+    </svg>
+  );
+};
+
+const FrameOrnament = ({ flip = false, className = "" }: { flip?: boolean; className?: string }) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+    className={`pointer-events-none absolute left-1/2 z-20 h-5 w-5 -translate-x-1/2 bg-black text-white ${flip ? "rotate-180" : ""} ${className}`}
+  >
+    <path d="M10 1 L13.5 6.5 A5 5 0 1 1 6.5 6.5 Z" />
+    <rect x="9.5" y="14" width="1" height="6" />
+  </svg>
+);
+
 const ProductPage = () => {
   const { id } = useParams();
   const productId = id ? Number(id) : null;
@@ -131,7 +198,8 @@ const ProductPage = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   // ✅ Images chargées directement depuis /produits/{id} (useProduct ne les renvoie pas)
   const [detailImages, setDetailImages] = useState<any[]>([]);
-const [caracExpanded, setCaracExpanded] = useState(true);
+  const [caracExpanded, setCaracExpanded] = useState(true);
+
   useEffect(() => {
     if (product) document.title = `${product.nom} — Les Casaniers Madagascar`;
   }, [product]);
@@ -802,7 +870,7 @@ const [caracExpanded, setCaracExpanded] = useState(true);
 
         {/* ---- Caractéristiques ---- */}
         <div id="caracteristiques" className="mb-16 max-w-5xl">
-       <SectionTitle>Caractéristiques principales</SectionTitle>
+          <SectionTitle>Caractéristiques principales</SectionTitle>
 
           {caracteristiquesPrincipales.length > 0 && (
             <ul className="space-y-1 text-sm mb-10">
@@ -817,54 +885,80 @@ const [caracExpanded, setCaracExpanded] = useState(true);
 
           {caracteristiquesTableau.length > 0 && (
             <div className="mt-12">
-             <SectionTitle level={3}>Caractéristiques</SectionTitle>
+              <SectionTitle level={3}>Caractéristiques</SectionTitle>
 
-<div className="mt-8 mx-auto w-full max-w-4xl">
-  <div className="relative rounded-md border-2 border-white bg-black text-white">
-    <span className="hidden sm:block absolute -top-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none">💡</span>
-    <span className="hidden sm:block absolute -bottom-4 left-1/2 -translate-x-1/2 text-sm select-none pointer-events-none rotate-180">💡</span>
+              <div className="mt-8 mb-10 mx-auto w-full max-w-4xl">
+                {/* ===== Tableau encadré (début = capture 1, fin = capture 2) ===== */}
+                <div className="relative bg-black text-white">
+                  {/* Coins du haut : croissant de lune + coin épais + biseaux */}
+                  <FrameCorner position="tl" moon />
+                  <FrameCorner position="tr" moon />
 
-    <div className="overflow-x-auto rounded-md">
-      <table className="w-full text-sm border-collapse text-white">
-        <thead>
-          <tr>
-            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-white/50 border-r border-r-white/70">
-              Caractéristiques <span className="text-[10px] align-middle">✎</span>
-            </th>
-            <th className="w-1/2 px-4 py-2 text-center font-bold uppercase tracking-wider text-[11px] border-b border-white/50">
-              Valeurs <span className="text-[10px] align-middle">🏷</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
-            <tr key={i}>
-              <td className="px-4 py-2 text-center text-xs text-white border-b border-white/40 border-r border-r-white/70">
-                {c.label}
-              </td>
-              <td className="px-4 py-2 text-center text-xs font-medium text-white border-b border-white/40">
-                {c.valeur}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
+                  {/* Coins du bas : équerres épaisses + biseaux */}
+                  <FrameCorner position="bl" />
+                  <FrameCorner position="br" />
 
-  {/* ===== Bouton Afficher moins / plus ===== */}
-  {caracteristiquesTableau.length > 5 && (
-    <div className="text-center mt-8">
-      <button
-        onClick={() => setCaracExpanded((v) => !v)}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
-      >
-        {caracExpanded ? "Afficher moins" : "Afficher plus"}
-        <ChevronRight className={`h-4 w-4 ${caracExpanded ? "rotate-[-90deg]" : "rotate-90"}`} />
-      </button>
-    </div>
-  )}
-</div>
+                  {/* Ornements centraux haut / bas */}
+                  <FrameOrnament className="top-0" />
+                  <FrameOrnament flip className="-bottom-5" />
+
+                  {/* Ligne verticale centrale (relie l'ornement du haut à celui du bas) */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-1/2 top-5 bottom-0 z-10 w-px -translate-x-1/2 bg-white/50"
+                  />
+
+                  {/* Bande du haut : ligne fine horizontale sous les croissants / l'ornement */}
+                  <div className="h-7 border-b border-white/60" />
+
+                  {/* Corps du tableau */}
+                  <div className="overflow-x-auto border-x border-white/60">
+                    <table className="w-full table-fixed border-collapse text-sm text-white">
+                      <thead>
+                        <tr>
+                          <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-b border-white/30">
+                            <span className="inline-flex items-center justify-center gap-1.5">
+                              Caractéristiques
+                              <ScrollText className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                          </th>
+                          <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-b border-white/30">
+                            <span className="inline-flex items-center justify-center gap-1.5">
+                              Valeurs
+                              <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                            </span>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
+                          <tr key={i}>
+                            <td className="px-4 py-3 text-center text-xs text-white border-b border-white/30">
+                              {c.label}
+                            </td>
+                            <td className="px-4 py-3 text-center text-xs font-medium text-white border-b border-white/30">
+                              {c.valeur}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ===== Bouton Afficher moins / plus ===== */}
+                {caracteristiquesTableau.length > 5 && (
+                  <div className="text-center mt-12">
+                    <button
+                      onClick={() => setCaracExpanded((v) => !v)}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+                    >
+                      {caracExpanded ? "Afficher moins" : "Afficher plus"}
+                      <ChevronRight className={`h-4 w-4 ${caracExpanded ? "rotate-[-90deg]" : "rotate-90"}`} />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
