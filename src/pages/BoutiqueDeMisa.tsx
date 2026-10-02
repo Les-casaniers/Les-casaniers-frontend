@@ -1,5 +1,3 @@
-// export default BoutiqueDeMisa;
-
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { formatAr } from "@/lib/products";
 import { useEffect, useMemo, useState } from "react";
@@ -42,6 +40,36 @@ const getFullImageUrl = (imageUrl: string | null | undefined): string => {
 
   const baseUrl = import.meta.env.VITE_APP_URL || "http://localhost:8000";
   return `${baseUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+};
+
+// ✅ AJOUT : nettoyage du nom de produit venant de la base de données
+const cleanProductName = (rawName: string | null | undefined, id?: number): string => {
+  let name = String(rawName ?? "")
+    .replace(/[_]+/g, " ") // underscores -> espaces
+    .replace(/\s+/g, " ") // espaces multiples -> un seul
+    .trim();
+
+  if (!name) {
+    return id !== undefined ? `Produit #${id}` : "Produit";
+  }
+
+  const hasLetters = /[a-zA-ZÀ-ÿ]/.test(name);
+  const isAllUpper = hasLetters && name === name.toUpperCase();
+  const isAllLower = hasLetters && name === name.toLowerCase();
+
+  // Si le nom est tout en majuscules ou tout en minuscules -> casse "Titre"
+  if (isAllUpper || isAllLower) {
+    name = name
+      .toLowerCase()
+      .split(" ")
+      .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+      .join(" ");
+  } else {
+    // Sinon on met juste la première lettre en majuscule
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  return name;
 };
 
 // ---------------------------------------------------------------------------
@@ -100,6 +128,23 @@ const BoutiqueDeMisa = () => {
       };
     });
   }, [apiData]);
+
+  // ✅ AJOUT : produits avec le nom corrigé, utilisés pour l'affichage des cartes
+  const displayProducts = useMemo(
+    () =>
+      products.map((p) => ({
+        ...p,
+        nomAffiche: cleanProductName(p.nom, p.id),
+      })),
+    [products]
+  );
+
+  // ✅ AJOUT : 3 produits maximum affichés (s'il y en a 1 ou 2 dans la base, on en affiche 1 ou 2)
+  const MAX_VISIBLE_PRODUCTS = 3;
+  const visibleProducts = useMemo(
+    () => displayProducts.slice(0, MAX_VISIBLE_PRODUCTS),
+    [displayProducts]
+  );
 
   const bannerImage = useMemo(() => {
     if (apiData?.banner_url) return getFullImageUrl(apiData.banner_url);
@@ -213,6 +258,127 @@ const BoutiqueDeMisa = () => {
           .misa-page section > * { animation: none; }
         }
       `}</style>
+
+      {/* ✅ AJOUT : agrandit les cartes qui affichent l'image (TEXTILES / ACCESSOIRES) */}
+      <style>{`
+        .misa-page section .group {
+          min-height: clamp(320px, 38vw, 520px);
+        }
+        .misa-page section .group > img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      `}</style>
+
+      {/* ✅ AJOUT : masque l'ancienne grille par catégories (remplacée par la grille des produits ci-dessous) */}
+      <style>{`
+        .misa-page > section {
+          display: none;
+        }
+        .misa-products-grid .misa-product-card {
+          position: relative;
+          min-height: clamp(320px, 38vw, 520px);
+        }
+        .misa-products-grid .misa-product-card > img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      `}</style>
+
+      {/* ✅ AJOUT : alignement en 3 colonnes + image un peu plus petite */}
+      <style>{`
+        .misa-page .misa-products-grid > .grid {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+        @media (min-width: 640px) {
+          .misa-page .misa-products-grid > .grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (min-width: 1024px) {
+          .misa-page .misa-products-grid > .grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+        .misa-page .misa-products-grid .misa-product-card {
+          min-height: clamp(200px, 24vw, 340px);
+        }
+      `}</style>
+
+      {/* ✅ AJOUT : 3 produits maximum — masque la grille précédente et utilise la nouvelle grille "misa-max3" */}
+      <style>{`
+        .misa-page .misa-products-grid {
+          display: none;
+        }
+        .misa-page .misa-max3 {
+          padding-top: 0.5rem;
+          padding-bottom: 2.5rem;
+        }
+        .misa-page .misa-max3-grid {
+          display: grid;
+          gap: 1rem;
+          grid-template-columns: minmax(0, 1fr);
+        }
+        @media (min-width: 768px) {
+          .misa-page .misa-max3-grid.count-1 { grid-template-columns: minmax(0, 1fr); }
+          .misa-page .misa-max3-grid.count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .misa-page .misa-max3-grid.count-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+          .misa-page .misa-max3-grid { gap: 1.5rem; }
+        }
+        .misa-page .misa-max3-card {
+          position: relative;
+          min-height: clamp(200px, 24vw, 340px);
+        }
+        .misa-page .misa-max3-card > img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      `}</style>
+
+      {/* ✅ AJOUT : rendu identique à la maquette (cartes larges, petit écart, pastille blanche en majuscules) */}
+      <style>{`
+        .misa-page .misa-max3-grid {
+          gap: 0.65rem;
+        }
+        @media (min-width: 1024px) {
+          .misa-page .misa-max3-grid { gap: 0.65rem; }
+        }
+        .misa-page .misa-max3-card {
+          min-height: 0;
+          aspect-ratio: 3 / 2;
+          border-radius: 12px;
+          border: 0;
+        }
+        .misa-page .misa-max3-card > img {
+          border: 0;
+          opacity: 0.8;
+        }
+        .misa-page .misa-max3-card > div.absolute.bottom-5 {
+          bottom: 0.9rem;
+        }
+        .misa-page .misa-max3-card > div.absolute.bottom-5 > span {
+          text-transform: uppercase;
+          font-weight: 700;
+          font-size: 0.875rem;
+          letter-spacing: 0.04em;
+          padding: 0.4rem 0.9rem;
+          border-radius: 9999px;
+          background: #ffffff;
+          color: #000000;
+        }
+      `}</style>
+
       <div className="misa-page w-full max-w-[1780px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6 lg:gap-8">
         {/* Bannière */}
         <div className="relative w-full rounded-[15px] overflow-hidden min-h-[120px] sm:min-h-[140px] md:min-h-[160px] bg-[#221008] border border-white/10 flex items-center shadow-2xl">
@@ -350,6 +516,62 @@ const BoutiqueDeMisa = () => {
               )}
             </div>
           </section>
+        )}
+
+        {/* ✅ AJOUT : grille des produits avec le NOM du produit (corrigé) au lieu de la catégorie */}
+        {!error && displayProducts.length > 0 && (
+          <div className="misa-products-grid pt-2 pb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+              {displayProducts.map((p) => (
+                <div
+                  key={p.id}
+                  className="misa-product-card relative rounded-[15px] overflow-hidden bg-black/40 border border-white/10 shadow-lg group"
+                >
+                  {p.image_url && (
+                    <img
+                      src={getFullImageUrl(p.image_url)}
+                      alt={p.nomAffiche}
+                      className="opacity-80 group-hover:scale-105 transition-transform duration-700 border border-white/15"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 max-w-[90%]">
+                    <span className="inline-block bg-white text-black font-bold text-xs sm:text-sm px-3 py-1.5 rounded-full tracking-wider shadow-md text-center">
+                      {p.nomAffiche}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ AJOUT : grille finale — produits de la base de données, 3 maximum (1, 2 ou 3 cartes selon le nombre de produits) */}
+        {!error && visibleProducts.length > 0 && (
+          <div className="misa-max3">
+            <div className={`misa-max3-grid count-${visibleProducts.length}`}>
+              {visibleProducts.map((p) => (
+                <div
+                  key={p.id}
+                  className="misa-max3-card relative rounded-[15px] overflow-hidden bg-black/40 border border-white/10 shadow-lg group"
+                >
+                  {p.image_url && (
+                    <img
+                      src={getFullImageUrl(p.image_url)}
+                      alt={p.nomAffiche}
+                      className="opacity-80 group-hover:scale-105 transition-transform duration-700 border border-white/15"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute bottom-5 left-1/2 -translate-x-1/2 max-w-[90%]">
+                    <span className="inline-block bg-white text-black font-bold text-xs sm:text-sm px-3 py-1.5 rounded-full tracking-wider shadow-md text-center">
+                      {p.nomAffiche}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </SiteLayout>
