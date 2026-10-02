@@ -62,20 +62,40 @@ const PAGE_ITEMS = {
 // Items par défaut
 const DEFAULT_ITEMS = [
   {
-    title: "FACTURATION NORMÉE",
-    description: "Documents conformes avec NIF STAT",
+    title: "FACTURATION NORMEE",
+    description: (
+      <>
+        Documents conformes<br />
+        avec NIF STAT
+      </>
+    ),
   },
   {
     title: "SAV PRIORITAIRE",
-    description: "Une heure d'arrêt est une perte de chiffres d'affaires",
+    description: (
+      <>
+        Une heure d'arrêt est une perte<br />
+        de chiffres d'affaires
+      </>
+    ),
   },
   {
     title: "AUDIT DE PARC",
-    description: "Des offres adaptées à ta structure",
+    description: (
+      <>
+        Des offres adaptées<br />
+        à ta structure
+      </>
+    ),
   },
   {
     title: "IMPORTATION DIRECTE",
-    description: "Accès aux dernières normes européennes",
+    description: (
+      <>
+        Accès aux dernières<br />
+        normes européennes
+      </>
+    ),
   },
 ];
 
@@ -86,35 +106,22 @@ export const InfoBar = () => {
   const items = PAGE_ITEMS[location.pathname] || DEFAULT_ITEMS;
 
   return (
-    <section className="w-full py-2">
-      <div className="flex flex-wrap md:flex-nowrap justify-between items-start gap-4">
-        {items.map((item, i) => {
-          const isFirst = i === 0;
-          const isLast = i === items.length - 1;
-
-          const alignClass = isFirst
-            ? "items-start"
-            : isLast
-            ? "items-end"
-            : "items-center";
-
-          const textAlignClass = isFirst
-            ? "text-left"
-            : isLast
-            ? "text-right"
-            : "text-center";
-
-          return (
-            <div key={i} className={`flex flex-1 flex-col ${alignClass}`}>
-              <p className={`text-xs sm:text-sm font-extrabold tracking-wide uppercase text-white whitespace-nowrap ${textAlignClass}`}>
-                {item.title}
-              </p>
-              <p className={`mt-1 max-w-[220px] text-[11px] sm:text-xs text-zinc-400 leading-tight ${textAlignClass}`}>
-                {item.description}
-              </p>
-            </div>
-          );
-        })}
+    <section
+      className="w-full py-2"
+      style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+    >
+      {/* Chaque bloc est centré sur lui-même ; le 1er colle à gauche, le dernier à droite */}
+      <div className="grid grid-cols-2 gap-y-4 gap-x-4 md:flex md:flex-nowrap md:justify-between md:items-start">
+        {items.map((item, i) => (
+          <div key={i} className="flex flex-col items-center text-center">
+            <p className="text-xs sm:text-sm font-bold tracking-[0.03em] uppercase text-white whitespace-nowrap">
+              {item.title}
+            </p>
+            <p className="mt-1 text-[11px] sm:text-xs text-zinc-300 leading-snug tracking-[0.02em]">
+              {item.description}
+            </p>
+          </div>
+        ))}
       </div>
     </section>
   );

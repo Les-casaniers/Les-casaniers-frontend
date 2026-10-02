@@ -5,7 +5,7 @@ import { MiniHero } from "@/components/layout/MiniHero";
 import { InfoBar } from "@/components/site/InfoBar";
 import { GamingCatalogue } from "@/components/gaming/GamingCatalogue";
 import fond from "@/assets/fond2.jpg";
-import chien from "@/assets/3.png";
+import chien from "@/assets/121.png";
 
 const Gaming = () => {
   useEffect(() => {
@@ -18,10 +18,12 @@ const Gaming = () => {
   {/* 1. Composant MiniHero */}
   <MiniHero
     title={
-      <>
-        une perfomence a la hauteur de tes ambitions {" "}
-        
-      </>
+      <span
+        className="text-base sm:text-xl md:text-2xl lg:text-[32px] font-bold tracking-[0.03em]"
+        style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+      >
+        Une performance a la hauteur de tes ambitions
+      </span>
     }
     description={
       <div className="flex flex-col">

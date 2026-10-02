@@ -52,26 +52,42 @@ const doors = [
 export const ThreeDoors = () => (
   <section className="mt-12 bg-black max-w-[1470px] mx-auto px-8 py-12 text-white lg:py-14">
     <div className="mb-12">
-      <h2 className="inline-flex items-end text-[26px] font-black uppercase leading-none tracking-[0.08em] sm:text-[34px]">
-      {/* Ligne 1 : soulignement solide */}
-        <span className="border-b-2 border-white pb-1 pr-3 whitespace-nowrap">
-            Choisis
-        </span>
-        <span className="mb-[0.35rem] ml-2 whitespace-nowrap">ton</span>
-        
-        <span className="mb-[0.1rem] relative pb-1 pl-3 font-light italic tracking-[0.04em] whitespace-nowrap">chemin.</span>
-
-        <div 
-          className="-ml-[220px] -mb-[0.09rem] w-64 h-1 bg-repeat-x"
+      <h2
+        className="relative inline-flex items-end text-[26px] uppercase leading-none tracking-[0.06em] sm:text-[34px]"
+        style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+      >
+        {/* "CHOISIS TON" : gras, trait plein */}
+        <span
+          className="pb-3 pr-[0.4em] font-bold whitespace-nowrap"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='50%25' x2='100%25' y2='50%25' stroke='rgb(255, 255, 255)' stroke-width='2' stroke-dasharray='12%2c 8'/%3e%3c/svg%3e")`
+            backgroundImage: "linear-gradient(#fff, #fff)",
+            backgroundSize: "100% 2px",
+            backgroundPosition: "left bottom",
+            backgroundRepeat: "no-repeat",
           }}
-        />
+        >
+          Choisis ton
+        </span>
 
-        <img 
+        {/* "CHEMIN." : italique fin, tirets qui dépassent un peu le mot */}
+        <span
+          className="ml-[0.3em] pb-3 pr-[1.2em] font-normal italic whitespace-nowrap"
+          style={{
+            backgroundImage: "repeating-linear-gradient(to right, #fff 0 12px, transparent 12px 20px)",
+            backgroundSize: "100% 2px",
+            backgroundPosition: "left bottom",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          chemin.
+        </span>
+
+        {/* flèche courbée en bout de ligne */}
+        <img
           src={arrow}
-          alt="Flèche vers le bas"
-          className="ml-1 -mb-[30px] h-8 w-8 text-white"
+          alt=""
+          aria-hidden="true"
+          className="absolute left-full top-[calc(100%-6px)] ml-1 h-7 w-7"
         />
       </h2>
     </div>

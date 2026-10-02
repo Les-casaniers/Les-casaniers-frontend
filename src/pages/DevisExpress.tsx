@@ -111,14 +111,22 @@ const DevisExpress = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/30" />
 
-          <div className="relative z-10 flex flex-col items-start max-w-4xl">
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white uppercase tracking-wide leading-tight mb-3">
-              Besoin d'un équipement à la hauteur de tes projets ?
+          <div className="relative z-10 flex flex-col items-start">
+            <h1
+              className="text-xl sm:text-2xl md:text-3xl lg:text-[36px] font-bold text-white uppercase tracking-[0.06em] leading-tight mb-3 lg:whitespace-nowrap"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              Besoin d'un equipement a la hauteur de tes projets ?
             </h1>
-            <p className="text-xs sm:text-sm md:text-base lg:text-[18px] text-white/90 italic font-normal leading-relaxed">
-              " Explique-nous ton besoin, et notre équipe te prépare <br className="hidden sm:inline" />
-              <span className="sm:ml-12 md:ml-16 inline-block mt-1 sm:mt-0">une recommandation et un devis sur mesure "</span>
-            </p>
+            <div
+              className="flex flex-col text-xs sm:text-sm md:text-base lg:text-[18px] text-white/90 italic font-normal tracking-[0.07em] leading-snug"
+              style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+            >
+              <p>" Explique-nous ton besoin, et notre équipe te prépare</p>
+              <p className="pl-[4em] sm:pl-[14em] md:pl-[19.5em]">
+                une recommandation et un devis sur mesure "
+              </p>
+            </div>
           </div>
 
           <div className="relative z-10 mt-6 md:mt-0 md:absolute md:bottom-8 md:right-8 lg:right-10">
@@ -129,58 +137,85 @@ const DevisExpress = () => {
         </div>
 
         {/* Grille des fonctionnalités */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 sm:py-6 border-b border-white/10 text-center uppercase">
-          <div className="p-2">
-            <h4 className="font-bold text-xs sm:text-sm text-white">Importation UE</h4>
-            <p className="text-[10px] sm:text-[11px] text-gray-400 lowercase mt-1">Produits sourcés d'Europe</p>
-          </div>
-          <div className="p-2">
-            <h4 className="font-bold text-xs sm:text-sm text-white">Garantie 24 Mois</h4>
-            <p className="text-[10px] sm:text-[11px] text-gray-400 lowercase mt-1">SAV local réactif</p>
-          </div>
-          <div className="p-2">
-            <h4 className="font-bold text-xs sm:text-sm text-white">Showroom Antananarivo</h4>
-            <p className="text-[10px] sm:text-[11px] text-gray-400 lowercase mt-1">Conseils & démonstration</p>
-          </div>
-          <div className="p-2">
-            <h4 className="font-bold text-xs sm:text-sm text-white">Livraison Madagascar</h4>
-            <p className="text-[10px] sm:text-[11px] text-gray-400 lowercase mt-1">Expédition sécurisée</p>
-          </div>
+        {/* Chaque bloc est centré sur lui-même ; le 1er colle à gauche, le dernier à droite */}
+        <div
+          className="grid grid-cols-2 gap-4 -mt-2 lg:-mt-4 pb-3 border-b border-white/10 md:flex md:justify-between md:items-start"
+          style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+        >
+          {[
+            { title: "Importation UE", text: "Produits sourcés d'Europe" },
+            { title: "Garantie 24 Mois", text: "SAV local réactif" },
+            { title: "Showroom Antananarivo", text: "Conseils & démonstration" },
+            { title: "Livraison Madagascar", text: "Expédition sécurisée" },
+          ].map((item) => (
+            <div key={item.title} className="flex flex-col items-center text-center">
+              <h4
+                className="font-bold text-xs sm:text-sm lg:text-base uppercase tracking-[0.05em] text-white whitespace-nowrap"
+                style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+              >
+                {item.title}
+              </h4>
+              <p className="mt-1 text-[10px] sm:text-xs lg:text-sm tracking-[0.03em] text-zinc-300">
+                {item.text}
+              </p>
+            </div>
+          ))}
         </div>
 
         {/* Section Pourquoi demander un devis */}
-        <div className="max-w-4xl space-y-2 pt-2">
-          <h3 className="text-sm sm:text-base font-bold text-white">Pourquoi demander un devis express ?</h3>
-          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+        <div
+          className="space-y-3 -mt-4 lg:-mt-6"
+          style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+        >
+          <h3
+            className="text-sm sm:text-base lg:text-[17px] font-bold tracking-[0.06em] leading-none text-white"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
+            Pourquoi demander un devis express ?
+          </h3>
+          <p className="text-xs sm:text-sm lg:text-base font-normal tracking-[0.04em] text-white/90 leading-snug">
             Parce que certains projets demandent plus qu'un simple produit.
           </p>
-          <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+          <p className="text-xs sm:text-sm lg:text-base font-normal tracking-[0.04em] text-white/90 leading-snug">
             Notre équipe prend en charge ta demande sous 24 h ouvrées, analyse ton besoin et prépare une proposition adaptée à ton activité, ton budget et tes contraintes.
           </p>
         </div>
 
-        {/* Titre Décris nous tes besoins */}
-        <div className="mt-4 sm:mt-6" id="besoins-section">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-bold uppercase tracking-widest text-white">
-            Décris nous tes besoins
-          </h2>
-          <div className="flex items-center gap-4 sm:gap-6 mt-2 overflow-x-auto scrollbar-none">
-            <div className="dashed-underline shrink-0">
-              <div className="u-solid"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-              <div className="u-dash"></div>
-            </div>
+        {/* Titre Décris nous tes besoins : trait plein + tirets alignés, flèche au bout */}
+        <div className="-mt-2 lg:-mt-4 mb-4" id="besoins-section">
+          <h2
+            className="relative inline-flex items-end gap-[0.45em] text-lg sm:text-xl md:text-2xl font-bold uppercase tracking-[0.03em] leading-none text-white"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
+            <span
+              className="pb-3"
+              style={{
+                backgroundImage: "linear-gradient(#fff, #fff)",
+                backgroundSize: "100% 2px",
+                backgroundPosition: "left bottom",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              Decris nous
+            </span>
+            <span
+              className="pb-3"
+              style={{
+                backgroundImage: "repeating-linear-gradient(to right, #fff 0 12px, transparent 12px 20px)",
+                backgroundSize: "100% 2px",
+                backgroundPosition: "left bottom",
+                backgroundRepeat: "no-repeat",
+              }}
+            >
+              tes besoins
+            </span>
             <img
               src={curvedArrow}
-              alt="Flèche"
-              className="w-6 h-6 sm:w-8 sm:h-8 object-contain shrink-0"
+              alt=""
+              aria-hidden="true"
+              className="absolute left-full top-[calc(100%-6px)] ml-2 h-6 w-6"
             />
-          </div>
+          </h2>
         </div>
 
         {/* Formulaire Carte Blanche */}
