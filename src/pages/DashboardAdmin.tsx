@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, FileText, Star, ClipboardList,
-  Bell, Settings, LogOut, ChevronRight, Shield, Menu, X, ExternalLink, Store,
+  Bell, Settings, LogOut, ChevronRight, Shield, Menu, X, ExternalLink, Store
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/casaniers-logo.jpg";
@@ -48,8 +48,9 @@ const DashboardAdmin = () => {
 
   const activeLabel = menuItems.find((item) => isActive(item.path))?.label || "Tableau de bord";
 
+  // Toujours en mode sombre
   useEffect(() => {
-    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("dark");
   }, []);
 
   // Fermer le dropdown en dehors
@@ -81,7 +82,6 @@ const DashboardAdmin = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
-
 
   const handleLogout = () => {
     logout();
@@ -203,7 +203,6 @@ const DashboardAdmin = () => {
 
             {/* Actions header */}
             <div className="flex items-center gap-3">
-
               {/* Badge statut */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                 <div className="relative">

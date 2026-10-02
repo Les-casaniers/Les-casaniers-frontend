@@ -14,8 +14,6 @@ import {
   ChevronRight,
   Bell,
   Settings,
-  Sun,
-  Moon,
   TrendingUp,
   Award,
   ExternalLink
@@ -25,7 +23,6 @@ import logo from "@/assets/casaniers-logo.png";
 
 const LivreurLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,16 +36,9 @@ const LivreurLayout: React.FC = () => {
     email: user?.email || "livreur@lescasaniers.mg",
   };
 
-  // Vérifier le thème au chargement
+  // Toujours en mode sombre
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setIsDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.add('dark');
   }, []);
 
   // Fermer la sidebar sur mobile lors du changement de route
@@ -77,17 +67,6 @@ const LivreurLayout: React.FC = () => {
     { path: '/DashboardLivreur', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/DashboardLivreur/livraisons', icon: Package, label: 'Mes livraisons' },
   ];
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -204,18 +183,6 @@ const LivreurLayout: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Theme toggle rapide */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-110 active:scale-95"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-amber-500" />
-                ) : (
-                  <Moon className="w-4 h-4 text-slate-700" />
-                )}
-              </button>
-
               {/* Status */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                 <div className="relative">

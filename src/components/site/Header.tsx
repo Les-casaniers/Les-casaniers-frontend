@@ -70,46 +70,14 @@ import {
 import { CategoriesMegaMenu } from '../mega-menu/CategoriesMegaMenu';
 import { SousCategoryMenuSection } from "../mega-menu/MenuProductComponents";
 
-const useTheme = () => {
-  const [theme, setTheme] = useState<"light" | "dark" | "system">(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (
-      savedTheme === "light" ||
-      savedTheme === "dark" ||
-      savedTheme === "system"
-    ) {
-      return savedTheme;
-    }
-    return "system";
-  });
-
+// Le site est toujours en mode sombre, quel que soit le thème du navigateur
+const useForceDarkTheme = () => {
   useEffect(() => {
     const root = document.documentElement;
-    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-      .matches
-      ? "dark"
-      : "light";
-    const effectiveTheme = theme === "system" ? systemTheme : theme;
-    root.classList.remove("light", "dark");
-    root.classList.add(effectiveTheme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      if (theme === "system") {
-        const root = document.documentElement;
-        const systemTheme = mediaQuery.matches ? "dark" : "light";
-        root.classList.remove("light", "dark");
-        root.classList.add(systemTheme);
-      }
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [theme]);
-
-  return { theme, setTheme };
+    root.classList.remove("light");
+    root.classList.add("dark");
+    localStorage.removeItem("theme");
+  }, []);
 };
 
 // ─── Dynamic Mega Menu helpers ─────────────────────────────────────────────────
@@ -139,7 +107,7 @@ export const Header = () => {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const { user, isAuthenticated, logout } = useAuth();
   const profilePhoto = getProfilePhotoUrl(user?.photo);
-  const { theme, setTheme } = useTheme();
+  useForceDarkTheme();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);

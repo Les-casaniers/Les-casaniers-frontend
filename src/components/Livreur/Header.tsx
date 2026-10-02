@@ -1,6 +1,6 @@
 // src/components/layout/Header.tsx
 import React, { useState, useEffect } from 'react';
-import { Menu, Bell, User, Search, Moon, Sun } from 'lucide-react';
+import { Menu, Bell, User, Search } from 'lucide-react';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -9,28 +9,12 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onMenuClick, userRole, userName }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Toujours en mode sombre
   useEffect(() => {
-    // Check for dark mode preference
-    const isDark = localStorage.getItem('theme') === 'dark';
-    setIsDarkMode(isDark);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    }
+    document.documentElement.classList.add('dark');
   }, []);
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   return (
     <header className="fixed top-0 right-0 left-0 lg:left-72 bg-card border-b border-border z-30">
@@ -56,14 +40,6 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, userRole, userName }) => {
 
         {/* Right section */}
         <div className="flex items-center gap-3">
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            className="theme-toggle-icon"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
           {/* Notifications */}
           <div className="relative">
             <button
