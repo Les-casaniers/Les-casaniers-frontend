@@ -2,25 +2,26 @@ import { SiteLayout } from "@/components/site/SiteLayout";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Cpu,
-  MonitorCog,
-  MemoryStick,
-  HardDrive,
-  Zap,
-  Snowflake,
-  CircuitBoard,
+  AlertTriangle,
   Box,
   Check,
-  AlertTriangle,
-  ChevronRight,
   ChevronLeft,
-  Sparkles,
+  ChevronRight,
+  CircuitBoard,
+  Cpu,
+  Flame,
+  Gem,
+  HardDrive,
   Loader2,
+  MemoryStick,
+  MonitorCog,
+  Plus,
+  Shield,
+  Snowflake,
+  Sparkles,
   Star,
   Trophy,
-  Flame,
-  Shield,
-  Gem,
+  Zap,
 } from "lucide-react";
 import { formatAr } from "@/lib/products";
 import { useShop } from "@/store/shop";
@@ -28,13 +29,14 @@ import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/casaniers-mascot.png";
 import { useNavigate } from "react-router-dom";
 import { MiniHero } from "@/components/layout/MiniHero";
-import { Product, productImage } from "@/hooks/useProducts";
+import { Product } from "@/hooks/useProducts";
 import api from "@/service/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import AICompatibilityPanel from "@/components/AICompatibilityPanel";
-import mascote from "@/assets/3.png"
-import {InfoBar} from "@/components/site/InfoBar"
+import mascote from "@/assets/3.png";
+import { InfoBar } from "@/components/site/InfoBar";
+import fille from "@/assets/fille.png";
 // Mapping des références pour chaque catégorie
 const referenceMapping = {
   case: ["CASE-"],
@@ -47,7 +49,7 @@ const referenceMapping = {
   psu: ["PSU-"],
 };
 
-// Icônes pour les atouts
+
 const atoutIcons: Record<string, JSX.Element> = {
   performance: <Flame className="h-3 w-3" />,
   economie: <Gem className="h-3 w-3" />,
@@ -60,12 +62,12 @@ const atoutIcons: Record<string, JSX.Element> = {
 const stepsConfig = [
   {
     key: "case",
-    title: "Boîtier",
+    title: "Boitier",
     subtitle: "La Forteresse",
     mascot: "La Forteresse",
     icon: Box,
     hint: "Choisissez un boîtier adapté à votre carte mère",
-    color: "from-slate-500 to-gray-600",
+    color: "bg-orange-500",
   },
   {
     key: "cpu",
@@ -74,7 +76,7 @@ const stepsConfig = [
     mascot: "Le Cerveau",
     icon: Cpu,
     hint: "Le cœur de votre configuration",
-    color: "from-purple-500 to-purple-700",
+    color: "bg-stone-500",
   },
   {
     key: "motherboard",
@@ -83,7 +85,7 @@ const stepsConfig = [
     mascot: "L'Architecte",
     icon: CircuitBoard,
     hint: "Assurez-vous de la compatibilité avec votre CPU",
-    color: "from-blue-500 to-blue-700",
+    color: "bg-sky-700",
   },
   {
     key: "cooling",
@@ -92,16 +94,16 @@ const stepsConfig = [
     mascot: "Sub-Zero",
     icon: Snowflake,
     hint: "Gardez votre CPU au frais",
-    color: "from-cyan-500 to-teal-600",
+    color: "bg-teal-600",
   },
   {
     key: "ram",
-    title: "Mémoire RAM",
+    title: "RAM",
     subtitle: "L'Archiviste",
     mascot: "L'Archiviste",
     icon: MemoryStick,
     hint: "Plus de RAM = plus de multitâche",
-    color: "from-emerald-500 to-green-700",
+    color: "bg-zinc-500",
   },
   {
     key: "storage",
@@ -110,29 +112,53 @@ const stepsConfig = [
     mascot: "L'Éclair",
     icon: HardDrive,
     hint: "SSD pour la vitesse, HDD pour la capacité",
-    color: "from-amber-500 to-orange-600",
+    color: "bg-lime-600",
   },
   {
     key: "gpu",
-    title: "Carte graphique",
+    title: "GPU",
     subtitle: "Le Titan",
     mascot: "Le Titan",
     icon: MonitorCog,
     hint: "Essentielle pour le gaming et le montage",
-    color: "from-red-500 to-rose-700",
+    color: "bg-yellow-500",
   },
   {
     key: "psu",
     title: "Alimentation",
-    subtitle: "Le Générateur",
+    subtitle: "LE HEAL",
     mascot: "Le Générateur",
     icon: Zap,
-    hint: "Prévoyez 20% de marge",
+    hint: "Choisi la bonne puissance pour tes composants",
     color: "from-yellow-500 to-orange-600",
   },
 ];
 
 type Selections = Record<string, Product | null>;
+
+const AtoutBadge = ({ atout }: { atout?: string }) => {
+  if (!atout || atout.trim() === "") return null;
+
+  const lowerAtout = atout.toLowerCase();
+  const icon = lowerAtout.includes("perf") || lowerAtout.includes("puiss")
+    ? atoutIcons.performance
+    : lowerAtout.includes("éco") || lowerAtout.includes("prix")
+      ? atoutIcons.economie
+      : lowerAtout.includes("game")
+        ? atoutIcons.gaming
+        : lowerAtout.includes("pro")
+          ? atoutIcons.pro
+          : atoutIcons.default;
+
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-gradient-to-r from-amber-500/15 to-orange-500/10 px-2 py-0.5">
+      {icon}
+      <span className="line-clamp-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+        {atout.length > 35 ? `${atout.slice(0, 35)}...` : atout}
+      </span>
+    </div>
+  );
+};
 
 // Fonction pour filtrer les produits par référence
 const filterProductsByReference = (
@@ -150,31 +176,10 @@ const filterProductsByReference = (
   return filtered;
 };
 
-// Composant badge d'atout
-const AtoutBadge = ({ atout }: { atout?: string }) => {
-  if (!atout || atout.trim() === "") return null;
-
-  const getAtoutIcon = () => {
-    const lowerAtout = atout.toLowerCase();
-    if (lowerAtout.includes("perf") || lowerAtout.includes("puiss")) return atoutIcons.performance;
-    if (lowerAtout.includes("éco") || lowerAtout.includes("prix")) return atoutIcons.economie;
-    if (lowerAtout.includes("game") || lowerAtout.includes("gaming")) return atoutIcons.gaming;
-    if (lowerAtout.includes("pro") || lowerAtout.includes("profe")) return atoutIcons.pro;
-    return atoutIcons.default;
-  };
-
-  return (
-    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/20">
-      {getAtoutIcon()}
-      <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 line-clamp-1">
-        {atout.length > 35 ? atout.slice(0, 35) + "..." : atout}
-      </span>
-    </div>
-  );
-};
 
 const Configurateur = () => {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(7);
+  const [productPage, setProductPage] = useState(0);
   const [selections, setSelections] = useState<Selections>({});
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const { addToCart } = useShop();
@@ -228,6 +233,12 @@ const Configurateur = () => {
 
   const currentStepData = stepsConfig[currentStep];
   const currentProducts = categorizedProducts[currentStepData?.key] || [];
+  const productsPerPage = 6;
+  const pageCount = Math.ceil(currentProducts.length / productsPerPage);
+  const visibleProducts = currentProducts.slice(
+    productPage * productsPerPage,
+    (productPage + 1) * productsPerPage,
+  );
 
   const total = useMemo(() => {
     return Object.values(selections).reduce((sum, product) => {
@@ -250,15 +261,11 @@ const Configurateur = () => {
   };
 
   const handleNext = () => {
-    if (currentStep < stepsConfig.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
+    if (productPage < pageCount - 1) setProductPage(productPage + 1);
   };
 
   const handlePrev = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+    if (productPage > 0) setProductPage(productPage - 1);
   };
 
   const handleAddToCart = async () => {
@@ -470,7 +477,13 @@ const Configurateur = () => {
           </div>
 
           {/* Sélection actuelle - design compact */}
-          <div className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-5 animate-fade-up">
+          <div className="relative rounded-xl border border-border/50 bg-card/50 p-5 backdrop-blur-sm animate-fade-up">
+            <img
+              src={fille}
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 -top-2 z-10 h-24 w-20 object-contain"
+            />
             <div className="flex items-center gap-3 mb-5">
               <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${currentStepData.color} flex items-center justify-center shadow-sm`}>
                 <currentStepData.icon className="h-5 w-5 text-white" />
@@ -498,37 +511,32 @@ const Configurateur = () => {
                     <button
                       key={product.id}
                       onClick={() => handleSelect(product)}
-                      className={`group text-left rounded-xl border transition-all duration-200 overflow-hidden ${isSelected
-                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                        : "border-border/70 bg-card hover:border-primary/30 hover:shadow-sm"
+                      className={`group relative overflow-hidden rounded-xl border bg-white text-left text-black transition-all duration-200 ${isSelected
+                        ? "border-primary ring-1 ring-primary/20"
+                        : "border-border/70 hover:border-primary/30 hover:shadow-sm"
                         }`}
                     >
-                      <div className="aspect-video bg-secondary/20 overflow-hidden">
+                      <span className="absolute right-1.5 top-1.5 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-[#ed5b32] text-white">
+                        <Plus className="h-3 w-3" strokeWidth={3} />
+                      </span>
+                      <div className="aspect-video overflow-hidden bg-white">
                         <img
                           src={imageUrl}
                           alt={product.nom}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full bg-white object-contain transition-transform duration-300 group-hover:scale-105"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = "/placeholder-pc.jpg";
                           }}
                         />
                       </div>
-                      <div className="p-2.5">
-                        <h3 className="font-semibold text-xs line-clamp-2 leading-tight mb-1.5">
+                      <div className="p-2.5 pt-1.5">
+                        <h3 className="mb-2 line-clamp-2 text-xs font-semibold leading-tight">
                           {product.nom}
                         </h3>
-
-                        <AtoutBadge atout={product.atout} />
-
-                        <div className="flex items-center justify-between mt-2 pt-1 border-t border-border/30">
-                          <span className="font-bold text-xs text-primary">
+                        <div className="flex justify-center">
+                          <span className="whitespace-nowrap rounded-full bg-black px-3 py-0.5 text-xs font-extrabold leading-none text-white shadow-sm">
                             {formatAr(product.prix)}
                           </span>
-                          {isSelected && (
-                            <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
-                              <Check className="h-2.5 w-2.5 text-white" />
-                            </div>
-                          )}
                         </div>
                       </div>
                     </button>
