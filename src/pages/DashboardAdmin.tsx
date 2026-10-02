@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, FileText, Star, ClipboardList,
   Bell, Settings, LogOut, ChevronRight, Shield, Menu, X, ExternalLink, Store,
-  Sun, Moon
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/casaniers-logo.jpg";
@@ -14,7 +13,6 @@ const DashboardAdmin = () => {
   const { user, logout } = useAuth();
   const [showLogout, setShowLogout] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -50,12 +48,8 @@ const DashboardAdmin = () => {
 
   const activeLabel = menuItems.find((item) => isActive(item.path))?.label || "Tableau de bord";
 
-  // Thème au chargement
   useEffect(() => {
-    const saved = localStorage.getItem("theme");
-    const dark = saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setIsDarkMode(dark);
-    document.documentElement.classList.toggle("dark", dark);
+    document.documentElement.classList.remove("dark");
   }, []);
 
   // Fermer le dropdown en dehors
@@ -88,12 +82,6 @@ const DashboardAdmin = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const toggleTheme = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-  };
 
   const handleLogout = () => {
     logout();
@@ -215,15 +203,6 @@ const DashboardAdmin = () => {
 
             {/* Actions header */}
             <div className="flex items-center gap-3">
-              {/* Theme rapide */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-all duration-300 hover:scale-110 active:scale-95"
-              >
-                {isDarkMode
-                  ? <Sun className="w-4 h-4 text-amber-500" />
-                  : <Moon className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
-              </button>
 
               {/* Badge statut */}
               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
