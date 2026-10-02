@@ -573,20 +573,20 @@ export const Header = () => {
                       <Link
                         to={getDashboardUrl()}
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm italic hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
                       >
                         {getDashboardLabel()}
                       </Link>
                       <Link
                         to="/DashboardClient/commandes"
                         onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm italic hover:bg-secondary dark:hover:bg-black-10 hover:text-white transition-colors text-black"
                       >
                         Mes commandes
                       </Link>
                       <button
                         onClick={handleLogout}
-                        className="w-full flex items-center gap-1 px-4 py-2.5 text-sm text-black hover:bg-secondary dark:hover:bg-black-10 hover:text-red-500 transition-colors border-t border-border mt-2 pt-2"
+                        className="w-full flex items-center gap-1 px-4 py-2.5 text-sm italic text-black hover:bg-secondary dark:hover:bg-black-10 hover:text-red-500 transition-colors border-t border-border mt-2 pt-2"
                       >
                         <span>Se déconnecter</span>
                         <LogOut className="h-4 w-4" />
