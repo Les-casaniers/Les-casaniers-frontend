@@ -1,9 +1,10 @@
-﻿
-import { SiteLayout } from "@/components/site/SiteLayout";
+﻿import { SiteLayout } from "@/components/site/SiteLayout";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import arrow from "@/assets/Curved Arrow Downward.png";
 import madagascar from "@/assets/madagascar.png";
+import avion from "@/assets/avion.png";
+import bateau from "@/assets/bateux.png";
 import {
   Minus,
   Plus,
@@ -873,23 +874,6 @@ const Cart = () => {
           )}
         </button>
       </div>
-
-      {checkoutStep === "panier" && (
-        <div className="mt-4 space-y-2.5 px-1">
-          <div className="flex items-center gap-2.5 text-xs text-white/50 font-sans">
-            <ShieldCheck className="h-4 w-4 text-orange-400 shrink-0" />
-            <span>Aucun paiement avant confirmation</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-white/50 font-sans">
-            <Truck className="h-4 w-4 text-orange-400 shrink-0" />
-            <span>Livraison disponible à Antananarivo</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs text-white/50 font-sans">
-            <Phone className="h-4 w-4 text-orange-400 shrink-0" />
-            <span>Un conseiller vous recontacte sous 24h</span>
-          </div>
-        </div>
-      )}
     </aside>
   );
 
@@ -1018,21 +1002,6 @@ const Cart = () => {
                       </div>
                     );
                   })}
-                </div>
-
-                <div className="flex justify-between items-center pt-4 px-2">
-                  <button
-                    onClick={handleClearCart}
-                    className="text-xs text-white/40 hover:text-red-500 transition-colors flex items-center gap-1 font-sans"
-                  >
-                    <Trash2 className="h-3 w-3" /> Vider le panier
-                  </button>
-                  <Link
-                    to="/catalogue"
-                    className="text-xs text-white/60 hover:text-white transition-colors font-sans"
-                  >
-                    ← Continuer mes achats
-                  </Link>
                 </div>
               </div>
 
@@ -1454,7 +1423,27 @@ const ReglementRouteDiagram = () => (
           <circle cx="46" cy="50" r="4.5" fill="#000000" />
         </g>
 
-        {/* Avion */}
+        {/* Avion — image importée depuis @/assets/avion.png */}
+        <image
+          href={avion}
+          x="912"
+          y="246"
+          width="66"
+          height="50"
+          preserveAspectRatio="xMidYMid meet"
+        />
+
+        {/* Bateau — image importée depuis @/assets/bateau.png */}
+        <image
+          href={bateau}
+          x="918"
+          y="304"
+          width="62"
+          height="46"
+          preserveAspectRatio="xMidYMid meet"
+        />
+
+        {/* Anciens dessins SVG (avion + bateau), conservés en commentaire
         <g transform="translate(945 272) rotate(-28) translate(-28 -20)">
           <path d="M4 20 Q4 16 10 16 H46 Q56 16 56 20 Q56 24 46 24 H10 Q4 24 4 20 Z" fill="#000000" />
           <path d="M22 18 L34 2 H40 L34 18 Z" fill="#000000" />
@@ -1462,14 +1451,13 @@ const ReglementRouteDiagram = () => (
           <path d="M6 17 L4 8 H9 L14 17 Z" fill="#000000" />
           <path d="M6 23 L4 32 H9 L14 23 Z" fill="#000000" />
         </g>
-
-        {/* Bateau */}
         <g transform="translate(922 308)">
           <path d="M0 22 H52 L44 38 H10 Z" fill="#000000" />
           <path d="M14 12 H36 V22 H14 Z" fill="#000000" />
           <path d="M20 3 H30 V12 H20 Z" fill="#000000" />
           <path d="M36 16 H44 V22 H36 Z" fill="#000000" />
         </g>
+        */}
 
         {/* Chariot 2 */}
         <g transform="translate(546 325)">
