@@ -17,9 +17,147 @@ import { Plane, Sailboat } from "lucide-react";
 import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import chat from "@/assets/chat.png";
 import fille from "@/assets/fille.png";
+import { Lightbulb } from "lucide-react";
 // ✅ Même fonction que dans l'admin pour construire l'URL des images
 import { getProductImageUrl } from "@/lib/utils";
 
+
+// Ampoule avec petites lumières autour (SVG inline)
+const Lightbulb = ({
+  size = 20,
+  className = "",
+  inverted = false,
+}: {
+  size?: number;
+  className?: string;
+  inverted?: boolean;
+}) => (
+  <svg
+    viewBox="-8 -8 40 40"
+    width={size}
+    height={size}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={`${className} ${inverted ? "rotate-180" : ""}`}
+    aria-hidden="true"
+  >
+    {/* Petites lumières autour de l'ampoule */}
+    <line x1="12" y1="-4" x2="12" y2="-7" />
+    <line x1="12" y1="28" x2="12" y2="31" />
+    <line x1="-4" y1="12" x2="-7" y2="12" />
+    <line x1="28" y1="12" x2="31" y2="12" />
+    <line x1="1" y1="1" x2="-1" y2="-1" />
+    <line x1="23" y1="1" x2="25" y2="-1" />
+    <line x1="1" y1="23" x2="-1" y2="25" />
+    <line x1="23" y1="23" x2="25" y2="25" />
+
+    {/* Corps de l'ampoule */}
+    <path d="M9 18h6" />
+    <path d="M10 22h4" />
+    <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2v.3h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
+  </svg>
+);
+
+const Sun = ({ size = 28, className = "" }: { size?: number; className?: string }) => {
+  const rays = Array.from({ length: 16 }, (_, i) => {
+    const a = (i * Math.PI * 2) / 16;
+    const r2 = i % 2 === 0 ? 15 : 11;
+    return (
+      <line
+        key={i}
+        x1={Math.cos(a) * 7}
+        y1={Math.sin(a) * 7}
+        x2={Math.cos(a) * r2}
+        y2={Math.sin(a) * r2}
+      />
+    );
+  });
+  return (
+    <svg
+      viewBox="-16 -16 32 32"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.4"
+      strokeLinecap="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {rays}
+      <circle r="4.5" />
+      <circle r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+};
+
+const Moon = ({
+  side = "left",
+  size = 22,
+  className = "",
+}: {
+  side?: "left" | "right";
+  size?: number;
+  className?: string;
+}) => {
+  const id = `moon-mask-${side}`;
+  const cutX = side === "left" ? 6.5 : 13.5;
+  return (
+    <svg viewBox="0 0 20 20" width={size} height={size} className={className} aria-hidden="true">
+      <defs>
+        <mask id={id}>
+          <rect width="20" height="20" fill="white" />
+          <circle cx={cutX} cy="9" r="7.5" fill="black" />
+        </mask>
+      </defs>
+      <circle cx="10" cy="10" r="8.5" fill="currentColor" mask={`url(#${id})`} />
+    </svg>
+  );
+};
+
+const SunMoonFrame = ({ children }: { children: React.ReactNode }) => {
+  const corner = "absolute h-5 w-5 border-white pointer-events-none";
+  return (
+    <div className="relative mx-auto w-full max-w-4xl px-8 py-6 text-white">
+      <div className="relative bg-black border border-white/60">
+
+        {/* ===== Lunes éloignées des 4 coins ===== */}
+        <div className="absolute -top-2.5 -left-2.5 z-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <Moon side="left" size={24} />
+        </div>
+        <div className="absolute -top-2.5 -right-2.5 z-20 translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <Moon side="right" size={24} />
+        </div>
+        {/* ===== Coins épais en équerre ===== */}
+        <span className={`${corner} -top-px -left-px border-t-[3px] border-l-[3px]`} />
+        <span className={`${corner} -top-px -right-px border-t-[3px] border-r-[3px]`} />
+        <span className={`${corner} -bottom-px -left-px border-b-[3px] border-l-[3px]`} />
+        <span className={`${corner} -bottom-px -right-px border-b-[3px] border-r-[3px]`} />
+
+        {/* ===== Ampoule en haut au centre (lumière vers le haut) ===== */}
+        <span className="absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-1/2 bg-black px-1.5 pointer-events-none">
+          <Lightbulb size={22} />
+        </span>
+
+        {/* ===== Ampoule en bas au centre (inversée, lumière vers le bas) ===== */}
+        <span className="absolute left-1/2 bottom-0 z-30 -translate-x-1/2 translate-y-1/2 bg-black px-1.5 pointer-events-none">
+          <Lightbulb size={22} inverted />
+        </span>
+
+        {/* ===== Ligne verticale centrale ===== */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-0 bottom-0 z-10 w-px -translate-x-1/2 bg-white/50"
+        />
+
+        <div className="py-5">{children}</div>
+      </div>
+    </div>
+  );
+};
 const specIcons = {
   processeur: Cpu,
   carte_graphique: MonitorCog,
@@ -441,10 +579,8 @@ const ProductPage = () => {
       : specsAsRows.length > 0
         ? specsAsRows
         : caracteristiquesFallback;
-
-  const conseilCompatibilite: string =
-    (product as any).conseil_compatibilite ||
-    "Vérifie bien la compatibilité de ce produit avec le reste de ta configuration avant de valider ta commande.";
+const conseilCompatibilite: string | null =
+  (product as any).conseil_compatibilite?.trim() || null;
   const conseilCtaLabel: string = (product as any).conseil_cta_label || "Découvre nos produits compatibles";
 
   const avis: AvisClient[] = Array.isArray((product as any).avis) ? (product as any).avis : [];
@@ -883,84 +1019,56 @@ const ProductPage = () => {
             </ul>
           )}
 
-          {caracteristiquesTableau.length > 0 && (
-            <div className="mt-12">
-              <SectionTitle level={3}>Caractéristiques</SectionTitle>
+{caracteristiquesTableau.length > 0 && (
+  <div className="mt-12">
+    <SectionTitle level={3}>Caractéristiques</SectionTitle>
 
-              <div className="mt-8 mb-10 mx-auto w-full max-w-4xl">
-                {/* ===== Tableau encadré (début = capture 1, fin = capture 2) ===== */}
-                <div className="relative bg-black text-white">
-                  {/* Coins du haut : croissant de lune + coin épais + biseaux */}
-                  <FrameCorner position="tl" moon />
-                  <FrameCorner position="tr" moon />
+    <div className="mt-8 mb-10 mx-auto w-full max-w-4xl">
+      <SunMoonFrame>
+        <div className="overflow-x-auto">
+          <table className="w-full table-fixed border-collapse text-sm text-white">
+            <thead>
+              <tr>
+                <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-y border-white/30">
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    Caractéristiques
+                    <ScrollText className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </th>
+                <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-y border-white/30">
+                  <span className="inline-flex items-center justify-center gap-1.5">
+                    Valeurs
+                    <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
+                <tr key={i}>
+                  <td className="px-4 py-3 text-center text-xs text-white border-b border-white/30">{c.label}</td>
+                  <td className="px-4 py-3 text-center text-xs font-medium text-white border-b border-white/30">{c.valeur}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SunMoonFrame>
 
-                  {/* Coins du bas : équerres épaisses + biseaux */}
-                  <FrameCorner position="bl" />
-                  <FrameCorner position="br" />
-
-                  {/* Ornements centraux haut / bas */}
-                  <FrameOrnament className="top-0" />
-                  <FrameOrnament flip className="-bottom-5" />
-
-                  {/* Ligne verticale centrale (relie l'ornement du haut à celui du bas) */}
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-1/2 top-5 bottom-0 z-10 w-px -translate-x-1/2 bg-white/50"
-                  />
-
-                  {/* Bande du haut : ligne fine horizontale sous les croissants / l'ornement */}
-                  <div className="h-7 border-b border-white/60" />
-
-                  {/* Corps du tableau */}
-                  <div className="overflow-x-auto border-x border-white/60">
-                    <table className="w-full table-fixed border-collapse text-sm text-white">
-                      <thead>
-                        <tr>
-                          <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-b border-white/30">
-                            <span className="inline-flex items-center justify-center gap-1.5">
-                              Caractéristiques
-                              <ScrollText className="h-3.5 w-3.5" aria-hidden="true" />
-                            </span>
-                          </th>
-                          <th className="w-1/2 px-4 py-3 text-center font-bold uppercase tracking-wider text-[11px] sm:text-xs border-b border-white/30">
-                            <span className="inline-flex items-center justify-center gap-1.5">
-                              Valeurs
-                              <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                            </span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(caracExpanded ? caracteristiquesTableau : caracteristiquesTableau.slice(0, 5)).map((c, i) => (
-                          <tr key={i}>
-                            <td className="px-4 py-3 text-center text-xs text-white border-b border-white/30">
-                              {c.label}
-                            </td>
-                            <td className="px-4 py-3 text-center text-xs font-medium text-white border-b border-white/30">
-                              {c.valeur}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* ===== Bouton Afficher moins / plus ===== */}
-                {caracteristiquesTableau.length > 5 && (
-                  <div className="text-center mt-12">
-                    <button
-                      onClick={() => setCaracExpanded((v) => !v)}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
-                    >
-                      {caracExpanded ? "Afficher moins" : "Afficher plus"}
-                      <ChevronRight className={`h-4 w-4 ${caracExpanded ? "rotate-[-90deg]" : "rotate-90"}`} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+      {caracteristiquesTableau.length > 5 && (
+        <div className="text-center mt-12">
+          <button
+            onClick={() => setCaracExpanded((v) => !v)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2"
+          >
+            {caracExpanded ? "Afficher moins" : "Afficher plus"}
+            <ChevronRight className={`h-4 w-4 ${caracExpanded ? "rotate-[-90deg]" : "rotate-90"}`} />
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
         </div>
 
         {/* ---- Conseil de compatibilité : toujours affiché, juste sous le tableau ---- */}
@@ -974,7 +1082,7 @@ const ProductPage = () => {
 
             {/* Contenu du message */}
             <p className="text-sm italic text-zinc-300 leading-relaxed whitespace-pre-line">
-              "{conseilCompatibilite}"
+              « {conseilCompatibilite} »
             </p>
 
             {/* Mascotte décorative */}

@@ -31,7 +31,7 @@ type ProduitForm = {
   quantite_stock: string;
   est_dispo: boolean;
   actif: boolean;
-  // Champs de la ligne produit du catalogue (colonnes de la table produits)
+  conseil_compatibilite: string;
   ean: string;
   usages: string;
 } & Record<CatalogSpecKey, string>;
@@ -47,6 +47,7 @@ type CategoryForm = {
 
 const initialForm: ProduitForm = {
   categorie_id: "", id_sous_categorie: "", reference: "", nom: "", description_courte: "", description: "", atout: "", prix: "", devise: "MGA", quantite_stock: "", est_dispo: true, actif: true,
+  conseil_compatibilite: "",
   ean: "", usages: "", ...emptyCatalogSpecs,
 };
 
@@ -378,6 +379,35 @@ const ProductForm = ({
         />
       </div>
       <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <AlertCircle className="h-3.5 w-3.5" /> Conseil de compatibilité
+          </label>
+          <span className="text-[10px] text-muted-foreground">{value.conseil_compatibilite.length}/500</span>
+        </div>
+        <textarea
+          className={INPUT}
+          rows={2}
+          maxLength={500}
+          placeholder="Ex: Vérifie bien la compatibilité de ce produit avec le reste de ta configuration avant de valider ta commande."
+          value={value.conseil_compatibilite}
+          onChange={(e) => setValue((p) => ({ ...p, conseil_compatibilite: e.target.value }))}
+        />
+        <button
+          type="button"
+          onClick={() =>
+            setValue((p) => ({
+              ...p,
+              conseil_compatibilite:
+                "Vérifie bien la compatibilité de ce produit avec le reste de ta configuration avant de valider ta commande.",
+            }))
+          }
+          className="text-[11px] text-primary hover:underline"
+        >
+          Utiliser le message standard
+        </button>
+      </div>
+      <div className="space-y-1.5">
         <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> Description</label>
         <textarea className={INPUT} placeholder="Description du produit..." value={value.description} onChange={(e) => setValue((p) => ({ ...p, description: e.target.value }))} rows={3} />
       </div>
@@ -667,6 +697,20 @@ const ModalFooter = ({ onCancel, onConfirm, confirmLabel = "Enregistrer", confir
   </div>
 );
 
+// ✅ Bannière d'erreur affichée DANS le modal (au-dessus du formulaire)
+const ErrorBanner = ({ message, onClose }: { message: string | null; onClose: () => void }) => {
+  if (!message) return null;
+  return (
+    <div role="alert" className="mx-6 mt-4 flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+      <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+      <span className="flex-1 break-words">{message}</span>
+      <button type="button" onClick={onClose} className="shrink-0 p-0.5 rounded hover:bg-destructive/10" title="Fermer">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
 const toBool = (v: any, fallback = true) =>
   v === undefined || v === null ? fallback : v === true || v === 1 || v === "1";
 
@@ -694,6 +738,8 @@ const AdminProduits = () => {
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const [createCaracteristiques, setCreateCaracteristiques] = useState<Record<string, string>>({});
   const [editCaracteristiques, setEditCaracteristiques] = useState<Record<string, string>>({});
@@ -793,6 +839,13 @@ const AdminProduits = () => {
     });
     return result;
   }, [produitsWithCaracts, filterCategorieId, filterSousCategorieId, filterCaracteristiques]);
+
+  // Extrait un message lisible d'une erreur API (422 : liste des erreurs, 500 : message du serveur)
+  const extractErrorMessage = (error: any, fallback: string): string => {
+    const data = error?.response?.data;
+    if (data?.errors) return Object.values(data.errors).flat().join(" · ");
+    return data?.message || error?.message || fallback;
+  };
 
   const handleApiError = (error: any, fallback: string) => {
     const responseData = error?.response?.data;
@@ -902,6 +955,7 @@ const AdminProduits = () => {
     fd.append("description_courte", data.description_courte);
     fd.append("description", data.description);
     fd.append("atout", data.atout);
+    fd.append("conseil_compatibilite", data.conseil_compatibilite.trim());
     fd.append("prix", data.prix.replace(/\s/g, "").replace(",", "."));
     fd.append("devise", data.devise);
     fd.append("quantite_stock", data.quantite_stock.replace(/\s/g, ""));
@@ -923,11 +977,12 @@ const AdminProduits = () => {
   };
 
   const handleCreate = async () => {
-    if (!form.reference) { toast({ title: "Erreur", description: "Veuillez sélectionner un type de référence", variant: "destructive" }); return; }
-    if (!form.nom.trim()) { toast({ title: "Erreur", description: "Le nom du produit est obligatoire", variant: "destructive" }); return; }
-    if (!form.categorie_id) { toast({ title: "Erreur", description: "Veuillez choisir une catégorie", variant: "destructive" }); return; }
+    setCreateError(null);
+    if (!form.reference) { setCreateError("Veuillez sélectionner un type de référence."); return; }
+    if (!form.nom.trim()) { setCreateError("Le nom du produit est obligatoire."); return; }
+    if (!form.categorie_id) { setCreateError("Veuillez choisir une catégorie."); return; }
     if (form.prix && Number.isNaN(Number(form.prix.replace(/\s/g, "").replace(",", ".")))) {
-      toast({ title: "Erreur", description: "Le prix doit être un nombre", variant: "destructive" }); return;
+      setCreateError("Le prix doit être un nombre."); return;
     }
     setIsCreating(true);
     try {
@@ -939,18 +994,19 @@ const AdminProduits = () => {
           await Promise.all(createImageFiles.map((file, index) => uploadImage.mutateAsync({ produitId: createdProductId, imageFile: file, alt: `${form.nom} - image ${index + 1}`, ordre: index })));
         }
       }
-      setShowModal(false); setForm(initialForm); setSelectedPrefix(""); setGeneratedReference(""); setCreateImageFiles([]); setCreateCaracteristiques({}); setCreateTemplates([]);
+      setShowModal(false); setForm(initialForm); setSelectedPrefix(""); setGeneratedReference(""); setCreateImageFiles([]); setCreateCaracteristiques({}); setCreateTemplates([]); setCreateError(null);
       await refetch();
       toast({ title: "Produit créé avec la référence " + form.reference });
-    } catch (e: any) { handleApiError(e, "Impossible de créer le produit."); } finally { setIsCreating(false); }
+    } catch (e: any) { setCreateError(extractErrorMessage(e, "Impossible de créer le produit.")); } finally { setIsCreating(false); }
   };
 
   const handleOpenEdit = async (p: Produit) => {
     setSelectedProduit(p);
+    setEditError(null);
     let existingPrefix = "";
     for (const prefix of REFERENCE_PREFIXES) { if (p.reference?.startsWith(prefix.label)) { existingPrefix = prefix.key; break; } }
     setSelectedPrefix(existingPrefix);
-    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), est_dispo: toBool(p.est_dispo), actif: toBool(p.actif),
+    setEditForm({ categorie_id: String(p.categorie_id ?? ""), id_sous_categorie: String(p.id_sous_categorie ?? ""), reference: p.reference ?? "", nom: p.nom ?? "", description_courte: p.description_courte ?? "", description: p.description ?? "", atout: p.atout ?? "", conseil_compatibilite: p.conseil_compatibilite ?? "", prix: String(p.prix ?? ""), devise: p.devise ?? "MGA", quantite_stock: String(p.quantite_stock ?? ""), est_dispo: toBool(p.est_dispo), actif: toBool(p.actif),
       ean: p.ean ?? "", usages: p.usages ?? "",
       ...(Object.fromEntries(CATALOG_SPEC_FIELDS.map((f) => [f.key, p[f.key] ?? ""])) as Record<CatalogSpecKey, string>),
     });
@@ -974,6 +1030,7 @@ const AdminProduits = () => {
 
   const handleEdit = async () => {
     if (!selectedProduit) return;
+    setEditError(null);
     setIsUpdating(true);
     try {
       await updateProductMutation.mutateAsync({ id: selectedProduit.id, updatedProduct: buildFormData(editForm) });
@@ -982,10 +1039,10 @@ const AdminProduits = () => {
         const startOrder = existingImages.length;
         await Promise.all(editImageFiles.map((file, index) => uploadImage.mutateAsync({ produitId: selectedProduit.id, imageFile: file, alt: `${editForm.nom} - image ${startOrder + index + 1}`, ordre: startOrder + index })));
       }
-      setShowEditModal(false); setSelectedProduit(null); setSelectedPrefix(""); setEditImageFiles([]); setExistingImages([]); setEditCaracteristiques({}); setEditTemplates([]);
+      setShowEditModal(false); setSelectedProduit(null); setSelectedPrefix(""); setEditImageFiles([]); setExistingImages([]); setEditCaracteristiques({}); setEditTemplates([]); setEditError(null);
       await refetch();
       toast({ title: "Produit mis à jour" });
-    } catch (e: any) { handleApiError(e, "Impossible de modifier le produit."); } finally { setIsUpdating(false); }
+    } catch (e: any) { setEditError(extractErrorMessage(e, "Impossible de modifier le produit.")); } finally { setIsUpdating(false); }
   };
 
   const handleDelete = async () => {
@@ -1009,8 +1066,8 @@ const AdminProduits = () => {
     } catch (e: any) { handleApiError(e, "Impossible d'enregistrer la catégorie."); }
   };
 
-  const closeCreateModal = () => { setShowModal(false); setCreateImageFiles([]); setSelectedPrefix(""); setGeneratedReference(""); setForm(initialForm); setCreateCaracteristiques({}); setCreateTemplates([]); };
-  const closeEditModal = () => { setShowEditModal(false); setEditImageFiles([]); setExistingImages([]); setSelectedPrefix(""); setGeneratedReference(""); setEditCaracteristiques({}); setEditTemplates([]); };
+  const closeCreateModal = () => { setShowModal(false); setCreateImageFiles([]); setSelectedPrefix(""); setGeneratedReference(""); setForm(initialForm); setCreateCaracteristiques({}); setCreateTemplates([]); setCreateError(null); };
+  const closeEditModal = () => { setShowEditModal(false); setEditImageFiles([]); setExistingImages([]); setSelectedPrefix(""); setGeneratedReference(""); setEditCaracteristiques({}); setEditTemplates([]); setEditError(null); };
 
   const handleCaracteristiqueFilterChange = (nomChamp: string, valeur: string, checked: boolean) => {
     setFilterCaracteristiques(prev => {
@@ -1350,6 +1407,7 @@ const AdminProduits = () => {
         <ModalPortal onClose={closeCreateModal}>
           <div className={`${MODAL_PANEL} max-w-2xl max-h-[88vh]`}>
             <ModalHeader icon={Package} title="Ajouter un produit" onClose={closeCreateModal} accent />
+            <ErrorBanner message={createError} onClose={() => setCreateError(null)} />
             <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
               <ProductForm value={form} setValue={setForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={false} templatesDisponibles={createTemplates} caracteristiques={createCaracteristiques} setCaracteristiques={setCreateCaracteristiques} loadTemplates={loadTemplatesForSousCategorie} />
               <ImageUploadField files={createImageFiles} setFiles={setCreateImageFiles} />
@@ -1363,6 +1421,7 @@ const AdminProduits = () => {
         <ModalPortal onClose={closeEditModal}>
           <div className={`${MODAL_PANEL} max-w-2xl max-h-[88vh]`}>
             <ModalHeader icon={Pencil} title="Modifier le produit" onClose={closeEditModal} accent />
+            <ErrorBanner message={editError} onClose={() => setEditError(null)} />
             <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
               <ProductForm value={editForm} setValue={setEditForm} categories={normalizedCategories} sousCategories={normalizedSousCategories} selectedPrefix={selectedPrefix} setSelectedPrefix={setSelectedPrefix} generatedReference={generatedReference} generateReference={generateReference} isEditMode={true} templatesDisponibles={editTemplates} caracteristiques={editCaracteristiques} setCaracteristiques={setEditCaracteristiques} onDeleteTemplate={(templateId, nomChamp) => { setCaractToDelete({ id: templateId, nom_champ: nomChamp, isTemplate: true }); setShowDeleteCaractModal(true); }} onEditTemplate={editTemplate} />
               <ExistingImagesManager selectedProduit={selectedProduit} existingImages={existingImages} setExistingImages={setExistingImages} setMainImage={setMainImage} deleteImage={deleteImage} handleApiError={handleApiError} toast={toast} />
