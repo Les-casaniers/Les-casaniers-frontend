@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Package, MapPin, Heart,
-  CreditCard, Settings, LogOut, ChevronRight,
-  Menu, X
+  ChevronRight, ChevronDown, Edit3, Check, Menu, X
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Header } from "@/components/site/Header";
 import { TopBar } from "@/components/site/TopBar";
-import logo from "@/assets/casaniers-logo.png";
 import { Footer } from "@/components/site/Footer";
 import EditProfileModal from "@/components/ActionClient/EditProfileModal";
 import { getProfilePhotoUrl } from "@/lib/utils";
@@ -16,7 +13,7 @@ import { getProfilePhotoUrl } from "@/lib/utils";
 const DashboardClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const displayPrenom = user?.prenom;
@@ -24,11 +21,11 @@ const DashboardClientLayout = () => {
   const displayPhoto = getProfilePhotoUrl(user?.photo);
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Mon aperçu", path: "/DashboardClient" },
-    { icon: Package, label: "Mes commandes", path: "/DashboardClient/commandes" },
-    { icon: MapPin, label: "Mes adresses", path: "/DashboardClient/adresses" },
-    { icon: Heart, label: "Mes favoris", path: "/DashboardClient/favoris" },
-    { icon: CreditCard, label: "Factures", path: "/DashboardClient/paiement" },
+    { label: "Mon aperçu", path: "/DashboardClient" },
+    { label: "Mes adresses", path: "/DashboardClient/adresses" },
+    { label: "Mes commandes", path: "/DashboardClient/commandes" },
+    { label: "Mes favoris", path: "/DashboardClient/favoris" },
+    { label: "Mes factures", path: "/DashboardClient/paiement" },
   ];
 
   const isActive = (path: string) => {
@@ -50,124 +47,81 @@ const DashboardClientLayout = () => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const handleLogout = () => {
-    if (typeof logout === "function") {
-      logout();
-    }
-    navigate("/");
-  };
-
-  // ─── Sidebar partagée ──────────────────────────────────────────────────────
+  // ─── Sidebar partagée conforme à la maquette ───────────────────────────────
   const SidebarContent = ({ onNavClick }: { onNavClick?: () => void }) => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-3 border-b border-white/7">
-        <div className="flex items-center justify-between">
-       
-          {onNavClick && (
-            <button
-              onClick={onNavClick}
-              className="lg:hidden p-1.5 hover:bg-muted rounded-lg transition-all duration-200"
-              aria-label="Fermer le menu"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+    <div className="p-4 w-full">
+      {/* Conteneur encadré Profil + Menu */}
+      <div className="rounded-xl border border-white/20 bg-black text-white overflow-hidden shadow-lg">
+        {/* Header Profil */}
+        <div className="relative p-4 flex items-center gap-3">
+          {/* Avatar circular */}
+          <div className="w-14 h-14 shrink-0 rounded-full overflow-hidden bg-white text-black font-bold flex items-center justify-center text-xl shadow">
+            {displayPhoto ? (
+              <img src={displayPhoto} alt="Photo de profil" className="w-full h-full object-cover" />
+            ) : displayPrenom || displayNom ? (
+              (displayPrenom || displayNom)?.charAt(0).toUpperCase()
+            ) : (
+              "U"
+            )}
+          </div>
 
-        {/* Profil court en haut de la sidebar */}
-        <div className="px-3 py-3">
+          {/* Pseudo / Nom & Statut */}
+          <div className="flex-1 min-w-0 pr-6">
+            <p className="text-base font-medium text-white truncate">
+              {displayPrenom && displayNom
+                ? `${displayPrenom} ${displayNom}`
+                : displayPrenom || displayNom || "Pseudo"}
+            </p>
+            <p className="text-xs text-neutral-400 flex items-center gap-1 mt-0.5">
+              <span>{user && (user as any).statut !== false ? "Actif" : "Inactif"}</span>
+              <Check className="w-3.5 h-3.5 text-white" />
+            </p>
+          </div>
+
+          {/* Bouton édition profil en haut à droite */}
           <button
             type="button"
             onClick={() => { setShowProfileModal(true); onNavClick?.(); }}
-            className="w-full text-left flex items-center gap-3 p-3 rounded-lg border border-white/7 hover:bg-muted/50 transition-colors"
+            className="absolute top-3 right-3 p-1 rounded border border-white/30 text-white hover:bg-white/10 transition-colors"
+            aria-label="Modifier le profil"
+            title="Modifier le profil"
           >
-            <div className="w-12 h-12 shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold">
-              {displayPhoto ? (
-                <img src={displayPhoto} alt="Photo de profil" className="w-full h-full object-cover" />
-              ) : displayPrenom || displayNom ? (
-                (displayPrenom || displayNom)?.charAt(0).toUpperCase()
-              ) : (
-                "U"
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground line-clamp-1">
-                {displayPrenom && displayNom
-                  ? `${displayPrenom} ${displayNom}`
-                  : displayPrenom || displayNom || "Client"}
-              </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-2">
-                <span
-                  className={
-                    "inline-block w-2 h-2 rounded-full " +
-                    (user && (user as any).statut ? "bg-green-400" : "bg-gray-400")
-                  }
-                />
-                {user && (user as any).statut ? "Actif" : "Inactif"}
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Edit3 className="w-3.5 h-3.5" />
           </button>
         </div>
+
+        {/* Ligne de séparation */}
+        <div className="border-t border-white/20" />
+
+        {/* Navigation Menu */}
+        <nav className="py-1">
+          {menuItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onNavClick}
+                className={`
+                  flex items-center justify-between px-5 py-3.5 text-sm font-medium
+                  transition-colors duration-150
+                  ${active
+                    ? "text-white font-semibold bg-white/10"
+                    : "text-neutral-300 hover:text-white hover:bg-white/5"
+                  }
+                `}
+              >
+                <span>{item.label}</span>
+                {active ? (
+                  <ChevronDown className="w-4 h-4 text-white" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-neutral-400" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-        {menuItems.map((item) => {
-          const active = isActive(item.path);
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={onNavClick}
-              className={`
-                relative flex items-center gap-3 px-3 py-2.5 rounded-lg
-                transition-all duration-200 group
-                ${active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:translate-x-1"
-                }
-              `}
-            >
-              <item.icon
-                className={`w-4 h-4 transition-all duration-200 ${
-                  active ? "text-primary-foreground" : "group-hover:text-primary"
-                }`}
-              />
-              <span className="text-sm font-medium flex-1">{item.label}</span>
-              {active && <ChevronRight className="w-3 h-3 animate-pulse-slow" />}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer sidebar : paramètres + déconnexion */}
-        {/* <div className="p-3 border-t border-white/7 space-y-0.5">
-          <Link
-            to="/DashboardClient/details-client"
-            onClick={onNavClick}
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg
-              transition-all duration-200 group
-              ${isActive("/DashboardClient/details-client")
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:translate-x-1"
-              }
-            `}
-          >
-            <Settings className="w-4 h-4 group-hover:text-primary transition-all duration-200" />
-            <span className="text-sm font-medium flex-1">Paramètres</span>
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 group"
-          >
-            <LogOut className="w-4 h-4 group-hover:text-destructive transition-all duration-200" />
-            <span className="text-sm font-medium flex-1 text-left">Déconnexion</span>
-          </button>
-        </div> */}
     </div>
   );
 
@@ -182,7 +136,7 @@ const DashboardClientLayout = () => {
       {/* Layout wrapper */}
       <div className="flex flex-1 relative">
         {/* Sidebar Desktop - toujours visible */}
-        <aside className="hidden lg:flex w-72 bg-card/95 backdrop-blur-md border-r border-border flex-col overflow-y-auto">
+        <aside className="hidden lg:flex w-80 bg-card/95 backdrop-blur-md border-r border-border flex-col overflow-y-auto">
           <SidebarContent />
         </aside>
 
@@ -195,7 +149,7 @@ const DashboardClientLayout = () => {
               onClick={() => setMobileMenuOpen(false)}
             />
             {/* Mobile Sidebar */}
-            <aside className="lg:hidden fixed left-0 top-0 w-72 h-screen bg-card/95 backdrop-blur-md border-r border-border flex flex-col z-40 overflow-y-auto animate-fade-in">
+            <aside className="lg:hidden fixed left-0 top-0 w-80 h-screen bg-card/95 backdrop-blur-md border-r border-border flex flex-col z-40 overflow-y-auto animate-fade-in">
               <SidebarContent onNavClick={() => setMobileMenuOpen(false)} />
             </aside>
           </>
@@ -232,16 +186,10 @@ const DashboardClientLayout = () => {
           to   { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-up { animation: fade-up 0.4s ease-out both; }
-
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 1; transform: translateX(0); }
-          50%       { opacity: 0.5; transform: translateX(2px); }
-        }
-        .animate-pulse-slow { animation: pulse-slow 2s ease-in-out infinite; }
       `}</style>
       <footer>
-          <Footer />
-        </footer>
+        <Footer />
+      </footer>
 
       {showProfileModal && (
         <EditProfileModal
@@ -254,4 +202,4 @@ const DashboardClientLayout = () => {
   );
 };
 
-export default DashboardClientLayout;
+export default DashboardClientLayout;
