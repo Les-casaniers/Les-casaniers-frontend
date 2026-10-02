@@ -15,12 +15,15 @@ import { getProductImageUrl } from "@/lib/utils";
 // Types
 interface Product {
   id: number;
+  reference?: string;
   nom: string;
   prix: number;
   devise: string;
   quantite_stock: number;
   description_courte: string;
   type_produit: string;
+  categorie?: { id: number; nom: string };
+  sous_categorie?: { id: number; nom: string };
   images?: { id: number; url: string; alt: string; ordre: number }[];
   est_dispo: boolean;
   actif: boolean;
@@ -33,6 +36,24 @@ interface Favori {
   date_creation: string;
   produit?: Product;
 }
+
+const REFERENCE_TYPES: Record<string, string> = {
+  CASE: "Unité Central",
+  CPU: "Processeur",
+  MB: "Carte mère",
+  CL: "Refroidissement",
+  RAM: "Mémoire RAM",
+  SD: "Stockage",
+  GPU: "Carte graphique",
+  PSU: "Alimentation",
+  PC: "Portable",
+  CLV: "Clavier Gaming",
+  SR: "Souris Gaming",
+  ECR: "Ecran Gaming",
+  CHS: "Chaise Gaming",
+  EXP: "Produit Exception",
+  REF: "Autres",
+};
 
 // Composant pour un produit favori individuel
 const FavoriteProductCard = ({
@@ -52,17 +73,22 @@ const FavoriteProductCard = ({
     return new Intl.NumberFormat('fr-FR').format(prix) + ` ${devise}`;
   };
 
-  const getTypeLabel = (type: string | undefined) => {
-    if (!type) return "Produit";
-    return type.charAt(0).toUpperCase() + type.slice(1);
+  const getTypeLabel = (p: Product) => {
+    const prefix = p.reference?.split("-")[0]?.toUpperCase();
+    const description = prefix ? REFERENCE_TYPES[prefix] : undefined;
+    if (prefix && description) return `${prefix}-${description}`;
+    return p.categorie?.nom || p.type_produit || "Produit";
   };
 
   return (
     <article className="group relative overflow-hidden rounded-xl bg-white p-3 text-black shadow-sm">
       {/* Catégorie + bouton ajouter au panier */}
       <div className="flex items-center justify-between text-[10px] italic text-black/70">
-        <span className="font-medium not-italic text-black/80">
-          {getTypeLabel(product.type_produit)}
+        <span
+          className="font-medium not-italic text-black/80"
+          style={{ textDecoration: "underline", textUnderlineOffset: "4px" }}
+        >
+          {getTypeLabel(product)}
         </span>
         <button
           onClick={() => onAddToCart(product.id)}
