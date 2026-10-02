@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import gorile from "@/assets/3.png";
+import gorile from "@/assets/122.png";
 import fond from  "@/assets/fond3.jpg";
 import { Product, productSpec, useCategories } from "@/hooks/useProducts";
 import { MiniHero } from "@/components/layout/MiniHero";
