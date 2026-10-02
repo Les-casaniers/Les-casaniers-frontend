@@ -310,6 +310,8 @@ export type CartItem = {
 
 export const useCartApi = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  // ✅ Détails complets des produits du panier (même source que la page Favoris : /produits/{id})
+  const [productDetails, setProductDetails] = useState<Record<number, any>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [cartTotal, setCartTotal] = useState(0);
   const [cartCount, setCartCount] = useState(0);
@@ -352,6 +354,26 @@ export const useCartApi = () => {
       setCartItems(items);
       updateCartCount(items);
       updateCartTotal(items);
+
+      // ✅ Récupérer les détails (images) de chaque produit du panier, comme dans Favoris
+      const productIds = Array.from(
+        new Set(items.filter((i) => !i.boutique && i.produit_id).map((i) => Number(i.produit_id)))
+      );
+      if (productIds.length > 0) {
+        const results = await Promise.all(
+          productIds.map((id) =>
+            api
+              .get(`/produits/${id}`)
+              .then((res) => ({ id, data: res.data?.data || res.data }))
+              .catch(() => ({ id, data: null }))
+          )
+        );
+        const details: Record<number, any> = {};
+        results.forEach(({ id, data }) => {
+          if (data) details[id] = data;
+        });
+        setProductDetails(details);
+      }
       
     } catch (error) {
       console.error("Erreur chargement panier:", error);
@@ -565,7 +587,12 @@ export const useCartApi = () => {
           id: item.produit?.id || item.produit_id,
           name: item.produit?.nom || item.titre || `Produit #${item.produit_id}`,
           price: item.prix_unitaire,
-          image: item.produit?.image || "/placeholder.jpg",
+          // ✅ Images : détails complets du produit en priorité, sinon celles du panier
+          images: productDetails[Number(item.produit_id)]?.images ?? item.produit?.images ?? [],
+          image_principale: productDetails[Number(item.produit_id)]?.image_principale,
+          image_url: productDetails[Number(item.produit_id)]?.image_url,
+          photo: productDetails[Number(item.produit_id)]?.photo,
+          image: productDetails[Number(item.produit_id)]?.image ?? item.produit?.image ?? "",
           category: item.produit?.type_produit || "Produit",
           tagline: "Article ajouté au panier"
         },

@@ -33,6 +33,7 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "@/hooks/use-toast";
 import fosa from "@/assets/8.png";
+import { getProductImageUrl as getSharedProductImageUrl } from "@/lib/utils";
 import { useCartApi } from "@/hooks/useCartApi";
 import api from "@/service/api";
 import { useNavigate } from "react-router-dom";
@@ -305,15 +306,10 @@ const Cart = () => {
     if (isBoutique) {
       return product.image_url || fosa;
     }
-    const images = product.images || [];
-    if (images.length === 0) return fosa;
-    const mainImage = images.find((img: any) => img.ordre === 0) || images[0];
-    if (!mainImage?.url) return fosa;
-    let finalUrl = mainImage.url;
-    if (mainImage.url.startsWith("/storage")) {
-      finalUrl = `http://127.0.0.1:8000${mainImage.url}`;
-    }
-    return finalUrl;
+    // ✅ Même fonction que la page Favoris (gère /storage, /image/..., URL complètes, etc.)
+    const url = getSharedProductImageUrl(product);
+    // Si aucune image n'a été trouvée, la fonction partagée renvoie un placeholder : on garde la mascotte
+    return !url || url.endsWith("/placeholder-pc.jpg") ? fosa : url;
   };
 
   useEffect(() => {
