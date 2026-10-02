@@ -53,9 +53,9 @@ const DashboardClientLayout = () => {
       {/* Conteneur encadré Profil + Menu */}
       <div className="rounded-xl border border-white/20 bg-black text-white overflow-hidden shadow-lg">
         {/* Header Profil */}
-        <div className="relative p-4 flex items-center gap-3">
+        <div className="relative z-20 flex h-12 items-center gap-3 px-4">
           {/* Avatar circular */}
-          <div className="w-14 h-14 shrink-0 rounded-full overflow-hidden bg-white text-black font-bold flex items-center justify-center text-xl shadow">
+          <div className="flex h-[60px] w-[60px] shrink-0 translate-y-3 items-center justify-center overflow-hidden rounded-full bg-white text-xl font-bold text-black shadow">
             {displayPhoto ? (
               <img src={displayPhoto} alt="Photo de profil" className="w-full h-full object-cover" />
             ) : displayPrenom || displayNom ? (
@@ -66,7 +66,7 @@ const DashboardClientLayout = () => {
           </div>
 
           {/* Pseudo / Nom & Statut */}
-          <div className="flex-1 min-w-0 pr-6">
+          <div className="min-w-0 flex-1 pr-6">
             <p className="text-base font-medium text-white truncate">
               {displayPrenom && displayNom
                 ? `${displayPrenom} ${displayNom}`
@@ -202,4 +202,4 @@ const DashboardClientLayout = () => {
   );
 };
 
-export default DashboardClientLayout;
+export default DashboardClientLayout;
