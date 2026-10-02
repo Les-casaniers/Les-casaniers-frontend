@@ -444,9 +444,9 @@ const Configurateur = () => {
               </span>
               <span className="font-semibold text-primary">{Math.round(progress)}%</span>
             </div>
-            <div className="relative h-1.5 rounded-full overflow-hidden bg-secondary">
+            <div className="relative h-1.5 rounded-full bg-secondary/80">
               <div
-                className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-primary to-accent"
+                className="h-full rounded-full bg-gradient-to-r from-primary via-accent to-primary shadow-[0_0_8px_hsl(var(--primary)/0.8),0_0_16px_hsl(var(--accent)/0.6)] transition-[width] duration-700 ease-in-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -455,11 +455,11 @@ const Configurateur = () => {
                 <button
                   key={step.key}
                   onClick={() => setCurrentStep(idx)}
-                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${idx === currentStep
-                    ? "bg-primary text-primary-foreground shadow-sm"
+                  className={`px-2.5 py-1 rounded-full text-[10px] font-medium bg-gradient-to-r ${step.color} text-white/90 transition-all duration-300 ${idx === currentStep
+                    ? "opacity-100 ring-1 ring-white/30 shadow-[0_0_10px_rgba(255,255,255,0.28)]"
                     : selections[step.key]
-                      ? "bg-primary/10 text-primary"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80"
+                      ? "opacity-90 shadow-sm"
+                      : "opacity-70 hover:opacity-100"
                     }`}
                 >
                   {selections[step.key] && <Check className="h-2.5 w-2.5 inline mr-0.5" />}
