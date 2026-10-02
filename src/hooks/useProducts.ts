@@ -44,6 +44,7 @@ export interface Product {
   description_courte?: string | null;
   description: string;
   atout?: string;
+  conseil_compatibilite?: string | null;
   prix: number;
   devise?: string | null;
   quantite_stock: number;
