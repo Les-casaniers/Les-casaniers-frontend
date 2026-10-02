@@ -90,10 +90,16 @@ const PromoBanner: FC<PromoBannerProps> = ({
               {eyebrow}
             </span>
           )}
-          <h2 className="font-sans text-sm sm:text-base md:text-lg lg:text-2xl font-extrabold leading-none text-white drop-shadow-md whitespace-nowrap tracking-wide">
+          <h2
+            className="text-sm sm:text-base md:text-lg lg:text-2xl font-bold leading-none text-white drop-shadow-md whitespace-nowrap tracking-[0.03em]"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
             {title}
           </h2>
-          <p className="font-serif text-xs sm:text-sm md:text-base italic text-white/90 drop-shadow whitespace-nowrap tracking-wide">
+          <p
+            className="text-xs sm:text-sm md:text-base italic font-normal text-white/90 drop-shadow whitespace-nowrap tracking-[0.04em]"
+            style={{ fontFamily: '"Glacial Indifference", system-ui, sans-serif' }}
+          >
             {subtitle}
           </p>
         </div>
