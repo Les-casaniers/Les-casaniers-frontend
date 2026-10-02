@@ -1,13 +1,14 @@
 // src/pages/Favorites.tsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Trash2, ShoppingBag, ArrowRight, Loader2 } from "lucide-react";
+import { Trash2, ArrowRight, Loader2 } from "lucide-react";
 import { useShop } from "@/store/shop";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/service/api";
 import { useAuth } from "@/contexts/AuthContext";
 import mascot from "@/assets/casaniers-mascot.png";
+import basketIcon from "@/assets/Basket.png";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { getProductImageUrl } from "@/lib/utils";
@@ -22,6 +23,14 @@ interface Product {
   quantite_stock: number;
   description_courte: string;
   type_produit: string;
+  usages?: string | null;
+  processeur?: string | null;
+  ssd?: string | null;
+  os?: string | null;
+  gpu?: string | null;
+  resolution?: string | null;
+  ram?: string | null;
+  taille?: string | null;
   categorie?: { id: number; nom: string };
   sous_categorie?: { id: number; nom: string };
   images?: { id: number; url: string; alt: string; ordre: number }[];
@@ -80,6 +89,15 @@ const FavoriteProductCard = ({
     return p.categorie?.nom || p.type_produit || "Produit";
   };
 
+  // Détails affichés après le nom, séparés par des virgules
+  const getSpecs = (p: Product) =>
+    [p.usages, p.processeur, p.ssd, p.os, p.gpu, p.resolution, p.ram, p.taille]
+      .map((v) => (v ?? "").toString().trim())
+      .filter(Boolean)
+      .join(", ");
+
+  const specs = getSpecs(product);
+
   return (
     <article className="group relative overflow-hidden rounded-xl bg-white p-3 text-black shadow-sm">
       {/* Catégorie + bouton ajouter au panier */}
@@ -99,7 +117,7 @@ const FavoriteProductCard = ({
           {isAddingToCart ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <ShoppingBag className="h-3.5 w-3.5" />
+            <img src={basketIcon} alt="" className="h-5 w-5 object-contain" />
           )}
         </button>
       </div>
@@ -119,21 +137,22 @@ const FavoriteProductCard = ({
       {/* Séparateur */}
       <div className="mt-3 h-[2px] w-full rounded-full bg-black" />
 
-      {/* Nom + bouton supprimer */}
+      {/* Nom + détails + bouton supprimer */}
       <div className="mt-3 flex items-start justify-between gap-2">
         <Link
           to={`/produit/${product.id}`}
           className="flex-1 text-xs font-bold leading-snug transition hover:underline"
         >
-          {product.nom}
+          {[product.nom, specs].filter(Boolean).join(", ")}
         </Link>
+         {/* Bouton supprimer (désactivé pour l'instant, décommenter pour le réafficher)
         <button
           onClick={() => onRemove(product.id)}
           aria-label="Retirer des favoris"
           className="shrink-0 rounded p-1 text-black/40 transition hover:bg-black hover:text-white"
         >
           <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        </button> */}
       </div>
 
       {/* Prix */}
