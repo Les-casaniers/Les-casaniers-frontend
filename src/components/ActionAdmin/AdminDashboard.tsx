@@ -167,13 +167,6 @@ const AdminDashboard = () => {
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
             <span className="text-sm font-medium">Actualiser</span>
           </button>
-          <Link
-            to="/DashboardAdmin/parametres"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-all duration-200 hover:shadow-lg hover:shadow-foreground/20"
-          >
-            <Settings className="h-4 w-4" />
-            <span className="text-sm font-medium">Paramètres</span>
-          </Link>
         </div>
       </div>
 
