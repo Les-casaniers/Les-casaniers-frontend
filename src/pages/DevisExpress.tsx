@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import devisExpressBg from "@/assets/devis_express.png";
 import {
@@ -7,10 +8,25 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
+import api from "@/service/api";
+
+const initialForm = {
+  nom: "",
+  email: "",
+  telephone: "",
+  entreprise: "",
+  besoin: "",
+  budget: "",
+  date_souhaitee: "",
+  message: "",
+  accepte: false,
+};
 
 const DevisExpress = () => {
   const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState(initialForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     document.title = "Devis Express — Les Casaniers Madagascar";
@@ -19,6 +35,57 @@ const DevisExpress = () => {
 
   const scrollToBesoins = () => {
     document.getElementById("besoins-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, type, value, checked } = event.target as HTMLInputElement;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!form.accepte) {
+      toast.error("Veuillez accepter d’être contacté pour traiter votre demande.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await api.post("/devis-express", {
+        nom: form.nom,
+        email: form.email,
+        telephone: form.telephone,
+        entreprise: form.entreprise,
+        besoin: form.besoin,
+        budget: form.budget,
+        date_souhaitee: form.date_souhaitee,
+        message: form.message,
+      });
+
+      if (response.data.success) {
+        toast.success(response.data.message || "Votre demande de devis a bien été enregistrée.");
+        setForm(initialForm);
+      } else {
+        toast.error(response.data.message || "Une erreur est survenue.");
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "Impossible d’envoyer votre demande pour le moment.";
+      const validationErrors = error?.response?.data?.errors;
+
+      if (validationErrors) {
+        const firstError = Object.values(validationErrors)[0];
+        toast.error(Array.isArray(firstError) ? firstError[0] : String(firstError));
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -220,20 +287,20 @@ const DevisExpress = () => {
 
         {/* Formulaire Carte Blanche */}
         <div className="rounded-[15px] bg-white text-black p-5 sm:p-8 md:p-12 lg:p-14 shadow-2xl">
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12 lg:gap-16">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 md:gap-12 lg:gap-16">
             {/* Colonne Gauche */}
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <input type="text" placeholder="Nom et prénom(*)" className="form-input" required />
+                <input name="nom" value={form.nom} onChange={handleChange} type="text" placeholder="Nom et prénom(*)" className="form-input" required />
               </div>
               <div>
-                <input type="email" placeholder="Email(*)" className="form-input" required />
+                <input name="email" value={form.email} onChange={handleChange} type="email" placeholder="Email(*)" className="form-input" required />
               </div>
               <div>
-                <input type="text" placeholder="Budget estimé" className="form-input" />
+                <input name="budget" value={form.budget} onChange={handleChange} type="text" placeholder="Budget estimé" className="form-input" />
               </div>
               <div>
-                <textarea placeholder="Besoin spécifique(*)" className="form-input h-20 resize-none" required />
+                <textarea name="besoin" value={form.besoin} onChange={handleChange} placeholder="Besoin spécifique(*)" className="form-input h-20 resize-none" required />
                 <p className="text-[10px] text-gray-500 italic mt-2 leading-tight">
                   ex : équiper huit collaborateurs avec un PC Portable. Nos logiciels..., nos contraintes...(*)
                 </p>
@@ -243,17 +310,21 @@ const DevisExpress = () => {
             {/* Colonne Droite */}
             <div className="space-y-5 sm:space-y-6">
               <div>
-                <input type="tel" placeholder="Téléphone(*)" className="form-input" required />
+                <input name="telephone" value={form.telephone} onChange={handleChange} type="tel" placeholder="Téléphone(*)" className="form-input" required />
               </div>
               <div>
-                <input type="text" placeholder="Entreprise(*)" className="form-input" required />
+                <input name="entreprise" value={form.entreprise} onChange={handleChange} type="text" placeholder="Entreprise(*)" className="form-input" required />
               </div>
               <div>
-                <input type="text" placeholder="Date jj/mm/aaaa" className="form-input" />
+                <input name="date_souhaitee" value={form.date_souhaitee} onChange={handleChange} type="date" className="form-input" />
+              </div>
+
+              <div>
+                <textarea name="message" value={form.message} onChange={handleChange} placeholder="Message complémentaire" className="form-input h-20 resize-none" />
               </div>
 
               <div className="flex items-start gap-2 pt-2">
-                <input type="checkbox" id="c" className="accent-black mt-1" required />
+                <input name="accepte" checked={form.accepte} onChange={handleChange} type="checkbox" id="c" className="accent-black mt-1" required />
                 <label htmlFor="c" className="text-xs font-medium text-gray-700 leading-snug">
                   J'accepte d'être contacté pour traiter ma demande.
                 </label>
@@ -274,8 +345,8 @@ const DevisExpress = () => {
 
             {/* Section Envoi & WhatsApp */}
             <div className="pt-4 md:pt-6 flex flex-col items-center">
-              <button type="submit" className="btn-orange w-full max-w-[280px] mb-6 uppercase tracking-wide shadow-md">
-                J'envoie ma demande
+              <button type="submit" disabled={isSubmitting} className="btn-orange w-full max-w-[280px] mb-6 uppercase tracking-wide shadow-md disabled:cursor-not-allowed disabled:opacity-70">
+                {isSubmitting ? "Envoi en cours..." : "J'envoie ma demande"}
               </button>
               <div className="flex items-center w-full gap-3 sm:gap-5 mb-6">
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
