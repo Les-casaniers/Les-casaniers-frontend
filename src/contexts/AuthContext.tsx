@@ -1,6 +1,7 @@
 // contexts/AuthContext.tsx
 import { clearAuthStorage, getAuthToken, setAuthToken, setUser } from '@/components/ActionClient/services/api';
 import api from '@/service/api';
+import { clearAdminRefreshToken, setAdminRefreshToken } from '@/service/api';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from '@/hooks/use-toast';
 
@@ -35,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       const token = getAuthToken();
       console.log('AuthProvider - Token présent:', token ? 'Oui' : 'Non');
-      
+
       if (!token) {
         setLoading(false);
         return;
@@ -70,17 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             throw new Error('Non authentifié');
           }
         }
-        
+
         setUserState(userData);
         setUser(userData);
         setIsAuthenticated(true);
         setIsAdmin(isAdminUser);
         setIsLivreur(isLivreurUser);
-        
+
         console.log('AuthProvider - Utilisateur connecté:', userData);
         console.log('AuthProvider - isAdmin:', isAdminUser);
         console.log('AuthProvider - isLivreur:', isLivreurUser);
-        
+
       } catch (error) {
         console.error('AuthProvider - Erreur vérification auth:', error);
         clearAuthStorage();
@@ -101,33 +102,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const credentials = buildLoginPayload(email, password);
       console.log('Tentative de connexion pour:', credentials.email);
-      
+
       // ✅ Étape 1: Essayer la connexion admin (pour admin et livreur)
       try {
         const adminResponse = await api.post('/admin/login', credentials);
-        
+
         console.log('Réponse login admin:', adminResponse.data);
-        
+
         if (adminResponse.data.success) {
-          const { admin, access_token } = adminResponse.data.data;
-          
+          const { admin, access_token, refresh_token } = adminResponse.data.data;
+
           // Stocker le token
           setAuthToken(access_token);
+          if (refresh_token) {
+            setAdminRefreshToken(refresh_token);
+          }
           api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
           setUser(admin);
-          
+
           setUserState(admin);
           setIsAuthenticated(true);
           setIsAdmin(admin.poste === 'admin');
           setIsLivreur(admin.poste === 'livreur');
-          
+
           console.log('Connexion admin/livreur réussie:', admin);
-          
+
           toast({
             title: 'Connexion réussie',
             description: `Bienvenue ${admin.prenom} !`,
           });
-          
+
           return {
             success: true,
             isAdmin: admin.poste === 'admin',
@@ -142,35 +146,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw adminError;
         }
       }
-      
+
       // ✅ Étape 2: Essayer la connexion client
       try {
         const clientResponse = await api.post('/utilisateurs/login', credentials);
-        
+
         console.log('Réponse login client:', clientResponse.data);
-        
+
         const data = clientResponse.data;
         const token = data.data?.access_token || data.data?.token || data.token;
         const userData = data.data?.utilisateur || data.data?.user || data.data || data.user;
-        
+
         if (token && userData) {
           // Stocker le token
+          clearAdminRefreshToken();
           setAuthToken(token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           setUser(userData);
-          
+
           setUserState(userData);
           setIsAuthenticated(true);
           setIsAdmin(false);
           setIsLivreur(false);
-          
+
           console.log('Connexion client réussie:', userData);
-          
+
           toast({
             title: 'Connexion réussie',
             description: `Bienvenue ${userData.prenom || userData.nom || 'Client'} !`,
           });
-          
+
           return {
             success: true,
             isAdmin: false,
@@ -183,17 +188,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Si on arrive ici, c'est que les deux tentatives ont échoué
         throw clientError;
       }
-      
+
       // Si on arrive ici, aucune connexion n'a fonctionné
       return {
         success: false,
         message: 'Email ou mot de passe incorrect',
         errors: {},
       };
-      
+
     } catch (error: any) {
       console.error('Erreur login:', error);
-      
+
       // Gérer les erreurs de validation
       if (error.response?.data?.errors) {
         const errorData = error.response.data;
@@ -203,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           errors: errorData.errors,
         };
       }
-      
+
       // Gérer les erreurs d'authentification
       if (error.response?.status === 401) {
         return {
@@ -212,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           errors: {},
         };
       }
-      
+
       return {
         success: false,
         message: error.response?.data?.message || 'Une erreur est survenue lors de la connexion',
@@ -234,25 +239,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
     setIsAdmin(false);
     setIsLivreur(false);
-    
+
     toast({
       title: 'Déconnexion',
       description: 'Vous avez été déconnecté avec succès',
     });
-    
+
     window.location.href = '/login';
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
       isAdmin,
       isLivreur,
-      login, 
+      login,
       updateUser,
       logout,
-      loading 
+      loading
     }}>
       {children}
     </AuthContext.Provider>

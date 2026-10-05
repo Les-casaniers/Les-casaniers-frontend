@@ -42,6 +42,7 @@ api.interceptors.response.use(
 export const clearAuthStorage = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  localStorage.removeItem('admin_refresh_token');
 };
 
 export const setAuthToken = (token: string) => {
