@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { 
-  FileText, 
-  Search, 
-  Trash2, 
-  Eye, 
-  Download, 
+import {
+  FileText,
+  Search,
+  Trash2,
+  Eye,
+  Download,
   Loader2,
   Calendar,
   CreditCard,
@@ -77,7 +77,7 @@ const AdminFactures = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
-  
+
   // Stats
   const [stats, setStats] = useState({
     total: 0,
@@ -101,7 +101,7 @@ const AdminFactures = () => {
       setIsLoading(true);
       const response = await api.get('/admin/factures');
       console.log("Factures récupérées:", response.data);
-      
+
       let facturesData: Facture[] = [];
       if (response.data.data && Array.isArray(response.data.data)) {
         facturesData = response.data.data;
@@ -110,9 +110,9 @@ const AdminFactures = () => {
       } else {
         facturesData = [];
       }
-      
+
       setFactures(facturesData);
-      
+
       // Calculer les statistiques
       const statsData = {
         total: facturesData.length,
@@ -123,7 +123,7 @@ const AdminFactures = () => {
         montantTotal: facturesData.reduce((sum, f) => sum + (f.statut === "payee" ? f.montant_total : 0), 0),
       };
       setStats(statsData);
-      
+
     } catch (error: any) {
       console.error("Erreur chargement factures:", error);
       toast.error(error.response?.data?.message || "Impossible de charger les factures");
@@ -206,7 +206,7 @@ const AdminFactures = () => {
       const response = await api.get(`/admin/factures/${facture.id}/download`, {
         responseType: 'blob'
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -215,11 +215,20 @@ const AdminFactures = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       toast.success("PDF téléchargé avec succès");
     } catch (error: any) {
       console.error("Erreur téléchargement:", error);
-      toast.error("Impossible de télécharger le PDF");
+      let message = error.response?.data?.message;
+      if (error.response?.data instanceof Blob) {
+        try {
+          const responseBody = JSON.parse(await error.response.data.text());
+          message = responseBody.message || message;
+        } catch {
+          // Keep the generic message when the response is not JSON.
+        }
+      }
+      toast.error(message || "Impossible de télécharger le PDF");
     }
   };
 
@@ -378,7 +387,7 @@ const AdminFactures = () => {
                     >
                       <Eye className="h-4 w-4" />
                     </button>
-                    
+
                     {facture.statut === "brouillon" && (
                       <button
                         onClick={() => emitFacture(facture.id)}
@@ -389,7 +398,7 @@ const AdminFactures = () => {
                         {actionLoading === facture.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </button>
                     )}
-                    
+
                     {facture.statut === "emise" && (
                       <button
                         onClick={() => { setPayModal(facture); setPayMethod(""); }}
@@ -399,7 +408,7 @@ const AdminFactures = () => {
                         <DollarSign className="h-4 w-4" />
                       </button>
                     )}
-                    
+
                     {(facture.statut === "brouillon" || facture.statut === "emise") && (
                       <button
                         onClick={() => cancelFacture(facture.id)}
@@ -410,7 +419,7 @@ const AdminFactures = () => {
                         <XCircle className="h-4 w-4" />
                       </button>
                     )}
-                    
+
                     {(facture.statut === "annulee" || facture.statut === "payee") && (
                       <button
                         onClick={() => {
@@ -424,7 +433,7 @@ const AdminFactures = () => {
                         <Trash2 className="h-4 w-4" />
                       </button>
                     )}
-                    
+
                     {facture.statut !== "brouillon" && (
                       <button
                         onClick={() => handleDownload(facture)}
@@ -522,7 +531,7 @@ const AdminFactures = () => {
             <div className="p-6 space-y-4">
               <h3 className="font-bold text-lg text-foreground">Marquer comme payée</h3>
               <p className="text-sm text-muted-foreground">
-                Facture <span className="font-semibold text-foreground">{payModal.facture_ref}</span> — 
+                Facture <span className="font-semibold text-foreground">{payModal.facture_ref}</span> —
                 <span className="font-bold ml-1">{formatPrice(payModal.montant_total, payModal.devise)}</span>
               </p>
               <input
@@ -535,8 +544,8 @@ const AdminFactures = () => {
                 <button onClick={() => setPayModal(null)} className="flex-1 px-4 py-2 text-sm border border-border rounded-xl hover:bg-secondary transition">
                   Annuler
                 </button>
-                <button 
-                  onClick={() => markAsPaid(payModal.id, payMethod || undefined)} 
+                <button
+                  onClick={() => markAsPaid(payModal.id, payMethod || undefined)}
                   disabled={actionLoading === payModal.id}
                   className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-2"
                 >
@@ -567,8 +576,8 @@ const AdminFactures = () => {
               <button onClick={() => setShowDeleteAlert(false)} className="flex-1 px-4 py-2 text-sm font-medium border border-border rounded-xl hover:bg-secondary transition">
                 Annuler
               </button>
-              <button 
-                onClick={() => deleteFacture(selectedFacture.id)} 
+              <button
+                onClick={() => deleteFacture(selectedFacture.id)}
                 disabled={actionLoading === selectedFacture.id}
                 className="flex-1 px-4 py-2 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition flex items-center justify-center gap-2"
               >
