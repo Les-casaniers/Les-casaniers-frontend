@@ -10,6 +10,8 @@ import {
 import { SiteLayout } from "@/components/site/SiteLayout";
 import api from "@/service/api";
 
+const WHATSAPP_NUMBER = "261348429933";
+
 const initialForm = {
   nom: "",
   email: "",
@@ -20,6 +22,23 @@ const initialForm = {
   date_souhaitee: "",
   message: "",
   accepte: false,
+};
+
+const buildWhatsAppUrl = (form: typeof initialForm) => {
+  const details = [
+    `Bonjour, je souhaite demander un devis.`,
+    "",
+    `Nom : ${form.nom}`,
+    `E-mail : ${form.email}`,
+    `Téléphone : ${form.telephone}`,
+    `Entreprise : ${form.entreprise}`,
+    `Besoin : ${form.besoin}`,
+    form.budget && `Budget estimé : ${form.budget}`,
+    form.date_souhaitee && `Date souhaitée : ${form.date_souhaitee}`,
+    form.message && `Message complémentaire : ${form.message}`,
+  ].filter(Boolean).join("\n");
+
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(details)}`;
 };
 
 const DevisExpress = () => {
@@ -45,6 +64,16 @@ const DevisExpress = () => {
     }));
   };
 
+  const handleWhatsApp = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const formElement = event.currentTarget.form;
+
+    if (!formElement?.reportValidity()) {
+      return;
+    }
+
+    window.open(buildWhatsAppUrl(form), "_blank", "noopener,noreferrer");
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -53,6 +82,7 @@ const DevisExpress = () => {
       return;
     }
 
+    const whatsappWindow = window.open("about:blank", "_blank");
     setIsSubmitting(true);
 
     try {
@@ -68,12 +98,20 @@ const DevisExpress = () => {
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Votre demande de devis a bien été enregistrée.");
-        setForm(initialForm);
+        if (whatsappWindow) {
+          whatsappWindow.opener = null;
+          whatsappWindow.location.href = buildWhatsAppUrl(form);
+          toast.success(response.data.message || "Votre demande est enregistrée. WhatsApp va s’ouvrir.");
+          setForm(initialForm);
+        } else {
+          toast.success("Votre demande est enregistrée. Autorisez les fenêtres pop-up puis utilisez le bouton WhatsApp pour envoyer le message.");
+        }
       } else {
+        whatsappWindow?.close();
         toast.error(response.data.message || "Une erreur est survenue.");
       }
     } catch (error: any) {
+      whatsappWindow?.close();
       const message = error?.response?.data?.message || "Impossible d’envoyer votre demande pour le moment.";
       const validationErrors = error?.response?.data?.errors;
 
@@ -355,9 +393,9 @@ const DevisExpress = () => {
                 </span>
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
               </div>
-              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="btn-whatsapp w-full max-w-[280px] justify-center">
-                WhatsApp <MessageCircle size={18} />
-              </a>
+              <button type="button" onClick={handleWhatsApp} className="btn-whatsapp w-full max-w-[280px] justify-center">
+                Envoyer via WhatsApp <MessageCircle size={18} />
+              </button>
             </div>
           </form>
         </div>
