@@ -260,12 +260,19 @@ const Configurateur = () => {
     }));
   };
 
+  // ✅ "Suivant" / "Précédent" naviguent entre les étapes (Boîtier → … → Alimentation)
   const handleNext = () => {
-    if (productPage < pageCount - 1) setProductPage(productPage + 1);
+    if (currentStep < stepsConfig.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setProductPage(0);
+    }
   };
 
   const handlePrev = () => {
-    if (productPage > 0) setProductPage(productPage - 1);
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      setProductPage(0);
+    }
   };
 
   const handleAddToCart = async () => {
