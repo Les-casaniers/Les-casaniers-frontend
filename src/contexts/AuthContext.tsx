@@ -157,25 +157,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Stocker le token
           setAuthToken(token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          setUser(userData);
+
+          let fullUser = userData;
+          try {
+            const profileResponse = await api.get('/utilisateurs/profile');
+            const profileData = profileResponse.data?.data || profileResponse.data;
+            if (profileData && typeof profileData === 'object') {
+              fullUser = { ...userData, ...profileData };
+            }
+          } catch (profileError) {
+            console.warn('Impossible de récupérer le profil complet après connexion:', profileError);
+          }
+
+          setUser(fullUser);
           
-          setUserState(userData);
+          setUserState(fullUser);
           setIsAuthenticated(true);
           setIsAdmin(false);
           setIsLivreur(false);
           
-          console.log('Connexion client réussie:', userData);
+          console.log('Connexion client réussie:', fullUser);
           
           toast({
             title: 'Connexion réussie',
-            description: `Bienvenue ${userData.prenom || userData.nom || 'Client'} !`,
+            description: `Bienvenue ${fullUser.prenom || fullUser.nom || 'Client'} !`,
           });
           
           return {
             success: true,
             isAdmin: false,
             isLivreur: false,
-            user: userData
+            user: fullUser
           };
         }
       } catch (clientError: any) {
