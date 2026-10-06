@@ -1,6 +1,5 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import devisExpressBg from "@/assets/devis_express.png";
@@ -23,6 +22,23 @@ const initialForm = {
   date_souhaitee: "",
   message: "",
   accepte: false,
+};
+
+const buildWhatsAppUrl = (form: typeof initialForm) => {
+  const details = [
+    `Bonjour, je souhaite demander un devis.`,
+    "",
+    `Nom : ${form.nom}`,
+    `E-mail : ${form.email}`,
+    `Téléphone : ${form.telephone}`,
+    `Entreprise : ${form.entreprise}`,
+    `Besoin : ${form.besoin}`,
+    form.budget && `Budget estimé : ${form.budget}`,
+    form.date_souhaitee && `Date souhaitée : ${form.date_souhaitee}`,
+    form.message && `Message complémentaire : ${form.message}`,
+  ].filter(Boolean).join("\n");
+
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(details)}`;
 };
 
 const DevisExpress = () => {
@@ -55,20 +71,7 @@ const DevisExpress = () => {
       return;
     }
 
-    const details = [
-      `Bonjour, je souhaite demander un devis.`,
-      "",
-      `Nom : ${form.nom}`,
-      `E-mail : ${form.email}`,
-      `Téléphone : ${form.telephone}`,
-      `Entreprise : ${form.entreprise}`,
-      `Besoin : ${form.besoin}`,
-      form.budget && `Budget estimé : ${form.budget}`,
-      form.date_souhaitee && `Date souhaitée : ${form.date_souhaitee}`,
-      form.message && `Message complémentaire : ${form.message}`,
-    ].filter(Boolean).join("\n");
-
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(details)}`, "_blank", "noopener,noreferrer");
+    window.open(buildWhatsAppUrl(form), "_blank", "noopener,noreferrer");
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -79,6 +82,7 @@ const DevisExpress = () => {
       return;
     }
 
+    const whatsappWindow = window.open("about:blank", "_blank");
     setIsSubmitting(true);
 
     try {
@@ -94,12 +98,20 @@ const DevisExpress = () => {
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || "Votre demande de devis a bien été enregistrée.");
-        setForm(initialForm);
+        if (whatsappWindow) {
+          whatsappWindow.opener = null;
+          whatsappWindow.location.href = buildWhatsAppUrl(form);
+          toast.success(response.data.message || "Votre demande est enregistrée. WhatsApp va s’ouvrir.");
+          setForm(initialForm);
+        } else {
+          toast.success("Votre demande est enregistrée. Autorisez les fenêtres pop-up puis utilisez le bouton WhatsApp pour envoyer le message.");
+        }
       } else {
+        whatsappWindow?.close();
         toast.error(response.data.message || "Une erreur est survenue.");
       }
     } catch (error: any) {
+      whatsappWindow?.close();
       const message = error?.response?.data?.message || "Impossible d’envoyer votre demande pour le moment.";
       const validationErrors = error?.response?.data?.errors;
 
