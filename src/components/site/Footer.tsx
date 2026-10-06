@@ -2,7 +2,7 @@ import logoImg from "@/assets/casaniers-logo.jpg";
 import mascotImg from "@/assets/10.png";
 import { Facebook, Instagram, Youtube, MapPin, Phone, Mail } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import circuitIncone from "@/assets/circuit4.png";
 import circuitIncone1 from "@/assets/circuit4.png";
 import circuitIncone2 from "@/assets/circuit5.png";
@@ -23,14 +23,27 @@ const TiktokIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const cols = [
+type FooterLink = { label: string; to: string; hash?: string };
+
+const cols: { title: string; links: FooterLink[] }[] = [
   {
     title: "SERVICES",
-    links: ["SAV et maintenance", "Audit de parc", "Devis sur-mesure", "Livraison Tana & Provinces"],
+    links: [
+      { label: "SAV et maintenance", to: "/cgv", hash: "sav" },
+      { label: "Audit de parc", to: "/cgv", hash: "audit" },
+      { label: "Devis sur-mesure", to: "/devis-express" },
+      { label: "Livraison Tana & Provinces", to: "/cgv", hash: "cgv" },
+    ],
   },
   {
     title: "LEGAL",
-    links: ["CGV", "CGU", "Mentions légales", "Confidentialité", "Cookies"],
+    links: [
+      { label: "CGV", to: "/cgv", hash: "cgv" },
+      { label: "CGU", to: "/cgv" },
+      { label: "Mentions légales", to: "/qui-sommes-nous" },
+      { label: "Confidentialité", to: "/confidentialite" },
+      { label: "Cookies", to: "/confidentialite" },
+    ],
   },
 ];
 
@@ -45,6 +58,17 @@ export const Footer = ({ className }: { className?: string }) => {
 
   // Déterminer si le footer est en mode blanc
   const isWhiteMode = className?.includes('bg-white');
+
+  // Après un clic sur un lien : scroll vers la section (#hash) ou en haut de la page
+  const handleLinkClick = (hash?: string) => {
+    setTimeout(() => {
+      if (hash) {
+        document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 150);
+  };
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,10 +187,14 @@ export const Footer = ({ className }: { className?: string }) => {
                 </div>
                 <ul className="space-y-2.5">
                   {c.links.map((l) => (
-                    <li key={l}>
-                      <a href="#" className={`text-sm ${isWhiteMode ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white'} transition-colors`}>
-                        {l}
-                      </a>
+                    <li key={l.label}>
+                      <Link
+                        to={l.hash ? `${l.to}#${l.hash}` : l.to}
+                        onClick={() => handleLinkClick(l.hash)}
+                        className={`text-sm ${isWhiteMode ? 'text-black/70 hover:text-black' : 'text-white/70 hover:text-white'} transition-colors`}
+                      >
+                        {l.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>
