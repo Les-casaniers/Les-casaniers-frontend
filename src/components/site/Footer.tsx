@@ -81,9 +81,10 @@ export const Footer = ({ className }: { className?: string }) => {
   return (
     <footer className={className || "bg-black text-white"}>
       {/* ── Bandeau newsletter ── */}
-      <div className={`border-b ${isWhiteMode ? 'border-black/10 bg-black' : 'border-white/10 bg-white'} w-full`}>
+      {/* relative z-10 : le bandeau passe au-dessus des circuits, qui se cachent dessous */}
+      <div className={`relative z-10 border-b ${isWhiteMode ? 'border-black/10 bg-black' : 'border-white/10 bg-white'} w-full`}>
         <div className="container-x py-8 md:py-12 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8 w-full max-w-full box-border">
-          <h3 className={`font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left ${isWhiteMode ? 'text-white' : 'text-black'}`}>
+          <h3 className={`font-display text-xl sm:text-2xl lg:text-3xl leading-snug text-center lg:text-left origin-center lg:origin-left scale-110 lg:scale-150 ${isWhiteMode ? 'text-white' : 'text-black'}`}>
             <span className="align-top text-2xl lg:text-4xl mr-1">"</span>
             <span className="font-extralight">Reçois </span><b className="font-black">nos news</b>
             <br />
@@ -181,7 +182,7 @@ export const Footer = ({ className }: { className?: string }) => {
           {/* — Liens de navigation (Services / Légal) — */}
           <div className="lg:col-span-4 lg:col-start-5 grid grid-cols-1 sm:grid-cols-2 gap-6 self-start text-center sm:text-left w-full">
             {cols.map((c) => (
-              <div key={c.title} className="w-full">
+              <div key={c.title} className={`w-full ${c.title === "SERVICES" ? "lg:-translate-x-10" : ""}`}>
                 <div className={`italic font-display text-sm mb-4 ${isWhiteMode ? 'text-black/60' : 'text-white/60'}`}>
                   {c.title}.
                 </div>
@@ -208,55 +209,58 @@ export const Footer = ({ className }: { className?: string }) => {
               <img
                 src={circuitIncone2}
                 alt=""
-                className="absolute -top-12 right-0 h-24 w-auto pointer-events-none opacity-40 z-0 object-contain"
+                className="absolute top-[calc(-3rem-1cm)] right-0 h-24 w-auto pointer-events-none opacity-40 z-0 object-contain"
               />
             )}
 
-            <div className={`italic font-display text-sm mb-4 ${isWhiteMode ? 'text-black/60' : 'text-white/60'} text-center sm:text-left relative z-10`}>
+            <div className={`italic font-display text-sm mb-4 ${isWhiteMode ? 'text-black/60' : 'text-white/60'} text-center sm:text-left relative z-10 lg:ml-[0.5cm]`}>
               NOUS TROUVER.
             </div>
 
-            <div
-              className={`relative w-full overflow-hidden rounded-lg border ${isWhiteMode ? 'border-black/15' : 'border-white/15'} z-10 box-border`}
-              style={{ aspectRatio: "4/3" }}
-            >
-              {isMobile ? (
-                <a
-                  href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`absolute inset-0 flex flex-col items-center justify-center gap-2 ${isWhiteMode ? 'bg-black/5 hover:bg-black/10' : 'bg-white/5 hover:bg-white/10'} transition-colors p-4`}
-                >
-                  <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/60' : 'text-white/60'}`} />
-                  <span className={`text-xs ${isWhiteMode ? 'text-black/70' : 'text-white/70'} uppercase tracking-widest underline text-center`}>
-                    Voir sur Google Maps
-                  </span>
-                </a>
-              ) : (
-                <>
-                  {!mapLoaded && (
-                    <div className={`absolute inset-0 ${isWhiteMode ? 'bg-black/5' : 'bg-white/5'} flex flex-col items-center justify-center gap-3`}>
-                      <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/30' : 'text-white/30'} animate-pulse`} />
-                      <span className={`text-xs ${isWhiteMode ? 'text-black/30' : 'text-white/30'} uppercase tracking-widest`}>
-                        Chargement…
-                      </span>
-                    </div>
-                  )}
+            {/* Enveloppe : garde la hauteur d'origine (ratio 4/3) */}
+            <div className="relative w-full z-10" style={{ aspectRatio: "4/3" }}>
+              {/* Cadre de la carte : */}
+              <div
+                className={`absolute inset-y-0 right-0 left-0 lg:left-[0.5cm] overflow-hidden rounded-[1%] border ${isWhiteMode ? 'border-black/15' : 'border-white/15'} box-border`}
+              >
+                {isMobile ? (
+                  <a
+                    href="https://maps.google.com/?q=5F4H+VPJ,+Antananarivo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`absolute inset-0 flex flex-col items-center justify-center gap-2 ${isWhiteMode ? 'bg-black/5 hover:bg-black/10' : 'bg-white/5 hover:bg-white/10'} transition-colors p-4`}
+                  >
+                    <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/60' : 'text-white/60'}`} />
+                    <span className={`text-xs ${isWhiteMode ? 'text-black/70' : 'text-white/70'} uppercase tracking-widest underline text-center`}>
+                      Voir sur Google Maps
+                    </span>
+                  </a>
+                ) : (
+                  <>
+                    {!mapLoaded && (
+                      <div className={`absolute inset-0 ${isWhiteMode ? 'bg-black/5' : 'bg-white/5'} flex flex-col items-center justify-center gap-3`}>
+                        <MapPin className={`h-6 w-6 ${isWhiteMode ? 'text-black/30' : 'text-white/30'} animate-pulse`} />
+                        <span className={`text-xs ${isWhiteMode ? 'text-black/30' : 'text-white/30'} uppercase tracking-widest`}>
+                          Chargement…
+                        </span>
+                      </div>
+                    )}
 
-                  <iframe
-                    title="Localisation Les Casaniers — Antananarivo"
-                    src={MAPS_EMBED_URL}
-                    className={[
-                      "absolute inset-0 w-full h-full border-0 contrast-125 transition-opacity duration-500",
-                      mapLoaded ? "opacity-100" : "opacity-0",
-                    ].join(" ")}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    onLoad={() => setMapLoaded(true)}
-                  />
-                </>
-              )}
+                    <iframe
+                      title="Localisation Les Casaniers — Antananarivo"
+                      src={MAPS_EMBED_URL}
+                      className={[
+                        "absolute inset-0 w-full h-full border-0 contrast-125 transition-opacity duration-500",
+                        mapLoaded ? "opacity-100" : "opacity-0",
+                      ].join(" ")}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      onLoad={() => setMapLoaded(true)}
+                    />
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
