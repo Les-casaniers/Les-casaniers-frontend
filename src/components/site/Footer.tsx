@@ -219,9 +219,9 @@ export const Footer = ({ className }: { className?: string }) => {
 
             {/* Enveloppe : garde la hauteur d'origine (ratio 4/3) */}
             <div className="relative w-full z-10" style={{ aspectRatio: "4/3" }}>
-              {/* Cadre de la carte : */}
+              {/* Cadre de la carte*/}
               <div
-                className={`absolute inset-y-0 right-0 left-0 lg:left-[0.5cm] overflow-hidden rounded-[1%] border ${isWhiteMode ? 'border-black/15' : 'border-white/15'} box-border`}
+                className={`absolute top-0 -bottom-[2.4cm] right-0 left-0 lg:left-[0.5cm] overflow-hidden rounded-[1%] border ${isWhiteMode ? 'border-black/15' : 'border-white/15'} box-border`}
               >
                 {isMobile ? (
                   <a
