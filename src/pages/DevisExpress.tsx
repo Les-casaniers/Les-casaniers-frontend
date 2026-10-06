@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import curvedArrow from "@/assets/Curved Arrow Downward.png";
 import devisExpressBg from "@/assets/devis_express.png";
@@ -9,6 +10,8 @@ import {
 } from "lucide-react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import api from "@/service/api";
+
+const WHATSAPP_NUMBER = "261348429933";
 
 const initialForm = {
   nom: "",
@@ -43,6 +46,29 @@ const DevisExpress = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+  };
+
+  const handleWhatsApp = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const formElement = event.currentTarget.form;
+
+    if (!formElement?.reportValidity()) {
+      return;
+    }
+
+    const details = [
+      `Bonjour, je souhaite demander un devis.`,
+      "",
+      `Nom : ${form.nom}`,
+      `E-mail : ${form.email}`,
+      `Téléphone : ${form.telephone}`,
+      `Entreprise : ${form.entreprise}`,
+      `Besoin : ${form.besoin}`,
+      form.budget && `Budget estimé : ${form.budget}`,
+      form.date_souhaitee && `Date souhaitée : ${form.date_souhaitee}`,
+      form.message && `Message complémentaire : ${form.message}`,
+    ].filter(Boolean).join("\n");
+
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(details)}`, "_blank", "noopener,noreferrer");
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -355,9 +381,9 @@ const DevisExpress = () => {
                 </span>
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
               </div>
-              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="btn-whatsapp w-full max-w-[280px] justify-center">
-                WhatsApp <MessageCircle size={18} />
-              </a>
+              <button type="button" onClick={handleWhatsApp} className="btn-whatsapp w-full max-w-[280px] justify-center">
+                Envoyer via WhatsApp <MessageCircle size={18} />
+              </button>
             </div>
           </form>
         </div>
