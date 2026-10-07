@@ -235,7 +235,7 @@ const DevisExpress = () => {
           </div>
 
           <div className="relative z-10 mt-6 md:mt-0 md:absolute md:bottom-8 md:right-8 lg:right-10">
-            <button onClick={scrollToBesoins} className="btn-orange text-xs sm:text-sm uppercase tracking-wider shadow-lg">
+            <button onClick={scrollToBesoins} className="btn-orange text-xs sm:text-sm tracking-wider shadow-lg">
               Demander un devis
             </button>
           </div>
@@ -375,15 +375,15 @@ const DevisExpress = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-black text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider hover:bg-black/90 transition-colors w-full sm:w-auto"
+                className="bg-black text-white px-5 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs font-bold tracking-wider hover:bg-black/90 transition-colors w-full sm:w-auto"
               >
-                J'ajoute un fichier <FileText size={16} />
+                j'ajoute un fichier <FileText size={16} />
               </button>
             </div>
 
             {/* Section Envoi & WhatsApp */}
             <div className="pt-4 md:pt-6 flex flex-col items-center">
-              <button type="submit" disabled={isSubmitting} className="btn-orange w-full max-w-[280px] mb-6 uppercase tracking-wide shadow-md disabled:cursor-not-allowed disabled:opacity-70">
+              <button type="submit" disabled={isSubmitting} className="btn-orange w-full max-w-[280px] mb-6 tracking-wide shadow-md disabled:cursor-not-allowed disabled:opacity-70">
                 {isSubmitting ? "Envoi en cours..." : "J'envoie ma demande"}
               </button>
               <div className="flex items-center w-full gap-3 sm:gap-5 mb-6">
@@ -394,7 +394,7 @@ const DevisExpress = () => {
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
               </div>
               <button type="button" onClick={handleWhatsApp} className="btn-whatsapp w-full max-w-[280px] justify-center">
-                Envoyer via WhatsApp <MessageCircle size={18} />
+                WhatsApp <MessageCircle size={18} />
               </button>
             </div>
           </form>

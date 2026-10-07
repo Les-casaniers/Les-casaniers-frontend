@@ -48,6 +48,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "VAG Rundschrift D Regular";
+  src: local("VAG Rundschrift D Regular"), local("VAGRundschriftD-Regular");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -161,7 +169,7 @@
     
     /* Fonts */
     --font-display: 'Glacial Indifference', 'Space Grotesk', system-ui, sans-serif;
-    --font-body: 'Glacial Indifference', 'Inter', system-ui, sans-serif;
+    --font-body: 'VAG Rundschrift D Regular', 'Glacial Indifference', 'Inter', system-ui, sans-serif;
     
     /* Letter spacing */
     --tracking-tighter: -0.03em;
