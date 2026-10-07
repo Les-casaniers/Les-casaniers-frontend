@@ -388,7 +388,7 @@ const DevisExpress = () => {
               </button>
               <div className="flex items-center w-full gap-3 sm:gap-5 mb-6">
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
-                <span className="text-[10px] sm:text-[11px] uppercase text-gray-400 font-bold tracking-widest whitespace-nowrap">
+                <span className="text-[10px] sm:text-[11px] text-gray-400 font-bold tracking-widest whitespace-nowrap">
                   ou contacte nous sur
                 </span>
                 <div className="h-[1px] bg-gray-200 flex-1"></div>
