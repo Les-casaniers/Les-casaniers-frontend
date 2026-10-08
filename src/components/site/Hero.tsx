@@ -61,10 +61,12 @@ export const Hero = () => {
                 Construisons ton outil de reussite
               </h1>
 
-              <p className="font-mono mt-14 sm:mt-16 text-[14px] 
-                font-light italic leading-relaxed text-white">
-                <span>&quot; Le meilleur pc n'est pas forcément le plus puissant du marché.</span>
-                <span className="block pl-6 sm:pl-10 mt-1">C'est celui adapté à tes besoins, pour jouer et évoluer sereinement &quot;</span>
+              <p
+                className="mt-14 sm:mt-16 text-[14px] sm:text-[16px] leading-relaxed text-white"
+                style={{ fontFamily: '"VAG Rundschrift D Regular", "Glacial Indifference", sans-serif', fontStyle: 'italic' }}
+              >
+                <span>“ Le meilleur PC n’est pas forcément le plus puissant du marché.</span>
+                <span className="block pl-6 sm:pl-10 mt-1">C’est celui adapté à tes besoins, pour jouer et évoluer sereinement ”</span>
               </p>
 
               <Link
